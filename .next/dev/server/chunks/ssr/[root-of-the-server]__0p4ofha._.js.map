@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 10, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/dmua8/Cabinet-Varelli/app/page.tsx"],"sourcesContent":["export default function Home() {\n  return (\n    <main style={{padding:'40px',fontFamily:'sans-serif'}}>\n      <h1>Cabinet Varelli</h1>\n      <p><em>Seul Dieu peut juger</em></p>\n      <ul>\n        <li>Dashboard</li>\n        <li>Simulateur d'honoraires</li>\n        <li>Dossiers</li>\n        <li>Clients</li>\n        <li>Comptabilité</li>\n        <li>Base juridique</li>\n      </ul>\n    </main>\n  );\n}"],"names":["Home","style","padding","fontFamily"],"mappings":";;;;;;AAAe,SAASA;IACtB,qBACE,8OAAC;QAAKC,OAAO;YAACC,SAAQ;YAAOC,YAAW;QAAY;;0BAClD,8OAAC;0BAAG;;;;;;0BACJ,8OAAC;0BAAE,cAAA,8OAAC;8BAAG;;;;;;;;;;;0BACP,8OAAC;;kCACC,8OAAC;kCAAG;;;;;;kCACJ,8OAAC;kCAAG;;;;;;kCACJ,8OAAC;kCAAG;;;;;;kCACJ,8OAAC;kCAAG;;;;;;kCACJ,8OAAC;kCAAG;;;;;;kCACJ,8OAAC;kCAAG;;;;;;;;;;;;;;;;;;AAIZ"}}]
+}
