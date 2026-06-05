@@ -1,37 +1,51 @@
+"use client";
+
 export default function Home() {
   return (
     <main
       style={{
         minHeight: "100vh",
         display: "flex",
-        background: "#0f1115",
+        background: "#0b0d10",
+        color: "#fff",
       }}
     >
       <aside
         style={{
-          width: "260px",
-          background: "#171a21",
-          padding: "20px",
-          borderRight: "1px solid #2d323d",
+          width: "280px",
+          background: "#13161c",
+          borderRight: "1px solid #242933",
+          padding: "24px",
         }}
       >
-        <h2 style={{ color: "#d4af37" }}>⚖ Cabinet Varelli</h2>
+        <h1
+          style={{
+            color: "#d4af37",
+            marginBottom: "8px",
+          }}
+        >
+          ⚖ Cabinet Varelli
+        </h1>
 
-        <p style={{ opacity: 0.8 }}>
-          <em>Seul Dieu peut juger</em>
+        <p
+          style={{
+            opacity: 0.7,
+            fontStyle: "italic",
+            marginBottom: "30px",
+          }}
+        >
+          Seul Dieu peut me juger
         </p>
 
-        <hr />
-
-        <nav>
-          <p>📊 Dashboard</p>
-          <p>💰 Simulateur</p>
-          <p>📁 Dossiers</p>
-          <p>👥 Clients</p>
-          <p>📈 Comptabilité</p>
-          <p>📚 Juridique</p>
-          <p>⚙ Paramètres</p>
-        </nav>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <MenuItem icon="📊" label="Dashboard" />
+          <MenuItem icon="💰" label="Simulateur" />
+          <MenuItem icon="📁" label="Dossiers" />
+          <MenuItem icon="👥" label="Clients" />
+          <MenuItem icon="📈" label="Comptabilité" />
+          <MenuItem icon="📚" label="Base juridique" />
+          <MenuItem icon="⚙️" label="Paramètres" />
+        </div>
       </aside>
 
       <section
@@ -40,23 +54,67 @@ export default function Home() {
           padding: "40px",
         }}
       >
-        <h1>Dashboard</h1>
+        <h2
+          style={{
+            fontSize: "32px",
+            marginBottom: "24px",
+          }}
+        >
+          Tableau de bord
+        </h2>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
             gap: "20px",
-            marginTop: "30px",
           }}
         >
-          <Card title="CA du mois" value="$0" />
+          <Card title="CA Total" value="$0" />
+          <Card title="CA du Mois" value="$0" />
           <Card title="Clients" value="0" />
           <Card title="Dossiers" value="0" />
-          <Card title="Blanchi" value="$0" />
+        </div>
+
+        <div
+          style={{
+            marginTop: "40px",
+            background: "#13161c",
+            padding: "24px",
+            borderRadius: "12px",
+          }}
+        >
+          <h3>Activité récente</h3>
+
+          <ul>
+            <li>Cabinet Varelli initialisé</li>
+            <li>Connexion Supabase configurée</li>
+            <li>Prêt pour les dossiers RP</li>
+          </ul>
         </div>
       </section>
     </main>
+  );
+}
+
+function MenuItem({
+  icon,
+  label,
+}: {
+  icon: string;
+  label: string;
+}) {
+  return (
+    <div
+      style={{
+        background: "#1a1f27",
+        padding: "12px",
+        borderRadius: "10px",
+        cursor: "pointer",
+      }}
+    >
+      {icon} {label}
+    </div>
   );
 }
 
@@ -70,21 +128,27 @@ function Card({
   return (
     <div
       style={{
-        background: "#171a21",
-        padding: "20px",
+        background: "#13161c",
+        padding: "24px",
         borderRadius: "12px",
       }}
     >
-      <h3>{title}</h3>
       <p
         style={{
-          fontSize: "28px",
-          fontWeight: "bold",
+          opacity: 0.7,
+        }}
+      >
+        {title}
+      </p>
+
+      <h2
+        style={{
           color: "#d4af37",
+          marginTop: "10px",
         }}
       >
         {value}
-      </p>
+      </h2>
     </div>
   );
 }
