@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/dmua8/Cabinet-Varelli/app/layout.tsx"],"sourcesContent":["export default function RootLayout({\n  children,\n}: {\n  children: React.ReactNode;\n}) {\n  return (\n    <html lang=\"fr\">\n      <body\n        style={{\n          margin: 0,\n          background: \"#0f1115\",\n          color: \"#ffffff\",\n          fontFamily: \"Arial, sans-serif\",\n        }}\n      >\n        {children}\n      </body>\n    </html>\n  );\n}"],"names":["RootLayout","children","lang","style","margin","background","color","fontFamily"],"mappings":";;;;;;AAAe,SAASA,WAAW,EACjCC,QAAQ,EAGT;IACC,qBACE,8OAAC;QAAKC,MAAK;kBACT,cAAA,8OAAC;YACCC,OAAO;gBACLC,QAAQ;gBACRC,YAAY;gBACZC,OAAO;gBACPC,YAAY;YACd;sBAECN;;;;;;;;;;;AAIT"}},
-    {"offset": {"line": 40, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/dmua8/Cabinet-Varelli/node_modules/next/src/server/route-modules/app-page/vendored/rsc/react-jsx-dev-runtime.ts"],"sourcesContent":["module.exports = (\n  require('../../module.compiled') as typeof import('../../module.compiled')\n).vendored['react-rsc']!.ReactJsxDevRuntime\n"],"names":["module","exports","require","vendored","ReactJsxDevRuntime"],"mappings":"AAAAA,OAAOC,OAAO,GACZC,QAAQ,4HACRC,QAAQ,CAAC,YAAY,CAAEC,kBAAkB","ignoreList":[0]}}]
-}
