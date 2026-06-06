@@ -3,62 +3,124 @@
 import { useMemo, useState } from "react";
 
 export default function SimulateurPage() {
-  const [typeAffaire, setTypeAffaire] = useState("crime");
+  const [crimes, setCrimes] = useState(0);
+  const [majeurs, setMajeurs] = useState(0);
+  const [mineurs, setMineurs] = useState(0);
+
   const [risque, setRisque] = useState(0);
+
   const [bonBoulot, setBonBoulot] = useState(false);
   const [proces, setProces] = useState(false);
   const [planteVerte, setPlanteVerte] = useState(false);
 
-  const total = useMemo(() => {
-    let base = 0;
+  const calcul = useMemo(() => {
+    const totalCrimes = crimes * 22500;
+    const totalMajeurs = majeurs * 12000;
+    const totalMineurs = mineurs * 5000;
 
-    if (typeAffaire === "mineur") base = 5000;
-    if (typeAffaire === "majeur") base = 12000;
-    if (typeAffaire === "crime") base = 22500;
+    const sousTotal =
+      totalCrimes +
+      totalMajeurs +
+      totalMineurs;
 
-    let modif = risque;
+    let bonus = risque;
 
-    if (bonBoulot) modif += 15;
-    if (proces) modif += 35;
-    if (planteVerte) modif -= 15;
+    if (bonBoulot) bonus += 15;
+    if (proces) bonus += 35;
+    if (planteVerte) bonus -= 15;
 
-    return Math.round(base + (base * modif) / 100);
-  }, [typeAffaire, risque, bonBoulot, proces, planteVerte]);
+    const total =
+      sousTotal +
+      (sousTotal * bonus) / 100;
+
+    return {
+      totalCrimes,
+      totalMajeurs,
+      totalMineurs,
+      sousTotal,
+      bonus,
+      total: Math.round(total),
+    };
+  }, [
+    crimes,
+    majeurs,
+    mineurs,
+    risque,
+    bonBoulot,
+    proces,
+    planteVerte,
+  ]);
 
   return (
     <main
       style={{
         minHeight: "100vh",
-        background: "#111",
+        background: "#0f0f0f",
         color: "white",
         padding: "40px",
       }}
     >
       <h1 style={{ color: "#d4af37" }}>
-        ⚖ Simulateur Varelli
+        ⚖ Cabinet Varelli
       </h1>
 
+      <p>
+        Seul Dieu peut juger
+      </p>
+
+      <hr />
+
+      <h2>Infractions</h2>
+
+      <label>Crimes</label>
+      <br />
+      <input
+        type="number"
+        min="0"
+        value={crimes}
+        onChange={(e) =>
+          setCrimes(Number(e.target.value))
+        }
+      />
+
+      <br />
       <br />
 
-      <label>Type d'affaire</label>
+      <label>Délits majeurs</label>
       <br />
-      <select
-        value={typeAffaire}
-        onChange={(e) => setTypeAffaire(e.target.value)}
-      >
-        <option value="mineur">Délit mineur (5 000$)</option>
-        <option value="majeur">Délit majeur (12 000$)</option>
-        <option value="crime">Crime (22 500$)</option>
-      </select>
+      <input
+        type="number"
+        min="0"
+        value={majeurs}
+        onChange={(e) =>
+          setMajeurs(Number(e.target.value))
+        }
+      />
 
       <br />
       <br />
 
-      <label>Niveau de risque</label>
+      <label>Délits mineurs</label>
       <br />
+      <input
+        type="number"
+        min="0"
+        value={mineurs}
+        onChange={(e) =>
+          setMineurs(Number(e.target.value))
+        }
+      />
+
+      <br />
+      <br />
+
+      <h2>Risque</h2>
+
       <select
         value={risque}
-        onChange={(e) => setRisque(Number(e.target.value))}
+        onChange={(e) =>
+          setRisque(Number(e.target.value))
+        }
       >
         <option value={0}>Aucun</option>
         <option value={5}>Faible (+5%)</option>
@@ -74,7 +136,9 @@ export default function SimulateurPage() {
         <input
           type="checkbox"
           checked={bonBoulot}
-          onChange={() => setBonBoulot(!bonBoulot)}
+          onChange={() =>
+            setBonBoulot(!bonBoulot)
+          }
         />
         Bon boulot (+15%)
       </label>
@@ -85,7 +149,9 @@ export default function SimulateurPage() {
         <input
           type="checkbox"
           checked={proces}
-          onChange={() => setProces(!proces)}
+          onChange={() =>
+            setProces(!proces)
+          }
         />
         Procès (+35%)
       </label>
@@ -96,7 +162,9 @@ export default function SimulateurPage() {
         <input
           type="checkbox"
           checked={planteVerte}
-          onChange={() => setPlanteVerte(!planteVerte)}
+          onChange={() =>
+            setPlanteVerte(!planteVerte)
+          }
         />
         Plante verte (-15%)
       </label>
@@ -109,19 +177,44 @@ export default function SimulateurPage() {
           background: "#1b1b1b",
           padding: "25px",
           borderRadius: "15px",
-          maxWidth: "400px",
+          maxWidth: "600px",
         }}
       >
-        <h2>Total TTC</h2>
+        <h2>Facturation</h2>
 
-        <p
+        <p>
+          Crimes :{" "}
+          {calcul.totalCrimes.toLocaleString()} $
+        </p>
+
+        <p>
+          Délits majeurs :{" "}
+          {calcul.totalMajeurs.toLocaleString()} $
+        </p>
+
+        <p>
+          Délits mineurs :{" "}
+          {calcul.totalMineurs.toLocaleString()} $
+        </p>
+
+        <hr />
+
+        <p>
+          Sous-total :{" "}
+          {calcul.sousTotal.toLocaleString()} $
+        </p>
+
+        <p>
+          Modificateur : {calcul.bonus}%
+        </p>
+
+        <h1
           style={{
-            fontSize: "2rem",
             color: "#d4af37",
           }}
         >
-          {total.toLocaleString()} $
-        </p>
+          {calcul.total.toLocaleString()} $
+        </h1>
       </div>
     </main>
   );
