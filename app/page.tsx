@@ -1,120 +1,67 @@
-"use client";
-
 export default function Home() {
   return (
     <main
       style={{
         minHeight: "100vh",
-        display: "flex",
-        background: "#0b0d10",
-        color: "#fff",
+        background: "#111111",
+        color: "white",
+        padding: "40px",
+        fontFamily: "Arial",
       }}
     >
-      <aside
+      <h1
         style={{
-          width: "280px",
-          background: "#13161c",
-          borderRight: "1px solid #242933",
-          padding: "24px",
+          color: "#d4af37",
+          fontSize: "3rem",
+          marginBottom: "10px",
         }}
       >
-        <h1
-          style={{
-            color: "#d4af37",
-            marginBottom: "8px",
-          }}
-        >
-          ⚖ Cabinet Varelli
-        </h1>
+        ⚖ Cabinet Varelli
+      </h1>
 
-        <p
-          style={{
-            opacity: 0.7,
-            fontStyle: "italic",
-            marginBottom: "30px",
-          }}
-        >
-          Seul Dieu peut me juger
-        </p>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <MenuItem icon="📊" label="Dashboard" />
-          <MenuItem icon="💰" label="Simulateur" />
-          <MenuItem icon="📁" label="Dossiers" />
-          <MenuItem icon="👥" label="Clients" />
-          <MenuItem icon="📈" label="Comptabilité" />
-          <MenuItem icon="📚" label="Base juridique" />
-          <MenuItem icon="⚙️" label="Paramètres" />
-        </div>
-      </aside>
-
-      <section
+      <p
         style={{
-          flex: 1,
-          padding: "40px",
+          fontStyle: "italic",
+          color: "#999",
+          marginBottom: "40px",
         }}
       >
-        <h2
-          style={{
-            fontSize: "32px",
-            marginBottom: "24px",
-          }}
-        >
-          Tableau de bord
-        </h2>
+        Seul Dieu peut juger
+      </p>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-            gap: "20px",
-          }}
-        >
-          <Card title="CA Total" value="$0" />
-          <Card title="CA du Mois" value="$0" />
-          <Card title="Clients" value="0" />
-          <Card title="Dossiers" value="0" />
-        </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
+          gap: "20px",
+        }}
+      >
+        <Card title="💰 Chiffre d'affaires" value="$0" />
+        <Card title="📁 Dossiers ouverts" value="0" />
+        <Card title="✅ Dossiers fermés" value="0" />
+        <Card title="👤 Clients" value="0" />
+      </div>
 
-        <div
-          style={{
-            marginTop: "40px",
-            background: "#13161c",
-            padding: "24px",
-            borderRadius: "12px",
-          }}
-        >
-          <h3>Activité récente</h3>
+      <h2 style={{ marginTop: "50px", color: "#d4af37" }}>
+        Navigation
+      </h2>
 
-          <ul>
-            <li>Cabinet Varelli initialisé</li>
-            <li>Connexion Supabase configurée</li>
-            <li>Prêt pour les dossiers RP</li>
-          </ul>
-        </div>
-      </section>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+          gap: "15px",
+          marginTop: "20px",
+        }}
+      >
+        <MenuCard title="⚖ Simulateur" href="/simulateur" />
+        <MenuCard title="📁 Dossiers" href="/dossiers" />
+        <MenuCard title="👤 Clients" href="/clients" />
+        <MenuCard title="📈 Comptabilité" href="/comptabilite" />
+        <MenuCard title="📚 Juridique" href="/juridique" />
+        <MenuCard title="⚙ Paramètres" href="/parametres" />
+      </div>
     </main>
-  );
-}
-
-function MenuItem({
-  icon,
-  label,
-}: {
-  icon: string;
-  label: string;
-}) {
-  return (
-    <div
-      style={{
-        background: "#1a1f27",
-        padding: "12px",
-        borderRadius: "10px",
-        cursor: "pointer",
-      }}
-    >
-      {icon} {label}
-    </div>
   );
 }
 
@@ -128,27 +75,46 @@ function Card({
   return (
     <div
       style={{
-        background: "#13161c",
-        padding: "24px",
-        borderRadius: "12px",
+        background: "#1b1b1b",
+        border: "1px solid #333",
+        borderRadius: "15px",
+        padding: "20px",
       }}
     >
+      <h3>{title}</h3>
       <p
         style={{
-          opacity: 0.7,
-        }}
-      >
-        {title}
-      </p>
-
-      <h2
-        style={{
+          fontSize: "2rem",
           color: "#d4af37",
-          marginTop: "10px",
         }}
       >
         {value}
-      </h2>
+      </p>
     </div>
+  );
+}
+
+function MenuCard({
+  title,
+  href,
+}: {
+  title: string;
+  href: string;
+}) {
+  return (
+    <a
+      href={href}
+      style={{
+        textDecoration: "none",
+        color: "white",
+        background: "#1b1b1b",
+        border: "1px solid #333",
+        borderRadius: "15px",
+        padding: "20px",
+        display: "block",
+      }}
+    >
+      {title}
+    </a>
   );
 }
