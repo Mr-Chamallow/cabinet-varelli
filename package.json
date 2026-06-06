@@ -13,7 +13,8 @@
     "jspdf": "^4.2.1",
     "next": "^16.2.7",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
