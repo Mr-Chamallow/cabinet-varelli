@@ -1,120 +1,99 @@
+"use client";
+
+import Link from "next/link";
+
+const cards = [
+{
+title: "⚖️ Simulateur",
+href: "/simulateur",
+description: "Calcul des honoraires RP",
+},
+{
+title: "💰 Blanchiment",
+href: "/blanchiment",
+description: "Gestion sale → propre",
+},
+{
+title: "📁 Dossiers",
+href: "/dossiers",
+description: "Affaires du cabinet",
+},
+{
+title: "👤 Clients",
+href: "/clients",
+description: "Répertoire clients",
+},
+{
+title: "📈 Comptabilité",
+href: "/comptabilite",
+description: "Historique financier",
+},
+{
+title: "📚 Juridique",
+href: "/juridique",
+description: "Base légale RP",
+},
+];
+
 export default function Home() {
-  return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#111111",
-        color: "white",
-        padding: "40px",
-        fontFamily: "Arial",
-      }}
-    >
-      <h1
+return (
+<main
+style={{
+minHeight: "100vh",
+background: "#0b0b0b",
+color: "white",
+padding: "40px",
+}}
+>
+<h1
+style={{
+color: "#d4af37",
+fontSize: "3rem",
+}}
+>
+Cabinet Varelli </h1>
+
+  <p
+    style={{
+      opacity: 0.8,
+      marginBottom: "40px",
+    }}
+  >
+    Seul Dieu peut juger
+  </p>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns:
+        "repeat(auto-fit,minmax(250px,1fr))",
+      gap: "20px",
+    }}
+  >
+    {cards.map((card) => (
+      <Link
+        key={card.href}
+        href={card.href}
         style={{
-          color: "#d4af37",
-          fontSize: "3rem",
-          marginBottom: "10px",
+          textDecoration: "none",
         }}
       >
-        ⚖ Cabinet Varelli
-      </h1>
+        <div
+          style={{
+            background: "#151515",
+            border: "1px solid #d4af37",
+            borderRadius: "16px",
+            padding: "20px",
+            color: "white",
+          }}
+        >
+          <h2>{card.title}</h2>
+          <p>{card.description}</p>
+        </div>
+      </Link>
+    ))}
+  </div>
+</main>
 
-      <p
-        style={{
-          fontStyle: "italic",
-          color: "#999",
-          marginBottom: "40px",
-        }}
-      >
-        Seul Dieu peut juger
-      </p>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
-          gap: "20px",
-        }}
-      >
-        <Card title="💰 Chiffre d'affaires" value="$0" />
-        <Card title="📁 Dossiers ouverts" value="0" />
-        <Card title="✅ Dossiers fermés" value="0" />
-        <Card title="👤 Clients" value="0" />
-      </div>
-
-      <h2 style={{ marginTop: "50px", color: "#d4af37" }}>
-        Navigation
-      </h2>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-          gap: "15px",
-          marginTop: "20px",
-        }}
-      >
-        <MenuCard title="⚖ Simulateur" href="/simulateur" />
-        <MenuCard title="📁 Dossiers" href="/dossiers" />
-        <MenuCard title="👤 Clients" href="/clients" />
-        <MenuCard title="📈 Comptabilité" href="/comptabilite" />
-        <MenuCard title="📚 Juridique" href="/juridique" />
-        <MenuCard title="⚙ Paramètres" href="/parametres" />
-      </div>
-    </main>
-  );
-}
-
-function Card({
-  title,
-  value,
-}: {
-  title: string;
-  value: string;
-}) {
-  return (
-    <div
-      style={{
-        background: "#1b1b1b",
-        border: "1px solid #333",
-        borderRadius: "15px",
-        padding: "20px",
-      }}
-    >
-      <h3>{title}</h3>
-      <p
-        style={{
-          fontSize: "2rem",
-          color: "#d4af37",
-        }}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function MenuCard({
-  title,
-  href,
-}: {
-  title: string;
-  href: string;
-}) {
-  return (
-    <a
-      href={href}
-      style={{
-        textDecoration: "none",
-        color: "white",
-        background: "#1b1b1b",
-        border: "1px solid #333",
-        borderRadius: "15px",
-        padding: "20px",
-        display: "block",
-      }}
-    >
-      {title}
-    </a>
-  );
+);
 }
