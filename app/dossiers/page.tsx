@@ -1,83 +1,135 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabase";
 
 export default function DossiersPage() {
-const [client, setClient] = useState("");
-const [type, setType] = useState("");
-const [montant, setMontant] = useState("");
-const [notes, setNotes] = useState("");
 
-const reference =
-"CV-26-" +
-String(Math.floor(Math.random() * 99999))
-.padStart(5, "0");
+  const [client,setClient] = useState("");
+  const [typeAffaire,setTypeAffaire] = useState("");
+  const [montant,setMontant] = useState("");
+  const [notes,setNotes] = useState("");
 
-return (
-<main
-style={{
-minHeight: "100vh",
-background: "#0b0b0b",
-color: "white",
-padding: "40px",
-}}
->
-<h1 style={{ color: "#d4af37" }}>
-📁 Dossiers Varelli </h1>
+  const [dossiers,setDossiers] = useState<any[]>([]);
 
-  <p>Référence : {reference}</p>
+  async function chargerDossiers() {
 
-  <br />
+    const { data } = await supabase
+      .from("dossiers")
+      .select("*")
+      .order("created_at",{ ascending:false });
 
-  <input
-    placeholder="Nom du client"
-    value={client}
-    onChange={(e) =>
-      setClient(e.target.value)
+    setDossiers(data || []);
+  }
+
+  async function creerDossier() {
+
+    const reference =
+      "CV-" + Date.now();
+
+    const { error } = await supabase
+      .from("dossiers")
+      .insert({
+        reference,
+        client,
+        type_affaire:typeAffaire,
+        montant:Number(montant),
+        notes
+      });
+
+    if(error){
+      alert(error.message);
+      return;
     }
-  />
 
-  <br />
-  <br />
+    alert("Dossier créé : " + reference);
 
-  <input
-    placeholder="Type d'affaire"
-    value={type}
-    onChange={(e) =>
-      setType(e.target.value)
-    }
-  />
+    setClient("");
+    setTypeAffaire("");
+    setMontant("");
+    setNotes("");
 
-  <br />
-  <br />
+    chargerDossiers();
+  }
 
-  <input
-    type="number"
-    placeholder="Montant"
-    value={montant}
-    onChange={(e) =>
-      setMontant(e.target.value)
-    }
-  />
+  useEffect(() => {
+    chargerDossiers();
+  },[]);
 
-  <br />
-  <br />
+  return (
+    <main style={{padding:40}}>
 
-  <textarea
-    placeholder="Notes"
-    value={notes}
-    onChange={(e) =>
-      setNotes(e.target.value)
-    }
-  />
+      <h1>📁 Gestion des dossiers</h1>
 
-  <br />
-  <br />
+      <br />
 
-  <button>
-    Créer le dossier
-  </button>
-</main>
+      <input
+        placeholder="Client"
+        value={client}
+        onChange={(e)=>setClient(e.target.value)}
+      />
 
-);
+      <br /><br />
+
+      <input
+        placeholder="Type affaire"
+        value={typeAffaire}
+        onChange={(e)=>setTypeAffaire(e.target.value)}
+      />
+
+      <br /><br />
+
+      <input
+        type="number"
+        placeholder="Montant"
+        value={montant}
+        onChange={(e)=>setMontant(e.target.value)}
+      />
+
+      <br /><br />
+
+      <textarea
+        placeholder="Notes"
+        value={notes}
+        onChange={(e)=>setNotes(e.target.value)}
+      />
+
+      <br /><br />
+
+      <button onClick={creerDossier}>
+        Créer dossier
+      </button>
+
+      <hr />
+
+      <h2>Dossiers existants</h2>
+
+      {dossiers.map((dossier)=>(
+        <div
+          key={dossier.id}
+          style={{
+            border:"1px solid #333",
+            padding:15,
+            marginBottom:10,
+            borderRadius:10
+          }}
+        >
+          <b>{dossier.reference}</b>
+
+          <br />
+
+          {dossier.client}
+
+          <br />
+
+          {dossier.type_affaire}
+
+          <br />
+
+          {Number(dossier.montant).toLocaleString()} $
+        </div>
+      ))}
+
+    </main>
+  );
 }
