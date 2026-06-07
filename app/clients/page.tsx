@@ -3,16 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
-interface Client {
-  id: string;
-  nom: string;
-  telephone: string;
-  organisation: string;
-  notes: string;
-}
-
 export default function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
 
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
@@ -25,17 +17,15 @@ export default function ClientsPage() {
     const { data } = await supabase
       .from("clients")
       .select("*")
-      .order("nom");
+      .order("created_at", { ascending: false });
 
-    if (data) {
-      setClients(data as Client[]);
-    }
+    setClients(data || []);
   }
 
   async function ajouterClient() {
     if (!supabase) return;
 
-    if (!nom) {
+    if (!nom.trim()) {
       alert("Nom obligatoire");
       return;
     }
@@ -62,7 +52,7 @@ export default function ClientsPage() {
     chargerClients();
   }
 
-  async function supprimerClient(id: string) {
+  async function supprimerClient(id:string) {
     if (!supabase) return;
 
     await supabase
@@ -80,130 +70,110 @@ export default function ClientsPage() {
   return (
     <main
       style={{
-        minHeight: "100vh",
-        background: "#111",
-        color: "white",
-        padding: "40px",
+        minHeight:"100vh",
+        background:"#0f0f0f",
+        color:"white",
+        padding:"40px"
       }}
     >
-      <h1
-        style={{
-          color: "#d4af37",
-          marginBottom: "30px",
-        }}
-      >
-        👤 Gestion des Clients
+      <h1 style={{color:"#d4af37"}}>
+        👤 Clients Varelli
       </h1>
 
       <div
         style={{
-          background: "#1b1b1b",
-          padding: "25px",
-          borderRadius: "15px",
-          marginBottom: "30px",
-          maxWidth: "600px",
+          background:"#1a1a1a",
+          padding:"20px",
+          borderRadius:"12px",
+          maxWidth:"700px",
+          marginTop:"20px"
         }}
       >
         <input
-          placeholder="Nom RP"
+          placeholder="Nom"
           value={nom}
-          onChange={(e) => setNom(e.target.value)}
-          style={{ width: "100%", padding: 10 }}
+          onChange={(e)=>setNom(e.target.value)}
+          style={{width:"100%",padding:"10px"}}
         />
 
-        <br />
-        <br />
+        <br /><br />
 
         <input
           placeholder="Téléphone"
           value={telephone}
-          onChange={(e) =>
-            setTelephone(e.target.value)
-          }
-          style={{ width: "100%", padding: 10 }}
+          onChange={(e)=>setTelephone(e.target.value)}
+          style={{width:"100%",padding:"10px"}}
         />
 
-        <br />
-        <br />
+        <br /><br />
 
         <input
           placeholder="Organisation"
           value={organisation}
-          onChange={(e) =>
-            setOrganisation(e.target.value)
-          }
-          style={{ width: "100%", padding: 10 }}
+          onChange={(e)=>setOrganisation(e.target.value)}
+          style={{width:"100%",padding:"10px"}}
         />
 
-        <br />
-        <br />
+        <br /><br />
 
         <textarea
           placeholder="Notes"
           value={notes}
-          onChange={(e) =>
-            setNotes(e.target.value)
-          }
+          onChange={(e)=>setNotes(e.target.value)}
           style={{
-            width: "100%",
-            padding: 10,
-            minHeight: "100px",
+            width:"100%",
+            padding:"10px",
+            minHeight:"100px"
           }}
         />
 
-        <br />
-        <br />
+        <br /><br />
 
         <button
           onClick={ajouterClient}
           style={{
-            background: "#d4af37",
-            border: "none",
-            padding: "12px 20px",
-            cursor: "pointer",
-            fontWeight: "bold",
+            background:"#d4af37",
+            color:"black",
+            border:"none",
+            padding:"12px 20px",
+            cursor:"pointer",
+            fontWeight:"bold"
           }}
         >
           Ajouter le client
         </button>
       </div>
 
-      <h2>Liste des clients</h2>
+      <h2 style={{marginTop:"40px"}}>
+        Liste des clients
+      </h2>
 
-      {clients.map((client) => (
+      {clients.map((client)=>(
         <div
           key={client.id}
           style={{
-            background: "#1b1b1b",
-            padding: "20px",
-            borderRadius: "15px",
-            marginBottom: "15px",
+            background:"#1a1a1a",
+            padding:"20px",
+            borderRadius:"12px",
+            marginTop:"15px"
           }}
         >
           <h3>{client.nom}</h3>
 
-          <p>
-            📞 {client.telephone || "Aucun"}
-          </p>
+          <p>📞 {client.telephone || "-"}</p>
 
-          <p>
-            🏢 {client.organisation || "Aucune"}
-          </p>
+          <p>🏢 {client.organisation || "-"}</p>
 
-          <p>
-            📝 {client.notes || "Aucune note"}
-          </p>
+          <p>📝 {client.notes || "-"}</p>
 
           <button
-            onClick={() =>
-              supprimerClient(client.id)
-            }
+            onClick={()=>supprimerClient(client.id)}
             style={{
-              background: "#8b0000",
-              color: "white",
-              border: "none",
-              padding: "10px 15px",
-              cursor: "pointer",
+              background:"#7a0000",
+              color:"white",
+              border:"none",
+              padding:"10px 15px",
+              cursor:"pointer"
             }}
           >
             Supprimer
