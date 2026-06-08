@@ -4,160 +4,131 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState<any[]>([]);
-  const [nom, setNom] = useState("");
-  const [telephone, setTelephone] = useState("");
-  const [email, setEmail] = useState("");
-  const [notes, setNotes] = useState("");
+  const [clients,setClients] = useState<any[]>([]);
+  const [search,setSearch] = useState("");
 
-  async function chargerClients() {
-    if (!supabase) return;
+  const [nomRp,setNomRp] = useState("");
+  const [telephone,setTelephone] = useState("");
+  const [organisation,setOrganisation] = useState("");
+  const [notes,setNotes] = useState("");
+
+  async function charger() {
+    if(!supabase) return;
 
     const { data } = await supabase
       .from("clients")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at",{ascending:false});
 
     setClients(data || []);
   }
 
-  async function ajouterClient() {
-    if (!supabase) return;
+  useEffect(()=>{
+    charger();
+  },[]);
 
-    const { error } = await supabase
-      .from("clients")
-      .insert({
-        nom,
-        telephone,
-        email,
-        notes,
-      });
+  async function ajouter() {
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setNom("");
-    setTelephone("");
-    setEmail("");
-    setNotes("");
-
-    chargerClients();
-  }
-
-  async function supprimerClient(id: string) {
-    if (!supabase) return;
+    if(!supabase) return;
 
     await supabase
       .from("clients")
-      .delete()
-      .eq("id", id);
+      .insert({
+        nom_rp: nomRp,
+        telephone,
+        organisation,
+        notes
+      });
 
-    chargerClients();
+    setNomRp("");
+    setTelephone("");
+    setOrganisation("");
+    setNotes("");
+
+    charger();
   }
 
-  useEffect(() => {
-    chargerClients();
-  }, []);
-
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#111",
-        color: "white",
-        padding: 40,
-      }}
-    >
-      <h1 style={{ color: "#d4af37" }}>
-        👥 Clients
-      </h1>
+    <main style={{padding:40}}>
 
-      <div
-        style={{
-          background: "#1b1b1b",
-          padding: 20,
-          borderRadius: 15,
-          marginBottom: 30,
-        }}
-      >
-        <input
-          placeholder="Nom"
-          value={nom}
-          onChange={(e) => setNom(e.target.value)}
-        />
+      <h1>👥 Clients</h1>
 
-        <br />
-        <br />
+      <input
+        placeholder="Recherche"
+        value={search}
+        onChange={(e)=>setSearch(e.target.value)}
+      />
 
-        <input
-          placeholder="Téléphone"
-          value={telephone}
-          onChange={(e) =>
-            setTelephone(e.target.value)
-          }
-        />
+      <br/><br/>
 
-        <br />
-        <br />
+      <input
+        placeholder="Nom RP"
+        value={nomRp}
+        onChange={(e)=>setNomRp(e.target.value)}
+      />
 
-        <input
-          placeholder="Email"
-          value={email}
-          onChange={(e) =>
-            setEmail(e.target.value)
-          }
-        />
+      <br/><br/>
 
-        <br />
-        <br />
+      <input
+        placeholder="Téléphone"
+        value={telephone}
+        onChange={(e)=>setTelephone(e.target.value)}
+      />
 
-        <textarea
-          placeholder="Notes"
-          value={notes}
-          onChange={(e) =>
-            setNotes(e.target.value)
-          }
-        />
+      <br/><br/>
 
-        <br />
-        <br />
+      <input
+        placeholder="Organisation"
+        value={organisation}
+        onChange={(e)=>setOrganisation(e.target.value)}
+      />
 
-        <button onClick={ajouterClient}>
-          Ajouter le client
-        </button>
-      </div>
+      <br/><br/>
 
-      <h2>Liste des clients</h2>
+      <textarea
+        placeholder="Notes"
+        value={notes}
+        onChange={(e)=>setNotes(e.target.value)}
+      />
 
-      {clients.map((client) => (
-        <div
-          key={client.id}
-          style={{
-            background: "#1b1b1b",
-            padding: 20,
-            borderRadius: 15,
-            marginBottom: 15,
-          }}
-        >
-          <h3>{client.nom}</h3>
+      <br/><br/>
 
-          <p>{client.telephone}</p>
+      <button onClick={ajouter}>
+        Ajouter
+      </button>
 
-          <p>{client.email}</p>
+      <hr/>
 
-          <p>{client.notes}</p>
-
-          <button
-            onClick={() =>
-              supprimerClient(client.id)
-            }
+      {clients
+        .filter(c =>
+          (c.nom_rp || "")
+            .toLowerCase()
+            .includes(search.toLowerCase())
+        )
+        .map(client=>(
+          <div
+            key={client.id}
+            style={{
+              border:"1px solid #333",
+              padding:15,
+              marginBottom:10
+            }}
           >
-            Supprimer
-          </button>
-        </div>
-      ))}
+            <b>{client.nom_rp}</b>
+
+            <br/>
+
+            {client.telephone}
+
+            <br/>
+
+            {client.organisation}
+
+            <br/>
+
+            {client.notes}
+          </div>
+        ))}
     </main>
   );
 }
