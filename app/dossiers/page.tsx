@@ -4,78 +4,108 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 export default function DossiersPage() {
+  const [dossiers, setDossiers] = useState<any[]>([]);
 
-  const [client,setClient] = useState("");
-  const [typeAffaire,setTypeAffaire] = useState("");
-  const [montant,setMontant] = useState("");
-  const [notes,setNotes] = useState("");
+  const [client, setClient] = useState("");
+  const [typeAffaire, setTypeAffaire] = useState("");
+  const [typeClient, setTypeClient] = useState("Indépendant");
+  const [risque, setRisque] = useState("Aucun");
+  const [montant, setMontant] = useState("");
+  const [notes, setNotes] = useState("");
 
-  const [dossiers,setDossiers] = useState<any[]>([]);
-
-  async function chargerDossiers() {
+  async function charger() {
+    if (!supabase) return;
 
     const { data } = await supabase
       .from("dossiers")
       .select("*")
-      .order("created_at",{ ascending:false });
+      .order("created_at", { ascending: false });
 
     setDossiers(data || []);
   }
 
+  useEffect(() => {
+    charger();
+  }, []);
+
   async function creerDossier() {
+    if (!supabase) return;
 
     const reference =
-      "CV-" + Date.now();
+      "DOS-" +
+      new Date().getFullYear() +
+      "-" +
+      String(Date.now()).slice(-5);
 
     const { error } = await supabase
       .from("dossiers")
       .insert({
         reference,
         client,
-        type_affaire:typeAffaire,
-        montant:Number(montant),
-        notes
+        type_affaire: typeAffaire,
+        type_client: typeClient,
+        risque,
+        montant: Number(montant),
+        notes,
+        statut: "Ouvert"
       });
 
-    if(error){
+    if (error) {
       alert(error.message);
       return;
     }
-
-    alert("Dossier créé : " + reference);
 
     setClient("");
     setTypeAffaire("");
     setMontant("");
     setNotes("");
 
-    chargerDossiers();
+    charger();
   }
 
-  useEffect(() => {
-    chargerDossiers();
-  },[]);
-
   return (
-    <main style={{padding:40}}>
-
-      <h1>📁 Gestion des dossiers</h1>
-
-      <br />
+    <main style={{ padding: 40 }}>
+      <h1>📁 Dossiers</h1>
 
       <input
         placeholder="Client"
         value={client}
-        onChange={(e)=>setClient(e.target.value)}
+        onChange={(e) => setClient(e.target.value)}
       />
 
       <br /><br />
 
       <input
-        placeholder="Type affaire"
+        placeholder="Type d'affaire"
         value={typeAffaire}
-        onChange={(e)=>setTypeAffaire(e.target.value)}
+        onChange={(e) => setTypeAffaire(e.target.value)}
       />
+
+      <br /><br />
+
+      <select
+        value={typeClient}
+        onChange={(e) => setTypeClient(e.target.value)}
+      >
+        <option>Indépendant</option>
+        <option>Petite frappe</option>
+        <option>Gang</option>
+        <option>Organisation</option>
+        <option>Famille</option>
+      </select>
+
+      <br /><br />
+
+      <select
+        value={risque}
+        onChange={(e) => setRisque(e.target.value)}
+      >
+        <option>Aucun</option>
+        <option>Faible</option>
+        <option>Moyen</option>
+        <option>Élevé</option>
+        <option>Extrême</option>
+      </select>
 
       <br /><br />
 
@@ -83,7 +113,7 @@ export default function DossiersPage() {
         type="number"
         placeholder="Montant"
         value={montant}
-        onChange={(e)=>setMontant(e.target.value)}
+        onChange={(e) => setMontant(e.target.value)}
       />
 
       <br /><br />
@@ -91,45 +121,50 @@ export default function DossiersPage() {
       <textarea
         placeholder="Notes"
         value={notes}
-        onChange={(e)=>setNotes(e.target.value)}
+        onChange={(e) => setNotes(e.target.value)}
       />
 
       <br /><br />
 
       <button onClick={creerDossier}>
-        Créer dossier
+        Créer le dossier
       </button>
 
       <hr />
 
-      <h2>Dossiers existants</h2>
-
-      {dossiers.map((dossier)=>(
+      {dossiers.map((d) => (
         <div
-          key={dossier.id}
+          key={d.id}
           style={{
-            border:"1px solid #333",
-            padding:15,
-            marginBottom:10,
-            borderRadius:10
+            border: "1px solid #333",
+            padding: 15,
+            marginBottom: 10,
+            borderRadius: 10
           }}
         >
-          <b>{dossier.reference}</b>
+          <b>{d.reference}</b>
 
           <br />
 
-          {dossier.client}
+          {d.client}
 
           <br />
 
-          {dossier.type_affaire}
+          {d.type_affaire}
 
           <br />
 
-          {Number(dossier.montant).toLocaleString()} $
+          {d.type_client}
+
+          <br />
+
+          {d.montant}$
+
+          <br />
+
+          {d.statut}
         </div>
       ))}
-
     </main>
   );
 }
