@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import jsPDF from "jspdf";
 
 export default function FacturesPage() {
   const [client, setClient] = useState("");
   const [montant, setMontant] = useState("");
   const [description, setDescription] = useState("");
-
   const [factures, setFactures] = useState<any[]>([]);
 
   async function charger() {
@@ -16,9 +16,7 @@ export default function FacturesPage() {
     const { data } = await supabase
       .from("factures")
       .select("*")
-      .order("created_at", {
-        ascending: false,
-      });
+      .order("created_at", { ascending: false });
 
     setFactures(data || []);
   }
@@ -36,13 +34,20 @@ export default function FacturesPage() {
       "-" +
       String(Date.now()).slice(-5);
 
-    await supabase.from("factures").insert({
-      numero,
-      client,
-      montant: Number(montant),
-      description,
-      statut: "En attente",
-    });
+    const { error } = await supabase
+      .from("factures")
+      .insert({
+        numero,
+        client,
+        montant: Number(montant),
+        description,
+        statut: "En attente",
+      });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
 
     setClient("");
     setMontant("");
@@ -51,22 +56,73 @@ export default function FacturesPage() {
     charger();
   }
 
-  async function payer(id: string) {
+  function genererPDF(facture: any) {
+    const pdf = new jsPDF();
+
+    pdf.setFontSize(22);
+    pdf.text("CABINET VARELLI", 20, 20);
+
+    pdf.setFontSize(12);
+
+    pdf.text(`Facture : ${facture.numero}`, 20, 50);
+
+    pdf.text(`Client : ${facture.client}`, 20, 65);
+
+    pdf.text(
+      `Montant : ${Number(
+        facture.montant
+      ).toLocaleString()} $`,
+      20,
+      80
+    );
+
+    pdf.text(
+      `Description : ${
+        facture.description || "-"
+      }`,
+      20,
+      95
+    );
+
+    pdf.text(
+      `Statut : ${
+        facture.statut || "En attente"
+      }`,
+      20,
+      110
+    );
+
+    pdf.save(`${facture.numero}.pdf`);
+  }
+
+  async function supprimer(id: string) {
     if (!supabase) return;
 
     await supabase
       .from("factures")
-      .update({
-        statut: "Payée",
-      })
+      .delete()
       .eq("id", id);
 
     charger();
   }
 
   return (
-    <main style={{ padding: 40 }}>
-      <h1>💰 Factures</h1>
+    <main
+      style={{
+        padding: 40,
+        minHeight: "100vh",
+        background: "#111",
+        color: "white",
+      }}
+    >
+      <h1
+        style={{
+          color: "#d4af37",
+          marginBottom: 30,
+        }}
+      >
+        💰 Factures
+      </h1>
 
       <input
         placeholder="Client"
@@ -74,19 +130,15 @@ export default function FacturesPage() {
         onChange={(e) =>
           setClient(e.target.value)
         }
+        style={{
+          width: "100%",
+          maxWidth: 500,
+          padding: 10,
+        }}
       />
 
-      <br /><br />
-
-      <input
-        placeholder="Description"
-        value={description}
-        onChange={(e) =>
-          setDescription(e.target.value)
-        }
-      />
-
-      <br /><br />
+      <br />
+      <br />
 
       <input
         type="number"
@@ -95,54 +147,113 @@ export default function FacturesPage() {
         onChange={(e) =>
           setMontant(e.target.value)
         }
+        style={{
+          width: "100%",
+          maxWidth: 500,
+          padding: 10,
+        }}
       />
 
-      <br /><br />
+      <br />
+      <br />
 
-      <button onClick={creerFacture}>
-        Créer Facture
+      <textarea
+        placeholder="Description"
+        value={description}
+        onChange={(e) =>
+          setDescription(e.target.value)
+        }
+        style={{
+          width: "100%",
+          maxWidth: 500,
+          height: 100,
+          padding: 10,
+        }}
+      />
+
+      <br />
+      <br />
+
+      <button
+        onClick={creerFacture}
+        style={{
+          padding: "12px 20px",
+          cursor: "pointer",
+        }}
+      >
+        Créer la facture
       </button>
 
-      <hr />
+      <hr
+        style={{
+          marginTop: 30,
+          marginBottom: 30,
+        }}
+      />
+
+      <h2>Historique</h2>
+
+      {factures.length === 0 && (
+        <p>Aucune facture.</p>
+      )}
 
       {factures.map((f) => (
         <div
           key={f.id}
           style={{
-            border: "1px solid #333",
-            padding: 15,
-            marginBottom: 10,
+            background: "#1b1b1b",
+            padding: 20,
+            marginBottom: 15,
+            borderRadius: 10,
           }}
         >
-          <b>{f.numero}</b>
+          <h3>{f.numero}</h3>
 
-          <br />
+          <p>
+            <b>Client :</b> {f.client}
+          </p>
 
-          {f.client}
+          <p>
+            <b>Montant :</b>{" "}
+            {Number(
+              f.montant
+            ).toLocaleString()} $
+          </p>
 
-          <br />
+          <p>
+            <b>Description :</b>{" "}
+            {f.description || "-"}
+          </p>
 
-          {f.description}
+          <p>
+            <b>Statut :</b>{" "}
+            {f.statut || "En attente"}
+          </p>
 
-          <br />
+          <button
+            onClick={() =>
+              genererPDF(f)
+            }
+            style={{
+              marginRight: 10,
+              padding: "8px 12px",
+              cursor: "pointer",
+            }}
+          >
+            Télécharger PDF
+          </button>
 
-          {f.montant}$
-
-          <br />
-
-          Statut : {f.statut}
-
-          <br /><br />
-
-          {f.statut !== "Payée" && (
-            <button
-              onClick={() =>
-                payer(f.id)
-              }
-            >
-              Marquer Payée
-            </button>
-          )}
+          <button
+            onClick={() =>
+              supprimer(f.id)
+            }
+            style={{
+              padding: "8px 12px",
+              cursor: "pointer",
+            }}
+          >
+            Supprimer
+          </button>
         </div>
       ))}
     </main>
