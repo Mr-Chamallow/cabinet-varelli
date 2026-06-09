@@ -1,261 +1,225 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 export default function FacturesPage() {
-  const [client, setClient] = useState("");
-  const [montant, setMontant] = useState("");
-  const [description, setDescription] = useState("");
-  const [factures, setFactures] = useState<any[]>([]);
 
-  async function charger() {
-    if (!supabase) return;
+const factureRef = useRef<HTMLDivElement>(null);
 
-    const { data } = await supabase
-      .from("factures")
-      .select("*")
-      .order("created_at", { ascending: false });
+const [client,setClient] = useState("");
+const [montant,setMontant] = useState("");
+const [description,setDescription] = useState("");
+const [factures,setFactures] = useState<any[]>([]);
 
-    setFactures(data || []);
-  }
+useEffect(()=>{
+charger();
+},[]);
 
-  useEffect(() => {
-    charger();
-  }, []);
+async function charger() {
 
-  async function creerFacture() {
-    if (!supabase) return;
+if(!supabase) return;
 
-    const numero =
-      "FAC-" +
-      new Date().getFullYear() +
-      "-" +
-      String(Date.now()).slice(-5);
+const { data } = await supabase
+.from("factures")
+.select("*")
+.order("created_at",{ascending:false});
 
-    const { error } = await supabase
-      .from("factures")
-      .insert({
-        numero,
-        client,
-        montant: Number(montant),
-        description,
-        statut: "En attente",
-      });
+setFactures(data || []);
+}
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+async function creerFacture() {
 
-    setClient("");
-    setMontant("");
-    setDescription("");
+if(!supabase) return;
 
-    charger();
-  }
+const numero =
+"FAC-" +
+new Date().getFullYear() +
+"-" +
+String(Date.now()).slice(-5);
 
-  function genererPDF(facture: any) {
-    const pdf = new jsPDF();
+await supabase
+.from("factures")
+.insert({
+numero,
+client,
+montant:Number(montant),
+description,
+statut:"En attente"
+});
 
-    pdf.setFontSize(22);
-    pdf.text("CABINET VARELLI", 20, 20);
+setClient("");
+setMontant("");
+setDescription("");
 
-    pdf.setFontSize(12);
+charger();
+}
 
-    pdf.text(`Facture : ${facture.numero}`, 20, 50);
+async function exportPDF(id:string){
 
-    pdf.text(`Client : ${facture.client}`, 20, 65);
+const element =
+document.getElementById(id);
 
-    pdf.text(
-      `Montant : ${Number(
-        facture.montant
-      ).toLocaleString()} $`,
-      20,
-      80
-    );
+if(!element) return;
 
-    pdf.text(
-      `Description : ${
-        facture.description || "-"
-      }`,
-      20,
-      95
-    );
+const canvas =
+await html2canvas(element);
 
-    pdf.text(
-      `Statut : ${
-        facture.statut || "En attente"
-      }`,
-      20,
-      110
-    );
+const img =
+canvas.toDataURL("image/png");
 
-    pdf.save(`${facture.numero}.pdf`);
-  }
+const pdf =
+new jsPDF("p","mm","a4");
 
-  async function supprimer(id: string) {
-    if (!supabase) return;
+pdf.addImage(
+img,
+"PNG",
+10,
+10,
+190,
+0
+);
 
-    await supabase
-      .from("factures")
-      .delete()
-      .eq("id", id);
+pdf.save("facture.pdf");
+}
 
-    charger();
-  }
+async function exportPNG(id:string){
 
-  return (
-    <main
-      style={{
-        padding: 40,
-        minHeight: "100vh",
-        background: "#111",
-        color: "white",
-      }}
-    >
-      <h1
-        style={{
-          color: "#d4af37",
-          marginBottom: 30,
-        }}
-      >
-        💰 Factures
-      </h1>
+const element =
+document.getElementById(id);
 
-      <input
-        placeholder="Client"
-        value={client}
-        onChange={(e) =>
-          setClient(e.target.value)
-        }
-        style={{
-          width: "100%",
-          maxWidth: 500,
-          padding: 10,
-        }}
-      />
+if(!element) return;
 
-      <br />
-      <br />
+const canvas =
+await html2canvas(element);
 
-      <input
-        type="number"
-        placeholder="Montant"
-        value={montant}
-        onChange={(e) =>
-          setMontant(e.target.value)
-        }
-        style={{
-          width: "100%",
-          maxWidth: 500,
-          padding: 10,
-        }}
-      />
+const a =
+document.createElement("a");
 
-      <br />
-      <br />
+a.href =
+canvas.toDataURL();
 
-      <textarea
-        placeholder="Description"
-        value={description}
-        onChange={(e) =>
-          setDescription(e.target.value)
-        }
-        style={{
-          width: "100%",
-          maxWidth: 500,
-          height: 100,
-          padding: 10,
-        }}
-      />
+a.download =
+"facture.png";
 
-      <br />
-      <br />
+a.click();
+}
 
-      <button
-        onClick={creerFacture}
-        style={{
-          padding: "12px 20px",
-          cursor: "pointer",
-        }}
-      >
-        Créer la facture
-      </button>
+return (
 
-      <hr
-        style={{
-          marginTop: 30,
-          marginBottom: 30,
-        }}
-      />
+<main
+style={{
+padding:40,
+background:"#0f172a",
+minHeight:"100vh",
+color:"white"
+}}
+>
 
-      <h2>Historique</h2>
+<h1
+style={{
+color:"#d4af37",
+fontSize:"2.5rem"
+}}
+>
+💰 Factures
+</h1>
 
-      {factures.length === 0 && (
-        <p>Aucune facture.</p>
-      )}
+<input
+placeholder="Client"
+value={client}
+onChange={(e)=>setClient(e.target.value)}
+/>
 
-      {factures.map((f) => (
-        <div
-          key={f.id}
-          style={{
-            background: "#1b1b1b",
-            padding: 20,
-            marginBottom: 15,
-            borderRadius: 10,
-          }}
-        >
-          <h3>{f.numero}</h3>
+<br/><br/>
 
-          <p>
-            <b>Client :</b> {f.client}
-          </p>
+<input
+type="number"
+placeholder="Montant"
+value={montant}
+onChange={(e)=>setMontant(e.target.value)}
+/>
 
-          <p>
-            <b>Montant :</b>{" "}
-            {Number(
-              f.montant
-            ).toLocaleString()} $
-          </p>
+<br/><br/>
 
-          <p>
-            <b>Description :</b>{" "}
-            {f.description || "-"}
-          </p>
+<textarea
+placeholder="Description"
+value={description}
+onChange={(e)=>setDescription(e.target.value)}
+/>
 
-          <p>
-            <b>Statut :</b>{" "}
-            {f.statut || "En attente"}
-          </p>
+<br/><br/>
 
-          <button
-            onClick={() =>
-              genererPDF(f)
-            }
-            style={{
-              marginRight: 10,
-              padding: "8px 12px",
-              cursor: "pointer",
-            }}
-          >
-            Télécharger PDF
-          </button>
+<button onClick={creerFacture}>
+Créer facture
+</button>
 
-          <button
-            onClick={() =>
-              supprimer(f.id)
-            }
-            style={{
-              padding: "8px 12px",
-              cursor: "pointer",
-            }}
-          >
-            Supprimer
-          </button>
-        </div>
-      ))}
-    </main>
-  );
+<hr/>
+
+{factures.map((f)=>(
+
+<div
+key={f.id}
+id={f.id}
+style={{
+background:"#111827",
+padding:25,
+borderRadius:15,
+border:"2px solid #d4af37",
+marginBottom:20
+}}
+>
+
+<h2 style={{color:"#d4af37"}}>
+{f.numero}
+</h2>
+
+<p><b>Client :</b> {f.client}</p>
+
+<p>
+<b>Montant :</b>
+{" "}
+{Number(f.montant).toLocaleString()} $
+</p>
+
+<p>
+<b>Description :</b>
+{" "}
+{f.description}
+</p>
+
+<p>
+<b>Statut :</b>
+{" "}
+<span
+style={{
+background:"#16a34a",
+padding:"5px 10px",
+borderRadius:20
+}}
+>
+{f.statut}
+</span>
+</p>
+
+<button
+onClick={()=>exportPDF(f.id)}
+>
+PDF
+</button>
+
+<button
+onClick={()=>exportPNG(f.id)}
+style={{marginLeft:10}}
+>
+PNG
+</button>
+
+</div>
+
+))}
+</main>
+);
 }

@@ -4,45 +4,68 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 export default function ComptabilitePage() {
-  const [entrees, setEntrees] = useState(0);
-  const [sorties, setSorties] = useState(0);
 
-  useEffect(() => {
-    charger();
-  }, []);
+const [ca,setCa] = useState(0);
 
-  async function charger() {
-    if (!supabase) return;
+useEffect(()=>{
+charger();
+},[]);
 
-    const { data } = await supabase
-      .from("operations")
-      .select("*");
+async function charger(){
 
-    const liste = data || [];
+if(!supabase) return;
 
-    const totalEntrees = liste
-      .filter((x) => x.type === "Entrée")
-      .reduce((a, b) => a + Number(b.montant), 0);
+const { data } = await supabase
+.from("factures")
+.select("*");
 
-    const totalSorties = liste
-      .filter((x) => x.type === "Sortie")
-      .reduce((a, b) => a + Number(b.montant), 0);
+const total =
+(data || [])
+.reduce(
+(a,b)=>
+a + Number(b.montant || 0),
+0
+);
 
-    setEntrees(totalEntrees);
-    setSorties(totalSorties);
-  }
+setCa(total);
+}
 
-  return (
-    <main style={{ padding: 40 }}>
-      <h1>📈 Comptabilité</h1>
+return(
 
-      <h2>Entrées : {entrees.toLocaleString()}$</h2>
+<main
+style={{
+padding:40,
+background:"#0f172a",
+color:"white",
+minHeight:"100vh"
+}}
+>
 
-      <h2>Sorties : {sorties.toLocaleString()}$</h2>
+<h1>📈 Comptabilité</h1>
 
-      <h1>
-        Solde : {(entrees - sorties).toLocaleString()}$
-      </h1>
-    </main>
-  );
+<div
+style={{
+background:"#111827",
+padding:30,
+borderRadius:15,
+marginTop:20
+}}
+>
+
+<h2>Chiffre d'affaires</h2>
+
+<h1
+style={{
+color:"#d4af37",
+fontSize:"3rem"
+}}
+>
+{ca.toLocaleString()} $
+</h1>
+
+</div>
+
+</main>
+
+);
 }
