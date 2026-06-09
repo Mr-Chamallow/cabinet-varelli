@@ -5,118 +5,183 @@ import { supabase } from "../../lib/supabase";
 
 export default function OperationsPage() {
 
-const [operations,setOperations] = useState<any[]>([]);
+const [operations, setOperations] = useState<any[]>([]);
 
-const [type,setType] = useState("Entrée");
-const [montant,setMontant] = useState("");
-const [motif,setMotif] = useState("");
+const [type, setType] = useState("Entrée");
+const [montant, setMontant] = useState("");
+const [motif, setMotif] = useState("");
 
-useEffect(()=>{
+useEffect(() => {
 charger();
-},[]);
+}, []);
 
-async function charger(){
+async function charger() {
 
-if(!supabase) return;
+
+if (!supabase) return;
 
 const { data } = await supabase
-.from("operations")
-.select("*")
-.order("created_at",{ascending:false});
+  .from("operations")
+  .select("*")
+  .order("created_at", { ascending: false });
 
 setOperations(data || []);
+
+
 }
 
-async function ajouter(){
+async function ajouter() {
 
-if(!supabase) return;
+
+if (!supabase) return;
 
 await supabase
-.from("operations")
-.insert({
-type,
-montant:Number(montant),
-motif
-});
+  .from("operations")
+  .insert({
+    type,
+    montant: Number(montant),
+    motif
+  });
 
 setMontant("");
 setMotif("");
 
 charger();
+
+
 }
 
-return(
+async function supprimer(id: string) {
 
-<main style={{
-padding:40,
-background:"#0f172a",
-color:"white",
-minHeight:"100vh"
-}}>
 
-<h1>📊 Opérations</h1>
+if (!supabase) return;
 
-<select
-value={type}
-onChange={(e)=>setType(e.target.value)}
+await supabase
+  .from("operations")
+  .delete()
+  .eq("id", id);
 
->
+charger();
 
-<option>Entrée</option>
-<option>Sortie</option>
-</select>
 
-<br/><br/>
+}
 
-<input
-type="number"
-placeholder="Montant"
-value={montant}
-onChange={(e)=>setMontant(e.target.value)}
-/>
-
-<br/><br/>
-
-<input
-placeholder="Motif"
-value={motif}
-onChange={(e)=>setMotif(e.target.value)}
-/>
-
-<br/><br/>
-
-<button onClick={ajouter}>
-Ajouter
-</button>
-
-<hr/>
-
-{operations.map(op=>(
-
-<div
-key={op.id}
+return (
+<main
 style={{
-background:"#111827",
-padding:15,
-marginBottom:10,
-borderRadius:10
+minHeight: "100vh",
+background: "#0f172a",
+color: "white",
+padding: "40px"
 }}
 >
+<h1
+style={{
+color: "#d4af37",
+marginBottom: "30px"
+}}
+>
+📊 Opérations </h1>
 
-<b>{op.type}</b>
+  <div
+    style={{
+      background: "#1e293b",
+      padding: "20px",
+      borderRadius: "15px",
+      maxWidth: "600px",
+      marginBottom: "30px"
+    }}
+  >
+    <select
+      value={type}
+      onChange={(e) => setType(e.target.value)}
+      style={{
+        width: "100%",
+        padding: "10px",
+        marginBottom: "15px"
+      }}
+    >
+      <option>Entrée</option>
+      <option>Sortie</option>
+    </select>
 
-<br/>
+    <input
+      type="number"
+      placeholder="Montant"
+      value={montant}
+      onChange={(e) => setMontant(e.target.value)}
+      style={{
+        width: "100%",
+        padding: "10px",
+        marginBottom: "15px"
+      }}
+    />
 
-{Number(op.montant).toLocaleString()} $
+    <input
+      placeholder="Motif"
+      value={motif}
+      onChange={(e) => setMotif(e.target.value)}
+      style={{
+        width: "100%",
+        padding: "10px",
+        marginBottom: "15px"
+      }}
+    />
 
-<br/>
+    <button
+      onClick={ajouter}
+      style={{
+        width: "100%",
+        background: "#d4af37",
+        color: "#111",
+        border: "none",
+        padding: "12px",
+        borderRadius: "10px",
+        cursor: "pointer",
+        fontWeight: "bold"
+      }}
+    >
+      Ajouter l'opération
+    </button>
+  </div>
 
-{op.motif}
+  <h2>Historique</h2>
 
-</div>
+  {operations.map((op) => (
 
-))}
+    <div
+      key={op.id}
+      style={{
+        background: "#1e293b",
+        padding: "20px",
+        borderRadius: "15px",
+        marginBottom: "15px"
+      }}
+    >
+      <h3>{op.type}</h3>
 
+      <p>
+        {Number(op.montant).toLocaleString()} $
+      </p>
+
+      <p>{op.motif}</p>
+
+      <button
+        onClick={() => supprimer(op.id)}
+        style={{
+          background: "#dc2626",
+          color: "white",
+          border: "none",
+          padding: "10px 15px",
+          borderRadius: "10px",
+          cursor: "pointer"
+        }}
+      >
+        Supprimer
+      </button>
+    </div>
+
+  ))}
 </main>
 
 );
