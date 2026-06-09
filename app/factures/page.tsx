@@ -1,24 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 export default function FacturesPage() {
-
-const factureRef = useRef<HTMLDivElement>(null);
 
 const [client,setClient] = useState("");
 const [montant,setMontant] = useState("");
 const [description,setDescription] = useState("");
+const [echeance,setEcheance] = useState("");
+
 const [factures,setFactures] = useState<any[]>([]);
 
 useEffect(()=>{
 charger();
 },[]);
 
-async function charger() {
+async function charger(){
 
 if(!supabase) return;
 
@@ -30,7 +29,7 @@ const { data } = await supabase
 setFactures(data || []);
 }
 
-async function creerFacture() {
+async function creerFacture(){
 
 if(!supabase) return;
 
@@ -40,186 +39,201 @@ new Date().getFullYear() +
 "-" +
 String(Date.now()).slice(-5);
 
-await supabase
+const { error } = await supabase
 .from("factures")
 .insert({
 numero,
 client,
 montant:Number(montant),
 description,
+date_echeance:echeance,
 statut:"En attente"
 });
+
+if(error){
+alert(error.message);
+return;
+}
 
 setClient("");
 setMontant("");
 setDescription("");
+setEcheance("");
 
 charger();
 }
 
-async function exportPDF(id:string){
+function pdf(f:any){
 
-const element =
-document.getElementById(id);
+const doc = new jsPDF();
 
-if(!element) return;
+doc.setFillColor(15,23,42);
+doc.rect(0,0,210,40,"F");
 
-const canvas =
-await html2canvas(element);
+doc.setTextColor(255,255,255);
+doc.setFontSize(24);
+doc.text("CABINET VARELLI",20,25);
 
-const img =
-canvas.toDataURL("image/png");
+doc.setTextColor(0,0,0);
 
-const pdf =
-new jsPDF("p","mm","a4");
+doc.setFontSize(12);
 
-pdf.addImage(
-img,
-"PNG",
-10,
-10,
-190,
-0
+doc.text(`Facture : ${f.numero}`,20,60);
+doc.text(`Client : ${f.client}`,20,75);
+doc.text(`Montant : ${Number(f.montant).toLocaleString()} $`,20,90);
+doc.text(`Statut : ${f.statut}`,20,105);
+
+doc.text(
+`Description : ${f.description || "-"}`,
+20,
+120
 );
 
-pdf.save("facture.pdf");
+doc.save(`${f.numero}.pdf`);
 }
 
-async function exportPNG(id:string){
-
-const element =
-document.getElementById(id);
-
-if(!element) return;
-
-const canvas =
-await html2canvas(element);
-
-const a =
-document.createElement("a");
-
-a.href =
-canvas.toDataURL();
-
-a.download =
-"facture.png";
-
-a.click();
-}
-
-return (
+return(
 
 <main
 style={{
 padding:40,
-background:"#0f172a",
 minHeight:"100vh",
+background:"#0f172a",
 color:"white"
 }}
 >
 
 <h1
 style={{
-color:"#d4af37",
-fontSize:"2.5rem"
+fontSize:"3rem",
+color:"#d4af37"
 }}
 >
-💰 Factures
+💰 Facturation
 </h1>
+
+<div
+style={{
+background:"#1e293b",
+padding:25,
+borderRadius:15,
+marginTop:20,
+marginBottom:30
+}}
+>
 
 <input
 placeholder="Client"
 value={client}
 onChange={(e)=>setClient(e.target.value)}
+style={input}
 />
-
-<br/><br/>
 
 <input
 type="number"
 placeholder="Montant"
 value={montant}
 onChange={(e)=>setMontant(e.target.value)}
+style={input}
 />
 
-<br/><br/>
+<input
+type="date"
+value={echeance}
+onChange={(e)=>setEcheance(e.target.value)}
+style={input}
+/>
 
 <textarea
 placeholder="Description"
 value={description}
 onChange={(e)=>setDescription(e.target.value)}
+style={{
+...input,
+height:120
+}}
 />
 
-<br/><br/>
-
-<button onClick={creerFacture}>
-Créer facture
+<button
+onClick={creerFacture}
+style={btn}
+>
+Créer la facture
 </button>
 
-<hr/>
+</div>
+
+<h2>Historique</h2>
 
 {factures.map((f)=>(
 
 <div
 key={f.id}
-id={f.id}
 style={{
-background:"#111827",
-padding:25,
+background:"#1e293b",
+padding:20,
 borderRadius:15,
-border:"2px solid #d4af37",
-marginBottom:20
+marginBottom:15,
+border:"1px solid #334155"
 }}
 >
 
-<h2 style={{color:"#d4af37"}}>
+<h3 style={{color:"#d4af37"}}>
 {f.numero}
-</h2>
+</h3>
 
 <p><b>Client :</b> {f.client}</p>
 
 <p>
 <b>Montant :</b>
 {" "}
-{Number(f.montant).toLocaleString()} $
-</p>
-
-<p>
-<b>Description :</b>
-{" "}
-{f.description}
+{Number(f.montant).toLocaleString()}
+$
 </p>
 
 <p>
 <b>Statut :</b>
 {" "}
-<span
-style={{
-background:"#16a34a",
-padding:"5px 10px",
-borderRadius:20
-}}
->
 {f.statut}
-</span>
+</p>
+
+<p>
+<b>Échéance :</b>
+{" "}
+{f.date_echeance || "-"}
 </p>
 
 <button
-onClick={()=>exportPDF(f.id)}
+onClick={()=>pdf(f)}
+style={btn}
 >
-PDF
-</button>
-
-<button
-onClick={()=>exportPNG(f.id)}
-style={{marginLeft:10}}
->
-PNG
+Télécharger PDF
 </button>
 
 </div>
 
 ))}
+
 </main>
+
 );
 }
+
+const input = {
+width:"100%",
+padding:"12px",
+marginBottom:"15px",
+borderRadius:"10px",
+border:"1px solid #334155",
+background:"#111827",
+color:"white"
+};
+
+const btn = {
+padding:"12px 20px",
+border:"none",
+borderRadius:"10px",
+background:"#d4af37",
+fontWeight:"bold",
+cursor:"pointer"
+};

@@ -1,86 +1,123 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 export default function OperationsPage() {
-  const [type, setType] = useState("Entrée");
-  const [montant, setMontant] = useState("");
-  const [description, setDescription] = useState("");
-  const [operations, setOperations] = useState<any[]>([]);
 
-  async function charger() {
-    if (!supabase) return;
+const [operations,setOperations] = useState<any[]>([]);
 
-    const { data } = await supabase
-      .from("operations")
-      .select("*")
-      .order("created_at", { ascending: false });
+const [type,setType] = useState("Entrée");
+const [montant,setMontant] = useState("");
+const [motif,setMotif] = useState("");
 
-    setOperations(data || []);
-  }
+useEffect(()=>{
+charger();
+},[]);
 
-  useEffect(() => {
-    charger();
-  }, []);
+async function charger(){
 
-  async function ajouter() {
-    if (!supabase) return;
+if(!supabase) return;
 
-    await supabase.from("operations").insert({
-      type,
-      montant: Number(montant),
-      description,
-    });
+const { data } = await supabase
+.from("operations")
+.select("*")
+.order("created_at",{ascending:false});
 
-    setMontant("");
-    setDescription("");
+setOperations(data || []);
+}
 
-    charger();
-  }
+async function ajouter(){
 
-  return (
-    <main style={{ padding: 40 }}>
-      <h1>📊 Opérations</h1>
+if(!supabase) return;
 
-      <select
-        value={type}
-        onChange={(e) => setType(e.target.value)}
-      >
-        <option>Entrée</option>
-        <option>Sortie</option>
-      </select>
+await supabase
+.from("operations")
+.insert({
+type,
+montant:Number(montant),
+motif
+});
 
-      <br /><br />
+setMontant("");
+setMotif("");
 
-      <input
-        type="number"
-        placeholder="Montant"
-        value={montant}
-        onChange={(e) => setMontant(e.target.value)}
-      />
+charger();
+}
 
-      <br /><br />
+return(
 
-      <textarea
-        placeholder="Description"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
+<main style={{
+padding:40,
+background:"#0f172a",
+color:"white",
+minHeight:"100vh"
+}}>
 
-      <br /><br />
+<h1>📊 Opérations</h1>
 
-      <button onClick={ajouter}>
-        Ajouter
-      </button>
+<select
+value={type}
+onChange={(e)=>setType(e.target.value)}
 
-      <hr />
+>
 
-      {operations.map((op) => (
-        <div key={op.id}>
-          <b>{op.type}</b> - {op.montant}$ - {op.description}
-        </div>
-      ))}
-    </main>
-  );
+<option>Entrée</option>
+<option>Sortie</option>
+</select>
+
+<br/><br/>
+
+<input
+type="number"
+placeholder="Montant"
+value={montant}
+onChange={(e)=>setMontant(e.target.value)}
+/>
+
+<br/><br/>
+
+<input
+placeholder="Motif"
+value={motif}
+onChange={(e)=>setMotif(e.target.value)}
+/>
+
+<br/><br/>
+
+<button onClick={ajouter}>
+Ajouter
+</button>
+
+<hr/>
+
+{operations.map(op=>(
+
+<div
+key={op.id}
+style={{
+background:"#111827",
+padding:15,
+marginBottom:10,
+borderRadius:10
+}}
+>
+
+<b>{op.type}</b>
+
+<br/>
+
+{Number(op.montant).toLocaleString()} $
+
+<br/>
+
+{op.motif}
+
+</div>
+
+))}
+
+</main>
+
+);
 }
