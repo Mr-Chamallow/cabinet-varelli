@@ -6,234 +6,314 @@ import jsPDF from "jspdf";
 
 export default function FacturesPage() {
 
-const [client,setClient] = useState("");
-const [montant,setMontant] = useState("");
-const [description,setDescription] = useState("");
-const [echeance,setEcheance] = useState("");
+const [client, setClient] = useState("");
+const [montant, setMontant] = useState("");
+const [description, setDescription] = useState("");
 
-const [factures,setFactures] = useState<any[]>([]);
+const [factures, setFactures] = useState<any[]>([]);
+const [preview, setPreview] = useState<any>(null);
 
-useEffect(()=>{
+useEffect(() => {
 charger();
-},[]);
+}, []);
 
-async function charger(){
+async function charger() {
 
-if(!supabase) return;
+
+if (!supabase) return;
 
 const { data } = await supabase
-.from("factures")
-.select("*")
-.order("created_at",{ascending:false});
+  .from("factures")
+  .select("*")
+  .order("created_at", { ascending: false });
 
 setFactures(data || []);
+
+
 }
 
-async function creerFacture(){
+async function creerFacture() {
 
-if(!supabase) return;
+
+if (!supabase) return;
 
 const numero =
-"FAC-" +
-new Date().getFullYear() +
-"-" +
-String(Date.now()).slice(-5);
+  "FAC-" +
+  new Date().getFullYear() +
+  "-" +
+  String(Date.now()).slice(-5);
 
 const { error } = await supabase
-.from("factures")
-.insert({
-numero,
-client,
-montant:Number(montant),
-description,
-date_echeance:echeance,
-statut:"En attente"
-});
+  .from("factures")
+  .insert({
+    numero,
+    client,
+    montant: Number(montant),
+    description,
+    statut: "En attente"
+  });
 
-if(error){
-alert(error.message);
-return;
+if (error) {
+  alert(error.message);
+  return;
 }
 
 setClient("");
 setMontant("");
 setDescription("");
-setEcheance("");
 
 charger();
+
+
 }
 
-function pdf(f:any){
+async function supprimer(id: string) {
 
-const doc = new jsPDF();
 
-doc.setFillColor(15,23,42);
-doc.rect(0,0,210,40,"F");
+if (!supabase) return;
 
-doc.setTextColor(255,255,255);
-doc.setFontSize(24);
-doc.text("CABINET VARELLI",20,25);
+await supabase
+  .from("factures")
+  .delete()
+  .eq("id", id);
 
-doc.setTextColor(0,0,0);
+charger();
 
-doc.setFontSize(12);
 
-doc.text(`Facture : ${f.numero}`,20,60);
-doc.text(`Client : ${f.client}`,20,75);
-doc.text(`Montant : ${Number(f.montant).toLocaleString()} $`,20,90);
-doc.text(`Statut : ${f.statut}`,20,105);
-
-doc.text(
-`Description : ${f.description || "-"}`,
-20,
-120
-);
-
-doc.save(`${f.numero}.pdf`);
 }
 
-return(
+function genererPDF(facture: any) {
 
+
+const pdf = new jsPDF();
+
+pdf.setFontSize(24);
+pdf.text("CABINET VARELLI", 20, 25);
+
+pdf.setFontSize(14);
+
+pdf.text(`Facture : ${facture.numero}`, 20, 50);
+pdf.text(`Client : ${facture.client}`, 20, 65);
+pdf.text(`Montant : ${Number(facture.montant).toLocaleString()} $`, 20, 80);
+pdf.text(`Description : ${facture.description || "-"}`, 20, 95);
+pdf.text(`Statut : ${facture.statut || "En attente"}`, 20, 110);
+
+pdf.save(`${facture.numero}.pdf`);
+
+
+}
+
+return (
 <main
 style={{
-padding:40,
-minHeight:"100vh",
-background:"#0f172a",
-color:"white"
+minHeight: "100vh",
+background: "#0f172a",
+color: "white",
+padding: "40px"
 }}
 >
-
 <h1
 style={{
-fontSize:"3rem",
-color:"#d4af37"
+color: "#d4af37",
+marginBottom: "30px"
 }}
 >
-💰 Facturation
-</h1>
+💰 Factures </h1>
 
-<div
-style={{
-background:"#1e293b",
-padding:25,
-borderRadius:15,
-marginTop:20,
-marginBottom:30
-}}
->
 
-<input
-placeholder="Client"
-value={client}
-onChange={(e)=>setClient(e.target.value)}
-style={input}
-/>
+  <div
+    style={{
+      background: "#1e293b",
+      padding: "25px",
+      borderRadius: "15px",
+      maxWidth: "700px",
+      marginBottom: "40px"
+    }}
+  >
 
-<input
-type="number"
-placeholder="Montant"
-value={montant}
-onChange={(e)=>setMontant(e.target.value)}
-style={input}
-/>
+    <input
+      placeholder="Client"
+      value={client}
+      onChange={(e) => setClient(e.target.value)}
+      style={{
+        width: "100%",
+        padding: "12px",
+        marginBottom: "15px"
+      }}
+    />
 
-<input
-type="date"
-value={echeance}
-onChange={(e)=>setEcheance(e.target.value)}
-style={input}
-/>
+    <input
+      type="number"
+      placeholder="Montant"
+      value={montant}
+      onChange={(e) => setMontant(e.target.value)}
+      style={{
+        width: "100%",
+        padding: "12px",
+        marginBottom: "15px"
+      }}
+    />
 
-<textarea
-placeholder="Description"
-value={description}
-onChange={(e)=>setDescription(e.target.value)}
-style={{
-...input,
-height:120
-}}
-/>
+    <textarea
+      placeholder="Description"
+      value={description}
+      onChange={(e) => setDescription(e.target.value)}
+      style={{
+        width: "100%",
+        height: "120px",
+        padding: "12px",
+        marginBottom: "15px"
+      }}
+    />
 
-<button
-onClick={creerFacture}
-style={btn}
->
-Créer la facture
-</button>
+    <button
+      onClick={creerFacture}
+      style={{
+        width: "100%",
+        background: "#d4af37",
+        color: "#111",
+        border: "none",
+        padding: "14px",
+        borderRadius: "10px",
+        fontWeight: "bold",
+        cursor: "pointer"
+      }}
+    >
+      Créer la facture
+    </button>
 
-</div>
+  </div>
 
-<h2>Historique</h2>
+  <h2>Historique</h2>
 
-{factures.map((f)=>(
+  {factures.map((f) => (
 
-<div
-key={f.id}
-style={{
-background:"#1e293b",
-padding:20,
-borderRadius:15,
-marginBottom:15,
-border:"1px solid #334155"
-}}
->
+    <div
+      key={f.id}
+      style={{
+        background: "#1e293b",
+        padding: "20px",
+        borderRadius: "15px",
+        marginBottom: "15px"
+      }}
+    >
+      <h3>{f.numero}</h3>
 
-<h3 style={{color:"#d4af37"}}>
-{f.numero}
-</h3>
+      <p><b>Client :</b> {f.client}</p>
 
-<p><b>Client :</b> {f.client}</p>
+      <p>
+        <b>Montant :</b>{" "}
+        {Number(f.montant).toLocaleString()} $
+      </p>
 
-<p>
-<b>Montant :</b>
-{" "}
-{Number(f.montant).toLocaleString()}
-$
-</p>
+      <p>
+        <b>Statut :</b>{" "}
+        {f.statut || "En attente"}
+      </p>
 
-<p>
-<b>Statut :</b>
-{" "}
-{f.statut}
-</p>
+      <button
+        onClick={() => setPreview(f)}
+        style={{
+          marginRight: "10px",
+          padding: "10px",
+          cursor: "pointer"
+        }}
+      >
+        Voir
+      </button>
 
-<p>
-<b>Échéance :</b>
-{" "}
-{f.date_echeance || "-"}
-</p>
+      <button
+        onClick={() => genererPDF(f)}
+        style={{
+          marginRight: "10px",
+          padding: "10px",
+          cursor: "pointer"
+        }}
+      >
+        PDF
+      </button>
 
-<button
-onClick={()=>pdf(f)}
-style={btn}
->
-Télécharger PDF
-</button>
+      <button
+        onClick={() => supprimer(f.id)}
+        style={{
+          background: "#dc2626",
+          color: "white",
+          border: "none",
+          padding: "10px",
+          cursor: "pointer"
+        }}
+      >
+        Supprimer
+      </button>
+    </div>
 
-</div>
+  ))}
 
-))}
+  {preview && (
+
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.85)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 9999
+      }}
+    >
+
+      <div
+        style={{
+          background: "white",
+          color: "black",
+          padding: "40px",
+          borderRadius: "15px",
+          width: "700px",
+          maxWidth: "90%"
+        }}
+      >
+
+        <h1>CABINET VARELLI</h1>
+
+        <hr />
+
+        <p><b>Facture :</b> {preview.numero}</p>
+        <p><b>Client :</b> {preview.client}</p>
+
+        <p>
+          <b>Montant :</b>{" "}
+          {Number(preview.montant).toLocaleString()} $
+        </p>
+
+        <p>
+          <b>Description :</b>{" "}
+          {preview.description}
+        </p>
+
+        <p>
+          <b>Statut :</b>{" "}
+          {preview.statut}
+        </p>
+
+        <button
+          onClick={() => setPreview(null)}
+          style={{
+            marginTop: "20px",
+            padding: "10px 20px"
+          }}
+        >
+          Fermer
+        </button>
+
+      </div>
+
+    </div>
+
+  )}
 
 </main>
 
+
 );
 }
-
-const input = {
-width:"100%",
-padding:"12px",
-marginBottom:"15px",
-borderRadius:"10px",
-border:"1px solid #334155",
-background:"#111827",
-color:"white"
-};
-
-const btn = {
-padding:"12px 20px",
-border:"none",
-borderRadius:"10px",
-background:"#d4af37",
-fontWeight:"bold",
-cursor:"pointer"
-};
