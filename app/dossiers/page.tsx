@@ -29,7 +29,7 @@ export default function DossiersPage() {
   }, []);
 
   async function creerDossier() {
-    if (!supabase) return;
+
 
     const reference =
       "DOS-" +
@@ -59,6 +59,21 @@ export default function DossiersPage() {
     setTypeAffaire("");
     setMontant("");
     setNotes("");
+
+    charger();
+  }
+
+  async function supprimer(id: string) {
+    if (!supabase) return;
+
+    if (!window.confirm("Supprimer ce dossier ?")) return;
+
+    const { error } = await supabase.from("dossiers").delete().eq("id", id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
 
     charger();
   }
@@ -163,6 +178,21 @@ export default function DossiersPage() {
           <br />
 
           {d.statut}
+
+          <br />
+          <button
+          onClick={() => supprimer(d.id)}
+          style={{
+            background: "#dc2626",
+            color: "white",
+            border: "none",
+            padding: "8px 15px",
+            borderRadius: "8px",
+            cursor: "pointer"
+            }}
+            >
+            Supprimer
+            </button>
         </div>
       ))}
     </main>
