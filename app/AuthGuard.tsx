@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/comptabilite", label: "Comptabilité", icon: "📊", permission: "comptabilite" },
   { href: "/blanchiment", label: "Blanchiment", icon: "🔄", permission: "blanchiment" },
   { href: "/simulateur", label: "Simulateur", icon: "⚙️", permission: "simulateur" },
+  { href: "/audiences", label: "Audiences", icon: "📅", permission: "dashboard" },
   { href: "/juridique", label: "Juridique", icon: "📜", permission: "juridique" },
   { href: "/admin", label: "Admin", icon: "🛡️", permission: "admin" },
 ];

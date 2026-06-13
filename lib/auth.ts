@@ -1,6 +1,6 @@
-// lib/auth.ts
-// Système d'authentification V8 — Cabinet Varelli
-// Rôles : Patron > Avocat > Employé
+// lib/auth.ts — Cabinet Varelli V10
+// Comptes stockés en Supabase (table: membres)
+// Plus de comptes hardcodés
 
 export type Role = "Patron" | "Avocat" | "Employé";
 
@@ -10,14 +10,6 @@ export interface User {
   role: Role;
   avatar: string;
 }
-
-// Comptes de démonstration RP
-// En V8 production : remplacer par Supabase Auth
-export const DEMO_ACCOUNTS: Array<User & { password: string }> = [
-  { id: "1", nom: "Marco Varelli", role: "Patron", avatar: "M", password: "varelli2026" },
-  { id: "2", nom: "Sofia Benedetti", role: "Avocat", avatar: "S", password: "avocat2026" },
-  { id: "3", nom: "Lucas Moretti", role: "Employé", avatar: "L", password: "employe2026" },
-];
 
 export const PERMISSIONS: Record<Role, string[]> = {
   Patron: [
@@ -67,3 +59,9 @@ export const ROLE_BADGES: Record<Role, string> = {
   Avocat: "badge-info",
   Employé: "badge-success",
 };
+
+export const ALL_PERMISSIONS = [
+  "dashboard", "clients", "dossiers", "factures", "operations",
+  "comptabilite", "blanchiment", "simulateur", "juridique",
+  "parametres", "admin", "delete_all", "edit_all",
+];
