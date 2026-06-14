@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getUser } from "@/lib/auth";
 
 interface Op {
   type: string;
@@ -17,6 +18,7 @@ interface Facture {
 }
 
 export default function ComptabilitePage() {
+  const user = getUser();
   const [ops, setOps] = useState<Op[]>([]);
   const [factures, setFactures] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,8 +28,8 @@ export default function ComptabilitePage() {
   async function load() {
     if (!supabase) { setLoading(false); return; }
     const [{ data: o }, { data: f }] = await Promise.all([
-      supabase.from("operations").select("type, montant, motif, created_at").order("created_at", { ascending: false }),
-      supabase.from("factures").select("montant, statut, created_at").order("created_at", { ascending: false }),
+      supabase.from("operations").select("type, montant, motif, created_at").eq("created_by", user?.nom || "").order("created_at", { ascending: false }),
+      supabase.from("factures").select("montant, statut, created_at").eq("created_by", user?.nom || "").order("created_at", { ascending: false }),
     ]);
     setOps(o || []);
     setFactures(f || []);

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getUser } from "@/lib/auth";
 
 interface Operation {
   id: string;
@@ -15,6 +16,7 @@ const TYPES = ["Entrée", "Sortie"];
 const EMPTY_FORM = { type: "Entrée", montant: 0, motif: "" };
 
 export default function OperationsPage() {
+  const user = getUser();
   const [ops, setOps] = useState<Operation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -28,7 +30,7 @@ export default function OperationsPage() {
 
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from("operations").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("operations").select("*").eq("created_by", user!.nom).order("created_at", { ascending: false });
     setOps(data || []);
     setLoading(false);
   }
@@ -42,7 +44,7 @@ export default function OperationsPage() {
     if (!supabase || !form.motif.trim() || form.montant <= 0) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from("operations").insert([form]);
+      const { error } = await supabase.from("operations").insert([{ ...form, created_by: user!.nom }]);
       if (error) throw error;
       showToast("Opération enregistrée");
       setShowForm(false);

@@ -126,6 +126,7 @@ export default function SimulateurPage() {
       montant: honoraires,
       description,
       statut: "En attente",
+      created_by: supabase ? (await import("@/lib/auth")).getUser()?.nom || "" : "",
     }]);
 
     setCreatingFacture(false);

@@ -44,6 +44,8 @@ export default function Dashboard() {
 
   async function load() {
     if (!supabase) { setLoading(false); return; }
+    const u = getUser();
+    if (!u) { setLoading(false); return; }
     try {
       const [
         { count: clients },
@@ -53,12 +55,12 @@ export default function Dashboard() {
         { data: facturesData },
         { data: opsData },
       ] = await Promise.all([
-        supabase.from("clients").select("*", { count: "exact", head: true }),
-        supabase.from("dossiers").select("*", { count: "exact", head: true }),
-        supabase.from("factures").select("*", { count: "exact", head: true }),
-        supabase.from("dossiers").select("*", { count: "exact", head: true }).eq("statut", "Ouvert"),
-        supabase.from("factures").select("montant, statut"),
-        supabase.from("operations").select("type, montant"),
+        supabase.from("clients").select("*", { count: "exact", head: true }).eq("created_by", u.nom),
+        supabase.from("dossiers").select("*", { count: "exact", head: true }).eq("created_by", u.nom),
+        supabase.from("factures").select("*", { count: "exact", head: true }).eq("created_by", u.nom),
+        supabase.from("dossiers").select("*", { count: "exact", head: true }).eq("created_by", u.nom).eq("statut", "Ouvert"),
+        supabase.from("factures").select("montant, statut").eq("created_by", u.nom),
+        supabase.from("operations").select("type, montant").eq("created_by", u.nom),
       ]);
 
       const ca = (facturesData || []).reduce((s: number, f: { montant: number }) => s + (f.montant || 0), 0);

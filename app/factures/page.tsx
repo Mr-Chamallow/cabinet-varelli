@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import jsPDF from "jspdf";
+import { getUser } from "@/lib/auth";
 
 interface Facture {
   id: string;
@@ -340,6 +341,7 @@ function FacturePreview({ facture, onClose }: { facture: Facture; onClose: () =>
 
 /* ─── Page principale ────────────────────────────────────── */
 export default function FacturesPage() {
+  const user = getUser();
   const [factures, setFactures] = useState<Facture[]>([]);
   const [clients, setClients] = useState<{ nom_rp: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -357,8 +359,8 @@ export default function FacturesPage() {
   async function load() {
     if (!supabase) { setLoading(false); return; }
     const [{ data: f }, { data: c }] = await Promise.all([
-      supabase.from("factures").select("*").order("created_at", { ascending: false }),
-      supabase.from("clients").select("nom_rp").order("nom_rp"),
+      supabase.from("factures").select("*").eq("created_by", user!.nom).order("created_at", { ascending: false }),
+      supabase.from("clients").select("nom_rp").eq("created_by", user!.nom).order("nom_rp"),
     ]);
     setFactures(f || []);
     setClients(c || []);
@@ -374,7 +376,7 @@ export default function FacturesPage() {
     if (!supabase || !form.client.trim()) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from("factures").insert([form]);
+      const { error } = await supabase.from("factures").insert([{ ...form, created_by: user!.nom }]);
       if (error) throw error;
       showToast("Facture créée");
       setShowForm(false);
