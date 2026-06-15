@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { getUser } from "@/lib/auth";
 
 type Risque = "Aucun" | "Faible" | "Moyen" | "Élevé" | "Extrême";
 
@@ -52,8 +53,16 @@ function genNumeroFacture() {
 
 export default function SimulateurPage() {
   const router = useRouter();
+  const user = getUser();
+  const [clientsList, setClientsList] = useState<string[]>([]);
 
-  // Quantités
+  useEffect(() => {
+    if (supabase && user) {
+      supabase.from("clients").select("nom_rp").eq("created_by", user.nom).order("nom_rp")
+        .then(({ data }) => setClientsList((data || []).map((c: any) => c.nom_rp)));
+    }
+  }, []);
+
   const [qCrimes, setQCrimes] = useState(0);
   const [qDelitsMajeurs, setQDelitsMajeurs] = useState(0);
   const [qDelitsMineurs, setQDelitsMineurs] = useState(0);
@@ -566,12 +575,16 @@ export default function SimulateurPage() {
               <div className="form-group">
                 <label>Nom du client *</label>
                 <input
-                  placeholder="Nom RP du client"
+                  placeholder="Choisir parmi vos clients"
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
                   autoFocus
+                  list="sim-clients-list"
                   onKeyDown={(e) => e.key === "Enter" && creerFacture()}
                 />
+                <datalist id="sim-clients-list">
+                  {clientsList.map(c => <option key={c} value={c} />)}
+                </datalist>
               </div>
             </div>
             <div className="modal-footer">

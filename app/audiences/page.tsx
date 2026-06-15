@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { getUser, getMemberColor } from "@/lib/auth";
 
 interface Audience {
   id: string;
@@ -202,7 +202,7 @@ export default function AudiencesPage() {
                   {aud.slice(0, 3).map((a, idx) => (
                     <div key={idx} style={{
                       height: 4, borderRadius: 2,
-                      background: TYPE_COLORS[a.type] || "#64748b",
+                      background: getMemberColor(a.created_by || "default"),
                       marginBottom: 2,
                     }} />
                   ))}
@@ -214,15 +214,18 @@ export default function AudiencesPage() {
             })}
           </div>
 
-          {/* Légende types */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid var(--border)" }}>
-            {Object.entries(TYPE_COLORS).map(([type, color]) => (
-              <div key={type} style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.7rem", color: "var(--text-muted)" }}>
-                <div style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} />
-                {type}
-              </div>
-            ))}
-          </div>
+          {/* Légende membres */}
+          {audiences.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid var(--border)" }}>
+              <div style={{ width: "100%", fontSize: "0.68rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.25rem" }}>Membres</div>
+              {Array.from(new Set(audiences.map(a => a.created_by).filter(Boolean))).map(membre => (
+                <div key={membre} style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: getMemberColor(membre), flexShrink: 0 }} />
+                  {membre}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* SIDEBAR DROITE */}
@@ -249,7 +252,7 @@ export default function AudiencesPage() {
                       background: "var(--surface)",
                       borderRadius: "var(--radius)",
                       padding: "0.75rem",
-                      borderLeft: `3px solid ${TYPE_COLORS[a.type] || "#64748b"}`,
+                      borderLeft: `3px solid ${getMemberColor(a.created_by || "default")}`,
                     }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                         <div style={{ flex: 1 }}>
@@ -288,7 +291,7 @@ export default function AudiencesPage() {
                       cursor: "pointer",
                       background: "var(--surface)",
                       borderRadius: 8, padding: "0.6rem 0.75rem",
-                      borderLeft: `3px solid ${TYPE_COLORS[a.type] || "#64748b"}`,
+                      borderLeft: `3px solid ${getMemberColor(a.created_by || "default")}`,
                       transition: "opacity 0.1s",
                     }}
                   >

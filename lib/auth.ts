@@ -65,3 +65,22 @@ export const ALL_PERMISSIONS = [
   "comptabilite", "blanchiment", "simulateur", "juridique",
   "parametres", "admin", "delete_all", "edit_all",
 ];
+
+// Couleurs uniques par membre pour l'agenda (attribuées par hash du nom)
+export function getMemberColor(nom: string): string {
+  const colors = [
+    "#c9a84c", // gold
+    "#6366f1", // indigo
+    "#22c55e", // green
+    "#ef4444", // red
+    "#f97316", // orange
+    "#06b6d4", // cyan
+    "#ec4899", // pink
+    "#a855f7", // purple
+    "#14b8a6", // teal
+    "#f59e0b", // amber
+  ];
+  let hash = 0;
+  for (let i = 0; i < nom.length; i++) hash = nom.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
