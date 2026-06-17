@@ -60,7 +60,6 @@ export default function AudiencesPage() {
   const [editAudience, setEditAudience] = useState<Audience | null>(null);
   const [clients, setClients] = useState<string[]>([]);
   const [memberColors, setMemberColors] = useState<Record<string,string>>({});
-  const [memberColors, setMemberColors] = useState<Record<string, string>>({});
 
   useEffect(() => { fetchAudiences(); fetchClients(); fetchMemberColors(); }, []);
 
