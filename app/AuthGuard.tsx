@@ -2,24 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { getUser, logout, canAccess, ROLE_BADGES, ROLE_COLORS, type User, type Role } from "@/lib/auth";
+import { getUser, logout, canAccess, setRolesCache, getMemberColor, type User } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 const NAV_SECTIONS = [
   {
     label: "Cabinet",
     items: [
-      { href: "/", label: "Dashboard", icon: "◈", permission: "dashboard" },
-      { href: "/clients", label: "Clients", icon: "◉", permission: "clients" },
-      { href: "/dossiers", label: "Dossiers", icon: "◫", permission: "dossiers" },
-      { href: "/factures", label: "Factures", icon: "◳", permission: "factures" },
+      { href: "/",         label: "Dashboard",  icon: "◈", permission: "dashboard" },
+      { href: "/clients",  label: "Clients",    icon: "◉", permission: "clients" },
+      { href: "/dossiers", label: "Dossiers",   icon: "◫", permission: "dossiers" },
+      { href: "/factures", label: "Factures",   icon: "◳", permission: "factures" },
+      { href: "/casier",   label: "Casiers",    icon: "◪", permission: "clients" },
     ],
   },
   {
     label: "Outils",
     items: [
       { href: "/simulateur", label: "Simulateur", icon: "◐", permission: "simulateur" },
-      { href: "/blanchiment", label: "Blanchiment", icon: "◑", permission: "blanchiment" },
-      { href: "/audiences", label: "Audiences", icon: "◷", permission: "dashboard" },
+      { href: "/blanchiment",label: "Blanchiment",icon: "◑", permission: "blanchiment" },
+      { href: "/audiences",  label: "Audiences",  icon: "◷", permission: "dashboard" },
+      { href: "/minuteur",   label: "Minuteur",   icon: "◔", permission: "dashboard" },
+      { href: "/modeles",    label: "Modèles",    icon: "◧", permission: "modeles" },
     ],
   },
   {
@@ -42,59 +46,67 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [checked, setChecked] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [roleColor, setRoleColor] = useState("var(--gold)");
+  const [memberColor, setMemberColor] = useState("var(--gold)");
 
   useEffect(() => {
     const u = getUser();
-    if (!u && pathname !== "/login") {
-      router.replace("/login");
-    } else {
+    if (!u && pathname !== "/login") { router.replace("/login"); setChecked(true); return; }
+    if (u) {
       setUser(u);
+      loadRoles(u);
     }
     setChecked(true);
   }, [pathname]);
 
-  function handleLogout() {
-    logout();
-    setUser(null);
-    router.push("/login");
+  async function loadRoles(u: User) {
+    if (!supabase) return;
+    const [{ data: rolesData }, { data: membreData }] = await Promise.all([
+      supabase.from("roles").select("nom, permissions, couleur"),
+      supabase.from("membres").select("couleur").eq("nom", u.nom).single(),
+    ]);
+    if (rolesData) {
+      const cache: Record<string, string[]> = {};
+      rolesData.forEach((r: any) => { cache[r.nom] = r.permissions || []; });
+      setRolesCache(cache);
+      const rData = rolesData.find((r: any) => r.nom === u.role);
+      if (rData?.couleur) setRoleColor(rData.couleur);
+    }
+    if (membreData?.couleur) setMemberColor(membreData.couleur);
+    else setMemberColor(getMemberColor(u.nom));
   }
+
+  function handleLogout() { logout(); setUser(null); router.push("/login"); }
 
   if (!checked) return null;
   if (pathname === "/login") return <>{children}</>;
   if (!user) return null;
 
-  const roleColor = ROLE_COLORS[user.role as Role] || "var(--gold)";
-
   return (
     <div className="app-shell">
-      {/* ── SIDEBAR ── */}
       <aside className="sidebar">
         {/* Logo */}
         <div className="sidebar-logo">
           <div className="sidebar-logo-title">
-            <span style={{ fontSize: "1.2rem" }}>⚖</span>
+            <span style={{ fontSize:"1.2rem" }}>⚖</span>
             VARELLI
           </div>
           <div className="sidebar-logo-sub">Cabinet juridique</div>
         </div>
 
-        {/* Navigation */}
+        {/* Nav */}
         <nav className="sidebar-nav">
           {NAV_SECTIONS.map(section => {
-            const visibleItems = section.items.filter(item => canAccess(user.role, item.permission));
-            if (visibleItems.length === 0) return null;
+            const visible = section.items.filter(item => canAccess(user.role, item.permission));
+            if (visible.length === 0) return null;
             return (
               <div key={section.label}>
                 <div className="sidebar-section-label">{section.label}</div>
-                {visibleItems.map(item => {
+                {visible.map(item => {
                   const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
                   return (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      className={`sidebar-link ${active ? "active" : ""}`}
-                    >
-                      <span className="sidebar-link-icon" style={{ fontStyle: "normal", fontFamily: "monospace" }}>{item.icon}</span>
+                    <a key={item.href} href={item.href} className={`sidebar-link ${active?"active":""}`}>
+                      <span className="sidebar-link-icon" style={{ fontStyle:"normal", fontFamily:"monospace" }}>{item.icon}</span>
                       {item.label}
                     </a>
                   );
@@ -106,55 +118,48 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
         {/* Footer user */}
         <div className="sidebar-footer">
-          <div style={{ position: "relative" }}>
+          <div style={{ position:"relative" }}>
             <button className="sidebar-user" onClick={() => setUserMenuOpen(!userMenuOpen)}>
-              <div className="user-avatar">{user.avatar}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.nom}</div>
-                <div style={{ fontSize: "0.68rem", color: roleColor }}>{user.role}</div>
+              <div className="user-avatar" style={{ background:memberColor+"20", borderColor:memberColor+"40", color:memberColor }}>
+                {user.avatar}
               </div>
-              <span style={{ color: "var(--text-dim)", fontSize: "0.65rem", flexShrink: 0 }}>▲</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:"0.8rem", fontWeight:600, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user.nom}</div>
+                <div style={{ fontSize:"0.68rem", color:roleColor }}>{user.role}</div>
+              </div>
+              <span style={{ color:"var(--text-dim)", fontSize:"0.65rem", flexShrink:0 }}>▲</span>
             </button>
 
-            {/* User dropdown */}
             {userMenuOpen && (
               <>
-                <div
-                  style={{ position: "fixed", inset: 0, zIndex: 98 }}
-                  onClick={() => setUserMenuOpen(false)}
-                />
+                <div style={{ position:"fixed", inset:0, zIndex:98 }} onClick={() => setUserMenuOpen(false)} />
                 <div style={{
-                  position: "absolute",
-                  bottom: "calc(100% + 8px)",
-                  left: 0,
-                  right: 0,
-                  background: "var(--card)",
-                  border: "1px solid var(--border-light)",
-                  borderRadius: "var(--radius-lg)",
-                  padding: "0.5rem",
-                  boxShadow: "var(--shadow-lg)",
-                  zIndex: 99,
-                  animation: "slideUp 0.15s ease",
+                  position:"absolute", bottom:"calc(100% + 8px)", left:0, right:0,
+                  background:"var(--card)", border:"1px solid var(--border-light)",
+                  borderRadius:"var(--radius-lg)", padding:"0.5rem",
+                  boxShadow:"var(--shadow-lg)", zIndex:99, animation:"slideUp 0.15s ease",
                 }}>
-                  <div style={{ padding: "0.625rem 0.75rem", marginBottom: "0.25rem" }}>
-                    <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: "0.25rem" }}>Connecté en tant que</div>
-                    <div style={{ fontWeight: 600, fontSize: "0.85rem" }}>{user.nom}</div>
-                    <span className={`badge ${ROLE_BADGES[user.role as Role]}`} style={{ marginTop: "0.25rem" }}>{user.role}</span>
+                  <div style={{ padding:"0.625rem 0.75rem", marginBottom:"0.25rem" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.375rem" }}>
+                      <div style={{ width:8, height:8, borderRadius:"50%", background:memberColor }} />
+                      <div style={{ fontSize:"0.7rem", color:"var(--text-dim)" }}>Couleur agenda</div>
+                    </div>
+                    <div style={{ fontWeight:600, fontSize:"0.875rem" }}>{user.nom}</div>
+                    <span style={{ fontSize:"0.72rem", padding:"0.15rem 0.5rem", borderRadius:999,
+                      background:roleColor+"18", color:roleColor, border:`1px solid ${roleColor}30`, fontWeight:600 }}>
+                      {user.role}
+                    </span>
                   </div>
-                  <div style={{ height: 1, background: "var(--border)", margin: "0.25rem 0" }} />
-                  <button
-                    onClick={handleLogout}
-                    style={{
-                      display: "flex", alignItems: "center", gap: "0.5rem",
-                      width: "100%", padding: "0.55rem 0.75rem", borderRadius: 8,
-                      background: "transparent", border: "none", cursor: "pointer",
-                      fontSize: "0.825rem", color: "var(--danger)",
-                      fontFamily: "'Inter', sans-serif",
-                      transition: "background 0.1s",
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,0.08)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                  >
+                  <div style={{ height:1, background:"var(--border)", margin:"0.25rem 0" }} />
+                  <button onClick={handleLogout} style={{
+                    display:"flex", alignItems:"center", gap:"0.5rem",
+                    width:"100%", padding:"0.55rem 0.75rem", borderRadius:8,
+                    background:"transparent", border:"none", cursor:"pointer",
+                    fontSize:"0.825rem", color:"var(--danger)", fontFamily:"'Inter',sans-serif",
+                    transition:"background 0.1s",
+                  }}
+                    onMouseEnter={e=>e.currentTarget.style.background="rgba(239,68,68,0.08)"}
+                    onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                     <span>↩</span> Se déconnecter
                   </button>
                 </div>
@@ -164,7 +169,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* ── MAIN ── */}
       <main className="main-content">
         {children}
       </main>

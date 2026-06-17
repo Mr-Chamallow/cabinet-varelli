@@ -216,6 +216,7 @@ export default function DossiersPage() {
                   <td style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>{dateStr(d.created_at)}</td>
                   <td>
                     <div style={{ display: "flex", gap: "0.4rem", justifyContent: "flex-end" }}>
+                      <a href={`/dossiers/${d.id}`} className="btn btn-outline btn-sm">👁️ Ouvrir</a>
                       <button className="btn btn-ghost btn-sm" onClick={() => openEdit(d)}>✏️</button>
                       <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(d)}>🗑️</button>
                     </div>

@@ -59,8 +59,24 @@ export default function AudiencesPage() {
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [editAudience, setEditAudience] = useState<Audience | null>(null);
   const [clients, setClients] = useState<string[]>([]);
+  const [memberColors, setMemberColors] = useState<Record<string,string>>({});
+  const [memberColors, setMemberColors] = useState<Record<string, string>>({});
 
-  useEffect(() => { fetchAudiences(); fetchClients(); }, []);
+  useEffect(() => { fetchAudiences(); fetchClients(); fetchMemberColors(); }, []);
+
+  async function fetchMemberColors() {
+    if (!supabase) return;
+    const { data } = await supabase.from("membres").select("nom, couleur");
+    if (data) {
+      const map: Record<string, string> = {};
+      data.forEach((m: any) => { if (m.couleur) map[m.nom] = m.couleur; });
+      setMemberColors(map);
+    }
+  }
+
+  function getColor(nom: string) {
+    return memberColors[nom] || getMemberColor(nom);
+  }
 
   async function fetchAudiences() {
     if (!supabase) return;
@@ -68,6 +84,16 @@ export default function AudiencesPage() {
     const { data } = await supabase.from("audiences").select("*").order("date").order("heure");
     setAudiences(data || []);
     setLoading(false);
+  }
+
+  async function fetchMemberColors() {
+    if (!supabase) return;
+    const { data } = await supabase.from("membres").select("nom, couleur");
+    if (data) {
+      const map: Record<string,string> = {};
+      data.forEach((m: any) => { if (m.couleur) map[m.nom] = m.couleur; });
+      setMemberColors(map);
+    }
   }
 
   async function fetchClients() {
@@ -202,7 +228,7 @@ export default function AudiencesPage() {
                   {aud.slice(0, 3).map((a, idx) => (
                     <div key={idx} style={{
                       height: 4, borderRadius: 2,
-                      background: getMemberColor(a.created_by || "default"),
+                      background: getMemberColor(a.created_by || "default", memberColors[a.created_by]),
                       marginBottom: 2,
                     }} />
                   ))}
@@ -220,7 +246,7 @@ export default function AudiencesPage() {
               <div style={{ width: "100%", fontSize: "0.68rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.25rem" }}>Membres</div>
               {Array.from(new Set(audiences.map(a => a.created_by).filter(Boolean))).map(membre => (
                 <div key={membre} style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: getMemberColor(membre), flexShrink: 0 }} />
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: getMemberColor(membre, memberColors[membre]), flexShrink: 0 }} />
                   {membre}
                 </div>
               ))}
@@ -252,7 +278,7 @@ export default function AudiencesPage() {
                       background: "var(--surface)",
                       borderRadius: "var(--radius)",
                       padding: "0.75rem",
-                      borderLeft: `3px solid ${getMemberColor(a.created_by || "default")}`,
+                      borderLeft: `3px solid ${getMemberColor(a.created_by || "default", memberColors[a.created_by])}`,
                     }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                         <div style={{ flex: 1 }}>
@@ -291,7 +317,7 @@ export default function AudiencesPage() {
                       cursor: "pointer",
                       background: "var(--surface)",
                       borderRadius: 8, padding: "0.6rem 0.75rem",
-                      borderLeft: `3px solid ${getMemberColor(a.created_by || "default")}`,
+                      borderLeft: `3px solid ${getMemberColor(a.created_by || "default", memberColors[a.created_by])}`,
                       transition: "opacity 0.1s",
                     }}
                   >
