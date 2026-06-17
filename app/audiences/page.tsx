@@ -85,16 +85,6 @@ export default function AudiencesPage() {
     setLoading(false);
   }
 
-  async function fetchMemberColors() {
-    if (!supabase) return;
-    const { data } = await supabase.from("membres").select("nom, couleur");
-    if (data) {
-      const map: Record<string,string> = {};
-      data.forEach((m: any) => { if (m.couleur) map[m.nom] = m.couleur; });
-      setMemberColors(map);
-    }
-  }
-
   async function fetchClients() {
     if (!supabase) return;
     const { data } = await supabase.from("clients").select("nom_rp").order("nom_rp");
