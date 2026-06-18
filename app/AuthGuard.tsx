@@ -88,10 +88,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="sidebar-logo">
           <div className="sidebar-logo-title">
-            <span style={{ fontSize:"1.2rem" }}>⚖</span>
-            VARELLI
+            <img src="/logo.png" alt="BullHead" style={{ width:26, height:26, objectFit:"contain", flexShrink:0 }} />
+            BULLHEAD
           </div>
-          <div className="sidebar-logo-sub">Cabinet juridique</div>
+          <div className="sidebar-logo-sub">Law · Finance · Property</div>
         </div>
 
         {/* Nav */}

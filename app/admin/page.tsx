@@ -76,12 +76,19 @@ export default function AdminPage() {
   async function fetchAll() {
     if (!supabase) return;
     setLoading(true);
-    const [{ data: m }, { data: r }] = await Promise.all([
+    const [{ data: m, error: mErr }, { data: r, error: rErr }] = await Promise.all([
       supabase.from("membres").select("*").order("created_at"),
       supabase.from("roles").select("*").order("created_at"),
     ]);
+    if (mErr) console.error("Erreur membres:", mErr);
+    if (rErr) console.error("Erreur roles:", rErr);
     setMembres(m || []);
-    const rolesData = r || [];
+    const rolesData = (r || []).map((role: any) => ({
+      ...role,
+      permissions: Array.isArray(role.permissions)
+        ? role.permissions
+        : (typeof role.permissions === "string" ? JSON.parse(role.permissions || "[]") : []),
+    }));
     setRoles(rolesData);
     // Mettre à jour le cache des permissions
     const cache: Record<string, string[]> = {};
@@ -297,6 +304,15 @@ export default function AdminPage() {
           </div>
 
           <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
+            {roles.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">🎭</div>
+                <div className="empty-title">Aucun rôle trouvé</div>
+                <p style={{ fontSize:"0.875rem", marginTop:"0.5rem" }}>
+                  Vérifiez que la table <code>roles</code> existe dans Supabase et contient des données, ou créez un rôle ci-dessus.
+                </p>
+              </div>
+            )}
             {roles.map(r => {
               const isEditing = editRoleId === r.id;
               const currentPerms = isEditing ? editRolePerms : r.permissions;

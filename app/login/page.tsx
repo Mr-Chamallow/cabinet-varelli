@@ -74,15 +74,17 @@ export default function LoginPage() {
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
           <div style={{
-            width: 72, height: 72, borderRadius: "50%",
+            width: 84, height: 84, borderRadius: "50%",
             background: "var(--gold-muted)",
-            border: "2px solid rgba(212,175,55,0.4)",
+            border: "2px solid rgba(201,168,76,0.4)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "2rem", margin: "0 auto 1.25rem",
-          }}>⚖️</div>
+            margin: "0 auto 1.25rem", overflow: "hidden",
+          }}>
+            <img src="/logo.png" alt="BullHead" style={{ width:"68%", height:"68%", objectFit:"contain" }} />
+          </div>
           <div style={{ fontFamily: "'Cinzel', serif", fontSize: "0.7rem", letterSpacing: "0.3em", color: "var(--text-dim)", marginBottom: "0.5rem" }}>CABINET</div>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "2.25rem", fontWeight: 900, color: "var(--gold)", letterSpacing: "0.08em", marginBottom: "0.5rem" }}>VARELLI</div>
-          <div style={{ fontFamily: "'Cinzel', serif", fontSize: "0.72rem", color: "var(--text-dim)", letterSpacing: "0.12em" }}>« Seul Dieu peut juger »</div>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "2.25rem", fontWeight: 900, color: "var(--gold)", letterSpacing: "0.08em", marginBottom: "0.5rem" }}>BULLHEAD</div>
+          <div style={{ fontFamily: "'Cinzel', serif", fontSize: "0.72rem", color: "var(--text-dim)", letterSpacing: "0.12em" }}>Law · Finance · Property</div>
         </div>
 
         {/* Card */}
@@ -137,7 +139,7 @@ export default function LoginPage() {
         </div>
 
         <div style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "0.75rem", color: "var(--text-dim)" }}>
-          Cabinet Varelli · Los Santos · Confidentiel
+          Cabinet BullHead · Los Santos · Confidentiel
         </div>
       </div>
     </div>

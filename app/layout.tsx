@@ -3,8 +3,8 @@ import "./globals.css";
 import AuthGuard from "./AuthGuard";
 
 export const metadata: Metadata = {
-  title: "Cabinet Varelli",
-  description: "Cabinet d'avocats — Seul Dieu peut juger",
+  title: "Cabinet BullHead",
+  description: "Cabinet BullHead — Law · Finance · Property",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
