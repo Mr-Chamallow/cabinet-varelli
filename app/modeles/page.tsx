@@ -23,19 +23,26 @@ const TEMPLATES_DEFAUT = [
 
 DEMANDE DE NULLITÉ DE PROCÉDURE
 
-Fondement : Violation des droits Miranda — Article 41 & 42 du Code de Procédure Pénale
+Fondement : Violation des droits Miranda — Articles 41 & 42 du Code de Procédure Pénale
 
 Faits :
 Mon client a été arrêté le [date] à [heure] par [matricule des agents]. Les droits Miranda ont été [non lus / lus tardivement / incomplets].
 
 Moyens soulevés :
 • Dépassement du délai de 15 minutes pour la lecture des droits (Art. 41 CPP)
-• [Autre vice de procédure]
+• [Omission du droit à un avocat / EMS / nourriture]
+• [Fouille effectuée avant la lecture des droits]
+• [Autre vice de procédure constaté]
 
-En conséquence, je sollicite l'annulation de l'ensemble de la procédure et la mise en liberté immédiate de mon client.
+Sur le fondement de l'article 42 du Code de Procédure Pénale, tout vice substantiel affectant les droits de la défense entraîne la nullité de l'ensemble des actes subséquents.
+
+En conséquence, je sollicite respectueusement de cette cour :
+1. La nullité de l'ensemble de la procédure d'arrestation
+2. La mise en liberté immédiate de mon client
+3. Le retrait de toutes charges fondées sur les éléments obtenus irrégulièrement
 
 Fait à Los Santos, le [date]
-Cabinet Varelli — Seul Dieu peut juger`,
+Cabinet BullHead — Maître [Nom]`,
   },
   {
     titre: "Plaidoirie — Défense pénale standard",
@@ -44,51 +51,239 @@ Cabinet Varelli — Seul Dieu peut juger`,
 
 Mon client, [Nom du client], comparaît aujourd'hui devant vous accusé de [chefs d'inculpation].
 
-Je souhaite, avant toute chose, rappeler un principe fondamental de notre droit : la présomption d'innocence. Mon client est innocent jusqu'à preuve du contraire.
+Je souhaite, avant toute chose, rappeler un principe fondamental de notre droit : la présomption d'innocence. Mon client est innocent jusqu'à preuve du contraire, et il appartient à l'accusation — et à elle seule — d'apporter cette preuve au-delà de tout doute raisonnable.
 
 Sur les faits :
-[Exposé des faits de la défense]
+[Exposé des faits tels que vus par la défense]
 
 Sur le droit :
-[Argumentation juridique]
+[Argumentation juridique — qualification contestée, éléments constitutifs manquants, etc.]
 
 Sur les circonstances atténuantes :
-[Éléments favorables au client]
+[Absence d'antécédents / contexte particulier / coopération avec les autorités / regret sincère]
 
-En conclusion, je vous demande de bien vouloir [relaxer / requalifier / atténuer la peine de] mon client.
+En conclusion, je vous demande de bien vouloir [relaxer / requalifier les faits / prononcer une peine clémente] envers mon client.
 
-La justice, dans sa sagesse, saura distinguer la vérité.
+La justice, dans sa sagesse, saura distinguer la vérité des apparences.
 
-Maître Marco Varelli
-Cabinet Varelli — Los Santos`,
+Maître [Nom]
+Cabinet BullHead — Los Santos`,
   },
   {
-    titre: "Requête d'expungement",
+    titre: "Requête d'expungement (effacement de casier)",
     type: "Requête",
     contenu: `REQUÊTE EN EFFACEMENT DE CASIER JUDICIAIRE
 
 Demandeur : [Nom du client]
-Représenté par : Maître Marco Varelli, Cabinet Varelli
+Représenté par : Maître [Nom], Cabinet BullHead
 
 À l'attention du Tribunal de Los Santos,
 
 Par la présente, je sollicite l'effacement du casier judiciaire de mon client pour les motifs suivants :
 
-1. [Chef à effacer] — condamnation datant du [date]
-2. Bonne conduite depuis lors
-3. [Autres motifs]
+1. [Chef à effacer — code et infraction] — condamnation datant du [date]
+2. Bonne conduite irréprochable depuis cette date
+3. [Réinsertion professionnelle / sociale constatée]
+4. [Absence de récidive]
 
-Fondement légal : [Article applicable]
+Fondement légal : [Article applicable du Code Fédéral de Conformité Économique ou Code Pénal]
 
 Documents joints :
-□ Extrait de casier judiciaire
+□ Extrait de casier judiciaire actuel
 □ Justificatifs de bonne conduite
-□ [Autres pièces]
+□ Attestation employeur (le cas échéant)
+□ [Autres pièces pertinentes]
 
-Je me tiens à disposition pour tout renseignement complémentaire.
+Je me tiens à la disposition du Tribunal pour tout renseignement complémentaire et reste convaincu que la présente requête s'inscrit dans une démarche de réinsertion légitime.
 
-Maître Marco Varelli
-Cabinet Varelli`,
+Maître [Nom]
+Cabinet BullHead`,
+  },
+  {
+    titre: "Conclusions en défense — Requalification des faits",
+    type: "Conclusions",
+    contenu: `CONCLUSIONS EN DÉFENSE
+
+Pour : [Nom du client]
+Contre : Le Ministère Public
+Représenté par : Maître [Nom], Cabinet BullHead
+
+PLAISE AU TRIBUNAL,
+
+I. RAPPEL DES FAITS
+[Exposé factuel neutre des événements]
+
+II. SUR LA QUALIFICATION JURIDIQUE RETENUE
+L'accusation retient le chef de [infraction visée, code]. La défense conteste cette qualification pour les motifs suivants :
+• [Élément constitutif manquant]
+• [Absence d'intention caractérisée]
+• [Circonstance excluant la qualification retenue]
+
+III. SUR LA REQUALIFICATION SOLLICITÉE
+En conséquence, la défense sollicite la requalification des faits en [infraction de moindre gravité, code], dont les éléments constitutifs sont seuls réunis en l'espèce.
+
+IV. SUR LA PEINE
+À titre subsidiaire, et si le Tribunal ne retenait pas la requalification sollicitée, la défense demande que soient prises en compte les circonstances atténuantes suivantes : [liste].
+
+PAR CES MOTIFS,
+Il est demandé au Tribunal de :
+• Requalifier les faits reprochés en [infraction]
+• Statuer en conséquence sur la peine applicable
+
+Maître [Nom] — Cabinet BullHead`,
+  },
+  {
+    titre: "Plaidoirie — Légitime défense",
+    type: "Plaidoirie",
+    contenu: `Mesdames et Messieurs,
+
+Mon client ne nie pas les faits matériels qui lui sont reprochés. Mais nier la légitime défense reviendrait à nier le droit fondamental de toute personne à protéger sa vie et son intégrité physique.
+
+I. LE CONTEXTE DE L'AGRESSION
+[Description de la situation : qui a initié l'altercation, nature de la menace subie par le client]
+
+II. LES CONDITIONS DE LA LÉGITIME DÉFENSE
+La légitime défense suppose :
+1. Une atteinte injustifiée envers la personne — [démontré par...]
+2. Une riposte immédiate et nécessaire — [le client n'avait pas d'autre choix car...]
+3. Une proportionnalité entre l'attaque et la défense — [la riposte était proportionnée car...]
+
+III. L'ABSENCE D'ALTERNATIVE
+Mon client ne disposait d'aucune autre option pour préserver son intégrité physique. [Fuite impossible / absence de tiers pour intervenir / urgence de la situation]
+
+En conséquence, je vous demande de reconnaître que mon client a agi en état de légitime défense, et de prononcer son acquittement.
+
+Nul ne saurait être condamné pour avoir simplement voulu survivre.
+
+Maître [Nom] — Cabinet BullHead`,
+  },
+  {
+    titre: "Requête en divorce",
+    type: "Requête",
+    contenu: `REQUÊTE EN DIVORCE
+
+Demandeur : [Nom du client]
+Défendeur : [Nom du conjoint]
+Représenté par : Maître [Nom], Cabinet BullHead
+
+À l'attention du Tribunal Civil de Los Santos,
+
+Par la présente requête, [Nom du client] sollicite le prononcé du divorce d'avec [Nom du conjoint], mariés le [date].
+
+I. MOTIF DE LA DEMANDE
+☐ Consentement mutuel
+☐ Rupture du lien conjugal
+☐ Faute (préciser : [motif])
+
+II. SITUATION PATRIMONIALE
+[Répartition des biens communs souhaitée, le cas échéant]
+
+III. SITUATION DES ENFANTS (le cas échéant)
+[Garde, droit de visite, pension le cas échéant]
+
+IV. DEMANDES ANNEXES
+[Reprise du nom de naissance / autres demandes]
+
+Le demandeur sollicite que le Tribunal prononce le divorce et statue sur l'ensemble des conséquences qui en découlent.
+
+Maître [Nom]
+Cabinet BullHead`,
+  },
+  {
+    titre: "Requête en adoption",
+    type: "Requête",
+    contenu: `REQUÊTE EN ADOPTION
+
+Demandeur(s) : [Nom(s) du/des adoptant(s)]
+Concernant : [Nom de la personne à adopter]
+Représenté par : Maître [Nom], Cabinet BullHead
+
+À l'attention du Tribunal Civil de Los Santos,
+
+[Nom du/des demandeur(s)] sollicite(nt) l'adoption de [Nom de l'adopté], dans les conditions suivantes :
+
+I. SITUATION DU DEMANDEUR
+[Stabilité financière, logement adapté, capacité à accueillir]
+
+II. SITUATION DE LA PERSONNE À ADOPTER
+[Âge, situation actuelle, consentement le cas échéant]
+
+III. MOTIFS DE LA DEMANDE
+[Lien affectif préexistant / volonté de fonder une famille / autre motif légitime]
+
+IV. CONSENTEMENTS RECUEILLIS
+☐ Consentement de l'adopté (si majeur ou âge requis)
+☐ Consentement du représentant légal actuel (le cas échéant)
+
+Le demandeur sollicite que le Tribunal fasse droit à la présente requête et prononce l'adoption sollicitée.
+
+Maître [Nom]
+Cabinet BullHead`,
+  },
+  {
+    titre: "Lettre au client — Compte rendu d'audience",
+    type: "Lettre au client",
+    contenu: `Cabinet BullHead
+Los Santos
+
+[Date]
+
+Cher/Chère [Nom du client],
+
+Je fais suite à l'audience qui s'est tenue le [date] devant le Tribunal de Los Santos concernant votre dossier [référence].
+
+RÉSUMÉ DE L'AUDIENCE
+[Déroulement synthétique : ce qui a été dit, par qui, les points clés]
+
+DÉCISION RENDUE
+[Verdict, peine, ou prochaine étape de la procédure]
+
+PROCHAINES ÉTAPES
+[Délai d'appel, démarches à effectuer, prochaine audience le cas échéant]
+
+MES RECOMMANDATIONS
+[Conseils pratiques pour la suite]
+
+Je reste à votre entière disposition pour toute question concernant ce courrier ou la suite de votre dossier. N'hésitez pas à me contacter.
+
+Cordialement,
+
+Maître [Nom]
+Cabinet BullHead — Law · Finance · Property`,
+  },
+  {
+    titre: "Conclusions — Vice de procédure (entrave / fouille illégale)",
+    type: "Conclusions",
+    contenu: `CONCLUSIONS EN NULLITÉ — VICE DE PROCÉDURE
+
+Pour : [Nom du client]
+Représenté par : Maître [Nom], Cabinet BullHead
+
+PLAISE AU TRIBUNAL,
+
+I. RAPPEL DE LA PROCÉDURE D'ARRESTATION
+Le [date], mon client a fait l'objet d'un contrôle puis d'une fouille par les agents [matricules].
+
+II. SUR L'ILLÉGALITÉ DE LA FOUILLE
+La fouille pratiquée ne remplissait aucune des conditions légalement requises, à savoir :
+☐ Absence de délit mineur constaté préalablement
+☐ Absence de mandat
+☐ Absence d'accord du conducteur/possesseur
+☐ Absence de circonstance d'urgence ou de danger immédiat
+
+III. CONSÉQUENCES JURIDIQUES
+Conformément aux principes de loyauté de la preuve, tout élément obtenu en violation des conditions légales de fouille doit être écarté de la procédure.
+
+IV. DEMANDE
+En conséquence, la défense sollicite :
+1. L'annulation du procès-verbal de fouille du [date]
+2. L'écartement de l'ensemble des éléments de preuve qui en découlent
+3. Le non-lieu ou l'acquittement, à défaut d'éléments de preuve recevables
+
+PAR CES MOTIFS,
+Il est demandé au Tribunal de faire droit à la présente requête en nullité.
+
+Maître [Nom] — Cabinet BullHead`,
   },
 ];
 

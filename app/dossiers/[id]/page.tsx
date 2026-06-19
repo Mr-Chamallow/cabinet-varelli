@@ -5,6 +5,17 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
 
+const DOCUMENTS_DEFAUT = [
+  "Pièce d'identité du client",
+  "Procès-verbal d'arrestation",
+  "Rapport de police",
+  "Témoignages / déclarations",
+  "Preuves matérielles (photos, vidéos)",
+  "Casier judiciaire à jour",
+  "Mandat / ordonnance",
+  "Convocation officielle",
+];
+
 // Code pénal simplifié pour la picklist
 const CHEFS_PENAL = [
   // Contraventions
@@ -87,10 +98,13 @@ const CAT_COLORS: Record<string,string> = {
 interface Dossier {
   id:string; reference:string; client:string; type_affaire:string;
   type_client:string; risque:string; montant:number; statut:string;
-  notes:string; created_at:string; created_by:string;
+  notes:string; created_at:string; created_by:string; audience_id?:string;
 }
 interface Chef { id:string; code:string; infraction:string; categorie:string; amende:string; detention:string; }
 interface Event { id:string; type:string; contenu:string; created_by:string; created_at:string; }
+interface Document { id:string; label:string; obtenu:boolean; }
+interface Audience { id:string; titre:string; date:string; heure:string; }
+
 
 export default function DossierDetailPage() {
   const params = useParams();
@@ -101,6 +115,9 @@ export default function DossierDetailPage() {
   const [dossier, setDossier] = useState<Dossier|null>(null);
   const [chefs, setChefs] = useState<Chef[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [audiencesList, setAudiencesList] = useState<Audience[]>([]);
+  const [linkedAudience, setLinkedAudience] = useState<Audience|null>(null);
   const [loading, setLoading] = useState(true);
 
   // Edit dossier
@@ -121,19 +138,40 @@ export default function DossierDetailPage() {
   const [newEventType, setNewEventType] = useState("note");
   const [addingEvent, setAddingEvent] = useState(false);
 
+  // Documents
+  const [newDocLabel, setNewDocLabel] = useState("");
+  const [showDocPicker, setShowDocPicker] = useState(false);
+
+  // Audience link
+  const [showAudiencePicker, setShowAudiencePicker] = useState(false);
+
+  // Export
+  const [showExport, setShowExport] = useState(false);
+  const [exportCopied, setExportCopied] = useState(false);
+
   useEffect(() => { if (id) load(); }, [id]);
 
   async function load() {
     if (!supabase) return;
     setLoading(true);
-    const [{ data:d }, { data:c }, { data:e }] = await Promise.all([
+    const [{ data:d }, { data:c }, { data:e }, { data:doc }, { data:aud }] = await Promise.all([
       supabase.from("dossiers").select("*").eq("id",id).single(),
       supabase.from("dossier_chefs").select("*").eq("dossier_id",id).order("created_at"),
       supabase.from("dossier_events").select("*").eq("dossier_id",id).order("created_at",{ascending:false}),
+      supabase.from("dossier_documents").select("*").eq("dossier_id",id).order("created_at"),
+      supabase.from("audiences").select("id,titre,date,heure").order("date"),
     ]);
-    if (d) { setDossier(d); setEditForm(d); setStrategie(d.notes||""); }
+    if (d) {
+      setDossier(d); setEditForm(d); setStrategie(d.notes||"");
+      if (d.audience_id && aud) {
+        const found = aud.find((a:Audience) => a.id === d.audience_id);
+        setLinkedAudience(found || null);
+      }
+    }
     setChefs(c||[]);
     setEvents(e||[]);
+    setDocuments(doc||[]);
+    setAudiencesList(aud||[]);
     setLoading(false);
   }
 
@@ -186,12 +224,99 @@ export default function DossierDetailPage() {
     setEvents(e=>e.filter(x=>x.id!==evtId));
   }
 
+  // ─── DOCUMENTS ──────────────────────────────────────────────────────────────
+  async function addDocument(label:string) {
+    if (!supabase || !label.trim()) return;
+    const { data } = await supabase.from("dossier_documents").insert([{
+      dossier_id:id, label:label.trim(), obtenu:false,
+    }]).select().single();
+    if (data) setDocuments(d=>[...d,data]);
+    setNewDocLabel("");
+    setShowDocPicker(false);
+  }
+
+  async function toggleDocument(docId:string, current:boolean) {
+    if (!supabase) return;
+    await supabase.from("dossier_documents").update({ obtenu: !current }).eq("id", docId);
+    setDocuments(d => d.map(x => x.id===docId ? {...x, obtenu: !current} : x));
+  }
+
+  async function removeDocument(docId:string) {
+    if (!supabase) return;
+    await supabase.from("dossier_documents").delete().eq("id", docId);
+    setDocuments(d => d.filter(x => x.id !== docId));
+  }
+
+  // ─── AUDIENCE LINK ──────────────────────────────────────────────────────────
+  async function linkAudience(aud: Audience | null) {
+    if (!supabase) return;
+    await supabase.from("dossiers").update({ audience_id: aud?.id || null }).eq("id", id);
+    setLinkedAudience(aud);
+    setShowAudiencePicker(false);
+  }
+
+  // ─── EXPORT TEXTE ───────────────────────────────────────────────────────────
+  function generateExportText(): string {
+    if (!dossier) return "";
+    const lines = [
+      `═══════════════════════════════════════`,
+      `DOSSIER ${dossier.reference}`,
+      `═══════════════════════════════════════`,
+      ``,
+      `Client : ${dossier.client}`,
+      `Type d'affaire : ${dossier.type_affaire}`,
+      `Type client : ${dossier.type_client}`,
+      `Risque : ${dossier.risque}`,
+      `Statut : ${dossier.statut}`,
+      `Honoraires : ${dossier.montant ? dossier.montant.toLocaleString("fr-FR")+" $" : "—"}`,
+      `Créé par : ${dossier.created_by}`,
+      ``,
+    ];
+    if (linkedAudience) {
+      lines.push(`AUDIENCE LIÉE`, `${linkedAudience.titre} — ${new Date(linkedAudience.date+"T12:00:00").toLocaleDateString("fr-FR")}${linkedAudience.heure?" à "+linkedAudience.heure:""}`, ``);
+    }
+    if (chefs.length > 0) {
+      lines.push(`CHEFS D'INCULPATION (${chefs.length})`);
+      chefs.forEach(c => lines.push(`  • [${c.code}] ${c.infraction} — ${c.amende}${c.detention&&c.detention!=="—"?` / ${c.detention}`:""}`));
+      lines.push(`  Total amende max : ${amendeTotal.toLocaleString("fr-FR")} $`, ``);
+    }
+    if (documents.length > 0) {
+      lines.push(`PIÈCES (${documents.filter(d=>d.obtenu).length}/${documents.length})`);
+      documents.forEach(d => lines.push(`  [${d.obtenu?"x":" "}] ${d.label}`));
+      lines.push(``);
+    }
+    if (strategie.trim()) {
+      lines.push(`STRATÉGIE DE DÉFENSE`, strategie.trim(), ``);
+    }
+    if (events.length > 0) {
+      lines.push(`TIMELINE (${events.length} événements)`);
+      events.slice().reverse().forEach(e => {
+        lines.push(`  ${new Date(e.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"short"})} — [${e.type}] ${e.contenu} (par ${e.created_by})`);
+      });
+    }
+    lines.push(``, `═══════════════════════════════════════`, `Cabinet BullHead — généré le ${new Date().toLocaleDateString("fr-FR")}`);
+    return lines.join("\n");
+  }
+
+  function copyExport() {
+    navigator.clipboard.writeText(generateExportText());
+    setExportCopied(true);
+    setTimeout(() => setExportCopied(false), 2000);
+  }
+
   if (loading) return <div className="page-container"><div style={{color:"var(--text-dim)"}}>Chargement…</div></div>;
   if (!dossier) return <div className="page-container"><div style={{color:"var(--danger)"}}>Dossier introuvable</div></div>;
 
   const RISQUE_COLORS:Record<string,string> = {Aucun:"#64748b",Faible:"#22c55e",Moyen:"#f59e0b",Élevé:"#ef4444",Extrême:"#7c3aed"};
   const STATUT_COLORS:Record<string,string> = {Ouvert:"var(--info)","En cours":"var(--warning)",Clôturé:"var(--text-dim)",Gagné:"var(--success)",Perdu:"var(--danger)"};
   const amendeTotal = chefs.reduce((s,c) => { const n=parseInt(c.amende?.replace(/[^0-9]/g,"")||"0"); return s+n; }, 0);
+
+  // Calcul auto honoraires : tarifs cabinet par catégorie × modificateur risque
+  const TARIFS_HONORAIRES: Record<string,number> = { "Contravention":1500, "Délit mineur":3000, "Délit majeur":8000, "Crime":15000 };
+  const MOD_RISQUE_DOSSIER: Record<string,number> = { Aucun:1.0, Faible:1.15, Moyen:1.3, Élevé:1.5, Extrême:1.8 };
+  const honorairesBase = chefs.reduce((s,c) => s + (TARIFS_HONORAIRES[c.categorie]||0), 0);
+  const honorairesSuggeres = Math.round(honorairesBase * (MOD_RISQUE_DOSSIER[dossier.risque]||1));
+
   const fmt = (n:number) => n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
   const dateStr = (d:string) => new Date(d).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"});
   const timeStr = (d:string) => new Date(d).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
@@ -317,6 +442,26 @@ export default function DossierDetailPage() {
                 })}
               </div>
             )}
+
+            {/* Honoraires suggérés selon chefs */}
+            {chefs.length > 0 && honorairesSuggeres > 0 && (
+              <div style={{marginTop:"1rem",padding:"0.875rem 1rem",background:"var(--gold-muted)",
+                border:"1px solid rgba(201,168,76,0.3)",borderRadius:"var(--radius)",
+                display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"0.5rem"}}>
+                <div>
+                  <div style={{fontSize:"0.72rem",color:"var(--text-dim)",marginBottom:"0.15rem"}}>Honoraires suggérés</div>
+                  <div style={{fontWeight:700,color:"var(--gold)",fontSize:"1.05rem"}}>{fmt(honorairesSuggeres)}</div>
+                  <div style={{fontSize:"0.68rem",color:"var(--text-dim)"}}>Base {fmt(honorairesBase)} × risque {dossier.risque} ({(MOD_RISQUE_DOSSIER[dossier.risque]||1).toFixed(2)})</div>
+                </div>
+                <button className="btn btn-gold btn-sm" onClick={async()=>{
+                  if(!supabase) return;
+                  await supabase.from("dossiers").update({montant:honorairesSuggeres}).eq("id",id);
+                  setDossier(d=>d?{...d,montant:honorairesSuggeres}:d);
+                }}>
+                  Appliquer au dossier
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Stratégie de défense */}
@@ -334,6 +479,51 @@ export default function DossierDetailPage() {
               onChange={e=>setStrategie(e.target.value)}
               style={{width:"100%",resize:"vertical",fontFamily:"'Inter',sans-serif",lineHeight:1.7}}
             />
+          </div>
+
+          {/* Documents / Pièces */}
+          <div className="card">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.875rem"}}>
+              <div>
+                <div className="section-title">Pièces à fournir</div>
+                {documents.length>0 && (
+                  <div style={{fontSize:"0.72rem",color:"var(--text-dim)",marginTop:"0.15rem"}}>
+                    {documents.filter(d=>d.obtenu).length}/{documents.length} obtenue{documents.filter(d=>d.obtenu).length!==1?"s":""}
+                  </div>
+                )}
+              </div>
+              <button className="btn btn-gold btn-sm" onClick={()=>setShowDocPicker(true)}>+ Ajouter</button>
+            </div>
+
+            {documents.length===0 ? (
+              <div style={{textAlign:"center",padding:"1rem 0",color:"var(--text-dim)",fontSize:"0.825rem"}}>
+                Aucune pièce listée
+              </div>
+            ) : (
+              <div style={{display:"flex",flexDirection:"column",gap:"0.4rem"}}>
+                {documents.map(doc=>(
+                  <div key={doc.id} style={{display:"flex",alignItems:"center",gap:"0.625rem",
+                    padding:"0.55rem 0.75rem",borderRadius:"var(--radius)",
+                    background:doc.obtenu?"rgba(34,197,94,0.06)":"var(--surface)",
+                    border:`1px solid ${doc.obtenu?"rgba(34,197,94,0.2)":"var(--border)"}`}}>
+                    <button onClick={()=>toggleDocument(doc.id,doc.obtenu)} style={{
+                      width:20,height:20,borderRadius:6,flexShrink:0,cursor:"pointer",
+                      background:doc.obtenu?"var(--success)":"transparent",
+                      border:`1.5px solid ${doc.obtenu?"var(--success)":"var(--border-light)"}`,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      color:"#08090d",fontSize:"0.7rem",fontWeight:700,
+                    }}>{doc.obtenu?"✓":""}</button>
+                    <span style={{flex:1,fontSize:"0.825rem",
+                      color:doc.obtenu?"var(--text-dim)":"var(--text)",
+                      textDecoration:doc.obtenu?"line-through":"none"}}>{doc.label}</span>
+                    <button onClick={()=>removeDocument(doc.id)} style={{
+                      background:"none",border:"none",cursor:"pointer",color:"var(--text-dim)",
+                      fontSize:"0.85rem",flexShrink:0,
+                    }}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -358,6 +548,37 @@ export default function DossierDetailPage() {
               ))}
             </div>
           </div>
+
+          {/* Audience liée */}
+          <div className="card">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.875rem"}}>
+              <div className="section-title">Audience liée</div>
+              <button className="btn btn-outline btn-sm" onClick={()=>setShowAudiencePicker(true)}>
+                {linkedAudience?"Changer":"+ Lier"}
+              </button>
+            </div>
+            {linkedAudience ? (
+              <a href="/audiences" style={{textDecoration:"none"}}>
+                <div style={{padding:"0.75rem",borderRadius:"var(--radius)",background:"var(--gold-muted)",
+                  border:"1px solid rgba(201,168,76,0.3)"}}>
+                  <div style={{fontWeight:600,fontSize:"0.85rem",color:"var(--gold)",marginBottom:"0.2rem"}}>{linkedAudience.titre}</div>
+                  <div style={{fontSize:"0.75rem",color:"var(--text-dim)"}}>
+                    📅 {new Date(linkedAudience.date+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"})}
+                    {linkedAudience.heure&&` à ${linkedAudience.heure}`}
+                  </div>
+                </div>
+              </a>
+            ) : (
+              <div style={{textAlign:"center",padding:"1rem 0",color:"var(--text-dim)",fontSize:"0.8rem"}}>
+                Aucune audience liée
+              </div>
+            )}
+          </div>
+
+          {/* Export */}
+          <button className="btn btn-outline" onClick={()=>setShowExport(true)} style={{width:"100%",justifyContent:"center"}}>
+            📄 Exporter le résumé
+          </button>
 
           {/* Nouveau événement */}
           <div className="card">
@@ -485,6 +706,101 @@ export default function DossierDetailPage() {
                   <div style={{textAlign:"center",color:"var(--text-dim)",padding:"2rem"}}>Aucun résultat</div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pièces */}
+      {showDocPicker && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowDocPicker(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <h2 className="modal-title">Ajouter une pièce</h2>
+              <button className="modal-close" onClick={()=>setShowDocPicker(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Nom de la pièce</label>
+                <input placeholder="Ex : Témoignage de..." value={newDocLabel}
+                  onChange={e=>setNewDocLabel(e.target.value)} autoFocus
+                  onKeyDown={e=>e.key==="Enter"&&addDocument(newDocLabel)}/>
+              </div>
+              <div style={{fontSize:"0.72rem",color:"var(--text-dim)",marginBottom:"0.5rem"}}>Suggestions courantes</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"0.4rem"}}>
+                {DOCUMENTS_DEFAUT.filter(d=>!documents.some(x=>x.label===d)).map(d=>(
+                  <button key={d} onClick={()=>addDocument(d)} style={{
+                    padding:"0.35rem 0.7rem",borderRadius:999,cursor:"pointer",
+                    background:"var(--surface)",border:"1px solid var(--border)",
+                    fontSize:"0.75rem",color:"var(--text-muted)",fontFamily:"'Inter',sans-serif",
+                  }}>+ {d}</button>
+                ))}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline" onClick={()=>setShowDocPicker(false)}>Fermer</button>
+              <button className="btn btn-gold" onClick={()=>addDocument(newDocLabel)} disabled={!newDocLabel.trim()}>Ajouter</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal audience picker */}
+      {showAudiencePicker && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowAudiencePicker(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <h2 className="modal-title">Lier une audience</h2>
+              <button className="modal-close" onClick={()=>setShowAudiencePicker(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              {linkedAudience && (
+                <button className="btn btn-danger btn-sm" onClick={()=>linkAudience(null)} style={{marginBottom:"0.75rem"}}>
+                  Délier l'audience actuelle
+                </button>
+              )}
+              <div style={{display:"flex",flexDirection:"column",gap:"0.4rem",maxHeight:"50vh",overflowY:"auto"}}>
+                {audiencesList.length===0 ? (
+                  <div style={{textAlign:"center",color:"var(--text-dim)",padding:"1.5rem"}}>Aucune audience planifiée</div>
+                ) : audiencesList.map(a=>(
+                  <button key={a.id} onClick={()=>linkAudience(a)} style={{
+                    display:"flex",justifyContent:"space-between",alignItems:"center",
+                    padding:"0.65rem 0.875rem",borderRadius:"var(--radius)",
+                    background:linkedAudience?.id===a.id?"var(--gold-muted)":"var(--surface)",
+                    border:`1px solid ${linkedAudience?.id===a.id?"rgba(201,168,76,0.4)":"var(--border)"}`,
+                    cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left",
+                  }}>
+                    <span style={{fontSize:"0.85rem",fontWeight:500}}>{a.titre}</span>
+                    <span style={{fontSize:"0.75rem",color:"var(--text-dim)"}}>
+                      {new Date(a.date+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"short"})}{a.heure&&` ${a.heure}`}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal export */}
+      {showExport && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowExport(false)}>
+          <div className="modal modal-lg">
+            <div className="modal-header">
+              <h2 className="modal-title">Exporter le résumé</h2>
+              <button className="modal-close" onClick={()=>setShowExport(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <pre style={{whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"monospace",
+                fontSize:"0.78rem",color:"var(--text-muted)",lineHeight:1.6,
+                background:"var(--surface)",borderRadius:"var(--radius)",padding:"1.25rem",
+                maxHeight:"55vh",overflowY:"auto"}}>{generateExportText()}</pre>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline" onClick={()=>setShowExport(false)}>Fermer</button>
+              <button className="btn btn-gold" onClick={copyExport}>
+                {exportCopied?"✅ Copié !":"📋 Copier le texte"}
+              </button>
             </div>
           </div>
         </div>

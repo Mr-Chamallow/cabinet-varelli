@@ -298,26 +298,38 @@ export default function AudiencesPage() {
               <div style={{ fontSize: "0.82rem", color: "var(--text-dim)" }}>Aucune audience planifiée</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {prochaines.map(a => (
-                  <div
-                    key={a.id}
-                    onClick={() => { setSelectedDate(a.date); setViewYear(Number(a.date.split("-")[0])); setViewMonth(Number(a.date.split("-")[1]) - 1); }}
-                    style={{
-                      cursor: "pointer",
-                      background: "var(--surface)",
-                      borderRadius: 8, padding: "0.6rem 0.75rem",
-                      borderLeft: `3px solid ${getMemberColor(a.created_by || "default", memberColors[a.created_by])}`,
-                      transition: "opacity 0.1s",
-                    }}
-                  >
-                    <div style={{ fontWeight: 600, fontSize: "0.82rem", marginBottom: "0.15rem" }}>{a.titre}</div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
-                      {new Date(a.date + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                      {a.heure && ` à ${a.heure}`}
+                {prochaines.map(a => {
+                  const col = getMemberColor(a.created_by || "default", memberColors[a.created_by]);
+                  return (
+                    <div
+                      key={a.id}
+                      onClick={() => { setSelectedDate(a.date); setViewYear(Number(a.date.split("-")[0])); setViewMonth(Number(a.date.split("-")[1]) - 1); }}
+                      style={{
+                        cursor: "pointer",
+                        background: "var(--surface)",
+                        borderRadius: 8, padding: "0.6rem 0.75rem",
+                        borderLeft: `3px solid ${col}`,
+                        transition: "opacity 0.1s",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
+                        <div style={{ fontWeight: 600, fontSize: "0.82rem", marginBottom: "0.15rem", flex: 1, minWidth: 0 }}>{a.titre}</div>
+                        {a.created_by && (
+                          <span style={{
+                            fontSize: "0.62rem", padding: "0.12rem 0.45rem", borderRadius: 999,
+                            background: col + "18", color: col, border: `1px solid ${col}30`,
+                            flexShrink: 0, fontWeight: 600, whiteSpace: "nowrap",
+                          }}>{a.created_by}</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
+                        {new Date(a.date + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                        {a.heure && ` à ${a.heure}`}
+                      </div>
+                      {a.client && <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>👤 {a.client}</div>}
                     </div>
-                    {a.client && <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>👤 {a.client}</div>}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
