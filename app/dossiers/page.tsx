@@ -53,6 +53,7 @@ export default function DossiersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState("");
+  const [filterRisque, setFilterRisque] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Dossier | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -60,6 +61,13 @@ export default function DossiersPage() {
   const [saveError, setSaveError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<Dossier | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "danger" } | null>(null);
+  const [sortKey, setSortKey] = useState<string>("created_at");
+  const [sortDir, setSortDir] = useState<"asc"|"desc">("desc");
+
+  function toggleSort(key: string) {
+    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("desc"); }
+  }
 
   useEffect(() => { if (user) load(); }, []);
 
@@ -164,8 +172,16 @@ export default function DossiersPage() {
     const q = search.toLowerCase();
     return (
       (!search || d.reference?.toLowerCase().includes(q) || d.client?.toLowerCase().includes(q) || d.type_affaire?.toLowerCase().includes(q)) &&
-      (!filterStatut || d.statut === filterStatut)
+      (!filterStatut || d.statut === filterStatut) &&
+      (!filterRisque || d.risque === filterRisque)
     );
+  }).sort((a:any,b:any) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (sortKey === "montant") { av = av||0; bv = bv||0; }
+    else { av = (av||"").toString().toLowerCase(); bv = (bv||"").toString().toLowerCase(); }
+    if (av < bv) return sortDir === "asc" ? -1 : 1;
+    if (av > bv) return sortDir === "asc" ? 1 : -1;
+    return 0;
   });
 
   const fmt = (n: number) => n?.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 }) || "—";
@@ -195,6 +211,23 @@ export default function DossiersPage() {
           <option value="">Tous les statuts</option>
           {STATUTS.map(s => <option key={s}>{s}</option>)}
         </select>
+        <select value={filterRisque} onChange={e => setFilterRisque(e.target.value)} style={{ width: "auto", minWidth: 160 }}>
+          <option value="">Tous les risques</option>
+          {RISQUES.map(r => <option key={r}>{r}</option>)}
+        </select>
+        <button
+          className="btn btn-outline btn-sm"
+          onClick={() => {
+            if (filterStatut === "Ouvert" && filterRisque === "Élevé") { setFilterStatut(""); setFilterRisque(""); }
+            else { setFilterStatut("Ouvert"); setFilterRisque("Élevé"); }
+          }}
+          style={{
+            borderColor: filterStatut==="Ouvert"&&filterRisque==="Élevé" ? "rgba(239,68,68,0.5)" : undefined,
+            color: filterStatut==="Ouvert"&&filterRisque==="Élevé" ? "var(--danger)" : undefined,
+          }}
+        >
+          ⚠ Priorité
+        </button>
       </div>
 
       {loading ? (
@@ -210,8 +243,13 @@ export default function DossiersPage() {
           <table>
             <thead>
               <tr>
-                <th>Référence</th><th>Client</th><th>Type d'affaire</th><th>Type client</th>
-                <th>Risque</th><th>Montant</th><th>Statut</th><th>Date</th>
+                <th onClick={()=>toggleSort("reference")} style={{cursor:"pointer",userSelect:"none"}}>Référence {sortKey==="reference"&&(sortDir==="asc"?"↑":"↓")}</th>
+                <th onClick={()=>toggleSort("client")} style={{cursor:"pointer",userSelect:"none"}}>Client {sortKey==="client"&&(sortDir==="asc"?"↑":"↓")}</th>
+                <th>Type d'affaire</th><th>Type client</th>
+                <th>Risque</th>
+                <th onClick={()=>toggleSort("montant")} style={{cursor:"pointer",userSelect:"none"}}>Montant {sortKey==="montant"&&(sortDir==="asc"?"↑":"↓")}</th>
+                <th onClick={()=>toggleSort("statut")} style={{cursor:"pointer",userSelect:"none"}}>Statut {sortKey==="statut"&&(sortDir==="asc"?"↑":"↓")}</th>
+                <th onClick={()=>toggleSort("created_at")} style={{cursor:"pointer",userSelect:"none"}}>Date {sortKey==="created_at"&&(sortDir==="asc"?"↑":"↓")}</th>
                 <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>

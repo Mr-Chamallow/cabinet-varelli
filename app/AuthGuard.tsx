@@ -36,6 +36,7 @@ const NAV_SECTIONS = [
   {
     label: "Système",
     items: [
+      { href: "/supervision", label: "Supervision", icon: "◬", permission: "admin" },
       { href: "/admin", label: "Administration", icon: "◈", permission: "admin" },
     ],
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
@@ -89,6 +89,16 @@ const EVENT_TYPES = [
   { key:"alerte",    label:"Alerte",          icon:"⚠️", color:"var(--danger)" },
 ];
 
+function renderWithMentions(text: string) {
+  const parts = text.split(/(@[\p{L}\d]+(?:\s[\p{L}\d]+)?)/gu);
+  return parts.map((part, i) => {
+    if (part.startsWith("@")) {
+      return <span key={i} style={{ color:"var(--info)", fontWeight:600, background:"rgba(99,102,241,0.1)", padding:"0 0.2rem", borderRadius:4 }}>{part}</span>;
+    }
+    return part;
+  });
+}
+
 const CAT_COLORS: Record<string,string> = {
   "Contravention": "#64748b",
   "Délit mineur":  "#f59e0b",
@@ -118,6 +128,7 @@ export default function DossierDetailPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [audiencesList, setAudiencesList] = useState<Audience[]>([]);
+  const [membersList, setMembersList] = useState<string[]>([]);
   const [linkedAudience, setLinkedAudience] = useState<Audience|null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -129,6 +140,20 @@ export default function DossierDetailPage() {
   // Stratégie défense (champ notes enrichi)
   const [strategie, setStrategie] = useState("");
   const [savingStrat, setSavingStrat] = useState(false);
+  const [autoSaved, setAutoSaved] = useState(false);
+  const strategieTimer = useRef<NodeJS.Timeout|null>(null);
+
+  function handleStrategieChange(val: string) {
+    setStrategie(val);
+    setAutoSaved(false);
+    if (strategieTimer.current) clearTimeout(strategieTimer.current);
+    strategieTimer.current = setTimeout(async () => {
+      if (!supabase) return;
+      await supabase.from("dossiers").update({ notes: val }).eq("id", id);
+      setAutoSaved(true);
+      setTimeout(() => setAutoSaved(false), 2000);
+    }, 2500);
+  }
 
   // Chefs inculpation
   const [showChefPicker, setShowChefPicker] = useState(false);
@@ -155,12 +180,13 @@ export default function DossierDetailPage() {
   async function load() {
     if (!supabase) return;
     setLoading(true);
-    const [{ data:d }, { data:c }, { data:e }, { data:doc }, { data:aud }] = await Promise.all([
+    const [{ data:d }, { data:c }, { data:e }, { data:doc }, { data:aud }, { data:mem }] = await Promise.all([
       supabase.from("dossiers").select("*").eq("id",id).single(),
       supabase.from("dossier_chefs").select("*").eq("dossier_id",id).order("created_at"),
       supabase.from("dossier_events").select("*").eq("dossier_id",id).order("created_at",{ascending:false}),
       supabase.from("dossier_documents").select("*").eq("dossier_id",id).order("created_at"),
       supabase.from("audiences").select("id,titre,date,heure").order("date"),
+      supabase.from("membres").select("nom"),
     ]);
     if (d) {
       setDossier(d); setEditForm(d); setStrategie(d.notes||"");
@@ -173,6 +199,7 @@ export default function DossierDetailPage() {
     setEvents(e||[]);
     setDocuments(doc||[]);
     setAudiencesList(aud||[]);
+    setMembersList((mem||[]).map((m:any)=>m.nom));
     setLoading(false);
   }
 
@@ -583,17 +610,20 @@ export default function DossierDetailPage() {
           <div className="card">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.875rem"}}>
               <div className="section-title">Stratégie de défense</div>
-              <button className="btn btn-outline btn-sm" onClick={saveStrategie} disabled={savingStrat}>
-                {savingStrat?"…":"Sauvegarder"}
-              </button>
+              <span style={{ fontSize:"0.7rem", color: autoSaved ? "var(--success)" : "var(--text-dim)", transition:"color 0.2s" }}>
+                {autoSaved ? "✓ Sauvegardé" : "Auto-save activé"}
+              </span>
             </div>
             <textarea
               rows={8}
               placeholder="Arguments clés, axes de défense, vices de procédure identifiés, témoins, preuves à contester…"
               value={strategie}
-              onChange={e=>setStrategie(e.target.value)}
+              onChange={e=>handleStrategieChange(e.target.value)}
               style={{width:"100%",resize:"vertical",fontFamily:"'Inter',sans-serif",lineHeight:1.7}}
             />
+            <div style={{ textAlign:"right", fontSize:"0.68rem", color:"var(--text-dim)", marginTop:"0.3rem" }}>
+              {strategie.length} caractère{strategie.length!==1?"s":""}
+            </div>
           </div>
 
           {/* Documents / Pièces */}
@@ -711,9 +741,25 @@ export default function DossierDetailPage() {
                 }}>{t.icon} {t.label}</button>
               ))}
             </div>
-            <textarea rows={2} placeholder="Décrivez l'événement…" value={newEvent}
+            <textarea rows={2} placeholder="Décrivez l'événement… (tapez @ pour mentionner)" value={newEvent}
               onChange={e=>setNewEvent(e.target.value)}
-              style={{width:"100%",marginBottom:"0.625rem",resize:"none"}} />
+              style={{width:"100%",marginBottom:"0.5rem",resize:"none"}} />
+            <div style={{ display:"flex", flexWrap:"wrap", gap:"0.3rem", marginBottom:"0.625rem" }}>
+              {["RAS","Relance client envoyée","En attente de retour client","Dossier transmis au procureur","Audience reportée"].map(t => (
+                <button key={t} onClick={()=>setNewEvent(t)} style={{
+                  padding:"0.2rem 0.55rem", borderRadius:999, cursor:"pointer",
+                  background:"var(--surface)", border:"1px solid var(--border)",
+                  fontSize:"0.68rem", color:"var(--text-dim)", fontFamily:"'Inter',sans-serif",
+                }}>{t}</button>
+              ))}
+              {membersList.filter(m=>m!==user?.nom).map(m => (
+                <button key={m} onClick={()=>setNewEvent(ev => ev + (ev?" ":"") + "@"+m+" ")} style={{
+                  padding:"0.2rem 0.55rem", borderRadius:999, cursor:"pointer",
+                  background:"rgba(99,102,241,0.1)", border:"1px solid rgba(99,102,241,0.25)",
+                  fontSize:"0.68rem", color:"var(--info)", fontFamily:"'Inter',sans-serif",
+                }}>@{m}</button>
+              ))}
+            </div>
             <button className="btn btn-gold btn-sm" style={{width:"100%",justifyContent:"center"}}
               onClick={addEvent} disabled={addingEvent||!newEvent.trim()}>
               {addingEvent?"Ajout…":"+ Ajouter à la timeline"}
@@ -757,7 +803,7 @@ export default function DossierDetailPage() {
                               onMouseLeave={el=>el.currentTarget.style.color="var(--text-dim)"}>×</button>
                           </div>
                         </div>
-                        <div style={{fontSize:"0.8rem",color:"var(--text-muted)",lineHeight:1.55}}>{e.contenu}</div>
+                        <div style={{fontSize:"0.8rem",color:"var(--text-muted)",lineHeight:1.55}}>{renderWithMentions(e.contenu)}</div>
                         <div style={{fontSize:"0.68rem",color:"var(--text-dim)",marginTop:"0.15rem"}}>par {e.created_by}</div>
                       </div>
                     </div>

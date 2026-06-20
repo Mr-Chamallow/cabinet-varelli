@@ -38,6 +38,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [evolutionCA, setEvolutionCA] = useState<{mois:string;total:number}[]>([]);
   const [audiences, setAudiences] = useState<Audience[]>([]);
   const [factures, setFactures] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +72,7 @@ export default function Dashboard() {
       supabase.from("dossiers").select("*", { count: "exact", head: true }).eq("created_by", u.nom).eq("statut", "Ouvert"),
       supabase.from("dossiers").select("*", { count: "exact", head: true }).eq("created_by", u.nom).eq("statut", "Gagné"),
       supabase.from("dossiers").select("*", { count: "exact", head: true }).eq("created_by", u.nom).eq("statut", "Perdu"),
-      supabase.from("factures").select("montant, statut").eq("created_by", u.nom),
+      supabase.from("factures").select("montant, statut, created_at").eq("created_by", u.nom),
       supabase.from("audiences").select("id, titre, client, date, heure, type, created_by")
         .gte("date", today).order("date").order("heure").limit(6),
       supabase.from("factures").select("id, numero, client, montant, statut")
@@ -91,6 +92,24 @@ export default function Dashboard() {
       chiffreAffaires: ca,
       facturesEnAttente: enAttente,
     });
+
+    // Évolution CA sur 6 mois
+    const moisLabels = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+    const now = new Date();
+    const buckets: {mois:string;total:number}[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      buckets.push({ mois: moisLabels[d.getMonth()], total: 0 });
+    }
+    (factureData||[]).filter((f:any)=>f.statut==="Payée").forEach((f:any) => {
+      const fd = new Date(f.created_at);
+      const diffMonths = (now.getFullYear()-fd.getFullYear())*12 + (now.getMonth()-fd.getMonth());
+      if (diffMonths >= 0 && diffMonths <= 5) {
+        buckets[5-diffMonths].total += f.montant;
+      }
+    });
+    setEvolutionCA(buckets);
+
     setAudiences(audienceData || []);
     setFactures(facturesRecentes || []);
     setLoading(false);
@@ -177,6 +196,31 @@ export default function Dashboard() {
               <div style={{ display:"flex", gap:"1.25rem", fontSize:"0.78rem" }}>
                 <span style={{ color:"var(--success)" }}>● {stats?.dossiersGagnes} gagné{stats?.dossiersGagnes!==1?"s":""}</span>
                 <span style={{ color:"var(--danger)" }}>● {stats?.dossiersPerdus} perdu{stats?.dossiersPerdus!==1?"s":""}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Évolution du CA */}
+          {evolutionCA.some(b=>b.total>0) && (
+            <div className="card" style={{ marginBottom:"1.75rem" }}>
+              <div className="stat-label" style={{ marginBottom:"1rem" }}>Évolution du chiffre d'affaires (6 derniers mois)</div>
+              <div style={{ display:"flex", alignItems:"flex-end", gap:"0.75rem", height:120 }}>
+                {evolutionCA.map((b,i) => {
+                  const max = Math.max(...evolutionCA.map(x=>x.total), 1);
+                  const h = Math.max((b.total/max)*100, b.total>0?6:2);
+                  return (
+                    <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:"0.4rem" }}>
+                      <div style={{ fontSize:"0.62rem", color:"var(--text-dim)" }}>{b.total>0?fmt(b.total).replace(",00 $","$").replace(" $","$"):""}</div>
+                      <div style={{
+                        width:"100%", maxWidth:36, height:`${h}%`, minHeight:4,
+                        borderRadius:"4px 4px 0 0",
+                        background: i===5 ? "linear-gradient(180deg, var(--gold), var(--gold-dark))" : "var(--border-light)",
+                        transition:"height 0.5s ease",
+                      }} />
+                      <div style={{ fontSize:"0.68rem", color:"var(--text-dim)" }}>{b.mois}</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -315,6 +359,44 @@ export default function Dashboard() {
               <a href="/factures" className="btn btn-outline btn-sm" style={{ width: "100%", justifyContent: "center", marginTop: "1rem" }}>
                 + Nouvelle facture
               </a>
+            </div>
+          </div>
+
+          {/* Mini calendrier 7 jours */}
+          <div className="card" style={{ marginTop:"1.25rem" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
+              <div className="stat-label" style={{ marginBottom:0 }}>Aperçu 7 prochains jours</div>
+              <a href="/audiences" className="btn btn-ghost btn-sm">Agenda complet →</a>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:"0.4rem" }}>
+              {Array.from({length:7}).map((_,i) => {
+                const d = new Date(); d.setDate(d.getDate()+i);
+                const dStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+                const count = audiences.filter(a=>a.date===dStr).length;
+                const isToday = i === 0;
+                return (
+                  <a key={i} href="/audiences" style={{ textDecoration:"none" }}>
+                    <div style={{
+                      textAlign:"center", padding:"0.625rem 0.3rem", borderRadius:"var(--radius)",
+                      background: isToday ? "var(--gold-muted)" : count>0 ? "var(--surface)" : "transparent",
+                      border:`1px solid ${isToday?"rgba(201,168,76,0.3)":count>0?"var(--border)":"transparent"}`,
+                    }}>
+                      <div style={{ fontSize:"0.62rem", color:"var(--text-dim)", textTransform:"uppercase", marginBottom:"0.25rem" }}>
+                        {d.toLocaleDateString("fr-FR",{weekday:"short"})}
+                      </div>
+                      <div style={{ fontWeight: isToday?700:500, fontSize:"0.95rem", color: isToday?"var(--gold)":"var(--text)" }}>
+                        {d.getDate()}
+                      </div>
+                      {count > 0 && (
+                        <div style={{
+                          marginTop:"0.3rem", width:6, height:6, borderRadius:"50%",
+                          background:"var(--gold)", margin:"0.3rem auto 0",
+                        }} />
+                      )}
+                    </div>
+                  </a>
+                );
+              })}
             </div>
           </div>
 
