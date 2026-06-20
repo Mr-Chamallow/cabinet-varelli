@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { getUser, logout, canAccess, setRolesCache, getMemberColor, type User } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import CommandPalette from "./CommandPalette";
 
 const NAV_SECTIONS = [
   {
@@ -48,6 +49,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [roleColor, setRoleColor] = useState("var(--gold)");
   const [memberColor, setMemberColor] = useState("var(--gold)");
+  const [badges, setBadges] = useState<{ factures: number; audiences: number }>({ factures:0, audiences:0 });
 
   useEffect(() => {
     const u = getUser();
@@ -55,9 +57,31 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     if (u) {
       setUser(u);
       loadRoles(u);
+      loadBadges(u);
     }
     setChecked(true);
   }, [pathname]);
+
+  async function loadBadges(u: User) {
+    if (!supabase) return;
+    const today = new Date();
+    const in24h = new Date(today.getTime() + 24*60*60*1000).toISOString().split("T")[0];
+    const todayStr = today.toISOString().split("T")[0];
+
+    const [{ data: facturesData }, { data: audiencesData }] = await Promise.all([
+      supabase.from("factures").select("id, created_at").eq("created_by", u.nom).eq("statut", "En attente"),
+      supabase.from("audiences").select("id, date").gte("date", todayStr).lte("date", in24h),
+    ]);
+
+    // Factures en attente depuis plus de 3 jours
+    const now = Date.now();
+    const facturesEnRetard = (facturesData||[]).filter((f:any) => {
+      const age = (now - new Date(f.created_at).getTime()) / (1000*60*60*24);
+      return age > 3;
+    }).length;
+
+    setBadges({ factures: facturesEnRetard, audiences: (audiencesData||[]).length });
+  }
 
   async function loadRoles(u: User) {
     if (!supabase) return;
@@ -94,6 +118,23 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           <div className="sidebar-logo-sub">Law · Finance · Property</div>
         </div>
 
+        {/* Bouton recherche globale */}
+        <div style={{ padding:"0 0.75rem 0.5rem" }}>
+          <button onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key:"k", metaKey:true }))} style={{
+            display:"flex", alignItems:"center", gap:"0.5rem", width:"100%",
+            padding:"0.5rem 0.75rem", borderRadius:"var(--radius)",
+            background:"var(--surface)", border:"1px solid var(--border)",
+            color:"var(--text-dim)", cursor:"pointer", fontFamily:"'Inter',sans-serif",
+            fontSize:"0.78rem", transition:"border-color 0.15s",
+          }}
+            onMouseEnter={e=>e.currentTarget.style.borderColor="rgba(201,168,76,0.3)"}
+            onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
+            <span>🔍</span>
+            <span style={{ flex:1, textAlign:"left" }}>Rechercher…</span>
+            <span className="kbd-hint">⌘K</span>
+          </button>
+        </div>
+
         {/* Nav */}
         <nav className="sidebar-nav">
           {NAV_SECTIONS.map(section => {
@@ -104,10 +145,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 <div className="sidebar-section-label">{section.label}</div>
                 {visible.map(item => {
                   const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                  const badgeCount = item.href === "/factures" ? badges.factures : item.href === "/audiences" ? badges.audiences : 0;
                   return (
                     <a key={item.href} href={item.href} className={`sidebar-link ${active?"active":""}`}>
                       <span className="sidebar-link-icon" style={{ fontStyle:"normal", fontFamily:"monospace" }}>{item.icon}</span>
                       {item.label}
+                      {badgeCount > 0 && (
+                        <span className={`sidebar-badge ${item.href==="/factures"?"danger":"warning"}`}>{badgeCount}</span>
+                      )}
                     </a>
                   );
                 })}
@@ -172,6 +217,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       <main className="main-content">
         {children}
       </main>
+      <CommandPalette />
     </div>
   );
 }

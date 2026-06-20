@@ -12,6 +12,8 @@ interface Stats {
   dossiersOuverts: number;
   chiffreAffaires: number;
   facturesEnAttente: number;
+  dossiersGagnes: number;
+  dossiersPerdus: number;
 }
 
 interface Audience {
@@ -57,6 +59,8 @@ export default function Dashboard() {
       { count: dossiers },
       { count: factureCount },
       { count: dossiersOuverts },
+      { count: dossiersGagnes },
+      { count: dossiersPerdus },
       { data: factureData },
       { data: audienceData },
       { data: facturesRecentes },
@@ -65,6 +69,8 @@ export default function Dashboard() {
       supabase.from("dossiers").select("*", { count: "exact", head: true }).eq("created_by", u.nom),
       supabase.from("factures").select("*", { count: "exact", head: true }).eq("created_by", u.nom),
       supabase.from("dossiers").select("*", { count: "exact", head: true }).eq("created_by", u.nom).eq("statut", "Ouvert"),
+      supabase.from("dossiers").select("*", { count: "exact", head: true }).eq("created_by", u.nom).eq("statut", "Gagné"),
+      supabase.from("dossiers").select("*", { count: "exact", head: true }).eq("created_by", u.nom).eq("statut", "Perdu"),
       supabase.from("factures").select("montant, statut").eq("created_by", u.nom),
       supabase.from("audiences").select("id, titre, client, date, heure, type, created_by")
         .gte("date", today).order("date").order("heure").limit(6),
@@ -80,6 +86,8 @@ export default function Dashboard() {
       dossiers: dossiers || 0,
       factures: factureCount || 0,
       dossiersOuverts: dossiersOuverts || 0,
+      dossiersGagnes: dossiersGagnes || 0,
+      dossiersPerdus: dossiersPerdus || 0,
       chiffreAffaires: ca,
       facturesEnAttente: enAttente,
     });
@@ -136,7 +144,7 @@ export default function Dashboard() {
           </div>
 
           {/* Chiffres financiers */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem", marginBottom: "1.75rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem", marginBottom: "0.875rem" }}>
             <div className="card" style={{ borderColor: "rgba(34,197,94,0.2)" }}>
               <div className="stat-label" style={{ marginBottom: "0.5rem" }}>Chiffre d'affaires (factures payées)</div>
               <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.5rem", fontWeight: 700, color: "var(--success)" }}>
@@ -150,6 +158,28 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+
+          {/* Taux de réussite */}
+          {((stats?.dossiersGagnes||0) + (stats?.dossiersPerdus||0)) > 0 && (
+            <div className="card" style={{ marginBottom: "1.75rem" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:"0.75rem" }}>
+                <div className="stat-label" style={{ marginBottom:0 }}>Taux de réussite des dossiers clôturés</div>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:"1.1rem", color:"var(--gold)" }}>
+                  {Math.round((stats!.dossiersGagnes/(stats!.dossiersGagnes+stats!.dossiersPerdus))*100)}%
+                </div>
+              </div>
+              <div className="progress-bar-track" style={{ marginBottom:"0.625rem" }}>
+                <div className="progress-bar-fill" style={{
+                  width:`${(stats!.dossiersGagnes/(stats!.dossiersGagnes+stats!.dossiersPerdus))*100}%`,
+                  background:"linear-gradient(90deg, var(--success), #16a34a)",
+                }} />
+              </div>
+              <div style={{ display:"flex", gap:"1.25rem", fontSize:"0.78rem" }}>
+                <span style={{ color:"var(--success)" }}>● {stats?.dossiersGagnes} gagné{stats?.dossiersGagnes!==1?"s":""}</span>
+                <span style={{ color:"var(--danger)" }}>● {stats?.dossiersPerdus} perdu{stats?.dossiersPerdus!==1?"s":""}</span>
+              </div>
+            </div>
+          )}
 
           {/* Grille Agenda + Factures */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>

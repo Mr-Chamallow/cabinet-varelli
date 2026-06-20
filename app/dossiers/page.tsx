@@ -97,6 +97,18 @@ export default function DossiersPage() {
     setShowForm(true);
   }
 
+  async function duplicateDossier(d: Dossier) {
+    if (!supabase || !user) return;
+    const { error } = await supabase.from("dossiers").insert([{
+      reference: genRef(),
+      client: d.client, client_id: d.client_id || null,
+      type_affaire: d.type_affaire, type_client: d.type_client,
+      risque: d.risque, montant: 0, statut: "Ouvert",
+      notes: d.notes, created_by: user.nom,
+    }]);
+    if (!error) { showToast("Dossier dupliqué ✓"); load(); }
+  }
+
   // Quand on choisit un client dans la liste
   function handleClientSelect(nomRp: string) {
     const found = clients.find(c => c.nom_rp === nomRp);
@@ -218,6 +230,7 @@ export default function DossiersPage() {
                     <div style={{ display: "flex", gap: "0.4rem", justifyContent: "flex-end" }}>
                       <a href={`/dossiers/${d.id}`} className="btn btn-outline btn-sm">👁️ Ouvrir</a>
                       <button className="btn btn-ghost btn-sm" onClick={() => openEdit(d)}>✏️</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => duplicateDossier(d)} title="Dupliquer">⧉</button>
                       <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(d)}>🗑️</button>
                     </div>
                   </td>

@@ -58,6 +58,7 @@ export default function AudiencesPage() {
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [editAudience, setEditAudience] = useState<Audience | null>(null);
+  const [filterMember, setFilterMember] = useState<string | null>(null);
   const [clients, setClients] = useState<string[]>([]);
   const [memberColors, setMemberColors] = useState<Record<string,string>>({});
 
@@ -127,20 +128,44 @@ export default function AudiencesPage() {
   // Calendrier
   const { firstDay, daysInMonth } = getMonthDays(viewYear, viewMonth);
 
+  const filteredAudiences = useMemo(() =>
+    filterMember ? audiences.filter(a => a.created_by === filterMember) : audiences
+  , [audiences, filterMember]);
+
   const audiencesByDate = useMemo(() => {
     const map: Record<string, Audience[]> = {};
-    for (const a of audiences) {
+    for (const a of filteredAudiences) {
       if (!map[a.date]) map[a.date] = [];
       map[a.date].push(a);
     }
     return map;
-  }, [audiences]);
+  }, [filteredAudiences]);
 
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   const selectedAudiences = selectedDate ? (audiencesByDate[selectedDate] || []) : [];
 
-  const prochaines = audiences.filter(a => a.date >= todayStr).slice(0, 5);
+  const prochaines = filteredAudiences.filter(a => a.date >= todayStr).slice(0, 5);
+
+  function downloadICS(a: Audience) {
+    const dt = a.date.replace(/-/g,"");
+    const time = (a.heure || "09:00").replace(":","") + "00";
+    const dtStart = `${dt}T${time}`;
+    const ics = [
+      "BEGIN:VCALENDAR","VERSION:2.0","BEGIN:VEVENT",
+      `SUMMARY:${a.titre}`,
+      `DTSTART:${dtStart}`,
+      `DESCRIPTION:${a.client?`Client: ${a.client}. `:""}${a.notes||""}`,
+      `LOCATION:${a.lieu||""}`,
+      "END:VEVENT","END:VCALENDAR",
+    ].join("\r\n");
+    const blob = new Blob([ics], { type:"text/calendar" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url; link.download = `${a.titre.replace(/[^a-z0-9]/gi,"_")}.ics`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="page-container">
@@ -191,6 +216,7 @@ export default function AudiencesPage() {
               const aud = audiencesByDate[dateStr] || [];
               const isToday = dateStr === todayStr;
               const isSelected = dateStr === selectedDate;
+              const hasUrgent = isToday && aud.length > 0;
 
               return (
                 <div
@@ -205,6 +231,7 @@ export default function AudiencesPage() {
                     border: `1px solid ${isSelected ? "rgba(212,175,55,0.5)" : isToday ? "rgba(212,175,55,0.2)" : "var(--border)"}`,
                     transition: "all 0.12s",
                     position: "relative",
+                    animation: hasUrgent && !isSelected ? "todayPulse 2.5s ease-in-out infinite" : "none",
                   }}
                 >
                   <div style={{
@@ -229,16 +256,31 @@ export default function AudiencesPage() {
             })}
           </div>
 
-          {/* Légende membres */}
+          {/* Légende membres — cliquable pour filtrer */}
           {audiences.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid var(--border)" }}>
-              <div style={{ width: "100%", fontSize: "0.68rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.25rem" }}>Membres</div>
-              {Array.from(new Set(audiences.map(a => a.created_by).filter(Boolean))).map(membre => (
-                <div key={membre} style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: getMemberColor(membre, memberColors[membre]), flexShrink: 0 }} />
-                  {membre}
-                </div>
-              ))}
+              <div style={{ width: "100%", display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
+                <span style={{ fontSize: "0.68rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Membres</span>
+                {filterMember && <button onClick={()=>setFilterMember(null)} style={{ background:"none",border:"none",color:"var(--gold)",fontSize:"0.7rem",cursor:"pointer" }}>Réinitialiser</button>}
+              </div>
+              {Array.from(new Set(audiences.map(a => a.created_by).filter(Boolean))).map(membre => {
+                const col = getMemberColor(membre, memberColors[membre]);
+                const active = filterMember === membre;
+                return (
+                  <button key={membre} onClick={()=>setFilterMember(active?null:membre)} style={{
+                    display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.75rem",
+                    color: active ? col : "var(--text-muted)",
+                    background: active ? col+"15" : "transparent",
+                    border:`1px solid ${active?col+"40":"transparent"}`,
+                    borderRadius: 999, padding:"0.2rem 0.6rem", cursor:"pointer",
+                    fontFamily:"'Inter',sans-serif", opacity: filterMember && !active ? 0.4 : 1,
+                    transition:"all 0.12s",
+                  }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: col, flexShrink: 0 }} />
+                    {membre}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -278,6 +320,7 @@ export default function AudiencesPage() {
                           {a.notes && <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.3rem", fontStyle: "italic" }}>{a.notes}</div>}
                         </div>
                         <div style={{ display: "flex", gap: "0.25rem", flexShrink: 0, marginLeft: "0.5rem" }}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => downloadICS(a)} style={{ padding: "0.25rem 0.5rem", fontSize: "0.75rem" }} title="Exporter .ics">📥</button>
                           <button className="btn btn-ghost btn-sm" onClick={() => openEdit(a)} style={{ padding: "0.25rem 0.5rem", fontSize: "0.75rem" }}>✏️</button>
                           <button className="btn btn-ghost btn-sm" onClick={() => deleteAudience(a.id)} style={{ padding: "0.25rem 0.5rem", fontSize: "0.75rem", color: "var(--danger)" }}>🗑️</button>
                         </div>

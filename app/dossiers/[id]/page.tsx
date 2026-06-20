@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
+import jsPDF from "jspdf";
 
 const DOCUMENTS_DEFAUT = [
   "Pièce d'identité du client",
@@ -302,6 +303,120 @@ export default function DossierDetailPage() {
     navigator.clipboard.writeText(generateExportText());
     setExportCopied(true);
     setTimeout(() => setExportCopied(false), 2000);
+  }
+
+  function exportPDF() {
+    if (!dossier) return;
+    const doc = new jsPDF();
+    const gold: [number,number,number] = [201,168,76];
+    const dark: [number,number,number] = [20,22,28];
+    let y = 20;
+
+    // Header bandeau noir/or
+    doc.setFillColor(...dark);
+    doc.rect(0, 0, 210, 32, "F");
+    doc.setTextColor(...gold);
+    doc.setFont("times", "bold");
+    doc.setFontSize(18);
+    doc.text("CABINET BULLHEAD", 14, 16);
+    doc.setFontSize(8);
+    doc.setTextColor(180,180,180);
+    doc.setFont("helvetica", "normal");
+    doc.text("Law · Finance · Property", 14, 23);
+    doc.setTextColor(...gold);
+    doc.setFontSize(10);
+    doc.text(dossier.reference, 196, 16, { align:"right" });
+    doc.setTextColor(160,160,160);
+    doc.setFontSize(8);
+    doc.text(new Date().toLocaleDateString("fr-FR"), 196, 23, { align:"right" });
+
+    y = 42;
+    doc.setTextColor(20,20,20);
+
+    function section(title:string) {
+      doc.setFont("helvetica","bold"); doc.setFontSize(11);
+      doc.setTextColor(...gold);
+      doc.text(title.toUpperCase(), 14, y);
+      doc.setDrawColor(...gold); doc.setLineWidth(0.3);
+      doc.line(14, y+1.5, 196, y+1.5);
+      y += 8;
+      doc.setTextColor(20,20,20); doc.setFont("helvetica","normal"); doc.setFontSize(9);
+    }
+    function line(label:string, value:string) {
+      doc.setFont("helvetica","bold"); doc.text(label+" :", 14, y);
+      doc.setFont("helvetica","normal");
+      doc.text(value||"—", 60, y);
+      y += 6;
+    }
+    function checkPage() { if (y > 270) { doc.addPage(); y = 20; } }
+
+    section("Informations générales");
+    line("Client", dossier.client);
+    line("Type d'affaire", dossier.type_affaire);
+    line("Type client", dossier.type_client);
+    line("Risque", dossier.risque);
+    line("Statut", dossier.statut);
+    line("Honoraires", dossier.montant ? fmt(dossier.montant) : "—");
+    line("Créé par", dossier.created_by);
+    y += 3;
+
+    if (linkedAudience) {
+      checkPage(); section("Audience liée");
+      line("Titre", linkedAudience.titre);
+      line("Date", new Date(linkedAudience.date+"T12:00:00").toLocaleDateString("fr-FR") + (linkedAudience.heure?` à ${linkedAudience.heure}`:""));
+      y += 3;
+    }
+
+    if (chefs.length > 0) {
+      checkPage(); section(`Chefs d'inculpation (${chefs.length})`);
+      chefs.forEach(c => {
+        checkPage();
+        doc.setFont("helvetica","bold"); doc.text(`[${c.code}]`, 14, y);
+        doc.setFont("helvetica","normal");
+        doc.text(c.infraction, 32, y);
+        doc.text(c.amende||"—", 165, y);
+        y += 5.5;
+      });
+      doc.setFont("helvetica","bold");
+      doc.text(`Amende maximale cumulée : ${fmt(amendeTotal)}`, 14, y+2);
+      y += 9;
+    }
+
+    if (documents.length > 0) {
+      checkPage(); section(`Pièces (${documents.filter(d=>d.obtenu).length}/${documents.length})`);
+      documents.forEach(d => {
+        checkPage();
+        doc.text(d.obtenu ? "[x]" : "[ ]", 14, y);
+        doc.text(d.label, 24, y);
+        y += 5.5;
+      });
+      y += 3;
+    }
+
+    if (strategie.trim()) {
+      checkPage(); section("Stratégie de défense");
+      const split = doc.splitTextToSize(strategie.trim(), 180);
+      split.forEach((l:string) => { checkPage(); doc.text(l, 14, y); y += 5; });
+      y += 3;
+    }
+
+    if (events.length > 0) {
+      checkPage(); section(`Timeline (${events.length})`);
+      events.slice().reverse().forEach(e => {
+        checkPage();
+        doc.setFont("helvetica","bold");
+        doc.text(new Date(e.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"short"}), 14, y);
+        doc.setFont("helvetica","normal");
+        const txt = doc.splitTextToSize(`[${e.type}] ${e.contenu} (par ${e.created_by})`, 150);
+        doc.text(txt, 38, y);
+        y += 5.5 * txt.length;
+      });
+    }
+
+    doc.setFontSize(7); doc.setTextColor(150,150,150);
+    doc.text(`Cabinet BullHead — Document généré le ${new Date().toLocaleDateString("fr-FR")}`, 105, 290, { align:"center" });
+
+    doc.save(`${dossier.reference}.pdf`);
   }
 
   if (loading) return <div className="page-container"><div style={{color:"var(--text-dim)"}}>Chargement…</div></div>;
@@ -798,6 +913,7 @@ export default function DossierDetailPage() {
             </div>
             <div className="modal-footer">
               <button className="btn btn-outline" onClick={()=>setShowExport(false)}>Fermer</button>
+              <button className="btn btn-outline" onClick={exportPDF}>📄 Télécharger PDF</button>
               <button className="btn btn-gold" onClick={copyExport}>
                 {exportCopied?"✅ Copié !":"📋 Copier le texte"}
               </button>
