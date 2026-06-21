@@ -357,10 +357,10 @@ export default function FacturesPage() {
   useEffect(() => { load(); }, []);
 
   async function load() {
-    if (!supabase) { setLoading(false); return; }
+    if (!supabase || !user) { setLoading(false); return; }
     const [{ data: f }, { data: c }] = await Promise.all([
-      supabase.from("factures").select("*").eq("created_by", user!.nom).order("created_at", { ascending: false }),
-      supabase.from("clients").select("nom_rp").eq("created_by", user!.nom).order("nom_rp"),
+      supabase.from("factures").select("*").eq("created_by", user.nom).order("created_at", { ascending: false }),
+      supabase.from("clients").select("nom_rp").eq("created_by", user.nom).order("nom_rp"),
     ]);
     setFactures(f || []);
     setClients(c || []);
@@ -373,10 +373,10 @@ export default function FacturesPage() {
   }
 
   async function save() {
-    if (!supabase || !form.client.trim()) return;
+    if (!supabase || !user || !form.client.trim()) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from("factures").insert([{ ...form, created_by: user!.nom }]);
+      const { error } = await supabase.from("factures").insert([{ ...form, created_by: user.nom }]);
       if (error) throw error;
       showToast("Facture créée");
       setShowForm(false);

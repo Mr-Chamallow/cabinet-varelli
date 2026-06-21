@@ -74,10 +74,6 @@ export default function AudiencesPage() {
     }
   }
 
-  function getColor(nom: string) {
-    return memberColors[nom] || getMemberColor(nom);
-  }
-
   async function fetchAudiences() {
     if (!supabase) return;
     setLoading(true);

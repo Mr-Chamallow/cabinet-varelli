@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
 import jsPDF from "jspdf";
@@ -119,7 +119,6 @@ interface Audience { id:string; titre:string; date:string; heure:string; }
 
 export default function DossierDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const user = getUser();
   const id = params?.id as string;
 
@@ -139,7 +138,6 @@ export default function DossierDetailPage() {
 
   // Stratégie défense (champ notes enrichi)
   const [strategie, setStrategie] = useState("");
-  const [savingStrat, setSavingStrat] = useState(false);
   const [autoSaved, setAutoSaved] = useState(false);
   const strategieTimer = useRef<NodeJS.Timeout|null>(null);
 
@@ -210,13 +208,6 @@ export default function DossierDetailPage() {
     setDossier({...dossier,...editForm} as Dossier);
     setEditMode(false);
     setSaving(false);
-  }
-
-  async function saveStrategie() {
-    if (!supabase) return;
-    setSavingStrat(true);
-    await supabase.from("dossiers").update({ notes:strategie }).eq("id",id);
-    setSavingStrat(false);
   }
 
   async function addChef(chef: typeof CHEFS_PENAL[0]) {

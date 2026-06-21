@@ -84,14 +84,14 @@ export default function ClientsPage() {
   }
 
   async function loadDetail(client: Client) {
-    if (!supabase) return;
+    if (!supabase || !user) return;
     setDetailLoading(true);
     setSelectedClient(client);
     const [{ data: d }, { data: f }] = await Promise.all([
       supabase.from("dossiers").select("id,reference,type_affaire,statut,risque,montant")
-        .eq("created_by", user!.nom).ilike("client", client.nom_rp),
+        .eq("created_by", user.nom).ilike("client", client.nom_rp),
       supabase.from("factures").select("id,numero,montant,statut,description,created_at")
-        .eq("created_by", user!.nom).ilike("client", client.nom_rp),
+        .eq("created_by", user.nom).ilike("client", client.nom_rp),
     ]);
     setDossiers(d || []);
     setFactures(f || []);

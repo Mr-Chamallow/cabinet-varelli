@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [evolutionCA, setEvolutionCA] = useState<{mois:string;total:number}[]>([]);
   const [audiences, setAudiences] = useState<Audience[]>([]);
+  const [memberColors, setMemberColors] = useState<Record<string,string>>({});
   const [factures, setFactures] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,6 +55,14 @@ export default function Dashboard() {
     if (!supabase) { setLoading(false); return; }
 
     const today = new Date().toISOString().split("T")[0];
+
+    supabase.from("membres").select("nom, couleur").then(({ data }) => {
+      if (data) {
+        const map: Record<string,string> = {};
+        data.forEach((m: any) => { if (m.couleur) map[m.nom] = m.couleur; });
+        setMemberColors(map);
+      }
+    });
 
     const [
       { count: clients },
@@ -246,7 +255,7 @@ export default function Dashboard() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                   {audiences.map(a => {
                     const isToday = a.date === today;
-                    const memberColor = getMemberColor(a.created_by || "default");
+                    const memberColor = getMemberColor(a.created_by || "default", memberColors[a.created_by]);
                     return (
                       <a key={a.id} href="/audiences" style={{ textDecoration: "none" }}>
                         <div style={{
