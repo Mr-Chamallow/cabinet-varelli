@@ -285,6 +285,158 @@ Il est demandé au Tribunal de faire droit à la présente requête en nullité.
 
 Maître [Nom] — Cabinet BullHead`,
   },
+  {
+    titre: "Plaidoirie — Crime grave (meurtre / homicide)",
+    type: "Plaidoirie",
+    contenu: `Mesdames et Messieurs les membres de cette cour,
+
+L'accusation porte aujourd'hui contre mon client une charge de la plus grande gravité. C'est précisément pour cette raison que la rigueur de l'examen des preuves doit être absolue, et que le doute, s'il existe, doit nécessairement profiter à l'accusé.
+
+I. SUR L'ÉLÉMENT INTENTIONNEL
+L'accusation doit démontrer, au-delà de tout doute raisonnable, l'intention de mon client de causer la mort. [Contester la préméditation / l'intention / la qualification retenue]
+
+II. SUR LES CIRCONSTANCES DE L'ACTE
+[Contexte : provocation, état de stress, absence de préméditation, légitime défense partielle]
+
+III. SUR LA CHAÎNE DE PREUVES
+[Contester la fiabilité des témoignages, la continuité des preuves matérielles, les éventuels vices de procédure dans leur collecte]
+
+IV. SUR LA REQUALIFICATION POSSIBLE
+À titre subsidiaire, la défense fait valoir que les faits, s'ils sont établis, relèveraient davantage de [homicide involontaire / meurtre non prémédité] que du chef retenu par l'accusation.
+
+En conclusion, je vous demande de mesurer la gravité de la sanction à l'aune de la solidité réelle des preuves apportées, et non à l'émotion légitime que suscitent de tels faits.
+
+Maître [Nom] — Cabinet BullHead`,
+  },
+  {
+    titre: "Conclusions — Contestation d'un chef de blanchiment",
+    type: "Conclusions",
+    contenu: `CONCLUSIONS EN DÉFENSE — BLANCHIMENT
+
+Pour : [Nom du client]
+Représenté par : Maître [Nom], Cabinet BullHead
+
+PLAISE AU TRIBUNAL,
+
+I. RAPPEL DES FAITS
+L'accusation reproche à mon client d'avoir dissimulé l'origine de fonds afin qu'ils soient perçus comme légaux, pour un montant de [montant].
+
+II. SUR L'ABSENCE D'ÉLÉMENT INTENTIONNEL
+Le blanchiment suppose la connaissance de l'origine illicite des fonds. La défense soutient que :
+• Mon client ignorait l'origine réelle des sommes en cause
+• [Aucune dissimulation active n'a été opérée]
+• [Les fonds proviennent d'une activité légale démontrable : pièces jointes]
+
+III. SUR LA TRAÇABILITÉ DES FONDS
+[Contester la méthode de calcul du montant retenu / produire des justificatifs de provenance légale pour partie ou totalité des sommes]
+
+IV. SUR LA PROPORTIONNALITÉ DE LA SANCTION
+À titre subsidiaire, la défense demande que soit prise en compte l'absence d'antécédents et la coopération de mon client dans la présente procédure.
+
+PAR CES MOTIFS,
+Il est demandé au Tribunal de prononcer la relaxe, ou à tout le moins une sanction proportionnée aux éléments objectivement établis.
+
+Maître [Nom] — Cabinet BullHead`,
+  },
+  {
+    titre: "Acte d'appel",
+    type: "Requête",
+    contenu: `ACTE D'APPEL
+
+Appelant : [Nom du client]
+Représenté par : Maître [Nom], Cabinet BullHead
+Décision attaquée : Jugement du [date] — Tribunal de Los Santos
+
+À l'attention de la Cour d'Appel,
+
+[Nom du client], par l'intermédiaire de son conseil, interjette appel du jugement rendu le [date] le condamnant à [peine prononcée].
+
+I. MOTIFS DE L'APPEL
+☐ Erreur de qualification juridique des faits
+☐ Vice de procédure non sanctionné en première instance
+☐ Peine manifestement disproportionnée
+☐ Éléments de preuve nouveaux ou mal appréciés
+
+II. EXPOSÉ DES MOYENS
+[Développer chaque moyen retenu ci-dessus avec les arguments correspondants]
+
+III. DEMANDES
+L'appelant demande à la Cour de :
+1. [Infirmer le jugement et prononcer la relaxe]
+2. [À titre subsidiaire, réformer la peine prononcée]
+3. [Toute autre mesure que la Cour jugera appropriée]
+
+Le présent acte est déposé dans le délai légal d'appel suivant le prononcé du jugement.
+
+Maître [Nom]
+Cabinet BullHead`,
+  },
+  {
+    titre: "Contrat type — Prestation de services entre particuliers",
+    type: "Autre",
+    contenu: `CONTRAT DE PRESTATION DE SERVICES
+
+Entre les soussignés :
+[Nom du Prestataire], ci-après désigné "le Prestataire"
+ET
+[Nom du Client], ci-après désigné "le Client"
+
+Il est convenu ce qui suit :
+
+ARTICLE 1 — OBJET
+Le Prestataire s'engage à réaliser pour le Client la prestation suivante : [description précise de la prestation].
+
+ARTICLE 2 — DURÉE
+La présente prestation débute le [date] et se termine le [date], ou à l'achèvement de la mission décrite à l'article 1.
+
+ARTICLE 3 — RÉMUNÉRATION
+Le Client s'engage à verser au Prestataire la somme de [montant] selon les modalités suivantes : [paiement intégral à la signature / acompte de X% puis solde à la livraison].
+
+ARTICLE 4 — OBLIGATIONS DES PARTIES
+Le Prestataire s'engage à exécuter la prestation avec diligence et selon les règles de l'art.
+Le Client s'engage à fournir les informations et moyens nécessaires à la bonne exécution de la prestation.
+
+ARTICLE 5 — RÉSILIATION
+En cas de manquement grave de l'une des parties à ses obligations, l'autre partie pourra résilier le présent contrat après mise en demeure restée infructueuse pendant [délai].
+
+ARTICLE 6 — LITIGES
+Tout litige relatif à l'exécution du présent contrat sera soumis aux juridictions compétentes de Los Santos.
+
+Fait à Los Santos, le [date], en deux exemplaires originaux.
+
+Signature du Prestataire                    Signature du Client
+
+Document rédigé par Maître [Nom] — Cabinet BullHead`,
+  },
+  {
+    titre: "Préparation de témoignage — Trame d'audition",
+    type: "Autre",
+    contenu: `TRAME DE PRÉPARATION — AUDITION DE TÉMOIN
+
+Dossier : [Référence du dossier]
+Témoin : [Nom du témoin]
+Qualité : [Témoin direct / témoin de moralité / expert]
+
+I. RAPPEL DES RÈGLES
+• Le témoin doit répondre avec exactitude, sans extrapoler au-delà de ce qu'il a personnellement constaté
+• Toute fausse déclaration sous serment expose à des poursuites pour parjure
+• Le témoin peut indiquer ne pas se souvenir plutôt que d'inventer une réponse
+
+II. POINTS CLÉS À ABORDER
+1. [Présentation : lien avec le client / les faits]
+2. [Récit chronologique des faits observés]
+3. [Précisions sur les circonstances : lieu, heure, conditions de visibilité]
+4. [Confirmation ou infirmation d'éléments contestés par l'accusation]
+
+III. QUESTIONS ANTICIPÉES DE LA PARTIE ADVERSE
+• [Question probable 1] → Réponse à privilégier : [axe de réponse]
+• [Question probable 2] → Réponse à privilégier : [axe de réponse]
+
+IV. POINTS DE VIGILANCE
+[Éléments sur lesquels le témoin doit rester prudent ou factuel, sans dépasser ce qu'il sait réellement]
+
+Préparé par Maître [Nom] — Cabinet BullHead`,
+  },
 ];
 
 export default function ModelesPage() {
