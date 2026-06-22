@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { getUser, logout, canAccess, setRolesCache, getMemberColor, type User } from "@/lib/auth";
+import { getUser, logout, canAccess, loadRolesFromSupabase, getMemberColor, type User } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import CommandPalette from "./CommandPalette";
 
@@ -86,17 +86,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   async function loadRoles(u: User) {
     if (!supabase) return;
-    const [{ data: rolesData }, { data: membreData }] = await Promise.all([
-      supabase.from("roles").select("nom, permissions, couleur"),
+    const [rolesData, { data: membreData }] = await Promise.all([
+      loadRolesFromSupabase(),
       supabase.from("membres").select("couleur").eq("nom", u.nom).single(),
     ]);
-    if (rolesData) {
-      const cache: Record<string, string[]> = {};
-      rolesData.forEach((r: any) => { cache[r.nom] = r.permissions || []; });
-      setRolesCache(cache);
-      const rData = rolesData.find((r: any) => r.nom === u.role);
-      if (rData?.couleur) setRoleColor(rData.couleur);
-    }
+    const rData = rolesData.find((r) => r.nom === u.role);
+    if (rData?.couleur) setRoleColor(rData.couleur);
     if (membreData?.couleur) setMemberColor(membreData.couleur);
     else setMemberColor(getMemberColor(u.nom));
   }

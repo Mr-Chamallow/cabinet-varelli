@@ -1,5 +1,7 @@
-// lib/auth.ts — Cabinet Varelli V12
-// Rôles dynamiques depuis Supabase (table: roles)
+// lib/auth.ts — Cabinet BullHead
+// Rôles 100% dynamiques depuis Supabase (table: roles)
+
+import { supabase } from "@/lib/supabase";
 
 export type Role = string;
 
@@ -33,19 +35,74 @@ export const PERMISSION_LABELS: Record<string, string> = {
   modeles: "Modèles",
 };
 
-// Cache des permissions roles en mémoire
+// ─── CACHE DES RÔLES EN MÉMOIRE ─────────────────────────────────────────────
+// Rempli au login et à chaque chargement de page protégée.
 let _rolesCache: Record<string, string[]> = {};
+let _rolesLoaded = false;
 
 export function setRolesCache(roles: Record<string, string[]>) {
   _rolesCache = roles;
+  _rolesLoaded = true;
+}
+
+export function rolesAreLoaded(): boolean {
+  return _rolesLoaded;
+}
+
+/**
+ * Charge tous les rôles depuis Supabase et remplit le cache.
+ * Retourne la liste normalisée (permissions toujours en string[]).
+ * À appeler une fois au montage de AuthGuard ou de la page Admin.
+ */
+export async function loadRolesFromSupabase(): Promise<
+  { id: string; nom: string; permissions: string[]; couleur: string }[]
+> {
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("roles")
+    .select("id, nom, permissions, couleur")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("[auth] Erreur chargement des rôles:", error.message);
+    return [];
+  }
+
+  const normalized = (data || []).map((r: any) => ({
+    id: r.id,
+    nom: r.nom,
+    couleur: r.couleur || "#c9a84c",
+    permissions: normalizePermissions(r.permissions),
+  }));
+
+  const cache: Record<string, string[]> = {};
+  normalized.forEach((r) => { cache[r.nom] = r.permissions; });
+  setRolesCache(cache);
+
+  return normalized;
+}
+
+/** Supabase peut renvoyer permissions en array natif (jsonb) ou en string JSON selon le client. On gère les deux. */
+function normalizePermissions(raw: any): string[] {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 export function canAccess(role: Role, permission: string): boolean {
   if (_rolesCache[role]) return _rolesCache[role].includes(permission);
-  // Fallback par défaut
+  // Fallback de sécurité uniquement si le cache n'a jamais pu être chargé
+  // (évite de bloquer tout le monde si Supabase est temporairement indisponible)
   if (role === "Patron") return true;
-  if (role === "Avocat") return ["dashboard","clients","dossiers","factures","simulateur","audiences","juridique","modeles"].includes(permission);
-  return ["dashboard","clients","juridique","audiences"].includes(permission);
+  return false;
 }
 
 export function getUser(): User | null {
@@ -53,7 +110,9 @@ export function getUser(): User | null {
   try {
     const raw = sessionStorage.getItem("varelli_user");
     return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export function setUser(user: User): void {
@@ -67,20 +126,13 @@ export function logout(): void {
 export function getMemberColor(nom: string, customColor?: string): string {
   if (customColor) return customColor;
   const colors = [
-    "#c9a84c","#6366f1","#22c55e","#ef4444","#f97316",
-    "#06b6d4","#ec4899","#a855f7","#14b8a6","#f59e0b",
+    "#c9a84c", "#6366f1", "#22c55e", "#ef4444", "#f97316",
+    "#06b6d4", "#ec4899", "#a855f7", "#14b8a6", "#f59e0b",
   ];
   let hash = 0;
   for (let i = 0; i < nom.length; i++) hash = nom.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
 }
-
-// Rôles par défaut si Supabase pas dispo
-export const DEFAULT_ROLE_COLORS: Record<string, string> = {
-  Patron: "#c9a84c",
-  Avocat: "#6366f1",
-  Employé: "#22c55e",
-};
 
 export const ROLE_BADGES: Record<string, string> = {
   Patron: "badge-gold",

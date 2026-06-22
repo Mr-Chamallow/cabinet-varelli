@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUser, ALL_PERMISSIONS, PERMISSION_LABELS, setRolesCache, type User } from "@/lib/auth";
+import { getUser, ALL_PERMISSIONS, PERMISSION_LABELS, loadRolesFromSupabase, type User } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
@@ -33,6 +33,7 @@ export default function AdminPage() {
   const [membres, setMembres] = useState<Membre[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"membres"|"roles">("membres");
 
   // Membre form
@@ -74,26 +75,33 @@ export default function AdminPage() {
   }, []);
 
   async function fetchAll() {
-    if (!supabase) return;
+    if (!supabase) {
+      setFetchError("Connexion Supabase non configurée (variables d'environnement manquantes).");
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const [{ data: m, error: mErr }, { data: r, error: rErr }] = await Promise.all([
+    setFetchError("");
+
+    const [{ data: m, error: mErr }, rolesData] = await Promise.all([
       supabase.from("membres").select("*").order("created_at"),
-      supabase.from("roles").select("*").order("created_at"),
+      loadRolesFromSupabase(),
     ]);
-    if (mErr) console.error("Erreur membres:", mErr);
-    if (rErr) console.error("Erreur roles:", rErr);
+
+    if (mErr) {
+      console.error("[admin] Erreur membres:", mErr);
+      setFetchError(`Erreur lors du chargement des membres : ${mErr.message}`);
+    }
+
     setMembres(m || []);
-    const rolesData = (r || []).map((role: any) => ({
-      ...role,
-      permissions: Array.isArray(role.permissions)
-        ? role.permissions
-        : (typeof role.permissions === "string" ? JSON.parse(role.permissions || "[]") : []),
-    }));
-    setRoles(rolesData);
-    // Mettre à jour le cache des permissions
-    const cache: Record<string, string[]> = {};
-    rolesData.forEach((role: Role) => { cache[role.nom] = role.permissions || []; });
-    setRolesCache(cache);
+    setRoles(rolesData as Role[]);
+
+    if (rolesData.length === 0 && !mErr) {
+      setFetchError(
+        "Aucun rôle n'a pu être chargé depuis Supabase. Vérifiez que la table `roles` existe, contient des lignes, et que les policies RLS autorisent la lecture (clé anon)."
+      );
+    }
+
     setLoading(false);
   }
 
@@ -133,25 +141,41 @@ export default function AdminPage() {
   async function createRole() {
     if (!supabase || !roleForm.nom.trim()) return;
     setCreatingRole(true);
-    await supabase.from("roles").insert([{ nom: roleForm.nom.trim(), permissions: roleForm.permissions, couleur: roleForm.couleur }]);
-    setShowCreateRole(false);
-    setRoleForm({ nom:"", permissions:[], couleur:"#6366f1" });
-    fetchAll();
+    const { error } = await supabase.from("roles").insert([{ nom: roleForm.nom.trim(), permissions: roleForm.permissions, couleur: roleForm.couleur }]);
+    if (error) {
+      console.error("[admin] Erreur création rôle:", error);
+      setFetchError(`Impossible de créer le rôle : ${error.message}`);
+    } else {
+      setShowCreateRole(false);
+      setRoleForm({ nom:"", permissions:[], couleur:"#6366f1" });
+    }
+    await fetchAll();
     setCreatingRole(false);
   }
 
   async function saveRole(id: string) {
     if (!supabase) return;
     setSavingRole(true);
-    await supabase.from("roles").update({ permissions: editRolePerms, couleur: editRoleCouleur }).eq("id", id);
-    setEditRoleId(null); fetchAll();
+    const { error } = await supabase.from("roles").update({ permissions: editRolePerms, couleur: editRoleCouleur }).eq("id", id);
+    if (error) {
+      console.error("[admin] Erreur sauvegarde rôle:", error);
+      setFetchError(`Impossible de sauvegarder le rôle : ${error.message}`);
+    } else {
+      setEditRoleId(null);
+    }
+    await fetchAll();
     setSavingRole(false);
   }
 
   async function deleteRole(id: string) {
     if (!supabase) return;
-    await supabase.from("roles").delete().eq("id", id);
-    setDeleteRoleId(null); fetchAll();
+    const { error } = await supabase.from("roles").delete().eq("id", id);
+    if (error) {
+      console.error("[admin] Erreur suppression rôle:", error);
+      setFetchError(`Impossible de supprimer le rôle : ${error.message}`);
+    }
+    setDeleteRoleId(null);
+    await fetchAll();
   }
 
   function togglePerm(perms: string[], perm: string): string[] {
@@ -171,6 +195,18 @@ export default function AdminPage() {
         </div>
         <span className="badge badge-danger" style={{ padding:"0.4rem 1rem" }}>🛡️ Patron uniquement</span>
       </div>
+
+      {fetchError && (
+        <div style={{
+          background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
+          borderRadius:"var(--radius)", padding:"0.875rem 1.125rem",
+          marginBottom:"1.25rem", fontSize:"0.85rem", color:"var(--danger)",
+          display:"flex", alignItems:"flex-start", gap:"0.625rem",
+        }}>
+          <span style={{ flexShrink:0 }}>⚠️</span>
+          <span>{fetchError}</span>
+        </div>
+      )}
 
       {/* Tabs */}
       <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1.5rem" }}>
