@@ -16,7 +16,7 @@ export interface User {
 export const ALL_PERMISSIONS = [
   "dashboard", "clients", "dossiers", "factures", "simulateur",
   "blanchiment", "audiences", "juridique", "parametres", "admin",
-  "delete_all", "edit_all", "modeles",
+  "delete_all", "edit_all", "modeles", "h47",
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
@@ -33,6 +33,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   delete_all: "Supprimer (tout)",
   edit_all: "Modifier (tout)",
   modeles: "Modèles",
+  h47: "H-47",
 };
 
 // ─── CACHE DES RÔLES EN MÉMOIRE ─────────────────────────────────────────────

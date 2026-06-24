@@ -22,7 +22,7 @@ const NAV_SECTIONS = [
     items: [
       { href: "/simulateur", label: "Simulateur", icon: "◐", permission: "simulateur" },
       { href: "/blanchiment",label: "Blanchiment",icon: "◑", permission: "blanchiment" },
-      { href: "/h47",label: "H-47",icon: "◒", permission: "blanchiment" },
+      { href: "/h47",label: "H-47",icon: "◒", permission: "h47" },
       { href: "/audiences",  label: "Audiences",  icon: "◷", permission: "dashboard" },
       { href: "/minuteur",   label: "Minuteur",   icon: "◔", permission: "dashboard" },
       { href: "/modeles",    label: "Modèles",    icon: "◧", permission: "modeles" },

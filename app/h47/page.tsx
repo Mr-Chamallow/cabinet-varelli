@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { getUser, canAccess } from "@/lib/auth";
 
-const PRIX = { propre: 2500, sale: 3125 };
-const QUOTA_MAX = 250;
+const QUOTA_MAX_DEFAULT = 250;
+
+interface Config {
+  id: string;
+  nom_produit: string;
+  prix_propre: number;
+  prix_sale: number;
+  quota_max: number;
+}
 
 interface Vente {
   id: string;
@@ -44,8 +52,22 @@ function formatWeekLabel(mondayISO: string): string {
 }
 
 export default function H47Page() {
+  const router = useRouter();
   const user = getUser();
   const currentWeek = toISODate(getMonday(new Date()));
+
+  const [authorized, setAuthorized] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  const [config, setConfig] = useState<Config | null>(null);
+  const PRIX = config ? { propre: config.prix_propre, sale: config.prix_sale } : { propre: 2500, sale: 3125 };
+  const QUOTA_MAX = config?.quota_max ?? QUOTA_MAX_DEFAULT;
+  const NOM_PRODUIT = config?.nom_produit || "H-47";
+
+  // Édition config
+  const [showConfigEdit, setShowConfigEdit] = useState(false);
+  const [configForm, setConfigForm] = useState({ nom_produit: "", prix_propre: 0, prix_sale: 0, quota_max: 0 });
+  const [savingConfig, setSavingConfig] = useState(false);
 
   const [ventes, setVentes] = useState<Vente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +78,7 @@ export default function H47Page() {
 
   // Vue
   const [viewWeek, setViewWeek] = useState(currentWeek);
-  const [tab, setTab] = useState<"semaine"|"historique"|"convertisseur">("semaine");
+  const [tab, setTab] = useState<"semaine"|"historique"|"convertisseur"|"config">("semaine");
 
   // Convertisseur
   const [convMode, setConvMode] = useState<"paquets_vers_prix"|"prix_vers_paquets">("paquets_vers_prix");
@@ -67,7 +89,43 @@ export default function H47Page() {
   const [toast, setToast] = useState<string|null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Vente|null>(null);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (!user) { router.replace("/login"); return; }
+    if (!canAccess(user.role, "h47")) { setAuthorized(false); setAuthChecked(true); setLoading(false); return; }
+    setAuthorized(true);
+    setAuthChecked(true);
+    load();
+    loadConfig();
+  }, []);
+
+  async function loadConfig() {
+    if (!supabase) return;
+    const { data } = await supabase.from("h47_config").select("*").limit(1).single();
+    if (data) {
+      setConfig(data);
+      setConfigForm({ nom_produit: data.nom_produit, prix_propre: data.prix_propre, prix_sale: data.prix_sale, quota_max: data.quota_max });
+    }
+  }
+
+  async function saveConfig() {
+    if (!supabase || !config) return;
+    setSavingConfig(true);
+    const { error } = await supabase.from("h47_config").update({
+      nom_produit: configForm.nom_produit.trim() || "H-47",
+      prix_propre: configForm.prix_propre,
+      prix_sale: configForm.prix_sale,
+      quota_max: configForm.quota_max,
+      updated_at: new Date().toISOString(),
+    }).eq("id", config.id);
+    if (!error) {
+      showT("Configuration mise à jour ✓");
+      setShowConfigEdit(false);
+      loadConfig();
+    } else {
+      showT("Erreur : " + error.message);
+    }
+    setSavingConfig(false);
+  }
 
   async function load() {
     if (!supabase || !user) { setLoading(false); return; }
@@ -165,14 +223,28 @@ export default function H47Page() {
   const convResultPaquets = Math.floor(convPrix / PRIX[convType]);
   const convResultReste = convPrix - (convResultPaquets * PRIX[convType]);
 
+  if (!authChecked) return null;
+
+  if (!authorized) {
+    return (
+      <div className="page-container">
+        <div className="empty-state">
+          <div className="empty-icon">🔒</div>
+          <div className="empty-title">Accès réservé</div>
+          <p style={{ fontSize:"0.875rem", marginTop:"0.5rem" }}>Vous n'avez pas la permission d'accéder au module H-47.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page-container">
       <a className="back-link" href="/">← Tableau de bord</a>
 
       <div className="page-header">
         <div>
-          <h1 className="page-title">H-47 — Suivi des ventes</h1>
-          <p className="page-subtitle">Quotas hebdomadaires par organisation · 250 u/semaine max</p>
+          <h1 className="page-title">{NOM_PRODUIT} — Suivi des ventes</h1>
+          <p className="page-subtitle">Quotas hebdomadaires par organisation · {QUOTA_MAX} u/semaine max</p>
           <div className="gold-line" />
         </div>
         <button className="btn btn-gold" onClick={() => { setForm({ ...EMPTY_FORM }); setSaveError(""); setShowForm(true); }}>
@@ -182,7 +254,12 @@ export default function H47Page() {
 
       {/* Tabs */}
       <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1.5rem" }}>
-        {[["semaine","📅 Semaine en cours"],["historique","🗂 Historique"],["convertisseur","🔄 Convertisseur"]].map(([k,l]) => (
+        {([
+          ["semaine","📅 Semaine en cours"],
+          ["historique","🗂 Historique"],
+          ["convertisseur","🔄 Convertisseur"],
+          ...(user && canAccess(user.role, "admin") ? [["config","⚙️ Configuration"]] : []),
+        ] as [string,string][]).map(([k,l]) => (
           <button key={k} onClick={() => { setTab(k as any); if (k==="semaine") setViewWeek(currentWeek); }} style={{
             padding:"0.55rem 1.25rem", borderRadius:"var(--radius)", cursor:"pointer",
             fontFamily:"'Inter',sans-serif", fontSize:"0.85rem", fontWeight: tab===k?700:400,
@@ -413,8 +490,74 @@ export default function H47Page() {
           )}
 
           <div style={{ marginTop:"1.25rem", fontSize:"0.72rem", color:"var(--text-dim)", textAlign:"center" }}>
-            Tarifs : 2 500$/u en propre · 3 125$/u en sale · Quota 250u/semaine/organisation
+            Tarifs : {fmt(PRIX.propre)}/u en propre · {fmt(PRIX.sale)}/u en sale · Quota {QUOTA_MAX}u/semaine/organisation
           </div>
+        </div>
+      )}
+
+      {tab === "config" && (
+        <div className="card" style={{ maxWidth:560 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.25rem" }}>
+            <div className="section-title" style={{ marginBottom:0 }}>Configuration du module</div>
+            {!showConfigEdit && (
+              <button className="btn btn-outline btn-sm" onClick={() => setShowConfigEdit(true)}>✏️ Modifier</button>
+            )}
+          </div>
+
+          {!config ? (
+            <div style={{ color:"var(--text-dim)", fontSize:"0.85rem" }}>Chargement de la configuration…</div>
+          ) : !showConfigEdit ? (
+            <div style={{ display:"flex", flexDirection:"column", gap:"0.625rem" }}>
+              {[
+                { label:"Nom du produit", value: config.nom_produit },
+                { label:"Prix unitaire — Propre", value: fmt(config.prix_propre) },
+                { label:"Prix unitaire — Sale", value: fmt(config.prix_sale) },
+                { label:"Quota max / semaine / organisation", value: `${config.quota_max} unités` },
+              ].map(r => (
+                <div key={r.label} style={{ display:"flex", justifyContent:"space-between", fontSize:"0.85rem", paddingBottom:"0.5rem", borderBottom:"1px solid var(--border)" }}>
+                  <span style={{ color:"var(--text-dim)" }}>{r.label}</span>
+                  <span style={{ fontWeight:600 }}>{r.value}</span>
+                </div>
+              ))}
+              <div style={{ fontSize:"0.72rem", color:"var(--text-dim)", marginTop:"0.5rem" }}>
+                Dernière mise à jour visible une fois modifiée.
+              </div>
+            </div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
+              <div className="form-group">
+                <label>Nom du produit</label>
+                <input value={configForm.nom_produit} onChange={e => setConfigForm(f => ({ ...f, nom_produit: e.target.value }))} placeholder="H-47" />
+              </div>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Prix unitaire — Propre ($)</label>
+                  <input type="number" min={0} value={configForm.prix_propre} onChange={e => setConfigForm(f => ({ ...f, prix_propre: Math.max(0, Number(e.target.value)||0) }))} />
+                </div>
+                <div className="form-group">
+                  <label>Prix unitaire — Sale ($)</label>
+                  <input type="number" min={0} value={configForm.prix_sale} onChange={e => setConfigForm(f => ({ ...f, prix_sale: Math.max(0, Number(e.target.value)||0) }))} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Quota max par semaine et par organisation</label>
+                <input type="number" min={1} value={configForm.quota_max} onChange={e => setConfigForm(f => ({ ...f, quota_max: Math.max(1, Number(e.target.value)||1) }))} />
+              </div>
+
+              <div style={{ background:"rgba(234,179,8,0.08)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:"var(--radius)", padding:"0.75rem 1rem", fontSize:"0.78rem", color:"var(--warning)" }}>
+                ⚠️ Ces changements s'appliquent immédiatement aux nouvelles ventes et au calcul des quotas. Les ventes déjà enregistrées gardent leur prix d'origine.
+              </div>
+
+              <div style={{ display:"flex", gap:"0.625rem", justifyContent:"flex-end" }}>
+                <button className="btn btn-outline" onClick={() => { setShowConfigEdit(false); setConfigForm({ nom_produit:config.nom_produit, prix_propre:config.prix_propre, prix_sale:config.prix_sale, quota_max:config.quota_max }); }}>
+                  Annuler
+                </button>
+                <button className="btn btn-gold" onClick={saveConfig} disabled={savingConfig} style={{ opacity: savingConfig?0.7:1 }}>
+                  {savingConfig ? "Enregistrement…" : "Enregistrer"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
