@@ -25,12 +25,18 @@ export default function LoginPage() {
 
     const { data, error: err } = await supabase
       .from("membres")
-      .select("id, nom, role, password")
+      .select("id, nom, role, password, actif")
       .ilike("nom", nom.trim())
       .single();
 
     if (err || !data) {
       setError("Identifiants incorrects. Vérifiez votre nom RP.");
+      setLoading(false);
+      return;
+    }
+
+    if (data.actif === false) {
+      setError("Votre accès a été désactivé. Contactez un Patron du cabinet.");
       setLoading(false);
       return;
     }
@@ -66,7 +72,7 @@ export default function LoginPage() {
         position: "absolute", top: "30%", left: "50%",
         transform: "translate(-50%, -50%)",
         width: 600, height: 600, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 70%)",
+        background: "radial-gradient(circle, rgba(196,179,137,0.05) 0%, transparent 70%)",
         pointerEvents: "none",
       }} />
 
@@ -76,7 +82,7 @@ export default function LoginPage() {
           <div style={{
             width: 84, height: 84, borderRadius: "50%",
             background: "var(--gold-muted)",
-            border: "2px solid rgba(201,168,76,0.4)",
+            border: "2px solid rgba(196,179,137,0.35)",
             display: "flex", alignItems: "center", justifyContent: "center",
             margin: "0 auto 1.25rem", overflow: "hidden",
           }}>
@@ -91,7 +97,7 @@ export default function LoginPage() {
         <div style={{
           background: "var(--card)", border: "1px solid var(--border)",
           borderRadius: "var(--radius-lg)", padding: "2rem",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 40px rgba(212,175,55,0.05)",
+          boxShadow: "0 24px 80px rgba(2,4,12,0.55), 0 0 40px rgba(196,179,137,0.04)",
         }}>
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.2rem", fontWeight: 700, marginBottom: "0.25rem" }}>Connexion</div>
           <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "1.75rem" }}>Accès réservé au personnel du cabinet</div>

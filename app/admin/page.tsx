@@ -11,6 +11,7 @@ interface Membre {
   role: string;
   password: string;
   couleur: string;
+  actif: boolean;
   created_at?: string;
 }
 
@@ -136,6 +137,15 @@ export default function AdminPage() {
     setDeleteMembreId(null); fetchAll();
   }
 
+  async function toggleActif(id: string, currentlyActive: boolean) {
+    if (!supabase) return;
+    const { error } = await supabase.from("membres").update({ actif: !currentlyActive }).eq("id", id);
+    if (error) {
+      setFetchError("Impossible de modifier l'accès : " + error.message);
+    }
+    fetchAll();
+  }
+
   // ─── RÔLES ─────────────────────────────────────────────────────────────────
 
   async function createRole() {
@@ -252,7 +262,16 @@ export default function AdminPage() {
                     }}>{m.nom.charAt(0).toUpperCase()}</div>
 
                     <div style={{ flex:1, minWidth:120 }}>
-                      <div style={{ fontWeight:600, marginBottom:"0.2rem" }}>{m.nom}</div>
+                      <div style={{ fontWeight:600, marginBottom:"0.2rem", display:"flex", alignItems:"center", gap:"0.5rem" }}>
+                        {m.nom}
+                        {m.actif === false && (
+                          <span style={{ fontSize:"0.62rem", padding:"0.1rem 0.45rem", borderRadius:999,
+                            background:"rgba(239,68,68,0.12)", color:"var(--danger)", border:"1px solid rgba(239,68,68,0.3)",
+                            fontWeight:700, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                            Désactivé
+                          </span>
+                        )}
+                      </div>
                       {!isEditing ? (
                         <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
                           <span style={{ fontSize:"0.75rem",padding:"0.15rem 0.55rem",borderRadius:999,
@@ -307,6 +326,18 @@ export default function AdminPage() {
                     <div style={{ display:"flex", gap:"0.5rem", flexShrink:0 }}>
                       {!isEditing ? (
                         <>
+                          <button
+                            className="btn btn-sm"
+                            style={{
+                              background: m.actif === false ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+                              border: `1px solid ${m.actif === false ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+                              color: m.actif === false ? "var(--success)" : "var(--danger)",
+                            }}
+                            onClick={() => toggleActif(m.id, m.actif !== false)}
+                            title={m.actif === false ? "Réactiver l'accès" : "Couper l'accès"}
+                          >
+                            {m.actif === false ? "🔓 Réactiver" : "🔒 Couper l'accès"}
+                          </button>
                           <button className="btn btn-outline btn-sm" onClick={() => {
                             setEditMembreId(m.id); setEditMembreRole(m.role);
                             setEditMembrePassword(""); setEditMembreCouleur(m.couleur||"#c9a84c");

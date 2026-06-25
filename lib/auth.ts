@@ -109,7 +109,7 @@ export function canAccess(role: Role, permission: string): boolean {
 export function getUser(): User | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = sessionStorage.getItem("varelli_user");
+    const raw = localStorage.getItem("varelli_user");
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -117,11 +117,11 @@ export function getUser(): User | null {
 }
 
 export function setUser(user: User): void {
-  sessionStorage.setItem("varelli_user", JSON.stringify(user));
+  localStorage.setItem("varelli_user", JSON.stringify(user));
 }
 
 export function logout(): void {
-  sessionStorage.removeItem("varelli_user");
+  localStorage.removeItem("varelli_user");
 }
 
 export function getMemberColor(nom: string, customColor?: string): string {

@@ -89,8 +89,16 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!supabase) return;
     const [rolesData, { data: membreData }] = await Promise.all([
       loadRolesFromSupabase(),
-      supabase.from("membres").select("couleur").eq("nom", u.nom).single(),
+      supabase.from("membres").select("couleur, actif").eq("nom", u.nom).single(),
     ]);
+
+    // Si le membre a été désactivé côté admin, on le déconnecte immédiatement
+    if (membreData && membreData.actif === false) {
+      logout();
+      router.replace("/login");
+      return;
+    }
+
     const rData = rolesData.find((r) => r.nom === u.role);
     if (rData?.couleur) setRoleColor(rData.couleur);
     if (membreData?.couleur) setMemberColor(membreData.couleur);
@@ -124,7 +132,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             color:"var(--text-dim)", cursor:"pointer", fontFamily:"'Inter',sans-serif",
             fontSize:"0.78rem", transition:"border-color 0.15s",
           }}
-            onMouseEnter={e=>e.currentTarget.style.borderColor="rgba(201,168,76,0.3)"}
+            onMouseEnter={e=>e.currentTarget.style.borderColor="rgba(196,179,137,0.3)"}
             onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
             <span>🔍</span>
             <span style={{ flex:1, textAlign:"left" }}>Rechercher…</span>
