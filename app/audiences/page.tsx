@@ -101,6 +101,7 @@ export default function AudiencesPage() {
   const [search, setSearch] = useState("");
   const [clients, setClients] = useState<string[]>([]);
   const [memberColors, setMemberColors] = useState<Record<string, string>>({});
+  const [detailAudience, setDetailAudience] = useState<Audience | null>(null);
 
   useEffect(() => { fetchAudiences(); fetchClients(); fetchMemberColors(); }, []);
 
@@ -366,7 +367,8 @@ export default function AudiencesPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "1.5rem" }}>
 
-        <div className="card">
+        <div className="card" style={{ overflow: "hidden", position: "relative" }}>
+          <span className="wandering-cat" aria-hidden="true">🐈</span>
           {viewMode === "mois" ? (
             <>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
@@ -442,7 +444,7 @@ export default function AudiencesPage() {
                 <button className="btn btn-ghost btn-sm" onClick={() => navWeek(1)}>→</button>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {weekDates.map((d, idx) => {
                   const dStr = toISO(d);
                   const aud = audiencesByDate[dStr] || [];
@@ -450,22 +452,66 @@ export default function AudiencesPage() {
                   return (
                     <div key={dStr} style={{
                       borderRadius: "var(--radius)",
-                      border: `1px solid ${isToday ? "rgba(196,179,137,0.3)" : "var(--border)"}`,
-                      background: isToday ? "var(--gold-muted)" : "var(--surface)",
-                      padding: "0.75rem 0.9rem",
+                      border: `1px solid ${isToday ? "rgba(196,179,137,0.25)" : "var(--border)"}`,
+                      background: isToday ? "rgba(196,179,137,0.04)" : "transparent",
+                      padding: "0.6rem 0.7rem",
                     }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: aud.length ? "0.6rem" : 0 }}>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
-                          <span style={{ fontWeight: 700, fontSize: "0.85rem", color: isToday ? "var(--gold)" : "var(--text)" }}>
-                            {JOURS_LONG[idx]}
+                      <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem", marginBottom: aud.length ? "0.5rem" : 0 }}>
+                        <span style={{ fontWeight: 700, fontSize: "0.78rem", color: isToday ? "var(--gold)" : "var(--text-muted)", minWidth: 64 }}>
+                          {JOURS_LONG[idx]}
+                        </span>
+                        <span style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>{d.getDate()} {MOIS[d.getMonth()].toLowerCase()}</span>
+                        {aud.length > 0 && (
+                          <span style={{ marginLeft: "auto", fontSize: "0.66rem", color: "var(--text-dim)" }}>
+                            {aud.length} audience{aud.length > 1 ? "s" : ""}
                           </span>
-                          <span style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>{d.getDate()} {MOIS[d.getMonth()].toLowerCase()}</span>
-                        </div>
-                        {aud.length > 0 && <span style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>{aud.length} audience{aud.length > 1 ? "s" : ""}</span>}
+                        )}
                       </div>
+
                       {aud.length > 0 && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                          {aud.map(a => <AudienceCard key={a.id} a={a} compact />)}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+                          {aud.map(a => {
+                            const col = getColor(a.created_by);
+                            return (
+                              <button
+                                key={a.id}
+                                onClick={() => setDetailAudience(a)}
+                                style={{
+                                  display: "flex", alignItems: "center", gap: "0.7rem",
+                                  width: "100%", textAlign: "left",
+                                  padding: "0.5rem 0.65rem", borderRadius: "var(--radius)",
+                                  background: "var(--surface)", border: "1px solid var(--border)",
+                                  cursor: "pointer", fontFamily: "'Inter',sans-serif",
+                                  transition: "border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease)",
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = col + "50"; e.currentTarget.style.background = "var(--card-hover)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--surface)"; }}
+                              >
+                                {/* Heure mise en évidence, style Dashboard */}
+                                <div style={{ flexShrink: 0, textAlign: "center", minWidth: 42 }}>
+                                  <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: "0.95rem", color: "var(--text)", lineHeight: 1 }}>
+                                    {a.heure || "—"}
+                                  </div>
+                                </div>
+                                <div style={{ width: 3, height: 28, borderRadius: 2, background: col, flexShrink: 0 }} />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                                    <span style={{ fontSize: "0.78rem" }}>{TYPE_ICONS[a.type] || "📌"}</span>
+                                    <span style={{ fontWeight: 600, fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                      {a.titre}
+                                    </span>
+                                  </div>
+                                  <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: "0.1rem" }}>
+                                    {a.client && <span>{a.client}</span>}
+                                  </div>
+                                </div>
+                                <span style={{
+                                  fontSize: "0.6rem", padding: "0.1rem 0.4rem", borderRadius: 999, flexShrink: 0,
+                                  background: col + "18", color: col, border: `1px solid ${col}30`, fontWeight: 600,
+                                }}>{(a.created_by || "?").split(" ")[0]}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -546,6 +592,79 @@ export default function AudiencesPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal détail audience — ouverture en zoom */}
+      {detailAudience && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setDetailAudience(null)}>
+          <div className="modal" style={{ maxWidth: 460, animation: "modalZoomIn var(--t-base) var(--ease)" }}>
+            <div className="modal-header" style={{ borderBottom: `2px solid ${getColor(detailAudience.created_by)}40` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                <span style={{ fontSize: "1.3rem" }}>{TYPE_ICONS[detailAudience.type] || "📌"}</span>
+                <h2 className="modal-title">{detailAudience.titre}</h2>
+              </div>
+              <button className="modal-close" onClick={() => setDetailAudience(null)}>×</button>
+            </div>
+            <div className="modal-body">
+              {/* Date / heure en évidence */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: "1rem",
+                background: "var(--gold-muted)", border: "1px solid rgba(196,179,137,0.25)",
+                borderRadius: "var(--radius)", padding: "1rem 1.25rem",
+              }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: "1.8rem", color: "var(--gold)", lineHeight: 1 }}>
+                    {new Date(detailAudience.date + "T12:00:00").getDate()}
+                  </div>
+                  <div style={{ fontSize: "0.62rem", color: "var(--text-dim)", textTransform: "uppercase" }}>
+                    {new Date(detailAudience.date + "T12:00:00").toLocaleDateString("fr-FR", { month: "short" })}
+                  </div>
+                </div>
+                <div style={{ width: 1, height: 36, background: "var(--border-light)" }} />
+                <div>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: "1.3rem", color: "var(--text)" }}>
+                    {detailAudience.heure || "Heure non précisée"}
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
+                    {new Date(detailAudience.date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+                {[
+                  { label: "Type", value: detailAudience.type },
+                  { label: "Client", value: detailAudience.client || "—" },
+                  { label: "Lieu", value: detailAudience.lieu || "—" },
+                ].map(r => (
+                  <div key={r.label} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", paddingBottom: "0.5rem", borderBottom: "1px solid var(--border)" }}>
+                    <span style={{ color: "var(--text-dim)" }}>{r.label}</span>
+                    <span style={{ fontWeight: 500 }}>{r.value}</span>
+                  </div>
+                ))}
+                {detailAudience.notes && (
+                  <div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginBottom: "0.4rem" }}>Notes</div>
+                    <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.6, background: "var(--surface)", borderRadius: "var(--radius)", padding: "0.75rem" }}>
+                      {detailAudience.notes}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: getColor(detailAudience.created_by) }} />
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Créée par <strong style={{ color: "var(--text)" }}>{detailAudience.created_by}</strong></span>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost btn-sm" onClick={() => downloadICS(detailAudience)}>📥 Exporter .ics</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { openDuplicate(detailAudience); setDetailAudience(null); }}>⧉ Dupliquer</button>
+              <button className="btn btn-outline btn-sm" onClick={() => { openEdit(detailAudience); setDetailAudience(null); }}>✏️ Modifier</button>
+              <button className="btn btn-danger btn-sm" onClick={() => { deleteAudience(detailAudience.id); setDetailAudience(null); }}>🗑️ Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
