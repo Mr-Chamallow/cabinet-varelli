@@ -15,6 +15,9 @@ interface Audience {
   notes: string;
   created_by: string;
   created_at: string;
+  partage_avec?: string[];
+  prive?: boolean;
+  visible_pour?: string[];
 }
 
 const TYPES = ["Audience correctionnelle", "Audience civile", "Comparution immédiate", "Procès", "Entretien client", "Réunion cabinet", "Autre"];
@@ -42,6 +45,7 @@ const TYPE_COLORS: Record<string, string> = {
 const EMPTY: Omit<Audience, "id" | "created_by" | "created_at"> = {
   titre: "", client: "", date: "", heure: "",
   lieu: "", type: "Audience correctionnelle", notes: "",
+  partage_avec: [], prive: false, visible_pour: [],
 };
 
 function getMonthDays(year: number, month: number) {
@@ -102,8 +106,15 @@ export default function AudiencesPage() {
   const [clients, setClients] = useState<string[]>([]);
   const [memberColors, setMemberColors] = useState<Record<string, string>>({});
   const [detailAudience, setDetailAudience] = useState<Audience | null>(null);
+  const [membersList, setMembersList] = useState<string[]>([]);
 
-  useEffect(() => { fetchAudiences(); fetchClients(); fetchMemberColors(); }, []);
+  useEffect(() => { fetchAudiences(); fetchClients(); fetchMemberColors(); fetchMembersList(); }, []);
+
+  async function fetchMembersList() {
+    if (!supabase) return;
+    const { data } = await supabase.from("membres").select("nom").order("nom");
+    setMembersList((data || []).map((m: any) => m.nom));
+  }
 
   async function fetchMemberColors() {
     if (!supabase) return;
@@ -116,10 +127,17 @@ export default function AudiencesPage() {
   }
 
   async function fetchAudiences() {
-    if (!supabase) return;
+    if (!supabase || !user) return;
     setLoading(true);
     const { data } = await supabase.from("audiences").select("*").order("date").order("heure");
-    setAudiences(data || []);
+    const visibles = (data || []).filter((a: Audience) => {
+      if (!a.prive) return true;
+      if (a.created_by === user.nom) return true;
+      if ((a.visible_pour || []).includes(user.nom)) return true;
+      if ((a.partage_avec || []).includes(user.nom)) return true;
+      return false;
+    });
+    setAudiences(visibles);
     setLoading(false);
   }
 
@@ -158,14 +176,22 @@ export default function AudiencesPage() {
 
   function openEdit(a: Audience) {
     setEditAudience(a);
-    setForm({ titre: a.titre, client: a.client, date: a.date, heure: a.heure, lieu: a.lieu, type: a.type, notes: a.notes });
+    setForm({ titre: a.titre, client: a.client, date: a.date, heure: a.heure, lieu: a.lieu, type: a.type, notes: a.notes, partage_avec: a.partage_avec || [], prive: a.prive || false, visible_pour: a.visible_pour || [] });
     setShowModal(true);
   }
 
   function openDuplicate(a: Audience) {
     setEditAudience(null);
-    setForm({ titre: a.titre, client: a.client, date: "", heure: a.heure, lieu: a.lieu, type: a.type, notes: a.notes });
+    setForm({ titre: a.titre, client: a.client, date: "", heure: a.heure, lieu: a.lieu, type: a.type, notes: a.notes, partage_avec: a.partage_avec || [], prive: a.prive || false, visible_pour: a.visible_pour || [] });
     setShowModal(true);
+  }
+
+  function toggleMemberInField(field: "partage_avec" | "visible_pour", membre: string) {
+    setForm(f => {
+      const current = f[field] || [];
+      const next = current.includes(membre) ? current.filter(m => m !== membre) : [...current, membre];
+      return { ...f, [field]: next };
+    });
   }
 
   function getColor(membre: string) {
@@ -262,7 +288,8 @@ export default function AudiencesPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem", marginBottom: "0.3rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: 1, minWidth: 0 }}>
             <span style={{ fontSize: compact ? "0.78rem" : "0.85rem" }}>{TYPE_ICONS[a.type] || "📌"}</span>
-            <span style={{ fontWeight: 600, fontSize: compact ? "0.8rem" : "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {a.prive && <span title="Rendez-vous privé" style={{ fontSize: "0.7rem" }}>🔒</span>}
+            <span style={{ fontWeight: 600, fontSize: compact ? "0.8rem" : "0.875rem", color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {a.titre}
             </span>
           </div>
@@ -292,6 +319,11 @@ export default function AudiencesPage() {
             <span style={{
               fontSize: "0.6rem", color: typeCol, fontWeight: 500, paddingLeft: "0.2rem",
             }}>{a.type}</span>
+            {(a.partage_avec && a.partage_avec.length > 0) && (
+              <span style={{ fontSize: "0.6rem", color: "var(--info)", paddingLeft: "0.2rem" }}>
+                partagé avec {a.partage_avec.map(m => "@" + m.split(" ")[0]).join(", ")}
+              </span>
+            )}
           </div>
 
           {!compact && (
@@ -497,7 +529,7 @@ export default function AudiencesPage() {
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
                                     <span style={{ fontSize: "0.78rem" }}>{TYPE_ICONS[a.type] || "📌"}</span>
-                                    <span style={{ fontWeight: 600, fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    <span style={{ fontWeight: 600, fontSize: "0.82rem", color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                       {a.titre}
                                     </span>
                                   </div>
@@ -723,6 +755,71 @@ export default function AudiencesPage() {
                 <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                   <label>Notes</label>
                   <textarea rows={3} placeholder="Informations complémentaires…" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+                </div>
+
+                {/* Partager avec (@mention) */}
+                <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                  <label>Partager avec @</label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                    {membersList.filter(m => m !== user?.nom).map(m => {
+                      const active = (form.partage_avec || []).includes(m);
+                      const col = getColor(m);
+                      return (
+                        <button key={m} type="button" onClick={() => toggleMemberInField("partage_avec", m)} style={{
+                          display: "flex", alignItems: "center", gap: "0.3rem",
+                          padding: "0.35rem 0.65rem", borderRadius: 999, cursor: "pointer",
+                          fontFamily: "'Inter',sans-serif", fontSize: "0.74rem", fontWeight: active ? 700 : 400,
+                          background: active ? col + "18" : "var(--surface)",
+                          border: `1px solid ${active ? col + "50" : "var(--border)"}`,
+                          color: active ? col : "var(--text-muted)",
+                          transition: "all var(--t-fast) var(--ease)",
+                        }}>
+                          {active && "@"}{m}
+                        </button>
+                      );
+                    })}
+                    {membersList.length <= 1 && (
+                      <span style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>Aucun autre membre à partager.</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>
+                    Les membres sélectionnés verront ce rendez-vous même s'il est marqué privé.
+                  </div>
+                </div>
+
+                {/* RDV privé */}
+                <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+                    <input type="checkbox" checked={!!form.prive} onChange={e => setForm(f => ({ ...f, prive: e.target.checked }))} style={{ width: "auto" }} />
+                    🔒 Rendez-vous privé (masqué pour les autres membres)
+                  </label>
+                  {form.prive && (
+                    <div style={{ marginTop: "0.6rem" }}>
+                      <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginBottom: "0.4rem" }}>Visible uniquement par :</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                        {membersList.filter(m => m !== user?.nom).map(m => {
+                          const active = (form.visible_pour || []).includes(m);
+                          const col = getColor(m);
+                          return (
+                            <button key={m} type="button" onClick={() => toggleMemberInField("visible_pour", m)} style={{
+                              display: "flex", alignItems: "center", gap: "0.3rem",
+                              padding: "0.35rem 0.65rem", borderRadius: 999, cursor: "pointer",
+                              fontFamily: "'Inter',sans-serif", fontSize: "0.74rem", fontWeight: active ? 700 : 400,
+                              background: active ? col + "18" : "var(--surface)",
+                              border: `1px solid ${active ? col + "50" : "var(--border)"}`,
+                              color: active ? col : "var(--text-muted)",
+                              transition: "all var(--t-fast) var(--ease)",
+                            }}>
+                              {active && "✓"} {m}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: "0.4rem" }}>
+                        Vous voyez toujours vos propres rendez-vous privés. Les membres ci-dessus pourront aussi le voir.
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
