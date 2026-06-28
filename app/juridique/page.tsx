@@ -522,18 +522,19 @@ export default function JuridiqueePage() {
     return ARTICLES.filter(a => a.categorie === activeTab);
   }, [activeTab, search, isSearching]);
 
-  const catColors: Record<Categorie, string> = {
-    constitution: "#D4AF37",
-    penal_contravention: "#64748b",
-    penal_delit_mineur: "#f59e0b",
-    penal_delit_majeur: "#ef4444",
-    penal_crime: "#7c3aed",
-    procedure: "#3b82f6",
-    civil: "#06b6d4",
-    travail: "#84cc16",
-    commerce: "#f97316",
-    miranda: "#10b981",
-  };
+const catColors: Record<Categorie, string> = {
+  constitution: "#D4AF37",
+  penal_contravention: "#64748b",
+  penal_delit_mineur: "#f59e0b",
+  penal_delit_majeur: "#ef4444",
+  penal_crime: "#7c3aed",
+  procedure: "#3b82f6",
+  civil: "#06b6d4",
+  travail: "#84cc16",
+  commerce: "#f97316",
+  federal: "#06b6d4",
+  miranda: "#10b981",
+};
 
   return (
     <div className="page-container">
