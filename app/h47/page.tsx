@@ -60,13 +60,14 @@ export default function H47Page() {
   const [authChecked, setAuthChecked] = useState(false);
 
   const [config, setConfig] = useState<Config | null>(null);
+  const [configLoaded, setConfigLoaded] = useState(false);
   const PRIX = config ? { propre: config.prix_propre, sale: config.prix_sale } : { propre: 2500, sale: 3125 };
   const QUOTA_MAX = config?.quota_max ?? QUOTA_MAX_DEFAULT;
   const NOM_PRODUIT = config?.nom_produit || "H-47";
 
   // Édition config
   const [showConfigEdit, setShowConfigEdit] = useState(false);
-  const [configForm, setConfigForm] = useState({ nom_produit: "", prix_propre: 0, prix_sale: 0, quota_max: 0 });
+  const [configForm, setConfigForm] = useState({ nom_produit: "H-47", prix_propre: 2500, prix_sale: 3125, quota_max: 250 });
   const [savingConfig, setSavingConfig] = useState(false);
 
   const [ventes, setVentes] = useState<Vente[]>([]);
@@ -99,12 +100,21 @@ export default function H47Page() {
   }, []);
 
   async function loadConfig() {
-    if (!supabase) return;
-    const { data } = await supabase.from("h47_config").select("*").limit(1).single();
+    if (!supabase) { setConfigLoaded(true); return; }
+    const { data, error } = await supabase.from("h47_config").select("*").limit(1).maybeSingle();
     if (data) {
       setConfig(data);
       setConfigForm({ nom_produit: data.nom_produit, prix_propre: data.prix_propre, prix_sale: data.prix_sale, quota_max: data.quota_max });
+    } else if (!data && !error) {
+      // Aucune ligne en base : on insère des valeurs par défaut
+      const defaults = { nom_produit: "H-47", prix_propre: 2500, prix_sale: 3125, quota_max: 250 };
+      const { data: created } = await supabase.from("h47_config").insert([defaults]).select().single();
+      if (created) {
+        setConfig(created);
+        setConfigForm({ nom_produit: created.nom_produit, prix_propre: created.prix_propre, prix_sale: created.prix_sale, quota_max: created.quota_max });
+      }
     }
+    setConfigLoaded(true);
   }
 
   async function saveConfig() {
@@ -504,7 +514,7 @@ export default function H47Page() {
             )}
           </div>
 
-          {!config ? (
+          {!configLoaded ? (
             <div style={{ color:"var(--text-dim)", fontSize:"0.85rem" }}>Chargement de la configuration…</div>
           ) : !showConfigEdit ? (
             <div style={{ display:"flex", flexDirection:"column", gap:"0.625rem" }}>

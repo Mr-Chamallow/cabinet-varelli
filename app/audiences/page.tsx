@@ -583,42 +583,108 @@ export default function AudiencesPage() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
 
-          {selectedDate && (
-            <div className="card">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.875rem" }}>
-                <h3 style={{ fontSize: "0.875rem", fontWeight: 600 }}>
-                  {new Date(selectedDate + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+          {/* ── Audiences AUJOURD'HUI ────────────────────────────────── */}
+          <div className="card" style={{ border: audiencesAujourdhui.length > 0 ? "1px solid rgba(201,168,76,0.35)" : "1px solid var(--border)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.875rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: audiencesAujourdhui.length > 0 ? "var(--gold)" : "var(--text-dim)", boxShadow: audiencesAujourdhui.length > 0 ? "0 0 6px var(--gold)" : "none" }} />
+                <h3 style={{ fontSize: "0.875rem", fontWeight: 700, color: audiencesAujourdhui.length > 0 ? "var(--gold)" : "var(--text-muted)" }}>
+                  Aujourd'hui
                 </h3>
-                <button className="btn btn-ghost btn-sm" onClick={() => openCreate(selectedDate)}>+</button>
+                {audiencesAujourdhui.length > 0 && (
+                  <span style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem", borderRadius: 999, background: "var(--gold-muted)", color: "var(--gold)", border: "1px solid rgba(201,168,76,0.3)", fontWeight: 700 }}>
+                    {audiencesAujourdhui.length}
+                  </span>
+                )}
               </div>
+              <button className="btn btn-ghost btn-sm" onClick={() => openCreate(todayStr)} style={{ fontSize: "0.72rem" }}>+ Ajouter</button>
+            </div>
+            {loading ? (
+              <div className="skeleton" style={{ height: 48, borderRadius: "var(--radius)" }} />
+            ) : audiencesAujourdhui.length === 0 ? (
+              <div style={{ fontSize: "0.8rem", color: "var(--text-dim)", textAlign: "center", padding: "0.75rem 0", fontStyle: "italic" }}>
+                Aucune audience programmée aujourd'hui
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                {audiencesAujourdhui.map(a => <AudienceCard key={a.id} a={a} />)}
+              </div>
+            )}
+          </div>
 
+          {/* ── Date sélectionnée (si ≠ aujourd'hui) ────────────────── */}
+          {selectedDate && selectedDate !== todayStr && (
+            <div className="card" style={{ border: "1px solid rgba(99,102,241,0.3)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.875rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ fontSize: "0.85rem" }}>📌</span>
+                  <h3 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--info)" }}>
+                    {new Date(selectedDate + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+                  </h3>
+                  {selectedAudiences.length > 0 && (
+                    <span style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem", borderRadius: 999, background: "rgba(99,102,241,0.12)", color: "var(--info)", border: "1px solid rgba(99,102,241,0.3)", fontWeight: 700 }}>
+                      {selectedAudiences.length}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: "0.3rem" }}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => openCreate(selectedDate)} style={{ fontSize: "0.72rem" }}>+ Ajouter</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setSelectedDate(null)} style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>×</button>
+                </div>
+              </div>
               {selectedAudiences.length === 0 ? (
-                <div style={{ fontSize: "0.82rem", color: "var(--text-dim)", textAlign: "center", padding: "1rem 0" }}>
+                <div style={{ fontSize: "0.8rem", color: "var(--text-dim)", textAlign: "center", padding: "0.75rem 0", fontStyle: "italic" }}>
                   Aucune audience ce jour
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                   {selectedAudiences.map(a => <AudienceCard key={a.id} a={a} />)}
                 </div>
               )}
             </div>
           )}
 
+          {/* ── Séparateur visuel ─────────────────────────────────────── */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.25rem 0" }}>
+            <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+            <span style={{ fontSize: "0.62rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>À venir</span>
+            <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+          </div>
+
+          {/* ── Prochaines audiences (hors aujourd'hui) ──────────────── */}
           <div className="card">
-            <h3 style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.875rem" }}>📅 Prochaines audiences</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.875rem" }}>
+              <h3 style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-muted)" }}>Prochaines audiences</h3>
+              {prochaines.filter(a => a.date > todayStr).length > 0 && (
+                <span style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>
+                  {prochaines.filter(a => a.date > todayStr).length} planifiée{prochaines.filter(a => a.date > todayStr).length > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
             {loading ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 56, borderRadius: "var(--radius)" }} />)}
               </div>
-            ) : prochaines.length === 0 ? (
-              <div style={{ fontSize: "0.82rem", color: "var(--text-dim)", textAlign: "center", padding: "1rem 0" }}>Aucune audience planifiée</div>
+            ) : prochaines.filter(a => a.date > todayStr).length === 0 ? (
+              <div style={{ fontSize: "0.82rem", color: "var(--text-dim)", textAlign: "center", padding: "1rem 0", fontStyle: "italic" }}>Aucune audience à venir</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {prochaines.map((a) => (
-                  <div key={a.id} className="stagger-item" onClick={() => { setSelectedDate(a.date); setViewYear(Number(a.date.split("-")[0])); setViewMonth(Number(a.date.split("-")[1]) - 1); setViewMode("mois"); }} style={{ cursor: "pointer" }}>
-                    <AudienceCard a={a} compact />
-                  </div>
-                ))}
+                {prochaines.filter(a => a.date > todayStr).map((a) => {
+                  const daysUntil = Math.round((new Date(a.date + "T12:00:00").getTime() - new Date(todayStr + "T12:00:00").getTime()) / 86400000);
+                  const isThisWeek = daysUntil <= 7;
+                  return (
+                    <div key={a.id} style={{ position: "relative" }}>
+                      {isThisWeek && (
+                        <div style={{ position: "absolute", right: 6, top: 6, fontSize: "0.58rem", padding: "0.08rem 0.35rem", borderRadius: 999, background: "rgba(249,115,22,0.15)", color: "#f97316", border: "1px solid rgba(249,115,22,0.3)", fontWeight: 700, zIndex: 1 }}>
+                          J-{daysUntil}
+                        </div>
+                      )}
+                      <div onClick={() => { setSelectedDate(a.date); setViewYear(Number(a.date.split("-")[0])); setViewMonth(Number(a.date.split("-")[1]) - 1); setViewMode("mois"); }} style={{ cursor: "pointer" }}>
+                        <AudienceCard a={a} compact />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
