@@ -748,143 +748,128 @@ export default function SimulateurPage() {
                 Aperçu — Formulaire de Prison
               </div>
               <div style={{
-                background:"#0a1628", border:`2px solid #c9a84c`,
-                borderRadius:"var(--radius-lg)", overflow:"hidden", fontSize:"0.72rem",
-                fontFamily:"'Inter',sans-serif",
+                background:"rgba(10,22,40,0.95)", border:`2px solid rgba(201,168,76,0.4)`,
+                borderRadius:"var(--radius-lg)", overflow:"hidden", fontSize:"0.72rem", fontFamily:"'Inter',sans-serif",
               }}>
-                {/* Header titre */}
-                <div style={{ background:"#0d1f3c", borderBottom:"2px solid #c9a84c", padding:"0.6rem 1rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                  <div style={{ fontWeight:900, fontSize:"0.9rem", color:"#c9a84c", letterSpacing:"0.04em" }}>FORMULAIRE DE PRISON — San Andreas</div>
-                  <div style={{ border:`2px solid ${dc.couleur}`, borderRadius:4, padding:"0.2rem 0.75rem", fontWeight:900, fontSize:"0.82rem", color:dc.couleur }}>Defcon {defcon}</div>
+                {/* Header */}
+                <div style={{ background:"rgba(13,31,60,0.9)", borderBottom:"1px solid rgba(201,168,76,0.3)", padding:"0.55rem 1rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <div style={{ fontWeight:900, fontSize:"0.85rem", color:"#c9a84c", letterSpacing:"0.04em" }}>FORMULAIRE DE PRISON — San Andreas</div>
+                  <div style={{ border:`2px solid ${dc.couleur}60`, borderRadius:4, padding:"0.2rem 0.75rem", fontWeight:900, fontSize:"0.8rem", color:dc.couleur }}>Defcon {defcon}</div>
                 </div>
-
-                {/* Ligne infos prévenu */}
-                <div style={{ display:"grid", gridTemplateColumns:"90px 1fr 160px 1fr", borderBottom:"1px solid #c9a84c44" }}>
+                {/* Ligne prévenu */}
+                <div style={{ display:"grid", gridTemplateColumns:"auto auto auto 1fr", borderBottom:"1px solid rgba(201,168,76,0.15)" }}>
                   {[
                     ["En Date du", new Date().toLocaleDateString("fr-FR")+" à "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})],
-                    ["Le Prévenu", prenomPrev||nomPrev ? `${prenomPrev} ${nomPrev}`.trim() : "—"],
+                    ["Le Prévenu",  prenomPrev||nomPrev?`${prenomPrev} ${nomPrev}`.trim():"—"],
                     ["Matricule(s)", matricule||"—"],
-                  ].map(([label, val], i) => (
-                    <div key={i} style={{ padding:"0.35rem 0.625rem", background:i%2===0?"#0d1f3c":"#112240", borderRight:"1px solid #c9a84c44", display:"flex", alignItems:"center", gap:"0.4rem" }}>
-                      <span style={{ color:"#8ba7c7", fontSize:"0.65rem", flexShrink:0 }}>{label}</span>
-                      <span style={{ color:"#fff", fontWeight:600, fontSize:"0.72rem" }}>{val}</span>
+                  ].map(([label, val], i)=>(
+                    <div key={i} style={{ padding:"0.3rem 0.75rem", background:i%2===0?"rgba(13,31,60,0.7)":"rgba(17,34,64,0.7)", borderRight:"1px solid rgba(201,168,76,0.12)", display:"flex", alignItems:"center", gap:"0.4rem", whiteSpace:"nowrap" }}>
+                      <span style={{ color:"rgba(139,167,199,0.7)", fontSize:"0.6rem", flexShrink:0 }}>{label}</span>
+                      <span style={{ color:"#e0e8f0", fontWeight:600, fontSize:"0.7rem" }}>{val}</span>
                     </div>
                   ))}
+                  <div style={{ padding:"0.3rem", background:"rgba(13,31,60,0.5)" }}/>
                 </div>
-
-                {/* Corps principal */}
-                <div style={{ display:"grid", gridTemplateColumns:"200px 1fr" }}>
-                  {/* Colonne gauche */}
-                  <div style={{ borderRight:"1px solid #c9a84c44", padding:"0.75rem" }}>
+                {/* Corps */}
+                <div style={{ display:"grid", gridTemplateColumns:"195px 1fr" }}>
+                  {/* Gauche */}
+                  <div style={{ borderRight:"1px solid rgba(201,168,76,0.15)", padding:"0.625rem", display:"flex", flexDirection:"column", gap:"0.5rem" }}>
                     {/* Droits */}
-                    <div style={{ background:"#0d1f3c", borderRadius:4, padding:"0.5rem", marginBottom:"0.625rem", border:"1px solid #c9a84c30" }}>
-                      <div style={{ color:"#8ba7c7", fontSize:"0.6rem", marginBottom:"0.4rem" }}>Droits du prévenu</div>
+                    <div style={{ background:"rgba(13,31,60,0.5)", borderRadius:4, padding:"0.5rem", border:"1px solid rgba(201,168,76,0.12)" }}>
+                      <div style={{ color:"rgba(139,167,199,0.6)", fontSize:"0.58rem", marginBottom:"0.35rem" }}>Droits du prévenu</div>
                       <div style={{ display:"flex", gap:"0.75rem" }}>
-                        {[["Soins",droitSoins],["Nourriture",droitNourriture],["Plaider",droitPlaide&&!hasCrime]].map(([l,v])=>(
-                          <div key={String(l)} style={{ textAlign:"center" }}>
-                            <div style={{ width:14, height:14, border:`2px solid ${v?"#22c55e":"#c9a84c60"}`, borderRadius:3, background:v?"#22c55e30":"transparent", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 0.2rem" }}>
+                        {([["Soins",droitSoins],["Nourriture",droitNourriture],["Plaider",droitPlaide&&!hasCrime]] as [string,boolean][]).map(([l,v])=>(
+                          <div key={l} style={{ textAlign:"center" }}>
+                            <div style={{ width:14,height:14,border:`2px solid ${v?"rgba(34,197,94,0.6)":"rgba(201,168,76,0.25)"}`,borderRadius:3,background:v?"rgba(34,197,94,0.15)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 0.2rem" }}>
                               {v&&<span style={{color:"#22c55e",fontSize:"0.55rem",fontWeight:900}}>✓</span>}
                             </div>
-                            <div style={{ color:"#8ba7c7", fontSize:"0.58rem" }}>{String(l)}</div>
+                            <div style={{ color:"rgba(139,167,199,0.6)", fontSize:"0.58rem" }}>{l}</div>
                           </div>
                         ))}
                       </div>
                     </div>
                     {/* Intervenant */}
-                    <div style={{ background:"#0d1f3c", borderRadius:4, padding:"0.5rem", marginBottom:"0.625rem", border:"1px solid #c9a84c30" }}>
-                      {[
-                        {key:"avocat",    label:"Avocat",    col:"#22c55e"},
-                        {key:"procureur", label:"Procureur/Juge", col:"#3b82f6"},
-                        {key:"cs",        label:"CS/Sgt.II", col:"#64748b"},
-                      ].map(o=>(
-                        <div key={o.key} style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.3rem" }}>
-                          <div style={{ width:14, height:14, border:`2px solid ${o.key===intervenant?o.col:"#c9a84c60"}`, borderRadius:3, background:o.key===intervenant?o.col+"30":"transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                            {o.key===intervenant&&<span style={{color:o.col,fontSize:"0.55rem",fontWeight:900}}>✓</span>}
+                    <div style={{ background:"rgba(13,31,60,0.5)", borderRadius:4, padding:"0.5rem", border:"1px solid rgba(201,168,76,0.12)" }}>
+                      <div style={{ color:"rgba(139,167,199,0.6)", fontSize:"0.58rem", marginBottom:"0.35rem" }}>Intervenant</div>
+                      {([{key:"avocat",label:"Avocat",col:"rgba(34,197,94,0.7)"},{key:"procureur",label:"Procureur/Juge",col:"rgba(59,130,246,0.7)"},{key:"cs",label:"CS/Sgt.II",col:"rgba(100,116,139,0.7)"}] as const).map(o=>(
+                        <div key={o.key} style={{ display:"flex",alignItems:"center",gap:"0.4rem",marginBottom:"0.25rem" }}>
+                          <div style={{ width:14,height:14,border:`2px solid ${intervenant===o.key?o.col:"rgba(201,168,76,0.2)"}`,borderRadius:3,background:intervenant===o.key?o.col.replace("0.7","0.12"):"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+                            {intervenant===o.key&&<span style={{color:o.col,fontSize:"0.55rem",fontWeight:900}}>✓</span>}
                           </div>
-                          <span style={{ color:o.key===intervenant?"#fff":"#8ba7c7", fontSize:"0.7rem", fontWeight:o.key===intervenant?600:400 }}>{o.label}</span>
-                          {o.key===intervenant&&intervenant==="avocat"&&user?.nom&&(
-                            <span style={{ color:"#c9a84c", fontSize:"0.65rem", fontStyle:"italic", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user.nom}</span>
-                          )}
+                          <span style={{ color:intervenant===o.key?"#e0e8f0":"rgba(139,167,199,0.5)", fontSize:"0.68rem", fontWeight:intervenant===o.key?600:400 }}>{o.label}</span>
                         </div>
                       ))}
+                      {/* Nom avocat libre */}
+                      <div style={{ marginTop:"0.35rem", display:"flex", alignItems:"center", gap:"0.3rem" }}>
+                        <span style={{ fontSize:"0.6rem", color:"rgba(139,167,199,0.5)", flexShrink:0 }}>Nom :</span>
+                        <input
+                          placeholder={user?.nom||"Nom avocat…"}
+                          defaultValue={user?.nom||""}
+                          style={{ flex:1,fontSize:"0.65rem",padding:"0.15rem 0.35rem",background:"rgba(17,34,64,0.7)",border:"1px solid rgba(201,168,76,0.2)",borderRadius:3,color:"#e0e8f0" }}
+                        />
+                      </div>
                     </div>
                     {/* Résultats */}
-                    <div style={{ background:"#0d1f3c", borderRadius:4, padding:"0.5rem", border:"1px solid #c9a84c40" }}>
+                    <div style={{ background:"rgba(13,31,60,0.5)", borderRadius:4, padding:"0.5rem", border:"1px solid rgba(201,168,76,0.18)" }}>
                       <div style={{ marginBottom:"0.4rem" }}>
-                        <div style={{ color:"#8ba7c7", fontSize:"0.6rem" }}>Le Prévenu doit être mis en Prison :</div>
-                        <div style={{ display:"flex", alignItems:"center", gap:"0.4rem", marginTop:"0.2rem" }}>
-                          <div style={{ background:"#112240", border:"1px solid #c9a84c50", borderRadius:3, padding:"0.15rem 0.625rem", color:formulaireCalc.detentionTotale>0?"#fff":"#8ba7c7", fontWeight:700, fontSize:"0.8rem", minWidth:40, textAlign:"center" }}>
+                        <div style={{ color:"rgba(139,167,199,0.6)", fontSize:"0.6rem" }}>Le Prévenu doit être mis en Prison :</div>
+                        <div style={{ display:"flex",alignItems:"center",gap:"0.4rem",marginTop:"0.2rem" }}>
+                          <div style={{ background:"rgba(17,34,64,0.8)",border:"1px solid rgba(201,168,76,0.25)",borderRadius:3,padding:"0.15rem 0.625rem",color:formulaireCalc.detentionTotale>0?"#e0e8f0":"rgba(139,167,199,0.4)",fontWeight:700,fontSize:"0.8rem",minWidth:44,textAlign:"center" }}>
                             {formulaireCalc.detentionTotale||"—"}
                           </div>
-                          <span style={{ background:"#f59e0b", color:"#000", fontWeight:700, fontSize:"0.65rem", padding:"0.1rem 0.4rem", borderRadius:3 }}>Minutes</span>
+                          <span style={{ background:"rgba(245,158,11,0.75)",color:"#000",fontWeight:700,fontSize:"0.6rem",padding:"0.1rem 0.4rem",borderRadius:3 }}>Minutes</span>
                         </div>
                       </div>
                       <div>
-                        <div style={{ color:"#8ba7c7", fontSize:"0.6rem" }}>Pour une Amende totale de :</div>
-                        <div style={{ background:"#112240", border:"1px solid #c9a84c50", borderRadius:3, padding:"0.15rem 0.625rem", color:formulaireCalc.amendeFinale>0?"#c9a84c":"#8ba7c7", fontWeight:700, fontSize:"0.8rem", marginTop:"0.2rem", display:"inline-block" }}>
+                        <div style={{ color:"rgba(139,167,199,0.6)", fontSize:"0.6rem" }}>Pour une Amende totale de :</div>
+                        <div style={{ background:"rgba(17,34,64,0.8)",border:"1px solid rgba(201,168,76,0.25)",borderRadius:3,padding:"0.15rem 0.625rem",color:formulaireCalc.amendeFinale>0?"#c9a84c":"rgba(139,167,199,0.4)",fontWeight:700,fontSize:"0.78rem",marginTop:"0.2rem",display:"inline-block" }}>
                           {formulaireCalc.amendeFinale>0?fmt(formulaireCalc.amendeFinale):"—"}
                         </div>
                       </div>
                     </div>
                     {/* Retenue */}
-                    <div style={{ marginTop:"0.5rem", background:"#0d1f3c", borderRadius:4, padding:"0.5rem", border:"1px solid #c9a84c30" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.3rem" }}>
-                        <span style={{ color:"#8ba7c7", fontSize:"0.6rem" }}>Le Prévenu a eu une Retenue :</span>
-                        <span style={{ background:retenueData.color, color:"#000", fontWeight:900, fontSize:"0.65rem", padding:"0.1rem 0.5rem", borderRadius:3, letterSpacing:"0.05em" }}>{retenue}</span>
+                    <div style={{ background:"rgba(13,31,60,0.5)", borderRadius:4, padding:"0.5rem", border:`1px solid ${retenueData.color}35` }}>
+                      <div style={{ display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.35rem" }}>
+                        <span style={{ color:"rgba(139,167,199,0.6)", fontSize:"0.6rem", flexShrink:0 }}>Retenue :</span>
+                        <span style={{ background:retenueData.color,color:"#000",fontWeight:900,fontSize:"0.68rem",padding:"0.1rem 0.55rem",borderRadius:3,letterSpacing:"0.05em" }}>{retenue}</span>
+                        <span style={{ color:retenueData.color, fontSize:"0.6rem", fontWeight:700 }}>×{retenueData.coeff}</span>
                       </div>
-                      <div style={{ background:"#f59e0b15", border:"1px solid #f59e0b40", borderRadius:4, padding:"0.35rem 0.5rem" }}>
-                        <div style={{ color:"#8ba7c7", fontSize:"0.6rem", marginBottom:"0.15rem" }}>Conditions :</div>
-                        <div style={{ color:"#f59e0b", fontSize:"0.65rem", fontStyle:"italic" }}>{retenueData.desc}</div>
+                      <div style={{ background:`${retenueData.color}10`,border:`1px solid ${retenueData.color}30`,borderRadius:4,padding:"0.35rem 0.5rem" }}>
+                        <div style={{ color:"rgba(139,167,199,0.6)", fontSize:"0.58rem", marginBottom:"0.15rem" }}>Conditions :</div>
+                        <div style={{ color:retenueData.color, fontSize:"0.63rem", fontStyle:"italic", lineHeight:1.4 }}>{retenueData.desc}</div>
+                        {retenueData.tier==="max"&&<div style={{ fontSize:"0.58rem",color:"rgba(239,68,68,0.6)",marginTop:"0.2rem" }}>⚠ Approbation CS/SGT2 ou Juge requise</div>}
                       </div>
                     </div>
                   </div>
-
-                  {/* Tableau charges droite */}
-                  <div>
-                    {/* En-têtes table */}
-                    <div style={{ display:"grid", gridTemplateColumns:"100px 60px 60px 55px 1fr 70px", background:"#1a3a5c", borderBottom:"1px solid #c9a84c44", padding:"0.3rem 0" }}>
-                      {["Catégorie(s)","Tentative","Complicité","Quantité","Charge retenue(s)","Atténuation"].map(h=>(
-                        <div key={h} style={{ padding:"0 0.5rem", fontSize:"0.6rem", fontWeight:700, color:"#c9a84c", textAlign:"center" }}>{h}</div>
+                  {/* Tableau charges */}
+                  <div style={{ overflowX:"auto" }}>
+                    <div style={{ display:"grid",gridTemplateColumns:"90px 55px 60px 45px 1fr 60px",background:"rgba(26,58,92,0.5)",borderBottom:"1px solid rgba(201,168,76,0.2)",minWidth:380 }}>
+                      {["Catégorie","Tentative","Complicité","Qté","Charge retenue","Atténuat."].map(h=>(
+                        <div key={h} style={{ padding:"0.3rem 0.35rem",fontSize:"0.57rem",fontWeight:700,color:"rgba(201,168,76,0.85)",textAlign:"center",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis" }}>{h}</div>
                       ))}
                     </div>
-                    {/* Lignes */}
-                    {lignes.filter(l=>l.chef).length===0 ? (
-                      <div style={{ padding:"1.5rem", textAlign:"center", color:"#8ba7c7", fontSize:"0.72rem" }}>
-                        Aucun chef d'inculpation renseigné
-                      </div>
-                    ) : (
-                      lignes.filter(l=>l.chef).map((l,i)=>{
-                        const cat = l.chef!.categorie;
-                        const catBg: Record<string,string> = { "Crime":"#8b1a1a","Délit majeur":"#c2551a","Délit mineur":"#b8860b","Contravention":"#2a4a6b" };
-                        const catColor: Record<string,string> = { "Crime":"#ff8080","Délit majeur":"#ffa060","Délit mineur":"#ffd700","Contravention":"#90b8d8" };
-                        return(
-                          <div key={l.id} style={{ display:"grid", gridTemplateColumns:"100px 60px 60px 55px 1fr 70px", background:i%2===0?"#0d1f3c":"#112240", borderBottom:"1px solid #c9a84c20", alignItems:"center" }}>
-                            <div style={{ padding:"0.3rem 0.5rem", background:catBg[cat]||"#1a3a5c", textAlign:"center" }}>
-                              <span style={{ fontSize:"0.62rem", fontWeight:700, color:catColor[cat]||"#fff" }}>{cat}</span>
-                            </div>
-                            <div style={{ textAlign:"center", fontSize:"0.65rem", color:"#fff", padding:"0.3rem" }}>
-                              {l.tentative?<span style={{color:"#f59e0b",fontWeight:700}}>✓</span>:""}
-                            </div>
-                            <div style={{ textAlign:"center", fontSize:"0.65rem", color:"#fff", padding:"0.3rem" }}>
-                              {l.complicite?<span style={{color:"#3b82f6",fontWeight:700}}>✓</span>:""}
-                            </div>
-                            <div style={{ textAlign:"center", fontWeight:700, color:"#fff", fontSize:"0.7rem", padding:"0.3rem" }}>
-                              {l.quantite}
-                            </div>
-                            <div style={{ padding:"0.3rem 0.5rem", color:"#e0e8f0", fontSize:"0.68rem" }}>
-                              {l.chef!.infraction}
-                            </div>
-                            <div style={{ textAlign:"center", fontSize:"0.65rem", color:l.attenuation?"#22c55e":"#8ba7c7", padding:"0.3rem" }}>
-                              {l.attenuation?"Oui":"Non"}
-                            </div>
+                    {lignes.filter(l=>l.chef).length===0?(
+                      <div style={{ padding:"2rem",textAlign:"center",color:"rgba(139,167,199,0.4)",fontSize:"0.72rem" }}>Aucun chef renseigné</div>
+                    ):lignes.filter(l=>l.chef).map((l,i)=>{
+                      const cat=l.chef!.categorie;
+                      const catBg:Record<string,string>={"Crime":"rgba(139,26,26,0.5)","Délit majeur":"rgba(180,80,26,0.5)","Délit mineur":"rgba(150,115,10,0.45)","Contravention":"rgba(42,74,107,0.5)"};
+                      const catCol:Record<string,string>={"Crime":"#ffa0a0","Délit majeur":"#ffc090","Délit mineur":"#ffe090","Contravention":"#90c8e8"};
+                      return(
+                        <div key={l.id} style={{ display:"grid",gridTemplateColumns:"90px 55px 60px 45px 1fr 60px",background:i%2===0?"rgba(13,31,60,0.4)":"rgba(17,34,64,0.4)",borderBottom:"1px solid rgba(201,168,76,0.08)",alignItems:"center",minWidth:380 }}>
+                          <div style={{ padding:"0.3rem 0.35rem",background:catBg[cat]||"rgba(26,58,92,0.4)",textAlign:"center" }}>
+                            <span style={{ fontSize:"0.58rem",fontWeight:700,color:catCol[cat]||"#fff",whiteSpace:"nowrap" }}>{cat}</span>
                           </div>
-                        );
-                      })
-                    )}
+                          <div style={{ textAlign:"center",fontSize:"0.65rem",padding:"0.3rem" }}>{l.tentative?<span style={{color:"rgba(245,158,11,0.85)",fontWeight:700}}>✓</span>:<span style={{color:"rgba(139,167,199,0.2)"}}>—</span>}</div>
+                          <div style={{ textAlign:"center",fontSize:"0.65rem",padding:"0.3rem" }}>{l.complicite?<span style={{color:"rgba(99,130,246,0.85)",fontWeight:700}}>✓</span>:<span style={{color:"rgba(139,167,199,0.2)"}}>—</span>}</div>
+                          <div style={{ textAlign:"center",fontWeight:700,color:"#e0e8f0",fontSize:"0.7rem",padding:"0.3rem" }}>{l.quantite}</div>
+                          <div style={{ padding:"0.3rem 0.5rem",color:"rgba(200,216,232,0.9)",fontSize:"0.67rem",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{l.chef!.infraction}</div>
+                          <div style={{ textAlign:"center",fontSize:"0.63rem",color:l.attenuation?"rgba(34,197,94,0.75)":"rgba(139,167,199,0.3)",padding:"0.3rem" }}>{l.attenuation?"Oui":"Non"}</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
-
               {/* Tableau de référence des taux */}
               <div className="card" style={{background:"var(--surface)"}}>
                 <div className="section-title" style={{marginBottom:"0.75rem"}}>Référence — Taux des charges</div>

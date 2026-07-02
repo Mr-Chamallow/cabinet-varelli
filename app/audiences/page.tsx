@@ -311,16 +311,21 @@ export default function AudiencesPage() {
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-            <span style={{
-              fontSize: "0.62rem", padding: "0.1rem 0.4rem", borderRadius: 999, alignSelf: "flex-start",
-              background: col + "18", color: col, border: `1px solid ${col}30`, fontWeight: 600,
-            }}>{a.created_by || "?"}</span>
-            <span style={{
-              fontSize: "0.6rem", color: typeCol, fontWeight: 500, paddingLeft: "0.2rem",
-            }}>{a.type}</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem", minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", flexWrap: "nowrap", overflow: "hidden" }}>
+              <span style={{
+                fontSize: "0.62rem", padding: "0.1rem 0.4rem", borderRadius: 999, flexShrink: 0,
+                background: col + "18", color: col, border: `1px solid ${col}30`, fontWeight: 600,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 120,
+              }}>{a.created_by || "?"}</span>
+              <span style={{ fontSize: "0.58rem", color: "var(--text-dim)", flexShrink: 0 }}>·</span>
+              <span style={{
+                fontSize: "0.6rem", color: typeCol, fontWeight: 600, flexShrink: 0,
+                background: typeCol + "12", padding: "0.08rem 0.35rem", borderRadius: 999, border: `1px solid ${typeCol}25`,
+              }}>{a.type}</span>
+            </div>
             {(a.partage_avec && a.partage_avec.length > 0) && (
-              <span style={{ fontSize: "0.6rem", color: "var(--info)", paddingLeft: "0.2rem" }}>
+              <span style={{ fontSize: "0.6rem", color: "var(--info)", paddingLeft: "0.1rem" }}>
                 partagé avec {a.partage_avec.map(m => "@" + m.split(" ")[0]).join(", ")}
               </span>
             )}
