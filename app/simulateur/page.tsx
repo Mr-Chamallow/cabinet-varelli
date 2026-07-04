@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
 
 /* ─── CODE PÉNAL complet ──────────────────────────────────────────────────── */
-import { CHEFS_PENAL, PLAFONDS_PENAL as PLAFONDS, HONORAIRES_PAR_CAT as HON_PAR_CAT } from "@/lib/code-penal";
+import { CHEFS_PENAL, PLAFONDS_PENAL as PLAFONDS, HONORAIRES_PAR_CAT as HON_PAR_CAT } from "../lib/code-penal";
 
 const TAUX_TENTATIVE   = 0.9;
 const TAUX_COMPLICITE  = 0.8;

@@ -20,6 +20,25 @@ const DOCUMENTS_DEFAUT = [
 // Code pénal simplifié pour la picklist
 import { CHEFS_PENAL, type ChefPenal } from "@/lib/code-penal";
 
+const EVENT_TYPES = [
+  { key:"note",      label:"Note",            icon:"📝", color:"var(--text-muted)" },
+  { key:"audience",  label:"Audience",        icon:"⚖️", color:"var(--gold)" },
+  { key:"document",  label:"Document reçu",  icon:"📄", color:"var(--info)" },
+  { key:"decision",  label:"Décision",        icon:"🔨", color:"#a855f7" },
+  { key:"contact",   label:"Contact client", icon:"📞", color:"var(--success)" },
+  { key:"alerte",    label:"Alerte",          icon:"⚠️", color:"var(--danger)" },
+];
+
+function renderWithMentions(text: string) {
+  const parts = text.split(/(@[\p{L}\d]+(?:\s[\p{L}\d]+)?)/gu);
+  return parts.map((part, i) => {
+    if (part.startsWith("@")) {
+      return <span key={i} style={{ color:"var(--info)", fontWeight:600, background:"rgba(99,102,241,0.1)", padding:"0 0.2rem", borderRadius:4 }}>{part}</span>;
+    }
+    return part;
+  });
+}
+
 const CAT_COLORS: Record<string,string> = {
   "Contravention": "#64748b",
   "Délit mineur":  "#f59e0b",
