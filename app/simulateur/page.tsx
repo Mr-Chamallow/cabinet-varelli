@@ -691,7 +691,8 @@ export default function SimulateurPage() {
               )}
 
               {/* ─── APERÇU FORMULAIRE DE PRISON ─── */}
-              {/* print-target: formulaire-preview */
+              {/* print-target: formulaire-preview */}
+              <></>
               <div style={{ fontWeight:700, fontSize:"0.78rem", color:"var(--text-dim)", textTransform:"uppercase", letterSpacing:"0.08em", marginTop:"0.5rem" }}>
                 Aperçu — Formulaire de Prison
               </div>
