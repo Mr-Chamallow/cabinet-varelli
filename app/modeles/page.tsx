@@ -452,6 +452,62 @@ export default function ModelesPage() {
   const [filterType, setFilterType] = useState("");
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState<string|null>(null);
+  const [showAI, setShowAI] = useState(false);
+  const [aiClient, setAiClient] = useState("");
+  const [aiChefs, setAiChefs] = useState("");
+  const [aiContexte, setAiContexte] = useState("");
+  const [aiType, setAiType] = useState("Plaidoirie");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState("");
+  const [aiError, setAiError] = useState("");
+
+  async function generatePlaidoirie() {
+    if (!aiClient.trim()) return;
+    setAiLoading(true); setAiResult(""); setAiError("");
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1000,
+          messages: [{
+            role: "user",
+            content: `Tu es Maître Marco Varelli, avocat senior au Cabinet BullHead à Los Santos (jeu de rôle GTA FiveM - serveur FlashBackFA). Rédige une ${aiType.toLowerCase()} formelle en français juridique soutenu pour :
+- Client : ${aiClient}
+- Chefs d'inculpation : ${aiChefs || "non précisés"}
+- Contexte / notes : ${aiContexte || "affaire standard"}
+
+La plaidoirie doit :
+1. Commencer par "Mesdames et Messieurs les membres de cette Cour,"
+2. Contenir introduction, arguments de fond, demandes
+3. Se terminer par une citation biblique ou philosophique (Ézéchiel, Ruth, Proverbes, ou Jean)
+4. Être signée "Maître Marco Varelli — Cabinet BullHead"
+5. Utiliser un style sobre, formel et convaincant adapté au RP judiciaire
+
+Génère UNIQUEMENT la plaidoirie, sans introduction ni préambule de ta part.`
+          }]
+        })
+      });
+      const data = await response.json();
+      const text = data.content?.map((b: any) => b.text || "").join("") || "";
+      setAiResult(text);
+    } catch (e) {
+      setAiError("Erreur lors de la génération. Vérifiez la connexion.");
+    }
+    setAiLoading(false);
+  }
+
+  async function saveAiResult() {
+    if (!aiResult.trim() || !supabase || !user) return;
+    const titre = `[IA] ${aiType} — ${aiClient}`;
+    const { data } = await supabase.from("modeles").insert([{ titre, type: aiType, contenu: aiResult, created_by: user.nom }]).select().single();
+    if (data) { setModeles(m => [data, ...m]); setSelected(data); }
+    setShowAI(false); setAiResult(""); setAiClient(""); setAiChefs(""); setAiContexte("");
+    showT("Plaidoirie générée et sauvegardée");
+  }
+
+
 
   useEffect(() => { load(); }, []);
 
@@ -527,9 +583,14 @@ export default function ModelesPage() {
           <p className="page-subtitle">Bibliothèque de templates juridiques</p>
           <div className="gold-line" />
         </div>
-        <button className="btn btn-gold" onClick={() => { setForm({titre:"",type:"Plaidoirie",contenu:""}); setEditMode(false); setShowForm(true); }}>
-          + Nouveau modèle
-        </button>
+        <div style={{display:"flex",gap:"0.5rem"}}>
+          <button className="btn btn-outline" onClick={() => setShowAI(true)}>
+            ✨ Générer avec l'IA
+          </button>
+          <button className="btn btn-gold" onClick={() => { setForm({titre:"",type:"Plaidoirie",contenu:""}); setEditMode(false); setShowForm(true); }}>
+            + Nouveau modèle
+          </button>
+        </div>
       </div>
 
       <div style={{ display:"grid", gridTemplateColumns:"300px 1fr", gap:"1.5rem" }}>
@@ -680,6 +741,69 @@ export default function ModelesPage() {
         </div>
       )}
 
+
+      {/* ─── Modal IA ─── */}
+      {showAI && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowAI(false)}>
+          <div className="modal modal-lg">
+            <div className="modal-header">
+              <div>
+                <h2 className="modal-title">✨ Génération IA — Plaidoirie</h2>
+                <div style={{fontSize:"0.72rem",color:"var(--text-dim)",marginTop:"0.15rem"}}>Maître Marco Varelli · Cabinet BullHead</div>
+              </div>
+              <button className="modal-close" onClick={()=>setShowAI(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              {!aiResult ? (
+                <>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Nom du client *</label>
+                      <input placeholder="Ex : Pierre Durand" value={aiClient} onChange={e=>setAiClient(e.target.value)} autoFocus />
+                    </div>
+                    <div className="form-group">
+                      <label>Type de document</label>
+                      <select value={aiType} onChange={e=>setAiType(e.target.value)}>
+                        {TYPES.map(t=><option key={t}>{t}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Chefs d'inculpation</label>
+                    <input placeholder="Ex : DMJ-9 Agression sur agent, CR-8 Meurtre MORT RP..." value={aiChefs} onChange={e=>setAiChefs(e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label>Contexte / notes pour l'IA</label>
+                    <textarea rows={3} placeholder="Circonstances, éléments de défense, vice de procédure, etc." value={aiContexte} onChange={e=>setAiContexte(e.target.value)} />
+                  </div>
+                  {aiError && <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius)",padding:"0.75rem",fontSize:"0.82rem",color:"var(--danger)"}}>{aiError}</div>}
+                </>
+              ) : (
+                <div>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.75rem"}}>
+                    <div style={{fontSize:"0.78rem",color:"var(--success)",fontWeight:600}}>✅ Plaidoirie générée</div>
+                    <button className="btn btn-ghost btn-sm" onClick={()=>setAiResult("")}>← Modifier les paramètres</button>
+                  </div>
+                  <pre style={{whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"'Inter',sans-serif",fontSize:"0.8rem",color:"var(--text-muted)",lineHeight:1.75,background:"var(--surface)",borderRadius:"var(--radius)",padding:"1.25rem",maxHeight:"45vh",overflowY:"auto"}}>{aiResult}</pre>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline" onClick={()=>setShowAI(false)}>Fermer</button>
+              {!aiResult ? (
+                <button className="btn btn-gold" onClick={generatePlaidoirie} disabled={aiLoading||!aiClient.trim()} style={{opacity:aiLoading?0.7:1}}>
+                  {aiLoading ? "Génération en cours…" : "✨ Générer"}
+                </button>
+              ) : (
+                <div style={{display:"flex",gap:"0.5rem"}}>
+                  <button className="btn btn-outline" onClick={()=>navigator.clipboard.writeText(aiResult)}>📋 Copier</button>
+                  <button className="btn btn-gold" onClick={saveAiResult}>💾 Sauvegarder comme modèle</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {toast && (
         <div className="toast-container">
           <div className="toast toast-success">✅ {toast}</div>

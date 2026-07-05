@@ -14,6 +14,27 @@ const CAT_COLORS: Record<string, string> = {
   Crime:          "#7c3aed",
 };
 
+
+/* ─── Prescription ───────────────────────────────────────────────────────── */
+const PRESCRIPTION_JOURS: Record<string, number | null> = {
+  "Contravention": 365,
+  "Délit mineur":  1095,
+  "Délit majeur":  1825,
+  "Crime":         3650,
+};
+
+function calcPrescription(categorie: string, dateCondamnation: string, infraction: string) {
+  if (!dateCondamnation) return null;
+  const imprescriptible = categorie === "Crime" &&
+    (infraction.toUpperCase().includes("MORT RP") || infraction.toLowerCase().includes("terrorisme"));
+  if (imprescriptible) return { date: null, daysLeft: Infinity, expired: false, imprescriptible: true };
+  const duree = PRESCRIPTION_JOURS[categorie];
+  if (!duree) return null;
+  const prescDate = new Date(new Date(dateCondamnation + "T12:00:00").getTime() + duree * 86400000);
+  const daysLeft = Math.floor((prescDate.getTime() - Date.now()) / 86400000);
+  return { date: prescDate, daysLeft, expired: daysLeft < 0, imprescriptible: false };
+}
+
 const CATEGORIES = ["Contravention","Délit mineur","Délit majeur","Crime"];
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
@@ -325,6 +346,14 @@ export default function CasierPage() {
                       {e.notes}
                     </div>
                   )}
+                  {(() => {
+                    const p = calcPrescription(e.categorie, e.date_condamnation, e.infraction);
+                    if (!p) return null;
+                    if (p.imprescriptible) return <div style={{marginTop:"0.4rem"}}><span style={{fontSize:"0.6rem",padding:"0.1rem 0.45rem",borderRadius:999,background:"rgba(124,58,237,0.1)",color:"#7c3aed",border:"1px solid rgba(124,58,237,0.2)",fontWeight:700}}>⚖️ IMPRESCRIPTIBLE</span></div>;
+                    if (p.expired) return <div style={{marginTop:"0.4rem",display:"flex",alignItems:"center",gap:"0.4rem"}}><span style={{fontSize:"0.6rem",padding:"0.1rem 0.45rem",borderRadius:999,background:"rgba(34,197,94,0.1)",color:"var(--success)",border:"1px solid rgba(34,197,94,0.2)",fontWeight:700}}>✓ PRESCRIT</span><span style={{fontSize:"0.6rem",color:"var(--text-dim)"}}>le {p.date!.toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"})}</span></div>;
+                    const urgent = p.daysLeft <= 30;
+                    return <div style={{marginTop:"0.4rem",display:"flex",alignItems:"center",gap:"0.4rem"}}><span style={{fontSize:"0.6rem",padding:"0.1rem 0.45rem",borderRadius:999,background:urgent?"rgba(239,68,68,0.08)":"var(--surface)",color:urgent?"var(--danger)":"var(--text-dim)",border:`1px solid ${urgent?"rgba(239,68,68,0.2)":"var(--border)"}`}}>⏳ {p.daysLeft}j avant prescription</span><span style={{fontSize:"0.6rem",color:"var(--text-dim)"}}>{p.date!.toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"})}</span></div>;
+                  })()}
                 </div>
                 {/* Supprimer uniquement ses propres entrées */}
                 {e.created_by === user?.nom && (
@@ -448,17 +477,17 @@ export default function CasierPage() {
                 />
                 {chefSearch && (
                   <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", maxHeight: 200, overflowY: "auto", marginTop: 4 }}>
-                    {[...new Set(filteredChefs.map(c => c.categorie as string))].map((cat: string) => {
+                    {[...new Set(filteredChefs.map(c => c.categorie))].map(cat => {
                       const items = filteredChefs.filter(c => c.categorie === cat).slice(0, 8);
                       return (
-                        <div key={cat as string}>
-                          <div style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: (CAT_COLORS as Record<string,string>)[cat], padding: "0.4rem 0.875rem 0.2rem", fontWeight: 700 }}>{cat}</div>
+                        <div key={cat}>
+                          <div style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: CAT_COLORS[cat], padding: "0.4rem 0.875rem 0.2rem", fontWeight: 700 }}>{cat}</div>
                           {items.map(c => (
                             <button key={c.code} onClick={() => selectChef(c)}
                               style={{ display: "flex", alignItems: "center", gap: "0.625rem", width: "100%", padding: "0.45rem 0.875rem", background: "none", border: "none", cursor: "pointer", fontFamily: "'Inter',sans-serif", textAlign: "left" }}
                               onMouseEnter={e => e.currentTarget.style.background = "var(--card)"}
                               onMouseLeave={e => e.currentTarget.style.background = "none"}>
-                              <span style={{ fontFamily: "monospace", fontSize: "0.68rem", color: (CAT_COLORS as Record<string,string>)[cat], background: (CAT_COLORS as Record<string,string>)[cat] + "15", padding: "0.1rem 0.4rem", borderRadius: 4, flexShrink: 0 }}>{c.code}</span>
+                              <span style={{ fontFamily: "monospace", fontSize: "0.68rem", color: CAT_COLORS[cat], background: CAT_COLORS[cat] + "15", padding: "0.1rem 0.4rem", borderRadius: 4, flexShrink: 0 }}>{c.code}</span>
                               <span style={{ fontSize: "0.82rem", flex: 1 }}>{c.infraction}</span>
                               <span style={{ fontSize: "0.68rem", color: "var(--text-dim)", flexShrink: 0 }}>{c.amende}</span>
                             </button>

@@ -52,8 +52,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [roleColor, setRoleColor] = useState("var(--gold)");
   const [memberColor, setMemberColor] = useState("var(--gold)");
   const [badges, setBadges] = useState<{ factures: number; audiences: number }>({ factures:0, audiences:0 });
+  const [defcon, setDefconState] = useState<number>(5);
+  const [defconOpen, setDefconOpen] = useState(false);
 
   useEffect(() => {
+    const saved = typeof window !== 'undefined' ? parseInt(localStorage.getItem('cabinet_defcon') || '5') : 5;
+    setDefconState(isNaN(saved) ? 5 : Math.min(5, Math.max(1, saved)));
     const u = getUser();
     if (!u && pathname !== "/login") { router.replace("/login"); setChecked(true); return; }
     if (u) {
@@ -140,6 +144,49 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
+
+        {/* Defcon indicator */}
+        {(() => {
+          const DC_COLORS: Record<number,string> = {5:'#3b82f6',4:'#22c55e',3:'#f59e0b',2:'#f97316',1:'#ef4444'};
+          const DC_LABELS: Record<number,string> = {5:'Situation normale',4:'Menace potentielle',3:'Menace active',2:'Haute tension',1:'En guerre'};
+          const col = DC_COLORS[defcon] || '#3b82f6';
+          function setDefcon(n: number) {
+            setDefconState(n);
+            if (typeof window !== 'undefined') localStorage.setItem('cabinet_defcon', String(n));
+            setDefconOpen(false);
+          }
+          return (
+            <div style={{ padding:'0 0.75rem 0.625rem', position:'relative' }}>
+              <button onClick={() => setDefconOpen(!defconOpen)} style={{
+                display:'flex', alignItems:'center', gap:'0.5rem', width:'100%',
+                padding:'0.45rem 0.75rem', borderRadius:'var(--radius)',
+                background:col+'12', border:`1px solid ${col}35`,
+                cursor:'pointer', fontFamily:"'Inter',sans-serif", transition:'all 0.15s',
+              }}>
+                <div style={{ width:8, height:8, borderRadius:'50%', background:col, boxShadow:`0 0 6px ${col}`, flexShrink:0 }} />
+                <span style={{ fontSize:'0.72rem', fontWeight:700, color:col, letterSpacing:'0.06em' }}>DEFCON {defcon}</span>
+                <span style={{ fontSize:'0.62rem', color:col, opacity:0.7, flex:1, textAlign:'right' }}>▾</span>
+              </button>
+              {defconOpen && (
+                <>
+                  <div style={{ position:'fixed', inset:0, zIndex:97 }} onClick={() => setDefconOpen(false)} />
+                  <div style={{ position:'absolute', bottom:'calc(100% + 4px)', left:'0.75rem', right:'0.75rem', background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:'var(--radius-lg)', padding:'0.4rem', boxShadow:'var(--shadow-lg)', zIndex:99 }}>
+                    {[5,4,3,2,1].map(n => {
+                      const c = DC_COLORS[n];
+                      return (
+                        <button key={n} onClick={() => setDefcon(n)} style={{ display:'flex', alignItems:'center', gap:'0.5rem', width:'100%', padding:'0.45rem 0.625rem', borderRadius:6, background:defcon===n?c+'15':'transparent', border:'none', cursor:'pointer', fontFamily:"'Inter',sans-serif", marginBottom:2 }}>
+                          <div style={{ width:8, height:8, borderRadius:'50%', background:c, flexShrink:0 }} />
+                          <span style={{ fontSize:'0.7rem', fontWeight:defcon===n?700:400, color:defcon===n?c:'var(--text-muted)' }}>Defcon {n}</span>
+                          <span style={{ fontSize:'0.6rem', color:'var(--text-dim)', flex:1, textAlign:'right', whiteSpace:'nowrap' }}>{DC_LABELS[n]}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })()}
         {/* Nav */}
         <nav className="sidebar-nav">
           {NAV_SECTIONS.map(section => {

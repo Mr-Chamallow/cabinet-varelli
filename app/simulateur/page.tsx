@@ -291,6 +291,16 @@ export default function SimulateurPage() {
   /* ══════════════════════════════════════════════════════════════════════════ */
   return (
     <div className="page-container">
+
+      <style>{`
+        @media print {
+          .sidebar, .back-link, .btn, .modal-overlay, button:not(.print-only),
+          .page-header > div:last-child { display: none !important; }
+          .page-container { padding: 0 !important; max-width: none !important; }
+          body { background: white !important; color: black !important; }
+          .formulaire-preview { break-inside: avoid; }
+        }
+      `}</style>
       <a className="back-link" href="/">← Tableau de bord</a>
 
       <div className="page-header">
@@ -542,6 +552,7 @@ export default function SimulateurPage() {
               {/* Actions */}
               <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
                 <button className="btn btn-outline" onClick={exportFormulaire} style={{justifyContent:"center"}}>📋 Copier le formulaire</button>
+                <button className="btn btn-outline" onClick={()=>window.print()} style={{justifyContent:"center"}}>🖨️ Imprimer</button>
                 <button className="btn btn-gold" disabled={!hasCharges} onClick={()=>{setClientName(`${prenomPrev} ${nomPrev}`.trim());(window as any).__facMontant=formulaireCalc.honBase;(window as any).__facDesc=`Inculpation Defcon ${defcon} — Retenue ${retenue} — ${lignes.filter(l=>l.chef).map(l=>l.chef!.infraction.slice(0,30)).join(", ")}`;setShowFac(true);}} style={{justifyContent:"center",opacity:!hasCharges?0.4:1}}>🧾 Émettre la facture</button>
                 <button className="btn btn-ghost" onClick={()=>{setLignes([newLigne()]);setPrenomPrev("");setNomPrev("");setMatricule("");setDroitSoins(false);setDroitNourriture(false);setDroitPlaide(false);setIntervenant("avocat");setRetenue("NOMINAL");setDefcon(5);}} style={{justifyContent:"center",fontSize:"0.78rem"}}>Réinitialiser</button>
               </div>
@@ -680,6 +691,7 @@ export default function SimulateurPage() {
               )}
 
               {/* ─── APERÇU FORMULAIRE DE PRISON ─── */}
+              {/* print-target: formulaire-preview */
               <div style={{ fontWeight:700, fontSize:"0.78rem", color:"var(--text-dim)", textTransform:"uppercase", letterSpacing:"0.08em", marginTop:"0.5rem" }}>
                 Aperçu — Formulaire de Prison
               </div>

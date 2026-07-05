@@ -43,11 +43,15 @@ export default function Dashboard() {
   const [memberColors, setMemberColors] = useState<Record<string, string>>({});
   const [factures, setFactures] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recidivistes, setRecidivistes] = useState<{nom:string;count:number}[]>([]);
+  const [defcon, setDefconDash] = useState(5);
 
   useEffect(() => {
     const u = getUser();
     if (!u) { router.replace("/login"); return; }
     setUser(u);
+    const saved = parseInt(localStorage.getItem('cabinet_defcon') || '5');
+    setDefconDash(isNaN(saved) ? 5 : Math.min(5, Math.max(1, saved)));
     load(u);
   }, []);
 
@@ -120,6 +124,16 @@ export default function Dashboard() {
 
     setAudiences(audienceData || []);
     setFactures(facturesRecentes || []);
+
+    // Load recidivistes (3+ entries in casier)
+    const { data: casierData } = await supabase.from("casier").select("client_nom");
+    if (casierData) {
+      const counts: Record<string,number> = {};
+      casierData.forEach((r:any) => { counts[r.client_nom] = (counts[r.client_nom]||0)+1; });
+      const recids = Object.entries(counts).filter(([,n])=>n>=3).map(([nom,count])=>({nom,count})).sort((a,b)=>b.count-a.count).slice(0,5);
+      setRecidivistes(recids);
+    }
+
     setLoading(false);
   }
 
@@ -179,6 +193,25 @@ export default function Dashboard() {
               </a>
             ))}
           </div>
+
+
+          {/* ─── Alertes ─── */}
+          {(recidivistes.length > 0) && (
+            <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:"var(--radius-lg)",padding:"0.875rem 1.125rem",marginBottom:"0.875rem",display:"flex",gap:"1rem",alignItems:"flex-start",flexWrap:"wrap"}}>
+              <div style={{flexShrink:0}}>
+                <div style={{fontSize:"0.68rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"var(--danger)",fontWeight:700,marginBottom:"0.35rem"}}>⚠ Récidivistes (3 condamnations+)</div>
+                <div style={{display:"flex",gap:"0.5rem",flexWrap:"wrap"}}>
+                  {recidivistes.map(r=>(
+                    <a key={r.nom} href="/casier" style={{textDecoration:"none"}}>
+                      <span style={{fontSize:"0.72rem",padding:"0.2rem 0.65rem",borderRadius:999,background:"rgba(239,68,68,0.12)",color:"var(--danger)",border:"1px solid rgba(239,68,68,0.25)",fontWeight:600,display:"flex",alignItems:"center",gap:"0.3rem"}}>
+                        {r.nom} <span style={{opacity:0.7}}>×{r.count}</span>
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Chiffres financiers */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem", marginBottom: "0.875rem" }}>

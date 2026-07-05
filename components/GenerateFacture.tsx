@@ -9,7 +9,7 @@ export default function GenerateFacture({ facture }: any) {
     const pdf = new jsPDF();
 
     pdf.setFontSize(22);
-    pdf.text("Cabinet Varelli", 20, 20);
+    pdf.text("Cabinet BullHead", 20, 20);
 
     pdf.setFontSize(12);
 

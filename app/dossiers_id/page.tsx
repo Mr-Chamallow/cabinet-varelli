@@ -18,7 +18,67 @@ const DOCUMENTS_DEFAUT = [
 ];
 
 // Code pénal simplifié pour la picklist
-import { CHEFS_PENAL, type ChefPenal } from "@/lib/code-penal";
+const CHEFS_PENAL = [
+  // Contraventions
+  { code:"C-5",  infraction:"Conduite dangereuse",                  categorie:"Contravention", amende:"2 700$",   detention:"—" },
+  { code:"C-7",  infraction:"Excès de vitesse",                     categorie:"Contravention", amende:"1 800$",   detention:"—" },
+  { code:"C-9",  infraction:"Holster interdit",                     categorie:"Contravention", amende:"1 350$",   detention:"—" },
+  { code:"C-18", infraction:"Consommation de drogue",               categorie:"Contravention", amende:"450$",     detention:"—" },
+  // Délits mineurs
+  { code:"DM-1",  infraction:"Agression sur citoyen",               categorie:"Délit mineur",  amende:"4 500$",   detention:"30 min" },
+  { code:"DM-6",  infraction:"Braquage de supérette",               categorie:"Délit mineur",  amende:"3 600$",   detention:"20 min" },
+  { code:"DM-7",  infraction:"Braquage/piratage ATM",               categorie:"Délit mineur",  amende:"2 250$",   detention:"15 min" },
+  { code:"DM-8",  infraction:"Cambriolage",                         categorie:"Délit mineur",  amende:"1 350$",   detention:"15 min" },
+  { code:"DM-12", infraction:"Délit de fuite",                      categorie:"Délit mineur",  amende:"1 350$",   detention:"15 min" },
+  { code:"DM-13", infraction:"Entrave à une opération police",      categorie:"Délit mineur",  amende:"3 500$",   detention:"30 min" },
+  { code:"DM-15", infraction:"Exhibition d'armes de poing",         categorie:"Délit mineur",  amende:"1 350$",   detention:"15 min" },
+  { code:"DM-16", infraction:"Exhibition d'armes lourdes",          categorie:"Délit mineur",  amende:"4 500$",   detention:"30 min" },
+  { code:"DM-20", infraction:"Utilisation d'une arme à feu",        categorie:"Délit mineur",  amende:"1 350$",   detention:"15 min" },
+  { code:"DM-21", infraction:"Intrusion zone restreinte",           categorie:"Délit mineur",  amende:"3 200$",   detention:"30 min" },
+  { code:"DM-22", infraction:"Menace/intimidation envers civil",    categorie:"Délit mineur",  amende:"3 500$",   detention:"15 min" },
+  { code:"DM-23", infraction:"Mise en danger de la vie d'autrui",  categorie:"Délit mineur",  amende:"5 800$",   detention:"15 min" },
+  { code:"DM-26", infraction:"Non présentation à convocation",      categorie:"Délit mineur",  amende:"6 750$",   detention:"20 min" },
+  { code:"DM-47", infraction:"Possession de pistolet",              categorie:"Délit mineur",  amende:"15 000$",  detention:"20 min" },
+  { code:"DM-78", infraction:"Possession de cannabis",              categorie:"Délit mineur",  amende:"32$/u",    detention:"10 min" },
+  { code:"DM-79", infraction:"Possession de cocaïne",               categorie:"Délit mineur",  amende:"45$/u",    detention:"10 min" },
+  { code:"DM-84", infraction:"Possession d'héroïne",               categorie:"Délit mineur",  amende:"72$/u",    detention:"10 min" },
+  { code:"DM-124",infraction:"Vente de drogue",                     categorie:"Délit mineur",  amende:"3 750$",   detention:"10 min" },
+  { code:"DM-127",infraction:"Refus d'obtempérer",                  categorie:"Délit mineur",  amende:"900$",     detention:"15 min" },
+  { code:"DM-130",infraction:"Trafic de stupéfiants",               categorie:"Délit mineur",  amende:"Variable", detention:"Variable" },
+  { code:"DM-133",infraction:"Vol",                                  categorie:"Délit mineur",  amende:"1 350$",   detention:"15 min" },
+  { code:"DM-144",infraction:"Évasion du poste de police",         categorie:"Délit mineur",  amende:"7 500$",   detention:"20 min" },
+  // Délits majeurs
+  { code:"DMJ-9",  infraction:"Agression sur agent / police",       categorie:"Délit majeur",  amende:"8 500$",   detention:"1h" },
+  { code:"DMJ-11", infraction:"Menaces de mort / menaces graves",   categorie:"Délit majeur",  amende:"8 500$",   detention:"45 min" },
+  { code:"DMJ-13", infraction:"Homicide involontaire",              categorie:"Délit majeur",  amende:"12 500$",  detention:"25 min" },
+  { code:"DMJ-14", infraction:"Association de malfaiteurs",         categorie:"Délit majeur",  amende:"4 500$",   detention:"30 min" },
+  { code:"DMJ-17", infraction:"Braquage bijouterie/supermarché",    categorie:"Délit majeur",  amende:"9 000$",   detention:"30 min" },
+  { code:"DMJ-18", infraction:"Braquage banque centrale",           categorie:"Délit majeur",  amende:"25 000$",  detention:"60 min" },
+  { code:"DMJ-21", infraction:"Braquage banque (Fleeca)",           categorie:"Délit majeur",  amende:"15 000$",  detention:"25 min" },
+  { code:"DMJ-28", infraction:"Faux témoignage",                    categorie:"Délit majeur",  amende:"9 000$",   detention:"30 min" },
+  { code:"DMJ-36", infraction:"Participation à une fusillade",      categorie:"Délit majeur",  amende:"3 500$",   detention:"30 min" },
+  { code:"DMJ-54", infraction:"Possession de fusil d'assaut",       categorie:"Délit majeur",  amende:"35 000$",  detention:"25 min" },
+  { code:"DMJ-83", infraction:"Prise d'otage sur civil",            categorie:"Délit majeur",  amende:"4 500$",   detention:"15 min" },
+  { code:"DMJ-91", infraction:"Vol à main armée",                   categorie:"Délit majeur",  amende:"5 000$",   detention:"30 min" },
+  { code:"DMJ-100",infraction:"Corruption",                         categorie:"Délit majeur",  amende:"22 500$",  detention:"30 min" },
+  { code:"DMJ-101",infraction:"Fraude fiscale",                     categorie:"Délit majeur",  amende:"90 000$",  detention:"30 min" },
+  // Crimes
+  { code:"CR-2",  infraction:"Blanchiment",                         categorie:"Crime",         amende:"5$×somme", detention:"15 min" },
+  { code:"CR-4",  infraction:"Assassinat prémédité (MORT RP)",      categorie:"Crime",         amende:"225 000$", detention:"1h" },
+  { code:"CR-8",  infraction:"Meurtre (MORT RP)",                   categorie:"Crime",         amende:"100 800$", detention:"1h" },
+  { code:"CR-11", infraction:"Cavale",                              categorie:"Crime",         amende:"9 000$",   detention:"1h" },
+  { code:"CR-15", infraction:"Meurtre représentant État (MORT RP)", categorie:"Crime",         amende:"300 000$", detention:"30 min" },
+  { code:"CR-17", infraction:"Meurtre (COMA)",                      categorie:"Crime",         amende:"18 000$",  detention:"30 min" },
+  { code:"CR-19", infraction:"Possession de grenade",               categorie:"Crime",         amende:"135 000$", detention:"30 min" },
+  { code:"CR-21", infraction:"Prise d'otage représentant État",     categorie:"Crime",         amende:"18 000$",  detention:"30 min" },
+  { code:"CR-22", infraction:"Séquestration",                       categorie:"Crime",         amende:"15 500$",  detention:"30 min" },
+  { code:"CR-23", infraction:"Terrorisme",                          categorie:"Crime",         amende:"45 000$",  detention:"1h" },
+  { code:"CR-31", infraction:"Violation du secret professionnel",   categorie:"Crime",         amende:"22 500$",  detention:"30 min" },
+];
+
+const STATUTS_AVANCEMENT = [
+  "Investigation","Mise en examen","Instruction","Jugement","Appel","Clôturé — Gagné","Clôturé — Perdu",
+];
 
 const EVENT_TYPES = [
   { key:"note",      label:"Note",            icon:"📝", color:"var(--text-muted)" },
@@ -95,6 +155,13 @@ export default function DossierDetailPage() {
 
   // Chefs inculpation
   const [showChefPicker, setShowChefPicker] = useState(false);
+  const [showCasierModal, setShowCasierModal] = useState(false);
+  const [casierAmende, setCasierAmende] = useState<Record<string,string>>({});
+  const [casierDet, setCasierDet] = useState<Record<string,string>>({});
+  const [casierDate, setCasierDate] = useState(new Date().toISOString().split("T")[0]);
+  const [savingCasier, setSavingCasier] = useState(false);
+  const [facturesDossier, setFacturesDossier] = useState<{id:string;numero:string;montant:number;statut:string}[]>([]);
+  const [casierAdded, setCasierAdded] = useState(false);
   const [chefSearch, setChefSearch] = useState("");
 
   // Timeline
@@ -138,6 +205,11 @@ export default function DossierDetailPage() {
     setDocuments(doc||[]);
     setAudiencesList(aud||[]);
     setMembersList((mem||[]).map((m:any)=>m.nom));
+    // Load linked factures
+    if (d) {
+      const { data: facs } = await supabase.from("factures").select("id,numero,montant,statut").eq("dossier", d.reference);
+      setFacturesDossier(facs || []);
+    }
     setLoading(false);
   }
 
@@ -145,9 +217,55 @@ export default function DossierDetailPage() {
     if (!supabase||!dossier) return;
     setSaving(true);
     await supabase.from("dossiers").update(editForm).eq("id",id);
+    const prevStatut = dossier.statut;
     setDossier({...dossier,...editForm} as Dossier);
     setEditMode(false);
     setSaving(false);
+    // Propose casier auto if newly set to "Condamné"
+    if (editForm.statut === "Condamné" && prevStatut !== "Condamné" && chefs.length > 0) {
+      const initAmende: Record<string,string> = {};
+      const initDet: Record<string,string> = {};
+      chefs.forEach(c => { initAmende[c.id] = c.amende||""; initDet[c.id] = c.detention||""; });
+      setCasierAmende(initAmende); setCasierDet(initDet);
+      setShowCasierModal(true);
+    }
+  }
+
+  async function addToCasier() {
+    if (!supabase || !user || !dossier) return;
+    setSavingCasier(true);
+    const rows = chefs.map(c => ({
+      client_nom: dossier.client,
+      created_by: user.nom,
+      code: c.code,
+      infraction: c.infraction,
+      categorie: c.categorie,
+      amende_prononcee: casierAmende[c.id] || c.amende || "",
+      detention_prononcee: casierDet[c.id] || c.detention || "",
+      date_condamnation: casierDate,
+      notes: `Dossier ${dossier.reference}`,
+      dossier_id: dossier.id,
+      statut: "Condamné",
+    }));
+    await supabase.from("casier").insert(rows);
+    setSavingCasier(false);
+    setShowCasierModal(false);
+    setCasierAdded(true);
+    setTimeout(() => setCasierAdded(false), 3000);
+  }
+
+  async function createFactureDossier() {
+    if (!supabase || !user || !dossier) return;
+    const numero = `FAC-${new Date().getFullYear()}-${Math.floor(Math.random()*90000)+10000}`;
+    const { data } = await supabase.from("factures").insert([{
+      numero, client: dossier.client,
+      montant: honorairesSuggeres,
+      description: `Dossier ${dossier.reference} — ${dossier.type_affaire||""}`,
+      statut: "En attente",
+      dossier: dossier.reference,
+      created_by: user.nom,
+    }]).select("id,numero,montant,statut").single();
+    if (data) setFacturesDossier(f => [...f, data]);
   }
 
   async function addChef(chef: typeof CHEFS_PENAL[0]) {
@@ -381,7 +499,7 @@ export default function DossierDetailPage() {
   if (!dossier) return <div className="page-container"><div style={{color:"var(--danger)"}}>Dossier introuvable</div></div>;
 
   const RISQUE_COLORS:Record<string,string> = {Aucun:"#64748b",Faible:"#22c55e",Moyen:"#f59e0b",Élevé:"#ef4444",Extrême:"#7c3aed"};
-  const STATUT_COLORS:Record<string,string> = {Ouvert:"var(--info)","En cours":"var(--warning)",Clôturé:"var(--text-dim)",Gagné:"var(--success)",Perdu:"var(--danger)"};
+  const STATUT_COLORS:Record<string,string> = {Ouvert:"var(--info)","En cours":"var(--warning)",Clôturé:"var(--text-dim)",Gagné:"var(--success)",Perdu:"var(--danger)",Condamné:"#7c3aed"};
   const amendeTotal = chefs.reduce((s,c) => { const n=parseInt(c.amende?.replace(/[^0-9]/g,"")||"0"); return s+n; }, 0);
 
   // Calcul auto honoraires : tarifs cabinet par catégorie × modificateur risque
@@ -445,7 +563,7 @@ export default function DossierDetailPage() {
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"0.875rem"}}>
             {[
               {label:"Risque",key:"risque",type:"select",opts:["Aucun","Faible","Moyen","Élevé","Extrême"]},
-              {label:"Statut",key:"statut",type:"select",opts:["Ouvert","En cours","Clôturé","Gagné","Perdu"]},
+              {label:"Statut",key:"statut",type:"select",opts:["Ouvert","En cours","Clôturé","Gagné","Perdu","Condamné"]},
               {label:"Montant ($)",key:"montant",type:"number"},
               {label:"Type d'affaire",key:"type_affaire",type:"select",opts:["Défense pénale","Appel / Expungement","Droit civil","Adoption","Divorce","Contrat","Conseil juridique","Autre"]},
               {label:"Type client",key:"type_client",type:"select",opts:["Indépendant","Gang","PF","Famille","Petit frappe"]},
@@ -897,6 +1015,63 @@ export default function DossierDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ─── Casier auto modal ─── */}
+      {showCasierModal && chefs.length > 0 && dossier && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowCasierModal(false)}>
+          <div className="modal modal-lg">
+            <div className="modal-header">
+              <div>
+                <h2 className="modal-title">⚖️ Ajouter au casier judiciaire</h2>
+                <div style={{fontSize:"0.75rem",color:"var(--text-dim)",marginTop:"0.15rem"}}>Dossier {dossier.reference} · Client : {dossier.client}</div>
+              </div>
+              <button className="modal-close" onClick={()=>setShowCasierModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Date de condamnation</label>
+                <input type="date" value={casierDate} onChange={e=>setCasierDate(e.target.value)} />
+              </div>
+              <div style={{fontSize:"0.75rem",color:"var(--text-dim)",marginBottom:"0.75rem"}}>Ajustez les amendes et détentions prononcées si elles diffèrent du barème.</div>
+              <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
+                {chefs.map(c => {
+                  const catColors:Record<string,string>={Contravention:"#64748b","Délit mineur":"#f59e0b","Délit majeur":"#ef4444",Crime:"#7c3aed"};
+                  const col = catColors[c.categorie]||"var(--gold)";
+                  return (
+                    <div key={c.id} style={{background:"var(--surface)",borderRadius:"var(--radius)",padding:"0.75rem",borderLeft:`3px solid ${col}`}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.5rem"}}>
+                        <span style={{fontFamily:"monospace",fontSize:"0.68rem",color:col,background:col+"15",padding:"0.08rem 0.35rem",borderRadius:3}}>{c.code}</span>
+                        <span style={{fontWeight:600,fontSize:"0.82rem"}}>{c.infraction}</span>
+                        <span style={{fontSize:"0.68rem",color:col,marginLeft:"auto"}}>{c.categorie}</span>
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
+                        <div className="form-group" style={{marginBottom:0}}>
+                          <label>Amende prononcée</label>
+                          <input placeholder={c.amende||"—"} value={casierAmende[c.id]||""} onChange={e=>setCasierAmende(a=>({...a,[c.id]:e.target.value}))} style={{fontSize:"0.82rem"}} />
+                        </div>
+                        <div className="form-group" style={{marginBottom:0}}>
+                          <label>Détention prononcée</label>
+                          <input placeholder={c.detention||"—"} value={casierDet[c.id]||""} onChange={e=>setCasierDet(d=>({...d,[c.id]:e.target.value}))} style={{fontSize:"0.82rem"}} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline" onClick={()=>setShowCasierModal(false)}>Ignorer</button>
+              <button className="btn btn-gold" onClick={addToCasier} disabled={savingCasier} style={{opacity:savingCasier?0.7:1}}>
+                {savingCasier?"Enregistrement…":`⚖️ Ajouter ${chefs.length} chef${chefs.length>1?"s":""} au casier`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {casierAdded && (
+        <div className="toast-container"><div className="toast toast-success">✅ Chefs ajoutés au casier judiciaire</div></div>
       )}
     </div>
   );

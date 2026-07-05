@@ -70,7 +70,7 @@ export default function FactureCard({ facture }: any) {
         <div>
           ___________________
           <br />
-          Cabinet Varelli
+          Cabinet BullHead
         </div>
       </div>
     </div>

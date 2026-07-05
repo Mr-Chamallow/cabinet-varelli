@@ -46,6 +46,8 @@ export default function SupervisionPage() {
   const [stats, setStats]           = useState<MembreStats[]>([]);
   const [totaux, setTotaux]         = useState({ clients: 0, dossiers: 0, ca: 0, enAttente: 0, casiers: 0, audiences: 0 });
   const [activity, setActivity]     = useState<ActivityItem[]>([]);
+  const [caChart, setCaChart]         = useState<{mois:string;total:number}[]>([]);
+  const [dossiersTypes, setDossiersTypes] = useState<{type:string;count:number}[]>([]);
   const [actLoading, setActLoading] = useState(true);
   const [activeTab, setActiveTab]   = useState<"stats" | "activite">("stats");
   const [filterMember, setFilterMember] = useState("");
@@ -108,6 +110,27 @@ export default function SupervisionPage() {
     results.sort((a, b) => b.ca - a.ca);
     setStats(results);
     setTotaux({ clients: totClients, dossiers: totDossiers, ca: totCa, enAttente: totAttente, casiers: totCasiers, audiences: totAudiences });
+
+    // CA chart (6 derniers mois)
+    const { data: allFacs } = await supabase.from("factures").select("montant,statut,created_at");
+    const moisLabels = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+    const now = new Date();
+    const buckets = Array.from({length:6},(_,i)=>{
+      const d=new Date(now.getFullYear(),now.getMonth()-5+i,1);
+      return {mois:moisLabels[d.getMonth()],total:0,year:d.getFullYear(),month:d.getMonth()};
+    });
+    (allFacs||[]).filter((f:any)=>f.statut==="Payée").forEach((f:any)=>{
+      const fd=new Date(f.created_at);
+      const b=buckets.find(b=>b.year===fd.getFullYear()&&b.month===fd.getMonth());
+      if(b) b.total+=f.montant;
+    });
+    setCaChart(buckets.map(b=>({mois:b.mois,total:b.total})));
+
+    // Dossiers par type
+    const { data: allDoss } = await supabase.from("dossiers").select("type_affaire");
+    const typeCount: Record<string,number> = {};
+    (allDoss||[]).forEach((d:any)=>{ const t=d.type_affaire||"Autre"; typeCount[t]=(typeCount[t]||0)+1; });
+    setDossiersTypes(Object.entries(typeCount).map(([type,count])=>({type,count})).sort((a,b)=>b.count-a.count).slice(0,7));
     setLoading(false);
   }
 
@@ -238,6 +261,57 @@ export default function SupervisionPage() {
               </div>
             ))}
           </div>
+
+
+            {/* ─── Graphiques ─── */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1.25rem",marginBottom:"1.75rem"}}>
+              {/* CA 6 mois */}
+              <div className="card">
+                <div className="section-title" style={{marginBottom:"1rem"}}>CA cabinet — 6 derniers mois</div>
+                {caChart.some(b=>b.total>0) ? (
+                  <div style={{display:"flex",alignItems:"flex-end",gap:"0.5rem",height:100}}>
+                    {caChart.map((b,i)=>{
+                      const max=Math.max(...caChart.map(x=>x.total),1);
+                      const h=Math.max((b.total/max)*100,b.total>0?6:2);
+                      const isCurrent=i===5;
+                      return (
+                        <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"0.3rem"}}>
+                          {b.total>0&&<div style={{fontSize:"0.55rem",color:"var(--text-dim)",whiteSpace:"nowrap"}}>{(b.total/1000).toFixed(0)}k</div>}
+                          <div style={{width:"100%",height:`${h}%`,minHeight:4,borderRadius:"3px 3px 0 0",background:isCurrent?"var(--gold)":"var(--border-light)",transition:"height 0.4s"}}/>
+                          <div style={{fontSize:"0.6rem",color:isCurrent?"var(--gold)":"var(--text-dim)"}}>{b.mois}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{fontSize:"0.8rem",color:"var(--text-dim)",textAlign:"center",padding:"1.5rem 0"}}>Aucune donnée</div>
+                )}
+              </div>
+              {/* Types dossiers */}
+              <div className="card">
+                <div className="section-title" style={{marginBottom:"0.875rem"}}>Types d'affaires</div>
+                {dossiersTypes.length === 0 ? (
+                  <div style={{fontSize:"0.8rem",color:"var(--text-dim)",textAlign:"center",padding:"1.5rem 0"}}>Aucune donnée</div>
+                ) : (
+                  <div style={{display:"flex",flexDirection:"column",gap:"0.45rem"}}>
+                    {dossiersTypes.map((d,i)=>{
+                      const maxCount=dossiersTypes[0]?.count||1;
+                      const COLORS=["var(--gold)","var(--info)","var(--success)","var(--warning)","var(--danger)","#a855f7","#06b6d4"];
+                      const col=COLORS[i%COLORS.length];
+                      return (
+                        <div key={d.type} style={{display:"flex",alignItems:"center",gap:"0.625rem"}}>
+                          <div style={{width:80,fontSize:"0.68rem",color:"var(--text-dim)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:0}} title={d.type}>{d.type}</div>
+                          <div style={{flex:1,height:10,background:"var(--surface)",borderRadius:5,overflow:"hidden"}}>
+                            <div style={{height:"100%",width:`${(d.count/maxCount)*100}%`,background:col,borderRadius:5,transition:"width 0.4s"}}/>
+                          </div>
+                          <div style={{fontSize:"0.68rem",color:col,fontWeight:700,flexShrink:0,minWidth:20,textAlign:"right"}}>{d.count}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
 
           {/* Performance par membre */}
           <div style={{ marginTop: "1.75rem" }}>
