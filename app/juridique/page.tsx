@@ -3,9 +3,9 @@
 import { useState, useMemo } from "react";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
-import { ARTICLES, CHEFS_PENAL, type Categorie, type Article } from "@/lib/code-penal";
+import { ARTICLES } from "@/lib/code-penal";
 
-const ONGLETS: { key: Categorie; label: string; icon: string; color: string }[] = [
+const ONGLETS: { key: string; label: string; icon: string; color: string }[] = [
   { key: "constitution",          label: "Constitution",        icon: "🏛️", color: "#D4AF37" },
   { key: "penal_contravention",   label: "Contraventions",      icon: "📋", color: "#64748b" },
   { key: "penal_delit_mineur",    label: "Délits mineurs",      icon: "⚠️", color: "#f59e0b" },
@@ -16,10 +16,19 @@ const ONGLETS: { key: Categorie; label: string; icon: string; color: string }[] 
   { key: "commerce",              label: "Code du commerce",    icon: "🏪", color: "#f97316" },
   { key: "federal",               label: "Code fédéral",        icon: "🦅", color: "#06b6d4" },
   { key: "miranda",               label: "Droits Miranda",      icon: "🛡️", color: "#10b981" },
+  { key: "ref_armes",  label: "🔫 Armes",   icon: "⚔️", color: "#ef4444" },
+  { key: "ref_drogues",label: "💊 Drogues", icon: "💊", color: "#7c3aed" },
+  { key: "ref_poisson",label: "🐟 Pêche",   icon: "🐟", color: "#0ea5e9" },
+  { key: "ref_animaux",label: "🐾 Animaux", icon: "🐾", color: "#22c55e" },
 ];
 
+const REF_ARMES={legales:["Batte de baseball","Club de golf","Clé anglaise","Couteau","Matraque","Haltère"],dm:["Pistolet","Pistolet Cal.50","Pistolet Mk II","Pistolet de combat","Revolver","Pistolet flare"],dmj:["Fusil d'assaut","Fusil d'assaut Mk II","Carabine de combat","Fusil à pompe","Fusil de sniper","Mitraillette","Mitraillette Mk II","Micro SMG","LMG","Machine pistol","Fusil de chasse"],crime:["Grenade","Cocktail Molotov","Lance-roquettes","Bombe sticky","C4","Lance-grenade","Minigun","Lance-flammes","ADP"]};
+const REF_DROGUES={douces:["Cannabis","Weed Purple","Salvia","Spore X","Oyster Mushroom","Amanita","Psilocybe","Datura"],dures:["Héroïne","Cocaïne","Crack","Méthamphétamine","Opium","Ecstasy","Tranq","Mexicana","Lean","Purple Haze","Blacktrip","B-Magic","H-47"],prec:["Pseudoéphédrine","Phosphore rouge","Ammoniaque","Lithium","Éther","Xylazine"]};
+const REF_POISSON={legaux:["Anguille","Esturgeon","Bar","Brochet","Carpe","Maquereau","Thon","Saumon","Dorade","Mérou"],ill:["Dauphin","Piranha","Requin","Tortue de mer","Espadon hors saison"]};
+const REF_ANIMAUX={prot:["Puma de montagne","Ours noir","Biche","Vautour fauve","Renard","Hibou","Faucon pèlerin","Aigle royal"],chasse:["Lapin","Cerf","Sanglier","Coyote","Raton laveur","Lièvre"]};
+
 export default function JuridiqueePage() {
-  const [activeTab, setActiveTab] = useState<Categorie>("constitution");
+  const [activeTab, setActiveTab] = useState<string>("constitution");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [subFilter, setSubFilter] = useState<string>("");
@@ -60,7 +69,7 @@ export default function JuridiqueePage() {
     });
   }, [activeTab, subFilter, search, isSearching]);
 
-const catColors: Record<Categorie, string> = {
+const catColors: Record<string, string> = {
   constitution: "#D4AF37",
   penal_contravention: "#64748b",
   penal_delit_mineur: "#f59e0b",

@@ -46,7 +46,7 @@ export default function SupervisionPage() {
   const [stats, setStats]           = useState<MembreStats[]>([]);
   const [totaux, setTotaux]         = useState({ clients: 0, dossiers: 0, ca: 0, enAttente: 0, casiers: 0, audiences: 0 });
   const [activity, setActivity]     = useState<ActivityItem[]>([]);
-  const [caChart, setCaChart]         = useState<{mois:string;total:number}[]>([]);
+  const [caChart, setCaChart]       = useState<{mois:string;total:number}[]>([]);
   const [dossiersTypes, setDossiersTypes] = useState<{type:string;count:number}[]>([]);
   const [actLoading, setActLoading] = useState(true);
   const [activeTab, setActiveTab]   = useState<"stats" | "activite">("stats");
@@ -110,8 +110,6 @@ export default function SupervisionPage() {
     results.sort((a, b) => b.ca - a.ca);
     setStats(results);
     setTotaux({ clients: totClients, dossiers: totDossiers, ca: totCa, enAttente: totAttente, casiers: totCasiers, audiences: totAudiences });
-
-    // CA chart (6 derniers mois)
     const { data: allFacs } = await supabase.from("factures").select("montant,statut,created_at");
     const moisLabels = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
     const now = new Date();
@@ -308,6 +306,26 @@ export default function SupervisionPage() {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1.25rem",marginBottom:"1.75rem"}}>
+              <div className="card">
+                <div className="section-title" style={{marginBottom:"1rem"}}>CA — 6 derniers mois</div>
+                {caChart.some(b=>b.total>0)?(
+                  <div style={{display:"flex",alignItems:"flex-end",gap:"0.5rem",height:90}}>
+                    {caChart.map((b,i)=>{const max=Math.max(...caChart.map(x=>x.total),1);const h=Math.max((b.total/max)*100,b.total>0?6:2);const cur=i===5;return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"0.25rem"}}>{b.total>0&&<div style={{fontSize:"0.52rem",color:"var(--text-dim)",whiteSpace:"nowrap"}}>{(b.total/1000).toFixed(0)}k</div>}<div style={{width:"100%",height:h+"%",minHeight:4,borderRadius:"3px 3px 0 0",background:cur?"var(--gold)":"var(--border-light)",transition:"height 0.4s"}}/><div style={{fontSize:"0.58rem",color:cur?"var(--gold)":"var(--text-dim)"}}>{b.mois}</div></div>);})}
+                  </div>
+                ):<div style={{fontSize:"0.8rem",color:"var(--text-dim)",textAlign:"center",padding:"1.5rem 0"}}>Aucune donnée</div>}
+              </div>
+              <div className="card">
+                <div className="section-title" style={{marginBottom:"0.875rem"}}>Types d'affaires</div>
+                {dossiersTypes.length===0?(<div style={{fontSize:"0.8rem",color:"var(--text-dim)",textAlign:"center",padding:"1.5rem 0"}}>Aucune donnée</div>):(
+                  <div style={{display:"flex",flexDirection:"column",gap:"0.4rem"}}>
+                    {dossiersTypes.map((d,i)=>{const max=dossiersTypes[0]?.count||1;const COLS=["var(--gold)","var(--info)","var(--success)","var(--warning)","var(--danger)","#a855f7"];const col=COLS[i%COLS.length];return(<div key={d.type} style={{display:"flex",alignItems:"center",gap:"0.5rem"}}><div style={{width:76,fontSize:"0.65rem",color:"var(--text-dim)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flexShrink:0}} title={d.type}>{d.type}</div><div style={{flex:1,height:9,background:"var(--surface)",borderRadius:5,overflow:"hidden"}}><div style={{height:"100%",width:(d.count/max*100)+"%",background:col,borderRadius:5,transition:"width 0.4s"}}/></div><div style={{fontSize:"0.65rem",color:col,fontWeight:700,flexShrink:0,minWidth:18,textAlign:"right"}}>{d.count}</div></div>);})}
                   </div>
                 )}
               </div>

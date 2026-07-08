@@ -98,6 +98,11 @@ export default function SimulateurPage() {
   const [qMajeurs, setQMajeurs] = useState(0);
   const [qMineurs, setQMineurs] = useState(0);
   const [risque, setRisque]     = useState<Risque>("Moyen");
+  const [tarifEdit, setTarifEdit] = useState(false);
+  const [tarifCrime, setTarifCrime]   = useState(15000);
+  const [tarifMajeur, setTarifMajeur] = useState(8000);
+  const [tarifMineur, setTarifMineur] = useState(3000);
+  const [tarifContra, setTarifContra] = useState(1500);
   const [opts, setOpts]         = useState<string[]>([]);
 
   /* Service */
@@ -111,7 +116,9 @@ export default function SimulateurPage() {
   const [droitSoins, setDroitSoins]     = useState(false);
   const [droitNourriture, setDroitNourriture] = useState(false);
   const [droitPlaide, setDroitPlaide]   = useState(false);
-  const [intervenant, setIntervenant]   = useState<"avocat"|"procureur"|"cs">("avocat");
+  const [intAvocat, setIntAvocat]     = useState(true);
+  const [intProcureur, setIntProcureur] = useState(false);
+  const [intCS, setIntCS]             = useState(false);
   const [retenue, setRetenue]           = useState<RetenueKey>("NOMINAL");
   const [lignes, setLignes]             = useState<LigneChef[]>([newLigne()]);
   const [filterCat, setFilterCat]       = useState("");
@@ -198,16 +205,19 @@ export default function SimulateurPage() {
     const detentionTotale = detentionBase + Math.floor(detentionConversion);
 
     /* ── Honoraires ── */
+    const dynTarifs: Record<string,number> = {
+      "Contravention":tarifContra,"Délit mineur":tarifMineur,"Délit majeur":tarifMajeur,"Crime":tarifCrime
+    };
     const honBase = lignes
       .filter(l=>l.chef)
-      .reduce((s,l)=>(HON_PAR_CAT[l.chef!.categorie]||0)*(l.quantite||1)+s, 0);
+      .reduce((s,l)=>(dynTarifs[l.chef!.categorie]||0)*(l.quantite||1)+s, 0);
 
     return {
       detentionBase, detentionConversion, detentionTotale,
       amendeAvantRetenue, amendeFinale,
       capsAppliquees, amendeParCat, honBase,
     };
-  }, [lignes, defcon, retenue]);
+  }, [lignes, defcon, retenue, tarifCrime, tarifMajeur, tarifMineur, tarifContra]);
 
   /* ─── Helpers lignes ─────────────────────────────────────────────────────── */
   function updateLigne(id:string, upd:Partial<LigneChef>) {
@@ -232,7 +242,7 @@ export default function SimulateurPage() {
       `Date : ${dt}`,
       `Prévenu : ${prenomPrev} ${nomPrev}`.trim()||"Prévenu : Non renseigné",
       matricule?`Matricule(s) : ${matricule}`:"",
-      `Intervenant : ${intervenant==="avocat"?(user?.nom||"Cabinet BullHead"):intervenant==="procureur"?"Procureur / Juge":"CS / Sgt. II"}`,
+      `Intervenant : ${[intAvocat&&(user?.nom||"Avocat"),intProcureur&&"Procureur / Juge",intCS&&"CS / Sgt. II"].filter(Boolean).join(" + ")}`,
       "",
       `Droits : Soins [${droitSoins?"✓":" "}]  Nourriture [${droitNourriture?"✓":" "}]  Plaider coupable [${(!hasCrime&&droitPlaide)?"✓":" "}]`,
       "",
@@ -287,6 +297,8 @@ export default function SimulateurPage() {
 
   const hasCharges = lignes.some(l=>l.chef!==null);
   const dc = DEFCON_DATA[defcon];
+  // derived intervenant for preview (avocat | procureur | cs)
+  const intervenant = intCS ? "cs" : intProcureur ? "procureur" : "avocat";
 
   /* ══════════════════════════════════════════════════════════════════════════ */
   return (
@@ -463,11 +475,16 @@ export default function SimulateurPage() {
               {/* Intervenant */}
               <div className="card">
                 <div className="section-title" style={{marginBottom:"0.875rem"}}>Intervenant</div>
-                <div style={{display:"flex",flexDirection:"column",gap:"0.4rem"}}>
-                  {([{key:"avocat",label:`Avocat — ${user?.nom||"Cabinet BullHead"}`,col:"var(--gold)"},{key:"procureur",label:"Procureur / Juge",col:"var(--info)"},{key:"cs",label:"CS / Sgt. II (Absence procureur)",col:"var(--text-dim)"}] as const).map(opt=>(
-                    <button key={opt.key} onClick={()=>setIntervenant(opt.key)} style={{display:"flex",alignItems:"center",gap:"0.625rem",padding:"0.5rem 0.625rem",borderRadius:"var(--radius)",background:intervenant===opt.key?opt.col+"12":"var(--surface)",border:`1px solid ${intervenant===opt.key?opt.col+"50":"var(--border)"}`,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left",transition:"all 0.15s"}}>
-                      <div style={{width:14,height:14,borderRadius:"50%",flexShrink:0,border:`2px solid ${intervenant===opt.key?opt.col:"var(--border-light)"}`,background:intervenant===opt.key?opt.col:"transparent",transition:"all 0.15s"}}/>
-                      <span style={{fontSize:"0.775rem",fontWeight:intervenant===opt.key?600:400,color:intervenant===opt.key?opt.col:"var(--text-muted)"}}>{opt.label}</span>
+                <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
+                  {/* Avocat — toujours disponible */}
+                  {[{label:`Avocat — ${user?.nom||"Cabinet BullHead"}`,val:intAvocat,set:()=>setIntAvocat(v=>!v),col:"var(--gold)",disabled:false},{label:"Procureur / Juge",val:intProcureur,set:()=>{if(!intCS){setIntProcureur(v=>!v);}},col:"var(--info)",disabled:intCS},{label:"CS / Sgt. II (Absence procureur)",val:intCS,set:()=>{const next=!intCS;setIntCS(next);if(next)setIntProcureur(false);},col:"var(--text-dim)",disabled:hasCrime}].map(({label,val,set,col,disabled})=>(
+                    <button key={label} onClick={set} disabled={disabled} style={{display:"flex",alignItems:"center",gap:"0.625rem",padding:"0.5rem 0.625rem",borderRadius:"var(--radius)",background:val&&!disabled?col+"12":"var(--surface)",border:"1px solid "+(val&&!disabled?col+"50":"var(--border)"),cursor:disabled?"not-allowed":"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left",transition:"all 0.15s",opacity:disabled?0.35:1}}>
+                      <div style={{width:16,height:16,borderRadius:4,flexShrink:0,border:"2px solid "+(val&&!disabled?col:"var(--border-light)"),background:val&&!disabled?col+"30":"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
+                        {val&&!disabled&&<span style={{fontSize:"0.6rem",color:col,fontWeight:900}}>✓</span>}
+                      </div>
+                      <span style={{fontSize:"0.775rem",fontWeight:val&&!disabled?600:400,color:val&&!disabled?col:"var(--text-muted)"}}>{label}</span>
+                      {disabled&&hasCrime&&label.includes("CS")&&<span style={{fontSize:"0.6rem",color:"var(--danger)",marginLeft:"auto"}}>N/A Crime</span>}
+                      {disabled&&intCS&&label.includes("Proc")&&<span style={{fontSize:"0.6rem",color:"var(--text-dim)",marginLeft:"auto"}}>Masqué</span>}
                     </button>
                   ))}
                 </div>
@@ -553,8 +570,9 @@ export default function SimulateurPage() {
               <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
                 <button className="btn btn-outline" onClick={exportFormulaire} style={{justifyContent:"center"}}>📋 Copier le formulaire</button>
                 <button className="btn btn-outline" onClick={()=>window.print()} style={{justifyContent:"center"}}>🖨️ Imprimer</button>
+                <button className="btn btn-outline" onClick={()=>window.print()} style={{justifyContent:"center"}}>🖨️ Imprimer</button>
                 <button className="btn btn-gold" disabled={!hasCharges} onClick={()=>{setClientName(`${prenomPrev} ${nomPrev}`.trim());(window as any).__facMontant=formulaireCalc.honBase;(window as any).__facDesc=`Inculpation Defcon ${defcon} — Retenue ${retenue} — ${lignes.filter(l=>l.chef).map(l=>l.chef!.infraction.slice(0,30)).join(", ")}`;setShowFac(true);}} style={{justifyContent:"center",opacity:!hasCharges?0.4:1}}>🧾 Émettre la facture</button>
-                <button className="btn btn-ghost" onClick={()=>{setLignes([newLigne()]);setPrenomPrev("");setNomPrev("");setMatricule("");setDroitSoins(false);setDroitNourriture(false);setDroitPlaide(false);setIntervenant("avocat");setRetenue("NOMINAL");setDefcon(5);}} style={{justifyContent:"center",fontSize:"0.78rem"}}>Réinitialiser</button>
+                <button className="btn btn-ghost" onClick={()=>{setLignes([newLigne()]);setPrenomPrev("");setNomPrev("");setMatricule("");setDroitSoins(false);setDroitNourriture(false);setDroitPlaide(false);setIntAvocat(true);setIntProcureur(false);setIntCS(false);setRetenue("NOMINAL");setDefcon(5);}} style={{justifyContent:"center",fontSize:"0.78rem"}}>Réinitialiser</button>
               </div>
             </div>
 
@@ -606,7 +624,7 @@ export default function SimulateurPage() {
                                 <span style={{fontSize:"0.6rem",color:"var(--text-dim)",flexShrink:0}}>×</span>
                               </button>
                             ):(
-                              <input placeholder="Rechercher une infraction…" value={ligne.search} onChange={e=>updateLigne(ligne.id,{search:e.target.value,showPicker:true})} onFocus={()=>updateLigne(ligne.id,{showPicker:true})} style={{width:"100%",fontSize:"0.78rem",padding:"0.3rem 0.5rem",color:"var(--text)",background:"var(--surface)"}} autoFocus={idx===lignes.length-1&&idx>0}/>
+                              <input placeholder="Rechercher une infraction…" value={ligne.search} onChange={e=>updateLigne(ligne.id,{search:e.target.value,showPicker:true})} onFocus={()=>updateLigne(ligne.id,{showPicker:true})} style={{width:"100%",fontSize:"0.78rem",padding:"0.3rem 0.5rem",color:"var(--text)",background:"var(--surface)",caretColor:"var(--text)"}} autoFocus={idx===lignes.length-1&&idx>0}/>
                             )}
                             {ligne.showPicker&&!ligne.chef&&ligne.search&&(
                               <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"var(--card)",border:"1px solid var(--border)",borderRadius:"var(--radius)",zIndex:50,maxHeight:220,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,0.4)"}}>
@@ -662,7 +680,7 @@ export default function SimulateurPage() {
                                 {` (plaf. ${fmt(PLAFONDS[ligne.chef.categorie]||0)})`}
                               </span>
                             )}
-                            <span style={{fontSize:"0.63rem",color:"var(--gold)",marginLeft:"auto"}}>Hon.: {fmt(HON_PAR_CAT[ligne.chef.categorie]||0)}</span>
+                            <span style={{fontSize:"0.63rem",color:"var(--gold)",marginLeft:"auto"}}>Hon.: {fmt({"Contravention":tarifContra,"Délit mineur":tarifMineur,"Délit majeur":tarifMajeur,"Crime":tarifCrime}[ligne.chef.categorie]||0)}</span>
                           </div>
                         )}
                       </div>
@@ -676,7 +694,24 @@ export default function SimulateurPage() {
               {hasCharges&&(
                 <div className="card" style={{border:"1px solid rgba(201,168,76,0.2)"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.625rem"}}>
-                    <div className="section-title" style={{marginBottom:0}}>Honoraires estimés</div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div className="section-title" style={{marginBottom:0}}>Honoraires estimés</div><button className="btn btn-ghost btn-sm" onClick={()=>setTarifEdit(t=>!t)} style={{fontSize:"0.68rem"}}>{tarifEdit?"✕ Fermer":"✏️ Tarifs"}</button></div>
+
+                {/* Tarifs éditables */}
+                {tarifEdit && (
+                  <div style={{background:"var(--surface)",borderRadius:"var(--radius)",padding:"0.875rem",marginBottom:"1rem",border:"1px solid var(--border)"}}>
+                    <div style={{fontSize:"0.68rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"var(--text-dim)",marginBottom:"0.625rem"}}>Tarifs honoraires (session)</div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
+                      {[["Crime ($)",tarifCrime,setTarifCrime],["Délit majeur ($)",tarifMajeur,setTarifMajeur],["Délit mineur ($)",tarifMineur,setTarifMineur],["Contravention ($)",tarifContra,setTarifContra]].map(([l,v,set])=>(
+                        <div key={l as string} className="form-group" style={{marginBottom:0}}>
+                          <label style={{fontSize:"0.65rem"}}>{l as string}</label>
+                          <input type="number" value={v as number} onChange={e=>(set as any)(+e.target.value)} style={{fontWeight:600}}/>
+                        </div>
+                      ))}
+                    </div>
+                    <button className="btn btn-ghost btn-sm" onClick={()=>{setTarifCrime(15000);setTarifMajeur(8000);setTarifMineur(3000);setTarifContra(1500);}} style={{marginTop:"0.5rem",fontSize:"0.72rem"}}>↺ Réinitialiser</button>
+                  </div>
+                )}
+
                     <div style={{fontFamily:"'Playfair Display',serif",fontWeight:900,fontSize:"1.4rem",color:"var(--gold)"}}>{fmt(formulaireCalc.honBase)}</div>
                   </div>
                   <div style={{display:"flex",gap:"0.875rem",flexWrap:"wrap",marginBottom:"0.5rem"}}>

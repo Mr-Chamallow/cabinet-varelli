@@ -17,6 +17,8 @@ interface Audience {
   created_at: string;
   partage_avec?: string[];
   prive?: boolean;
+  dossier_ref?: string;
+  rappel_minutes?: number;
   visible_pour?: string[];
 }
 
@@ -45,7 +47,7 @@ const TYPE_COLORS: Record<string, string> = {
 const EMPTY: Omit<Audience, "id" | "created_by" | "created_at"> = {
   titre: "", client: "", date: "", heure: "",
   lieu: "", type: "Audience correctionnelle", notes: "",
-  partage_avec: [], prive: false, visible_pour: [],
+  partage_avec: [], prive: false, visible_pour: [], dossier_ref: "", rappel_minutes: 30,
 };
 
 function getMonthDays(year: number, month: number) {
@@ -107,6 +109,7 @@ export default function AudiencesPage() {
   const [memberColors, setMemberColors] = useState<Record<string, string>>({});
   const [detailAudience, setDetailAudience] = useState<Audience | null>(null);
   const [membersList, setMembersList] = useState<string[]>([]);
+  const [dossiersList, setDossiersList] = useState<{id:string;reference:string;client:string}[]>([]);
 
   useEffect(() => { fetchAudiences(); fetchClients(); fetchMemberColors(); fetchMembersList(); }, []);
 
@@ -289,6 +292,7 @@ export default function AudiencesPage() {
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: 1, minWidth: 0 }}>
             <span style={{ fontSize: compact ? "0.78rem" : "0.85rem" }}>{TYPE_ICONS[a.type] || "📌"}</span>
             {a.prive && <span title="Rendez-vous privé" style={{ fontSize: "0.7rem" }}>🔒</span>}
+            {(a as any).dossier_ref && <span style={{fontSize:"0.62rem",padding:"0.05rem 0.35rem",borderRadius:999,background:"rgba(201,168,76,0.1)",color:"var(--gold)",border:"1px solid rgba(201,168,76,0.2)"}}>📁 {(a as any).dossier_ref}</span>}
             <span style={{ fontWeight: 600, fontSize: compact ? "0.8rem" : "0.875rem", color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {a.titre}
             </span>
@@ -825,7 +829,20 @@ export default function AudiencesPage() {
                 </div>
                 <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                   <label>Notes</label>
-                  <textarea rows={3} placeholder="Informations complémentaires…" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+                  <div className="form-group">
+                    <label>Dossier lié (optionnel)</label>
+                    <input list="aud-dossiers" placeholder="Référence dossier…"
+                      value={(form as any).dossier_ref||""}
+                      onChange={e=>setForm(f=>({...f,dossier_ref:e.target.value}))}/>
+                    <datalist id="aud-dossiers">{dossiersList.map(d=><option key={d.id} value={d.reference}>{d.reference} — {d.client}</option>)}</datalist>
+                  </div>
+                  <div className="form-group">
+                    <label>Rappel de notification</label>
+                    <select value={(form as any).rappel_minutes||30} onChange={e=>setForm(f=>({...f,rappel_minutes:+e.target.value}))}>
+                      {[[10,"10 min avant"],[30,"30 min avant"],[60,"1h avant"],[120,"2h avant"],[1440,"1 jour avant"]].map(([v,l])=><option key={v} value={v}>{l}</option>)}
+                    </select>
+                  </div>
+                <textarea rows={3} placeholder="Informations complémentaires…" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
                 </div>
 
                 {/* Partager avec (@mention) */}

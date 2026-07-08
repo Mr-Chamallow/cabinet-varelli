@@ -7,13 +7,6 @@ import { getUser } from "@/lib/auth";
 /* ─── Référentiel pénal ──────────────────────────────────────────────────── */
 import { CHEFS_PENAL, type ChefPenal as ChefPenalType } from "@/lib/code-penal";
 
-const CAT_COLORS: Record<string, string> = {
-  Contravention: "#64748b",
-  "Délit mineur": "#f59e0b",
-  "Délit majeur": "#ef4444",
-  Crime:          "#7c3aed",
-};
-
 
 /* ─── Prescription ───────────────────────────────────────────────────────── */
 const PRESCRIPTION_JOURS: Record<string, number | null> = {
@@ -34,6 +27,13 @@ function calcPrescription(categorie: string, dateCondamnation: string, infractio
   const daysLeft = Math.floor((prescDate.getTime() - Date.now()) / 86400000);
   return { date: prescDate, daysLeft, expired: daysLeft < 0, imprescriptible: false };
 }
+
+const CAT_COLORS: Record<string, string> = {
+  Contravention: "#64748b",
+  "Délit mineur": "#f59e0b",
+  "Délit majeur": "#ef4444",
+  Crime:          "#7c3aed",
+};
 
 const CATEGORIES = ["Contravention","Délit mineur","Délit majeur","Crime"];
 
@@ -346,6 +346,14 @@ export default function CasierPage() {
                       {e.notes}
                     </div>
                   )}
+                  {(() => {
+                    const p = calcPrescription(e.categorie, e.date_condamnation, e.infraction);
+                    if (!p) return null;
+                    if (p.imprescriptible) return <div style={{marginTop:"0.4rem"}}><span style={{fontSize:"0.6rem",padding:"0.1rem 0.45rem",borderRadius:999,background:"rgba(124,58,237,0.1)",color:"#7c3aed",border:"1px solid rgba(124,58,237,0.2)",fontWeight:700}}>⚖️ IMPRESCRIPTIBLE</span></div>;
+                    if (p.expired) return <div style={{marginTop:"0.4rem",display:"flex",alignItems:"center",gap:"0.4rem"}}><span style={{fontSize:"0.6rem",padding:"0.1rem 0.45rem",borderRadius:999,background:"rgba(34,197,94,0.1)",color:"var(--success)",border:"1px solid rgba(34,197,94,0.2)",fontWeight:700}}>✓ PRESCRIT</span><span style={{fontSize:"0.6rem",color:"var(--text-dim)"}}>le {p.date!.toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"})}</span></div>;
+                    const urgent = p.daysLeft <= 30;
+                    return <div style={{marginTop:"0.4rem",display:"flex",alignItems:"center",gap:"0.4rem"}}><span style={{fontSize:"0.6rem",padding:"0.1rem 0.45rem",borderRadius:999,background:urgent?"rgba(239,68,68,0.08)":"var(--surface)",color:urgent?"var(--danger)":"var(--text-dim)",border:"1px solid "+(urgent?"rgba(239,68,68,0.2)":"var(--border)")}}>⏳ {p.daysLeft}j avant prescription</span><span style={{fontSize:"0.6rem",color:"var(--text-dim)"}}>{p.date!.toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"})}</span></div>;
+                  })()}
                   {(() => {
                     const p = calcPrescription(e.categorie, e.date_condamnation, e.infraction);
                     if (!p) return null;
