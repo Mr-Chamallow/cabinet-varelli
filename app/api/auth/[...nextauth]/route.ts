@@ -1,6 +1,8 @@
 import NextAuth from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
-import { supabase } from "@/lib/supabase";
+
+// Remplace par ton ID Discord copié à l'étape 1 (ex: "289412345678901234")
+const ADMIN_DISCORD_ID = "460865920278069248"; 
 
 const handler = NextAuth({
   providers: [
@@ -14,22 +16,17 @@ const handler = NextAuth({
     async signIn({ account, profile }) {
       if (!account?.providerAccountId) return false;
 
-      const discordUsername = (profile as any)?.username;
+      const discordId = account.providerAccountId;
+      const discordUsername = (profile as any)?.username || "Admin";
 
-      if (supabase && discordUsername) {
-        const { data: membre } = await supabase
-          .from("membres")
-          .select("role, nom")
-          .ilike("nom", discordUsername)
-          .single();
-
-        account.site_role = membre?.role || "Patron";
-        account.discord_username = membre?.nom || discordUsername;
-      } else {
+      // Si c'est ton ID Discord, tu es d'office Patron / Admin
+      if (discordId === ADMIN_DISCORD_ID) {
         account.site_role = "Patron";
-        account.discord_username = discordUsername || "Membre";
+      } else {
+        account.site_role = "MEMBRE";
       }
 
+      account.discord_username = discordUsername;
       return true;
     },
     async jwt({ token, account }) {
