@@ -13,7 +13,7 @@ export interface AppUser {
 
 export type User = AppUser;
 
-const STORAGE_KEY = "bullhead_user";
+const STORAGE_KEY = "varelli_user";
 
 export function getUser(): AppUser | null {
   if (typeof window === "undefined") return null;
