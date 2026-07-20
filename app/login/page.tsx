@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { setUser } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
@@ -10,10 +10,26 @@ function LoginContent() {
   const router = useRouter();
   const params = useSearchParams();
   const discordError = params?.get("error");
+  const { data: session, status } = useSession();
+
   const [nom, setNom] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Synchronise la session Discord reçue avec l'état local du site
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      const userObj = session.user as any;
+      setUser({
+        id: userObj.discord_id || userObj.email || "discord_user",
+        nom: userObj.discord_name || userObj.name || "Membre Discord",
+        role: userObj.site_role || "MEMBRE",
+        couleur: "#5865F2",
+      });
+      router.push("/");
+    }
+  }, [status, session, router]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -167,7 +183,7 @@ function LoginContent() {
           )}
           <button
             type="button"
-            onClick={() => signIn("discord", { callbackUrl: "/" })}
+            onClick={() => signIn("discord", { callbackUrl: "/login" })}
             style={{
               display: "flex",
               alignItems: "center",
