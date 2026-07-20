@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { supabase } from "@/lib/supabase";
 
@@ -11,7 +11,6 @@ export interface AppUser {
   permissions?: string[];
 }
 
-// Alias pour compatibilité
 export type User = AppUser;
 
 const STORAGE_KEY = "bullhead_user";
@@ -73,6 +72,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
+  "Patron":                   [...ALL_PERMISSIONS],
   "Associé / Patron":         [...ALL_PERMISSIONS],
   "Associé":                  ALL_PERMISSIONS.filter(p => p !== "admin"),
   "Avocat Senior":            ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","juridique","calculatrice","supervision"],
@@ -96,8 +96,10 @@ export function hasPermission(userOrRole: AppUser | string | null, permission: s
 
   if (typeof userOrRole === 'string') {
     const perms = DEFAULT_PERMISSIONS[userOrRole] || [];
-    return perms.includes(permission) || perms.includes("admin");
+    return perms.includes(permission) || perms.includes("admin") || userOrRole === "Patron";
   }
+
+  if (userOrRole.role === "Patron" || userOrRole.role === "Associé / Patron") return true;
 
   const perms = userOrRole.permissions || DEFAULT_PERMISSIONS[userOrRole.role] || [];
   return perms.includes(permission) || perms.includes("admin");
@@ -108,6 +110,8 @@ export const canAccess = hasPermission;
 export function getMemberColor(roleOrName?: string, customColor?: string): string {
   if (customColor) return customColor;
   switch (roleOrName) {
+    case "Patron":
+    case "Associé / Patron":
     case "CEO - Directeur général": return "#7c3aed";
     case "COO - Directrice opérationnel": return "#6366f1";
     case "Responsable juridique": return "#c9a84c";
