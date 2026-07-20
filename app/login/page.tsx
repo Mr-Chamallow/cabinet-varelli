@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -17,16 +17,22 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Synchronise la session Discord reçue avec l'état local du site
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
       const userObj = session.user as any;
+      
+      // On force le rôle Patron/Admin pour ton compte Discord
+      const roleFinal = (userObj.discord_id === "460865920278069248" || userObj.site_role) 
+        ? "Patron" 
+        : (userObj.site_role || "MEMBRE");
+
       setUser({
         id: userObj.discord_id || userObj.email || "discord_user",
-        nom: userObj.discord_name || userObj.name || "Membre Discord",
-        role: userObj.site_role || "MEMBRE",
+        nom: userObj.discord_name || userObj.name || "mrchamallow__",
+        role: roleFinal,
         couleur: "#5865F2",
       });
+      
       router.push("/");
     }
   }, [status, session, router]);
@@ -176,9 +182,7 @@ function LoginContent() {
                 textAlign: "center",
               }}
             >
-              {discordError === "not_member"
-                ? "⛔ Tu n'es pas membre du serveur Obsidian Logistics."
-                : "❌ Erreur Discord. Réessaie."}
+              ❌ Erreur Discord. Réessaie.
             </div>
           )}
           <button
