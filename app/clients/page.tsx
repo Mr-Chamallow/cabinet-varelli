@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
@@ -45,48 +45,82 @@ export default function ClientsPage() {
 
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from("clients").select("*").order("nom_rp");
-    setClients(data || []); setLoading(false);
+    try {
+      const { data, error } = await supabase.from("clients").select("*").order("nom_rp");
+      if (error) throw error;
+      setClients(data || []);
+    } catch (err) {
+      showT("Erreur lors du chargement des clients");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function openClient(c: Client) {
     setSelectedClient(c); setClientTab("info");
     if (!supabase) return;
-    const [{ data:d },{ data:f },{ data:cas }] = await Promise.all([
-      supabase.from("dossiers").select("id,reference,type_affaire,statut,created_at,created_by").eq("client", c.nom_rp).order("created_at",{ascending:false}),
-      supabase.from("factures").select("id,numero,montant,statut,created_at").eq("client", c.nom_rp).order("created_at",{ascending:false}),
-      supabase.from("casier").select("id,infraction,categorie,date_condamnation,amende_prononcee").eq("client_nom", c.nom_rp).order("date_condamnation",{ascending:false}),
-    ]);
-    setDossiers(d||[]); setFactures(f||[]); setCasier(cas||[]);
+    try {
+      const [{ data:d },{ data:f },{ data:cas }] = await Promise.all([
+        supabase.from("dossiers").select("id,reference,type_affaire,statut,created_at,created_by").or(`client_id.eq.${c.id},client.eq.${c.nom_rp}`).order("created_at",{ascending:false}),
+        supabase.from("factures").select("id,numero,montant,statut,created_at").eq("client", c.nom_rp).order("created_at",{ascending:false}),
+        supabase.from("casier").select("id,infraction,categorie,date_condamnation,amende_prononcee").eq("client_nom", c.nom_rp).order("date_condamnation",{ascending:false}),
+      ]);
+      setDossiers(d||[]); setFactures(f||[]); setCasier(cas||[]);
+    } catch (e) {
+      showT("Erreur lors de la récupération du profil");
+    }
   }
 
   async function saveClient() {
     if (!supabase || !user || !form.nom_rp.trim()) return;
     setSaving(true);
-    if (editMode && selectedClient) {
-      const { data } = await supabase.from("clients").update(form).eq("id",selectedClient.id).select().single();
-      if (data) { setClients(cs=>cs.map(c=>c.id===selectedClient.id?data:c)); setSelectedClient(data); }
-    } else {
-      const { data } = await supabase.from("clients").insert([{...form,created_by:user.nom}]).select().single();
-      if (data) { setClients(cs=>[data,...cs]); }
+    try {
+      if (editMode && selectedClient) {
+        const { data, error } = await supabase.from("clients").update(form).eq("id",selectedClient.id).select().single();
+        if (error) throw error;
+        if (data) {
+          // Mise à jour de la référence textuelle dans dossiers si le nom a changé
+          if (selectedClient.nom_rp !== form.nom_rp.trim()) {
+            await supabase.from("dossiers").update({ client: form.nom_rp.trim() }).eq("client_id", selectedClient.id);
+          }
+          setClients(cs=>cs.map(c=>c.id===selectedClient.id?data:c)); setSelectedClient(data);
+        }
+      } else {
+        const { data, error } = await supabase.from("clients").insert([{...form,created_by:user.nom}]).select().single();
+        if (error) throw error;
+        if (data) { setClients(cs=>[data,...cs]); }
+      }
+      setShowForm(false); setEditMode(false); showT(editMode?"Client mis à jour":"Client créé");
+    } catch (err: any) {
+      showT("Erreur lors de la sauvegarde");
+    } finally {
+      setSaving(false);
     }
-    setShowForm(false); setEditMode(false); showT(editMode?"Client mis à jour":"Client créé");
-    setSaving(false);
   }
 
   async function deleteClient(id:string) {
     if (!supabase) return;
-    await supabase.from("clients").delete().eq("id",id);
-    setClients(cs=>cs.filter(c=>c.id!==id));
-    setSelectedClient(null); setConfirm(null); showT("Client supprimé");
+    try {
+      const { error } = await supabase.from("clients").delete().eq("id",id);
+      if (error) throw error;
+      setClients(cs=>cs.filter(c=>c.id!==id));
+      setSelectedClient(null); setConfirm(null); showT("Client supprimé");
+    } catch (err) {
+      showT("Erreur lors de la suppression");
+    }
   }
 
   async function toggleBlacklist(c:Client) {
     if (!supabase) return;
-    await supabase.from("clients").update({blacklist:!c.blacklist}).eq("id",c.id);
-    const updated = {...c,blacklist:!c.blacklist};
-    setClients(cs=>cs.map(x=>x.id===c.id?updated:x));
-    setSelectedClient(updated);
+    try {
+      const { error } = await supabase.from("clients").update({blacklist:!c.blacklist}).eq("id",c.id);
+      if (error) throw error;
+      const updated = {...c,blacklist:!c.blacklist};
+      setClients(cs=>cs.map(x=>x.id===c.id?updated:x));
+      setSelectedClient(updated);
+    } catch (err) {
+      showT("Erreur lors de la modification de la blacklist");
+    }
   }
 
   function showT(msg:string){ setToast(msg); setTimeout(()=>setToast(null),3000); }

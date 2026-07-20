@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -73,13 +73,18 @@ export default function DossiersPage() {
 
   async function load() {
     if (!supabase || !user) { setLoading(false); return; }
-    const [{ data: d }, { data: c }] = await Promise.all([
-      supabase.from("dossiers").select("*").eq("created_by", user.nom).order("created_at", { ascending: false }),
-      supabase.from("clients").select("id, nom_rp").eq("created_by", user.nom).order("nom_rp"),
-    ]);
-    setDossiers(d || []);
-    setClients(c || []);
-    setLoading(false);
+    try {
+      const [{ data: d }, { data: c }] = await Promise.all([
+        supabase.from("dossiers").select("*").order("created_at", { ascending: false }),
+        supabase.from("clients").select("id, nom_rp").order("nom_rp"),
+      ]);
+      setDossiers(d || []);
+      setClients(c || []);
+    } catch (err) {
+      showToast("Erreur de chargement", "danger");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function showToast(msg: string, type: "success" | "danger" = "success") {
@@ -107,17 +112,22 @@ export default function DossiersPage() {
 
   async function duplicateDossier(d: Dossier) {
     if (!supabase || !user) return;
-    const { error } = await supabase.from("dossiers").insert([{
-      reference: genRef(),
-      client: d.client, client_id: d.client_id || null,
-      type_affaire: d.type_affaire, type_client: d.type_client,
-      risque: d.risque, montant: 0, statut: "Ouvert",
-      notes: d.notes, created_by: user.nom,
-    }]);
-    if (!error) { showToast("Dossier dupliqué ✓"); load(); }
+    try {
+      const { error } = await supabase.from("dossiers").insert([{
+        reference: genRef(),
+        client: d.client, client_id: d.client_id || null,
+        type_affaire: d.type_affaire, type_client: d.type_client,
+        risque: d.risque, montant: 0, statut: "Ouvert",
+        notes: d.notes, created_by: user.nom,
+      }]);
+      if (error) throw error;
+      showToast("Dossier dupliqué ✓");
+      load();
+    } catch (e) {
+      showToast("Erreur lors de la duplication", "danger");
+    }
   }
 
-  // Quand on choisit un client dans la liste
   function handleClientSelect(nomRp: string) {
     const found = clients.find(c => c.nom_rp === nomRp);
     setForm(f => ({ ...f, client: nomRp, client_id: found?.id || "" }));
@@ -139,7 +149,7 @@ export default function DossiersPage() {
         montant: Number(form.montant) || 0,
         statut: form.statut,
         notes: form.notes,
-        created_by: user.nom,
+        created_by: editTarget ? editTarget.created_by : user.nom,
       };
 
       if (editTarget) {
@@ -162,10 +172,15 @@ export default function DossiersPage() {
 
   async function doDelete() {
     if (!supabase || !confirmDelete) return;
-    await supabase.from("dossiers").delete().eq("id", confirmDelete.id);
-    setConfirmDelete(null);
-    showToast("Dossier supprimé");
-    load();
+    try {
+      const { error } = await supabase.from("dossiers").delete().eq("id", confirmDelete.id);
+      if (error) throw error;
+      setConfirmDelete(null);
+      showToast("Dossier supprimé");
+      load();
+    } catch (err) {
+      showToast("Erreur de suppression", "danger");
+    }
   }
 
   const filtered = dossiers.filter(d => {
