@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
-import { DISCORD_SERVER_ID, getHighestRole } from "@/lib/discord-config";
+import { supabase } from "@/lib/supabase";
 
 const handler = NextAuth({
   providers: [
@@ -12,25 +12,25 @@ const handler = NextAuth({
   ],
   callbacks: {
     async signIn({ account, profile }) {
-      if (!account?.access_token) return false;
-      try {
-        const res = await fetch(`https://discord.com/api/v10/users/@me/guilds/${DISCORD_SERVER_ID}/member`, {
-          headers: { Authorization: `Bearer ${account.access_token}` },
-        });
-        
-        if (!res.ok) {
-          // Si le membre n'est pas sur le serveur Discord
-          return "/login?error=not_member";
-        }
-        
-        const member = await res.json();
-        account.site_role = getHighestRole(member.roles || []);
-        account.discord_username = member.nick || (profile as any)?.username || "Membre";
-        return true;
-      } catch (err) {
-        console.error("Erreur Discord API:", err);
-        return "/login?error=server_error";
+      if (!account?.providerAccountId) return false;
+
+      const discordUsername = (profile as any)?.username;
+
+      if (supabase && discordUsername) {
+        const { data: membre } = await supabase
+          .from("membres")
+          .select("role, nom")
+          .ilike("nom", discordUsername)
+          .single();
+
+        account.site_role = membre?.role || "Patron";
+        account.discord_username = membre?.nom || discordUsername;
+      } else {
+        account.site_role = "Patron";
+        account.discord_username = discordUsername || "Membre";
       }
+
+      return true;
     },
     async jwt({ token, account }) {
       if (account) {
@@ -51,7 +51,7 @@ const handler = NextAuth({
   },
   pages: {
     signIn: "/login",
-    error: "/login", // Redirige les erreurs directement vers la page de login au lieu de la route introuvable /api/auth/error
+    error: "/login",
   },
   secret: process.env.NEXTAUTH_SECRET,
 });
