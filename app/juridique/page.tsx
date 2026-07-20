@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useState, useMemo } from "react";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
-import { ARTICLES } from "@/lib/code-penal";
+import { CHEFS_PENAL as ARTICLES } from "@/lib/code-penal";
 
 const ONGLETS: { key: string; label: string; icon: string; color: string }[] = [
   { key: "constitution",          label: "Constitution",        icon: "🏛️", color: "#D4AF37" },
