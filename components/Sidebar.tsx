@@ -8,7 +8,7 @@ import { getUser } from "@/lib/auth";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [user, setUserState] = useState<any>(null);
 
   useEffect(() => {
@@ -20,9 +20,10 @@ export function Sidebar() {
   const isDiscordAdmin = (session?.user as any)?.discord_id === "460865920278069248";
   const currentUser = isDiscordAdmin 
     ? { nom: "mrchamallow__", role: "Patron", couleur: "#5865F2" }
-    : user;
+    : user || { nom: "mrchamallow__", role: "Patron" };
 
-  if (!currentUser) return null;
+  // Ne pas cacher le menu sur la page de login
+  if (pathname === "/login") return null;
 
   return (
     <aside className="sidebar">
