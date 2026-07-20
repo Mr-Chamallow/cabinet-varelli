@@ -1,5 +1,7 @@
 "use client";
 
+import { supabase } from "@/lib/supabase";
+
 export interface AppUser {
   id: string;
   nom: string;
@@ -9,7 +11,7 @@ export interface AppUser {
   permissions?: string[];
 }
 
-// Alias pour compatibilité avec les pages qui importent "User"
+// Alias pour compatibilité
 export type User = AppUser;
 
 const STORAGE_KEY = "bullhead_user";
@@ -19,7 +21,9 @@ export function getUser(): AppUser | null {
   try {
     const s = localStorage.getItem(STORAGE_KEY);
     return s ? JSON.parse(s) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export function setUser(user: AppUser) {
@@ -28,16 +32,17 @@ export function setUser(user: AppUser) {
 }
 
 export function clearUser() {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(STORAGE_KEY);
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(STORAGE_KEY);
+  }
 }
 
 export const ALL_PERMISSIONS = [
-  "dashboard","clients","dossiers","factures","casier","simulateur","audiences",
-  "juridique","calculatrice","supervision","admin","delete_all","edit_all",
-  "obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie",
-  "obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats",
-  "obsidian_planification","obsidian_stats","cahier_vente",
+  "dashboard", "clients", "dossiers", "factures", "casier", "simulateur", "audiences",
+  "juridique", "calculatrice", "supervision", "admin", "delete_all", "edit_all",
+  "obsidian_dashboard", "obsidian_prix", "obsidian_stocks", "obsidian_armurerie",
+  "obsidian_garage", "obsidian_comptabilite", "obsidian_rdv", "obsidian_contrats",
+  "obsidian_planification", "obsidian_stats", "cahier_vente"
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
@@ -64,7 +69,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   obsidian_contrats: "Obsidian - Contrats",
   obsidian_planification: "Obsidian - Planification",
   obsidian_stats: "Obsidian - Statistiques",
-  cahier_vente: "Cahier de vente",
+  cahier_vente: "Cahier de vente"
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
@@ -83,7 +88,7 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   "Responsable sécurité":     ["dashboard","obsidian_dashboard","obsidian_armurerie","obsidian_rdv","obsidian_planification"],
   "Agent de sécurité":        ["dashboard","obsidian_dashboard","obsidian_armurerie","obsidian_rdv"],
   "Opérateur":                ["dashboard","obsidian_dashboard","obsidian_rdv"],
-  "Opérateur stagiaire":      ["dashboard","obsidian_dashboard"],
+  "Opérateur stagiaire":      ["dashboard","obsidian_dashboard"]
 };
 
 export function hasPermission(user: AppUser | null, permission: string): boolean {
@@ -92,7 +97,6 @@ export function hasPermission(user: AppUser | null, permission: string): boolean
   return perms.includes(permission) || perms.includes("admin");
 }
 
-// Alias canAccess vers hasPermission pour compatibilité
 export const canAccess = hasPermission;
 
 export function getMemberColor(role?: string): string {
@@ -109,4 +113,12 @@ export function getMemberColor(role?: string): string {
   }
 }
 
-export async function loadRolesFromSupabase(): Promise<void> { }
+export async function loadRolesFromSupabase(): Promise<any[]> {
+  try {
+    const { data, error } = await supabase.from("roles").select("*");
+    if (error) return [];
+    return data || [];
+  } catch {
+    return [];
+  }
+}
