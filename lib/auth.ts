@@ -6,7 +6,11 @@ export interface AppUser {
   role: string;
   couleur?: string;
   discord_id?: string;
+  permissions?: string[];
 }
+
+// Alias pour compatibilité avec les pages qui importent "User"
+export type User = AppUser;
 
 const STORAGE_KEY = "bullhead_user";
 
@@ -36,6 +40,33 @@ export const ALL_PERMISSIONS = [
   "obsidian_planification","obsidian_stats","cahier_vente",
 ];
 
+export const PERMISSION_LABELS: Record<string, string> = {
+  dashboard: "Tableau de bord",
+  clients: "Gestion clients",
+  dossiers: "Dossiers juridiques",
+  factures: "Facturation",
+  casier: "Casier judiciaire",
+  simulateur: "Simulateur",
+  audiences: "Audiences",
+  juridique: "Espace juridique",
+  calculatrice: "Calculatrice",
+  supervision: "Supervision",
+  admin: "Administration",
+  delete_all: "Suppression globale",
+  edit_all: "Édition globale",
+  obsidian_dashboard: "Obsidian - Dashboard",
+  obsidian_prix: "Obsidian - Prix",
+  obsidian_stocks: "Obsidian - Stocks",
+  obsidian_armurerie: "Obsidian - Armurerie",
+  obsidian_garage: "Obsidian - Garage",
+  obsidian_comptabilite: "Obsidian - Comptabilité",
+  obsidian_rdv: "Obsidian - Rendez-vous",
+  obsidian_contrats: "Obsidian - Contrats",
+  obsidian_planification: "Obsidian - Planification",
+  obsidian_stats: "Obsidian - Statistiques",
+  cahier_vente: "Cahier de vente",
+};
+
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   "Associé / Patron":         [...ALL_PERMISSIONS],
   "Associé":                  ALL_PERMISSIONS.filter(p => p !== "admin"),
@@ -57,8 +88,25 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
 
 export function hasPermission(user: AppUser | null, permission: string): boolean {
   if (!user) return false;
-  const perms = DEFAULT_PERMISSIONS[user.role] || [];
-  return perms.includes(permission);
+  const perms = user.permissions || DEFAULT_PERMISSIONS[user.role] || [];
+  return perms.includes(permission) || perms.includes("admin");
+}
+
+// Alias canAccess vers hasPermission pour compatibilité
+export const canAccess = hasPermission;
+
+export function getMemberColor(role?: string): string {
+  switch (role) {
+    case "CEO - Directeur général": return "#7c3aed";
+    case "COO - Directrice opérationnel": return "#6366f1";
+    case "Responsable juridique": return "#c9a84c";
+    case "Agent juridique": return "#a0916d";
+    case "Responsable logistique": return "#ef4444";
+    case "Agent logistique": return "#f97316";
+    case "Responsable sécurité": return "#64748b";
+    case "Agent de sécurité": return "#475569";
+    default: return "#334155";
+  }
 }
 
 export async function loadRolesFromSupabase(): Promise<void> { }
