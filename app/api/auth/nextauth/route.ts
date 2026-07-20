@@ -15,27 +15,44 @@ const handler = NextAuth({
       if (!account?.access_token) return false;
       try {
         const res = await fetch(`https://discord.com/api/v10/users/@me/guilds/${DISCORD_SERVER_ID}/member`, {
-          headers: { Authorization: `Bearer ${account.access_token}` }
+          headers: { Authorization: `Bearer ${account.access_token}` },
         });
-        if (!res.ok) return "/login?error=not_member";
+        
+        if (!res.ok) {
+          // Si le membre n'est pas sur le serveur Discord
+          return "/login?error=not_member";
+        }
+        
         const member = await res.json();
         account.site_role = getHighestRole(member.roles || []);
         account.discord_username = member.nick || (profile as any)?.username || "Membre";
         return true;
-      } catch { return "/login?error=server_error"; }
+      } catch (err) {
+        console.error("Erreur Discord API:", err);
+        return "/login?error=server_error";
+      }
     },
     async jwt({ token, account }) {
-      if (account) { token.site_role = account.site_role; token.discord_name = account.discord_username; token.discord_id = account.providerAccountId; }
+      if (account) {
+        token.site_role = account.site_role;
+        token.discord_name = account.discord_username;
+        token.discord_id = account.providerAccountId;
+      }
       return token;
     },
     async session({ session, token }) {
-      (session.user as any).site_role    = token.site_role;
-      (session.user as any).discord_name = token.discord_name;
-      (session.user as any).discord_id   = token.discord_id;
+      if (session.user) {
+        (session.user as any).site_role = token.site_role;
+        (session.user as any).discord_name = token.discord_name;
+        (session.user as any).discord_id = token.discord_id;
+      }
       return session;
     },
   },
-  pages: { signIn: "/login", error: "/login" },
+  pages: {
+    signIn: "/login",
+    error: "/login", // Redirige les erreurs directement vers la page de login au lieu de la route introuvable /api/auth/error
+  },
   secret: process.env.NEXTAUTH_SECRET,
 });
 
