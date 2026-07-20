@@ -99,8 +99,9 @@ export function hasPermission(user: AppUser | null, permission: string): boolean
 
 export const canAccess = hasPermission;
 
-export function getMemberColor(role?: string): string {
-  switch (role) {
+export function getMemberColor(roleOrName?: string, customColor?: string): string {
+  if (customColor) return customColor;
+  switch (roleOrName) {
     case "CEO - Directeur général": return "#7c3aed";
     case "COO - Directrice opérationnel": return "#6366f1";
     case "Responsable juridique": return "#c9a84c";
