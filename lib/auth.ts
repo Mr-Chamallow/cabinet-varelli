@@ -91,9 +91,15 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   "Opérateur stagiaire":      ["dashboard","obsidian_dashboard"]
 };
 
-export function hasPermission(user: AppUser | null, permission: string): boolean {
-  if (!user) return false;
-  const perms = user.permissions || DEFAULT_PERMISSIONS[user.role] || [];
+export function hasPermission(userOrRole: AppUser | string | null, permission: string): boolean {
+  if (!userOrRole) return false;
+
+  if (typeof userOrRole === 'string') {
+    const perms = DEFAULT_PERMISSIONS[userOrRole] || [];
+    return perms.includes(permission) || perms.includes("admin");
+  }
+
+  const perms = userOrRole.permissions || DEFAULT_PERMISSIONS[userOrRole.role] || [];
   return perms.includes(permission) || perms.includes("admin");
 }
 
