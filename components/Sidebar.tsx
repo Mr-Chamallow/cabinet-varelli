@@ -17,6 +17,8 @@ const NAV_SECTIONS = [
     { href: "/audiences",   label: "Audiences",     icon: "◍", permission: "audiences" },
     { href: "/juridique",   label: "Code pénal",    icon: "◎", permission: "juridique" },
     { href: "/calculatrice",label: "Calculatrice",  icon: "◑", permission: "calculatrice" },
+    { href: "/comptabilite",label: "Comptabilité",  icon: "◒", permission: "comptabilite" },
+    { href: "/operations",  label: "Opérations",    icon: "◓", permission: "comptabilite" },
   ]},
   { label: "🖤 Obsidian Logistics", items: [
     { href: "/obsidian",               label: "Dashboard OBS",   icon: "▣", permission: "obsidian_dashboard" },

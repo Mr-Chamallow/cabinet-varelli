@@ -2,6 +2,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 const CATS=["drogue","arme","accessoire","composant","objet_rare","autre"];
 const fmtN=(n:number)=>n.toLocaleString("fr-FR",{maximumFractionDigits:2});
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
@@ -9,6 +10,7 @@ interface Stock{id:string;nom:string;categorie:string;emoji:string;quantite:numb
 interface Mouvement{id:string;stock_nom:string;type:string;quantite:number;motif:string;membre:string;created_at:string;}
 export default function StocksPage(){
   const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_stocks"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [stocks,setStocks]=useState<Stock[]>([]);
   const [mouvements,setMouvements]=useState<Mouvement[]>([]);
   const [loading,setLoading]=useState(true);

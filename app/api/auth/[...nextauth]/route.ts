@@ -25,6 +25,16 @@ async function getRoleOverride(discordId: string): Promise<string | null> {
   return data?.role || null;
 }
 
+async function getRolePermissions(roleName: string): Promise<string[] | null> {
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("roles")
+    .select("permissions")
+    .eq("nom", roleName)
+    .maybeSingle();
+  return data?.permissions ?? null;
+}
+
 const handler = NextAuth({
   providers: [
     DiscordProvider({
@@ -49,6 +59,12 @@ const handler = NextAuth({
         const override = await getRoleOverride(token.discord_id as string);
         if (override) token.site_role = override;
       }
+      // Les permissions du rôle viennent de la table `roles` (configurable dans /admin).
+      // Si le rôle n'a pas d'entrée dans la table, on retombe sur les valeurs par défaut du code.
+      if (token.site_role) {
+        const perms = await getRolePermissions(token.site_role as string);
+        token.permissions = perms;
+      }
       return token;
     },
     async session({ session, token }) {
@@ -56,6 +72,7 @@ const handler = NextAuth({
         (session.user as any).site_role = token.site_role;
         (session.user as any).discord_name = token.discord_name;
         (session.user as any).discord_id = token.discord_id;
+        (session.user as any).permissions = token.permissions || null;
       }
       return session;
     },

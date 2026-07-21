@@ -2,6 +2,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 const CATS_R=["Vente drogue","Vente arme","Braquage ATM","Braquage superette","Braquage banque","Blanchiment","Cotisation","Autre"];
 const CATS_D=["Achat véhicule","Achat matériel","Achat drogue","Amende","Corruption","Dépense opérationnelle","Autre"];
@@ -9,6 +10,7 @@ const SEMAINES_LABELS=["Cette semaine","Semaine -1","Semaine -2","Semaine -3","S
 function getWeekStart(offset=0){const d=new Date();d.setDate(d.getDate()-d.getDay()+1-offset*7);d.setHours(0,0,0,0);return d.toISOString().split("T")[0];}
 export default function ComptaPage(){
   const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_comptabilite"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [entries,setEntries]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
   const [tab,setTab]=useState<"apercu"|"historique"|"saisie">("apercu");

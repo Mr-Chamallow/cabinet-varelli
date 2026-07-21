@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 const TYPES=["Réunion","Livraison","Surveillance","Intimidation","Récupération","Rencontre fournisseur","Braquage","Entraînement","Autre"];
 const PRIOS=["Basse","Normale","Haute","Critique"];
 const STATUTS=["Planifié","En cours","Terminé","Annulé"];
@@ -10,6 +11,7 @@ const SCOL:Record<string,string>={Planifié:"var(--info)","En cours":"var(--warn
 const EMPTY={titre:"",date:"",heure:"",type:"Réunion",lieu:"",membres_concernes:[] as string[],priorite:"Normale",statut:"Planifié",notes:""};
 export default function RdvPage(){
   const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_rdv"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [rdvs,setRdvs]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
   const [showForm,setShowForm]=useState(false);

@@ -1,11 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 const ZONES=[{nom:"Paleto",bonus:"Nord +1%",drogue:"Mexicana"},{nom:"Sandy Shores",bonus:"Nord +4%",drogue:"Meth Bleue"},{nom:"Grapeseed",bonus:"Nord +1%",drogue:"Mexicana"},{nom:"Vinewood",bonus:"10%",drogue:"Tranq"},{nom:"Aéroport",bonus:"4%",drogue:"Meth Bleue"},{nom:"Wardog",bonus:"1%",drogue:"Mexicana"},{nom:"Mirror Park",bonus:"0%",drogue:""},{nom:"Fête Foraine",bonus:"0%",drogue:"Meth Bleue"},{nom:"Barillo Plage",bonus:"7%",drogue:"Tranq"},{nom:"Del Perro",bonus:"10%",drogue:"Weed"},{nom:"Roxwood Est",bonus:"Nord +10%",drogue:"Crack"},{nom:"Eclypse Tower",bonus:"10%",drogue:""},{nom:"Vespucci",bonus:"4%",drogue:"Meth Bleue"},{nom:"Roxwood Ouest",bonus:"Nord +7%",drogue:"Mexicana"},{nom:"Terrain de cross",bonus:"Nord +10%",drogue:"Mexicana"},{nom:"Champ éolienne",bonus:"Nord +0%",drogue:""},{nom:"CAYO Perico",bonus:"10%",drogue:"Cocaïne"}];
 const DROGUES=[{nom:"Cocaïne",emoji:"❄️",min:429,max:449,sem:17},{nom:"Tranq",emoji:"💉",min:275,max:290,sem:0},{nom:"Meth Bleue",emoji:"🔵",min:289,max:309,sem:4},{nom:"Weed",emoji:"🌿",min:442,max:464,sem:13},{nom:"Purple",emoji:"🟣",min:322,max:344,sem:1},{nom:"Crack",emoji:"💎",min:339,max:359,sem:9},{nom:"Mexicana",emoji:"🌶️",min:359,max:379,sem:11},{nom:"Ecstasy",emoji:"💊",min:180,max:300,sem:0},{nom:"Lean",emoji:"🥤",min:300,max:350,sem:0},{nom:"B-Magic",emoji:"✨",min:450,max:470,sem:0}];
 const ACCS=[{nom:"Chargeurs Pistolets",prix:225000},{nom:"Chargeurs Auto",prix:500000},{nom:"Chargeurs Lourdes",prix:750000},{nom:"Silencieux Pistolets",prix:17500},{nom:"Silencieux Auto",prix:25000},{nom:"Silencieux Lourdes",prix:30000},{nom:"Viseurs Pistolets",prix:17500},{nom:"Viseurs Auto",prix:25000},{nom:"Viseurs Lourdes",prix:30000},{nom:"Poignées Lourdes",prix:30000},{nom:"Lampes Pistolets",prix:17500},{nom:"Lampes Lourdes",prix:30000},{nom:"Compensateurs Pistolets",prix:17500},{nom:"Freins Auto",prix:25000},{nom:"Freins Lourdes",prix:30000},{nom:"Canons Auto",prix:25000},{nom:"Canons Lourdes",prix:30000}];
 export default function PrixPage() {
+  const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_prix"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [tab,setTab]=useState<"drogues"|"accessoires"|"zones"|"custom">("drogues");
   const [custom,setCustom]=useState<any[]>([]);
   const [form,setForm]=useState({nom:"",categorie:"arme",emoji:"📦",prix_min:0,prix_max:0,prix_achat:0,vendeur:"",notes:""});

@@ -2,10 +2,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 const CATS=["arme","munition","accessoire","explosif","gilet","radio","autre"];
 const CAT_ICONS:Record<string,string>={arme:"🔫",munition:"🔴",accessoire:"🔧",explosif:"💣",gilet:"🦺",radio:"📻",autre:"📦"};
 export default function ArmureriePage(){
   const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_armurerie"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [stocks,setStocks]=useState<any[]>([]);
   const [logs,setLogs]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);

@@ -1,8 +1,12 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 export default function StatsPage(){
+  const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_stats"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [data,setData]=useState<any>({compta:[],contrats:[],stocks:[],mouvements:[]});
   const [loading,setLoading]=useState(true);
   const [period,setPeriod]=useState(4);

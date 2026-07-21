@@ -17,6 +17,7 @@ export function useCurrentUser(): { user: AppUser | null; loading: boolean } {
       role: s.site_role,
       couleur: "#5865F2",
       discord_id: s.discord_id,
+      permissions: s.permissions || undefined,
     },
     loading: false,
   };

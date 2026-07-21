@@ -2,12 +2,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 const TYPES=["personne","entreprise","organisation","inconnu"];
 const PRIOS=["Basse","Normale","Haute","Critique","Neutralisé"];
 const PCOL:Record<string,string>={Basse:"var(--text-dim)",Normale:"var(--info)",Haute:"var(--warning)",Critique:"var(--danger)",Neutralisé:"var(--success)"};
 const EMPTY={nom:"",type:"personne",priorite:"Normale",statut:"Actif",tags:[],age:0,origine:"",organisation:"",occupation:"",telephone:"",discord:"",comptes_bancaires:"",adresses:"",vehicules:"",relations:"",notes_publiques:"",notes_privees:""};
 export default function FichesPage(){
   const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_stats"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [fiches,setFiches]=useState<any[]>([]);
   const [selected,setSelected]=useState<any>(null);
   const [loading,setLoading]=useState(true);

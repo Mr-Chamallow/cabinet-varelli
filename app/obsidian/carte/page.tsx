@@ -2,12 +2,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 const TYPES=["garage","planque","zone","territoire","opération","point_interet"];
 const TCOL:Record<string,string>={garage:"#3b82f6",planque:"#f97316",zone:"#22c55e",territoire:"#7c3aed",opération:"var(--danger)","point_interet":"var(--gold)"};
 const ICONS:Record<string,string>={garage:"🚗",planque:"🏚️",zone:"🗺️",territoire:"🏴",opération:"⚡","point_interet":"📍"};
 const EMPTY={nom:"",type:"planque",x:0,y:0,couleur:"#c9a84c",description:"",statut:"Actif"};
 export default function CartePage(){
   const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_stats"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [points,setPoints]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
   const [showForm,setShowForm]=useState(false);

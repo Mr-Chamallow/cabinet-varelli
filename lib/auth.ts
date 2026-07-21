@@ -17,6 +17,7 @@ export type User = AppUser;
 export const ALL_PERMISSIONS = [
   "dashboard", "clients", "dossiers", "factures", "casier", "simulateur", "audiences",
   "juridique", "calculatrice", "supervision", "admin", "delete_all", "edit_all",
+  "comptabilite", "h47",
   "obsidian_dashboard", "obsidian_prix", "obsidian_stocks", "obsidian_armurerie",
   "obsidian_garage", "obsidian_comptabilite", "obsidian_rdv", "obsidian_contrats",
   "obsidian_planification", "obsidian_stats", "cahier_vente"
@@ -27,7 +28,8 @@ export const PERMISSION_LABELS: Record<string, string> = {
   factures: "Facturation", casier: "Casier judiciaire", simulateur: "Simulateur",
   audiences: "Audiences", juridique: "Espace juridique", calculatrice: "Calculatrice",
   supervision: "Supervision", admin: "Administration", delete_all: "Suppression globale",
-  edit_all: "Édition globale", obsidian_dashboard: "Obsidian - Dashboard",
+  edit_all: "Édition globale", comptabilite: "Comptabilité (Cabinet)", h47: "H-47 (Tracker de vente)",
+  obsidian_dashboard: "Obsidian - Dashboard",
   obsidian_prix: "Obsidian - Prix", obsidian_stocks: "Obsidian - Stocks",
   obsidian_armurerie: "Obsidian - Armurerie", obsidian_garage: "Obsidian - Garage",
   obsidian_comptabilite: "Obsidian - Comptabilité", obsidian_rdv: "Obsidian - Rendez-vous",
@@ -46,8 +48,8 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   "COO - Directrice opérationnel":  ALL_PERMISSIONS.filter(p => p !== "delete_all"),
   "Responsable juridique":          ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","juridique","calculatrice","obsidian_dashboard","obsidian_rdv"],
   "Agent juridique":                ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","juridique","obsidian_dashboard"],
-  "Responsable logistique":         ["dashboard","obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_planification","obsidian_stats","cahier_vente"],
-  "Agent logistique":               ["dashboard","obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_rdv","cahier_vente"],
+  "Responsable logistique":         ["dashboard","obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_planification","obsidian_stats","cahier_vente","h47"],
+  "Agent logistique":               ["dashboard","obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_rdv","cahier_vente","h47"],
   "Responsable sécurité":           ["dashboard","obsidian_dashboard","obsidian_armurerie","obsidian_rdv","obsidian_planification"],
   "Agent de sécurité":              ["dashboard","obsidian_dashboard","obsidian_armurerie","obsidian_rdv"],
   "Opérateur":                      ["dashboard","obsidian_dashboard","obsidian_rdv"],

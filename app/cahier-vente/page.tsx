@@ -2,6 +2,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 
 interface Transaction {
   id: string;
@@ -48,6 +49,7 @@ const EMPTY_FORM: FormState = { type:"entrée", montant:0, categorie:"Vente drog
 
 export default function CahierVentePage() {
   const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "cahier_vente"))) { window.location.href = "/"; } }, [user, userLoading]);
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [produits, setProduits]         = useState<Produit[]>([]);

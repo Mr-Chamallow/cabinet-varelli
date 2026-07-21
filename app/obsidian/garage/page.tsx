@@ -2,12 +2,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 const STATUTS=["Disponible","Sortie","Fourrière","Endommagé","Détruit"];
 const SCOL:Record<string,string>={Disponible:"var(--success)",Sortie:"var(--warning)",Fourrière:"var(--danger)",Endommagé:"#f97316",Détruit:"var(--text-dim)"};
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 const EMPTY={modele:"",plaque:"",couleur:"",position:"",statut:"Disponible",assigne_a:"",notes:"",valeur:0};
 export default function GaragePage(){
   const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_garage"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [veh,setVeh]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
   const [showForm,setShowForm]=useState(false);

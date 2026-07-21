@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 
 interface Operation {
   id: string;
@@ -17,6 +18,7 @@ const EMPTY_FORM = { type: "Entrée", montant: 0, motif: "" };
 
 export default function OperationsPage() {
   const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "comptabilite"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [ops, setOps] = useState<Operation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

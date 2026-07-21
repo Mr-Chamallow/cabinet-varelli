@@ -287,6 +287,10 @@ export default function AdminPage() {
             <button className="btn btn-gold btn-sm" onClick={() => { setRoleForm({ nom:"", permissions:[], couleur:"#6366f1" }); setShowCreateRole(true); }}>+ Nouveau rôle</button>
           </div>
 
+          <p style={{ fontSize:"0.8rem", color:"var(--text-dim)", marginBottom:"1rem" }}>
+            Ces rôles et permissions contrôlent réellement l'accès aux pages (calculé à chaque connexion Discord). Le nom du rôle doit correspondre exactement au rôle attribué (via Discord ou un override dans l'onglet Membres) pour s'appliquer.
+          </p>
+
           <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
             {roles.length === 0 && (
               <div className="empty-state"><div className="empty-icon">🎭</div><div className="empty-title">Aucun rôle trouvé</div></div>
@@ -418,7 +422,7 @@ export default function AdminPage() {
               <div className="form-group"><label>Rôle à forcer *</label>
                 <select value={overrideForm.role} onChange={e=>setOverrideForm(f=>({...f,role:e.target.value}))}>
                   <option value="">Choisir un rôle…</option>
-                  {Object.keys(DEFAULT_PERMISSIONS).map(r=><option key={r} value={r}>{r}</option>)}
+                  {(roles.length > 0 ? roles.map(r => r.nom) : Object.keys(DEFAULT_PERMISSIONS)).map(r=><option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               {createError&&<div style={{ background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius)",padding:"0.75rem",fontSize:"0.84rem",color:"var(--danger)" }}>⚠️ {createError}</div>}

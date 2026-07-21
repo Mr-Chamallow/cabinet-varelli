@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 const TYPES=["Livraison","Surveillance","Intimidation","Récupération","Braquage","Autre"];
 const DIFFS=["Facile","Normale","Difficile","Extrême"];
 const STATUTS=["En attente","En cours","Terminé","Échoué","Annulé"];
@@ -11,6 +12,7 @@ const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",
 const EMPTY={titre:"",type:"Livraison",difficulte:"Normale",recompense:0,statut:"En attente",membres_affectes:[] as string[],description:"",rapport:"",date_cible:""};
 export default function ContratsPage(){
   const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_contrats"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [contrats,setContrats]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
   const [showForm,setShowForm]=useState(false);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 
 interface Op {
   type: string;
@@ -19,6 +20,7 @@ interface Facture {
 
 export default function ComptabilitePage() {
   const { user, loading: userLoading } = useCurrentUser();
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "comptabilite"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [ops, setOps] = useState<Op[]>([]);
   const [factures, setFactures] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);
