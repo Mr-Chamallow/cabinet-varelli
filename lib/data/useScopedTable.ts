@@ -52,7 +52,7 @@ export function useScopedTable<T extends { id: string }>(
     if (!supabase || !user) return null;
     const { data, error: err } = await supabase
       .from(table)
-      .insert([{ ...payload, created_by: user.nom, created_by_id: user.id }])
+      .insert([{ ...payload, created_by: user.nom, created_by_id: user.id }] as any)
       .select()
       .single();
     if (err) { setError(err.message); return null; }
@@ -64,7 +64,7 @@ export function useScopedTable<T extends { id: string }>(
     if (!supabase) return null;
     const { data, error: err } = await supabase
       .from(table)
-      .update(payload)
+      .update(payload as any)
       .eq("id", id)
       .select()
       .single();
