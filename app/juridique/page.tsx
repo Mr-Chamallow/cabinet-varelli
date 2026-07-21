@@ -2,30 +2,30 @@
 
 import { useState, useMemo } from "react";
 
-// --- TYPES --------------------------------------------------------------------
+// ─── TYPES ────────────────────────────────────────────────────────────────────
 import { ARTICLES } from "@/lib/code-penal";
 
 const ONGLETS: { key: string; label: string; icon: string; color: string }[] = [
-  { key: "constitution",          label: "Constitution",        icon: "???", color: "#D4AF37" },
-  { key: "penal_contravention",   label: "Contraventions",      icon: "??", color: "#64748b" },
-  { key: "penal_delit_mineur",    label: "D�lits mineurs",      icon: "??", color: "#f59e0b" },
-  { key: "penal_delit_majeur",    label: "D�lits majeurs",      icon: "??", color: "#ef4444" },
-  { key: "penal_crime",           label: "Crimes",              icon: "??", color: "#7c3aed" },
-  { key: "procedure",             label: "Proc�dure p�nale",    icon: "??", color: "#3b82f6" },
-  { key: "travail",               label: "Code du travail",     icon: "??", color: "#84cc16" },
-  { key: "commerce",              label: "Code du commerce",    icon: "??", color: "#f97316" },
-  { key: "federal",               label: "Code f�d�ral",        icon: "??", color: "#06b6d4" },
-  { key: "miranda",               label: "Droits Miranda",      icon: "???", color: "#10b981" },
-  { key: "ref_armes",  label: "?? Armes",   icon: "??", color: "#ef4444" },
-  { key: "ref_drogues",label: "?? Drogues", icon: "??", color: "#7c3aed" },
-  { key: "ref_poisson",label: "?? P�che",   icon: "??", color: "#0ea5e9" },
-  { key: "ref_animaux",label: "?? Animaux", icon: "??", color: "#22c55e" },
+  { key: "constitution",          label: "Constitution",        icon: "🏛️", color: "#D4AF37" },
+  { key: "penal_contravention",   label: "Contraventions",      icon: "📋", color: "#64748b" },
+  { key: "penal_delit_mineur",    label: "Délits mineurs",      icon: "⚠️", color: "#f59e0b" },
+  { key: "penal_delit_majeur",    label: "Délits majeurs",      icon: "🔴", color: "#ef4444" },
+  { key: "penal_crime",           label: "Crimes",              icon: "💀", color: "#7c3aed" },
+  { key: "procedure",             label: "Procédure pénale",    icon: "⚖️", color: "#3b82f6" },
+  { key: "travail",               label: "Code du travail",     icon: "💼", color: "#84cc16" },
+  { key: "commerce",              label: "Code du commerce",    icon: "🏪", color: "#f97316" },
+  { key: "federal",               label: "Code fédéral",        icon: "🦅", color: "#06b6d4" },
+  { key: "miranda",               label: "Droits Miranda",      icon: "🛡️", color: "#10b981" },
+  { key: "ref_armes",  label: "🔫 Armes",   icon: "⚔️", color: "#ef4444" },
+  { key: "ref_drogues",label: "💊 Drogues", icon: "💊", color: "#7c3aed" },
+  { key: "ref_poisson",label: "🐟 Pêche",   icon: "🐟", color: "#0ea5e9" },
+  { key: "ref_animaux",label: "🐾 Animaux", icon: "🐾", color: "#22c55e" },
 ];
 
-const REF_ARMES={legales:["Batte de baseball","Club de golf","Cl� anglaise","Couteau","Matraque","Halt�re"],dm:["Pistolet","Pistolet Cal.50","Pistolet Mk II","Pistolet de combat","Revolver","Pistolet flare"],dmj:["Fusil d'assaut","Fusil d'assaut Mk II","Carabine de combat","Fusil � pompe","Fusil de sniper","Mitraillette","Mitraillette Mk II","Micro SMG","LMG","Machine pistol","Fusil de chasse"],crime:["Grenade","Cocktail Molotov","Lance-roquettes","Bombe sticky","C4","Lance-grenade","Minigun","Lance-flammes","ADP"]};
-const REF_DROGUES={douces:["Cannabis","Weed Purple","Salvia","Spore X","Oyster Mushroom","Amanita","Psilocybe","Datura"],dures:["H�ro�ne","Coca�ne","Crack","M�thamph�tamine","Opium","Ecstasy","Tranq","Mexicana","Lean","Purple Haze","Blacktrip","B-Magic","H-47"],prec:["Pseudo�ph�drine","Phosphore rouge","Ammoniaque","Lithium","�ther","Xylazine"]};
-const REF_POISSON={legaux:["Anguille","Esturgeon","Bar","Brochet","Carpe","Maquereau","Thon","Saumon","Dorade","M�rou"],ill:["Dauphin","Piranha","Requin","Tortue de mer","Espadon hors saison"]};
-const REF_ANIMAUX={prot:["Puma de montagne","Ours noir","Biche","Vautour fauve","Renard","Hibou","Faucon p�lerin","Aigle royal"],chasse:["Lapin","Cerf","Sanglier","Coyote","Raton laveur","Li�vre"]};
+const REF_ARMES={legales:["Batte de baseball","Club de golf","Clé anglaise","Couteau","Matraque","Haltère"],dm:["Pistolet","Pistolet Cal.50","Pistolet Mk II","Pistolet de combat","Revolver","Pistolet flare"],dmj:["Fusil d'assaut","Fusil d'assaut Mk II","Carabine de combat","Fusil à pompe","Fusil de sniper","Mitraillette","Mitraillette Mk II","Micro SMG","LMG","Machine pistol","Fusil de chasse"],crime:["Grenade","Cocktail Molotov","Lance-roquettes","Bombe sticky","C4","Lance-grenade","Minigun","Lance-flammes","ADP"]};
+const REF_DROGUES={douces:["Cannabis","Weed Purple","Salvia","Spore X","Oyster Mushroom","Amanita","Psilocybe","Datura"],dures:["Héroïne","Cocaïne","Crack","Méthamphétamine","Opium","Ecstasy","Tranq","Mexicana","Lean","Purple Haze","Blacktrip","B-Magic","H-47"],prec:["Pseudoéphédrine","Phosphore rouge","Ammoniaque","Lithium","Éther","Xylazine"]};
+const REF_POISSON={legaux:["Anguille","Esturgeon","Bar","Brochet","Carpe","Maquereau","Thon","Saumon","Dorade","Mérou"],ill:["Dauphin","Piranha","Requin","Tortue de mer","Espadon hors saison"]};
+const REF_ANIMAUX={prot:["Puma de montagne","Ours noir","Biche","Vautour fauve","Renard","Hibou","Faucon pèlerin","Aigle royal"],chasse:["Lapin","Cerf","Sanglier","Coyote","Raton laveur","Lièvre"]};
 
 export default function JuridiqueePage() {
   const [activeTab, setActiveTab] = useState<string>("constitution");
@@ -38,23 +38,23 @@ export default function JuridiqueePage() {
   // Sub-category filters only shown on penal_delit_mineur and penal_delit_majeur
   const SUB_FILTERS: Record<string, {key:string;label:string;icon:string}[]> = {
     penal_delit_mineur: [
-      { key:"",        label:"Tous",    icon:"??" },
-      { key:"armes",   label:"Armes",   icon:"??" },
-      { key:"drogues", label:"Drogues", icon:"??" },
-      { key:"poisson", label:"P�che",   icon:"??" },
-      { key:"animaux", label:"Animaux", icon:"??" },
+      { key:"",        label:"Tous",    icon:"📋" },
+      { key:"armes",   label:"Armes",   icon:"🔫" },
+      { key:"drogues", label:"Drogues", icon:"💊" },
+      { key:"poisson", label:"Pêche",   icon:"🐟" },
+      { key:"animaux", label:"Animaux", icon:"🐾" },
     ],
     penal_delit_majeur: [
-      { key:"",        label:"Tous",    icon:"??" },
-      { key:"armes",   label:"Armes",   icon:"??" },
-      { key:"drogues", label:"Drogues", icon:"??" },
+      { key:"",        label:"Tous",    icon:"📋" },
+      { key:"armes",   label:"Armes",   icon:"🔫" },
+      { key:"drogues", label:"Drogues", icon:"💊" },
     ],
   };
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (isSearching) {
-      // Mode recherche globale : on cherche dans TOUTES les cat�gories
+      // Mode recherche globale : on cherche dans TOUTES les catégories
       return ARTICLES.filter(a =>
         a.titre.toLowerCase().includes(q) ||
         a.contenu.toLowerCase().includes(q) ||
@@ -85,34 +85,34 @@ const catColors: Record<string, string> = {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">? Tableau de bord</a>
+      <a className="back-link" href="/">← Tableau de bord</a>
 
       <div className="page-header">
         <div>
           <h1 className="page-title">Base juridique</h1>
-          <p className="page-subtitle">Codes de l'�tat de San Andreas � FlashBackFA</p>
+          <p className="page-subtitle">Codes de l'État de San Andreas · FlashBackFA</p>
           <div className="gold-line" />
         </div>
       </div>
 
-      {/* Barre de recherche globale � prioritaire, cherche dans TOUS les codes */}
+      {/* Barre de recherche globale — prioritaire, cherche dans TOUS les codes */}
       <div style={{ marginBottom: "1.25rem" }}>
         <div className="search-bar" style={{ padding: "0 1rem" }}>
-          <span className="search-icon">??</span>
+          <span className="search-icon">🔍</span>
           <input
             type="text"
-            placeholder="Rechercher dans tous les codes (Constitution, P�nal, Travail, Commerce, F�d�ral, Miranda)�"
+            placeholder="Rechercher dans tous les codes (Constitution, Pénal, Travail, Commerce, Fédéral, Miranda)…"
             value={search}
             onChange={e => { setSearch(e.target.value); setExpanded(null); }}
             style={{ fontSize: "0.875rem" }}
           />
           {search && (
-            <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "1rem", flexShrink: 0 }}>�</button>
+            <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "1rem", flexShrink: 0 }}>×</button>
           )}
         </div>
       </div>
 
-      {/* Onglets � d�sactiv�s visuellement pendant une recherche globale */}
+      {/* Onglets — désactivés visuellement pendant une recherche globale */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.5rem", opacity: isSearching ? 0.4 : 1, transition: "opacity var(--t-fast) var(--ease)", pointerEvents: isSearching ? "none" : "auto" }}>
         {ONGLETS.map(o => (
           <button
@@ -138,7 +138,7 @@ const catColors: Record<string, string> = {
         ))}
       </div>
 
-      {/* Sous-filtres par cat�gorie (Armes / Drogues / P�che / Animaux) */}
+      {/* Sous-filtres par catégorie (Armes / Drogues / Pêche / Animaux) */}
       {SUB_FILTERS[activeTab] && !isSearching && (
         <div style={{ display:"flex", gap:"0.35rem", marginBottom:"0.75rem", flexWrap:"wrap" }}>
           {SUB_FILTERS[activeTab].map(sf => (
@@ -161,7 +161,7 @@ const catColors: Record<string, string> = {
       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
         <span style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>
           {isSearching ? (
-            <>{filtered.length} r�sultat{filtered.length !== 1 ? "s" : ""} dans <strong style={{ color: "var(--gold)" }}>tous les codes</strong> pour � {search} �</>
+            <>{filtered.length} résultat{filtered.length !== 1 ? "s" : ""} dans <strong style={{ color: "var(--gold)" }}>tous les codes</strong> pour « {search} »</>
           ) : (
             <>{filtered.length} article{filtered.length !== 1 ? "s" : ""}</>
           )}
@@ -175,7 +175,7 @@ const catColors: Record<string, string> = {
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
         {filtered.length === 0 && (
           <div className="card" style={{ textAlign: "center", color: "var(--text-dim)", padding: "3rem" }}>
-            Aucun article trouv�
+            Aucun article trouvé
           </div>
         )}
         {filtered.map(article => {
@@ -232,7 +232,7 @@ const catColors: Record<string, string> = {
                     </span>
                   )}
                 </div>
-                <span style={{ marginLeft: "0.75rem", color: "var(--text-dim)", transform: isOpen ? "rotate(90deg)" : "none", transition: "0.15s" }}>�</span>
+                <span style={{ marginLeft: "0.75rem", color: "var(--text-dim)", transform: isOpen ? "rotate(90deg)" : "none", transition: "0.15s" }}>›</span>
               </button>
 
               {isOpen && (
@@ -261,7 +261,7 @@ const catColors: Record<string, string> = {
                           border: "1px solid rgba(239,68,68,0.2)",
                           borderRadius: 8, padding: "0.5rem 0.875rem",
                         }}>
-                          <div style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-dim)", marginBottom: "0.15rem" }}>D�tention</div>
+                          <div style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-dim)", marginBottom: "0.15rem" }}>Détention</div>
                           <div style={{ fontWeight: 700, color: "#ef4444", fontSize: "0.9rem" }}>{article.detention}</div>
                         </div>
                       )}
