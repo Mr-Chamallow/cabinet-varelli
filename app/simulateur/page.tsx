@@ -1,12 +1,12 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 /* ─── CODE PÉNAL complet ──────────────────────────────────────────────────── */
-import { CHEFS_PENAL, PLAFONDS_PENAL as PLAFONDS, HONORAIRES_PAR_CAT as HON_PAR_CAT } from "@/lib/code-penal";
+import { CHEFS_PENAL, PLAFONDS_PENAL as PLAFONDS, HONORAIRES_PAR_CAT as HON_PAR_CAT } from "../lib/code-penal";
 
 const TAUX_TENTATIVE   = 0.9;
 const TAUX_COMPLICITE  = 0.8;
@@ -87,7 +87,7 @@ const fmt = (n:number) => n.toLocaleString("fr-FR",{style:"currency",currency:"U
 
 export default function SimulateurPage() {
   const router = useRouter();
-  const user = getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const nowRef = useRef(new Date());
 
   const [mode, setMode]           = useState<Mode>("penal");
@@ -278,7 +278,7 @@ export default function SimulateurPage() {
     if (!supabase||!user||!clientName.trim()||montant<=0) return;
     setCreating(true);
     const numero = genNumFac();
-    const { error } = await supabase.from("factures").insert([{ numero, client:clientName.trim(), montant, description, statut:"En attente", created_by:user.nom }]);
+    const { error } = await supabase.from("factures").insert([{ numero, client:clientName.trim(), montant, description, statut:"En attente", created_by:user.nom, created_by_id:user.id }]);
     setCreating(false);
     if (!error) { setFacCreated(numero); setShowFac(false); showT(`Facture ${numero} créée`); setTimeout(()=>setFacCreated(null),5000); }
   }

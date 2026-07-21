@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 const CATS=["arme","munition","accessoire","explosif","gilet","radio","autre"];
 const CAT_ICONS:Record<string,string>={arme:"🔫",munition:"🔴",accessoire:"🔧",explosif:"💣",gilet:"🦺",radio:"📻",autre:"📦"};
 export default function ArmureriePage(){
-  const user=getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [stocks,setStocks]=useState<any[]>([]);
   const [logs,setLogs]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);

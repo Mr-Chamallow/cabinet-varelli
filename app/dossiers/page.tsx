@@ -1,8 +1,7 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useState } from "react";
+import { useScopedTable } from "@/lib/data/useScopedTable";
 
 interface Dossier {
   id: string;
@@ -18,6 +17,8 @@ interface Dossier {
   created_at: string;
   created_by: string;
 }
+
+interface ClientLite { id: string; nom_rp: string }
 
 const TYPE_CLIENTS = ["Indépendant", "Gang", "PF", "Famille", "Petit frappe"];
 const RISQUES = ["Aucun", "Faible", "Moyen", "Élevé", "Extrême"];
@@ -47,10 +48,12 @@ const EMPTY_FORM = {
 };
 
 export default function DossiersPage() {
-  const user = getUser();
-  const [dossiers, setDossiers] = useState<Dossier[]>([]);
-  const [clients, setClients] = useState<{ id: string; nom_rp: string }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    rows: dossiers, loading, create, update, remove,
+  } = useScopedTable<Dossier>("dossiers", { orderBy: "created_at", ascending: false });
+
+  const { rows: clients } = useScopedTable<ClientLite>("clients", { orderBy: "nom_rp", ascending: true });
+
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState("");
   const [filterRisque, setFilterRisque] = useState("");
@@ -62,29 +65,11 @@ export default function DossiersPage() {
   const [confirmDelete, setConfirmDelete] = useState<Dossier | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "danger" } | null>(null);
   const [sortKey, setSortKey] = useState<string>("created_at");
-  const [sortDir, setSortDir] = useState<"asc"|"desc">("desc");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   function toggleSort(key: string) {
-    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
+    if (sortKey === key) setSortDir(d => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("desc"); }
-  }
-
-  useEffect(() => { if (user) load(); }, []);
-
-  async function load() {
-    if (!supabase || !user) { setLoading(false); return; }
-    try {
-      const [{ data: d }, { data: c }] = await Promise.all([
-        supabase.from("dossiers").select("*").order("created_at", { ascending: false }),
-        supabase.from("clients").select("id, nom_rp").order("nom_rp"),
-      ]);
-      setDossiers(d || []);
-      setClients(c || []);
-    } catch (err) {
-      showToast("Erreur de chargement", "danger");
-    } finally {
-      setLoading(false);
-    }
   }
 
   function showToast(msg: string, type: "success" | "danger" = "success") {
@@ -111,21 +96,14 @@ export default function DossiersPage() {
   }
 
   async function duplicateDossier(d: Dossier) {
-    if (!supabase || !user) return;
-    try {
-      const { error } = await supabase.from("dossiers").insert([{
-        reference: genRef(),
-        client: d.client, client_id: d.client_id || null,
-        type_affaire: d.type_affaire, type_client: d.type_client,
-        risque: d.risque, montant: 0, statut: "Ouvert",
-        notes: d.notes, created_by: user.nom,
-      }]);
-      if (error) throw error;
-      showToast("Dossier dupliqué ✓");
-      load();
-    } catch (e) {
-      showToast("Erreur lors de la duplication", "danger");
-    }
+    const created = await create({
+      reference: genRef(),
+      client: d.client, client_id: d.client_id || undefined,
+      type_affaire: d.type_affaire, type_client: d.type_client,
+      risque: d.risque, montant: 0, statut: "Ouvert",
+      notes: d.notes,
+    } as Partial<Dossier>);
+    if (created) showToast("Dossier dupliqué ✓");
   }
 
   function handleClientSelect(nomRp: string) {
@@ -134,53 +112,37 @@ export default function DossiersPage() {
   }
 
   async function save() {
-    if (!supabase || !user) return;
     if (!form.client.trim()) { setSaveError("Le nom du client est obligatoire."); return; }
     setSaving(true);
     setSaveError("");
-    try {
-      const payload = {
-        reference: form.reference,
-        client: form.client.trim(),
-        client_id: form.client_id || null,
-        type_affaire: form.type_affaire,
-        type_client: form.type_client,
-        risque: form.risque,
-        montant: Number(form.montant) || 0,
-        statut: form.statut,
-        notes: form.notes,
-        created_by: editTarget ? editTarget.created_by : user.nom,
-      };
 
-      if (editTarget) {
-        const { error } = await supabase.from("dossiers").update(payload).eq("id", editTarget.id);
-        if (error) throw error;
-        showToast("Dossier mis à jour");
-      } else {
-        const { error } = await supabase.from("dossiers").insert([payload]);
-        if (error) throw error;
-        showToast("Dossier créé ✓");
-      }
-      setShowForm(false);
-      load();
-    } catch (err: any) {
-      setSaveError(err?.message || "Erreur lors de l'enregistrement");
-    } finally {
-      setSaving(false);
-    }
+    const payload: Partial<Dossier> = {
+      reference: form.reference,
+      client: form.client.trim(),
+      client_id: form.client_id || undefined,
+      type_affaire: form.type_affaire,
+      type_client: form.type_client,
+      risque: form.risque,
+      montant: Number(form.montant) || 0,
+      statut: form.statut,
+      notes: form.notes,
+    };
+
+    const result = editTarget
+      ? await update(editTarget.id, payload)
+      : await create(payload);
+
+    setSaving(false);
+    if (!result) { setSaveError("Erreur lors de l'enregistrement"); return; }
+    showToast(editTarget ? "Dossier mis à jour" : "Dossier créé ✓");
+    setShowForm(false);
   }
 
   async function doDelete() {
-    if (!supabase || !confirmDelete) return;
-    try {
-      const { error } = await supabase.from("dossiers").delete().eq("id", confirmDelete.id);
-      if (error) throw error;
-      setConfirmDelete(null);
-      showToast("Dossier supprimé");
-      load();
-    } catch (err) {
-      showToast("Erreur de suppression", "danger");
-    }
+    if (!confirmDelete) return;
+    await remove(confirmDelete.id);
+    setConfirmDelete(null);
+    showToast("Dossier supprimé");
   }
 
   const filtered = dossiers.filter(d => {
@@ -190,10 +152,10 @@ export default function DossiersPage() {
       (!filterStatut || d.statut === filterStatut) &&
       (!filterRisque || d.risque === filterRisque)
     );
-  }).sort((a:any,b:any) => {
+  }).sort((a: any, b: any) => {
     let av = a[sortKey], bv = b[sortKey];
-    if (sortKey === "montant") { av = av||0; bv = bv||0; }
-    else { av = (av||"").toString().toLowerCase(); bv = (bv||"").toString().toLowerCase(); }
+    if (sortKey === "montant") { av = av || 0; bv = bv || 0; }
+    else { av = (av || "").toString().toLowerCase(); bv = (bv || "").toString().toLowerCase(); }
     if (av < bv) return sortDir === "asc" ? -1 : 1;
     if (av > bv) return sortDir === "asc" ? 1 : -1;
     return 0;
@@ -237,8 +199,8 @@ export default function DossiersPage() {
             else { setFilterStatut("Ouvert"); setFilterRisque("Élevé"); }
           }}
           style={{
-            borderColor: filterStatut==="Ouvert"&&filterRisque==="Élevé" ? "rgba(239,68,68,0.5)" : undefined,
-            color: filterStatut==="Ouvert"&&filterRisque==="Élevé" ? "var(--danger)" : undefined,
+            borderColor: filterStatut === "Ouvert" && filterRisque === "Élevé" ? "rgba(239,68,68,0.5)" : undefined,
+            color: filterStatut === "Ouvert" && filterRisque === "Élevé" ? "var(--danger)" : undefined,
           }}
         >
           ⚠ Priorité
@@ -258,13 +220,13 @@ export default function DossiersPage() {
           <table>
             <thead>
               <tr>
-                <th onClick={()=>toggleSort("reference")} style={{cursor:"pointer",userSelect:"none"}}>Référence {sortKey==="reference"&&(sortDir==="asc"?"↑":"↓")}</th>
-                <th onClick={()=>toggleSort("client")} style={{cursor:"pointer",userSelect:"none"}}>Client {sortKey==="client"&&(sortDir==="asc"?"↑":"↓")}</th>
+                <th onClick={() => toggleSort("reference")} style={{ cursor: "pointer", userSelect: "none" }}>Référence {sortKey === "reference" && (sortDir === "asc" ? "↑" : "↓")}</th>
+                <th onClick={() => toggleSort("client")} style={{ cursor: "pointer", userSelect: "none" }}>Client {sortKey === "client" && (sortDir === "asc" ? "↑" : "↓")}</th>
                 <th>Type d'affaire</th><th>Type client</th>
                 <th>Risque</th>
-                <th onClick={()=>toggleSort("montant")} style={{cursor:"pointer",userSelect:"none"}}>Montant {sortKey==="montant"&&(sortDir==="asc"?"↑":"↓")}</th>
-                <th onClick={()=>toggleSort("statut")} style={{cursor:"pointer",userSelect:"none"}}>Statut {sortKey==="statut"&&(sortDir==="asc"?"↑":"↓")}</th>
-                <th onClick={()=>toggleSort("created_at")} style={{cursor:"pointer",userSelect:"none"}}>Date {sortKey==="created_at"&&(sortDir==="asc"?"↑":"↓")}</th>
+                <th onClick={() => toggleSort("montant")} style={{ cursor: "pointer", userSelect: "none" }}>Montant {sortKey === "montant" && (sortDir === "asc" ? "↑" : "↓")}</th>
+                <th onClick={() => toggleSort("statut")} style={{ cursor: "pointer", userSelect: "none" }}>Statut {sortKey === "statut" && (sortDir === "asc" ? "↑" : "↓")}</th>
+                <th onClick={() => toggleSort("created_at")} style={{ cursor: "pointer", userSelect: "none" }}>Date {sortKey === "created_at" && (sortDir === "asc" ? "↑" : "↓")}</th>
                 <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
@@ -294,7 +256,6 @@ export default function DossiersPage() {
         </div>
       )}
 
-      {/* Modal */}
       {showForm && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowForm(false)}>
           <div className="modal modal-lg">

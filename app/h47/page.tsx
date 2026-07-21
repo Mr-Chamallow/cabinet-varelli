@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { getUser, canAccess } from "@/lib/auth";
+import { canAccess } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const QUOTA_MAX_DEFAULT = 250;
 
@@ -53,7 +54,7 @@ function formatWeekLabel(mondayISO: string): string {
 
 export default function H47Page() {
   const router = useRouter();
-  const user = getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const currentWeek = toISODate(getMonday(new Date()));
 
   const [authorized, setAuthorized] = useState(false);

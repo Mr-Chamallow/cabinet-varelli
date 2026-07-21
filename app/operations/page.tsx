@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 interface Operation {
   id: string;
@@ -16,7 +16,7 @@ const TYPES = ["Entrée", "Sortie"];
 const EMPTY_FORM = { type: "Entrée", montant: 0, motif: "" };
 
 export default function OperationsPage() {
-  const user = getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [ops, setOps] = useState<Operation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

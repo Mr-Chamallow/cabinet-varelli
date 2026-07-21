@@ -1,18 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUser, ALL_PERMISSIONS, PERMISSION_LABELS, loadRolesFromSupabase, type User } from "@/lib/auth";
+import { ALL_PERMISSIONS, PERMISSION_LABELS, DEFAULT_PERMISSIONS, loadRolesFromSupabase, type User } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
-interface Membre {
-  id: string;
+interface RoleOverride {
+  discord_id: string;
   nom: string;
   role: string;
-  password: string;
-  couleur: string;
-  actif: boolean;
-  created_at?: string;
+  updated_at?: string;
 }
 
 interface Role {
@@ -57,27 +55,19 @@ function timeAgo(iso: string): string {
 
 export default function AdminPage() {
   const router = useRouter();
-  const [user, setUserState] = useState<User | null>(null);
-  const [membres, setMembres] = useState<Membre[]>([]);
+  const { user, loading: userLoading } = useCurrentUser();
+  const [overrides, setOverrides] = useState<RoleOverride[]>([]);
   const [roles, setRoles]   = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"membres"|"roles"|"journaux">("membres");
 
-  // Membre form
-  const [showCreateMembre, setShowCreateMembre] = useState(false);
-  const [membreForm, setMembreForm] = useState({ nom:"", role:"", password:"", couleur:"#c9a84c" });
-  const [creatingMembre, setCreatingMembre] = useState(false);
+  // Override form
+  const [showCreateOverride, setShowCreateOverride] = useState(false);
+  const [overrideForm, setOverrideForm] = useState({ nom:"", discord_id:"", role:"" });
+  const [creatingOverride, setCreatingOverride] = useState(false);
   const [createError, setCreateError] = useState("");
-
-  // Edit membre
-  const [editMembreId, setEditMembreId]         = useState<string|null>(null);
-  const [editMembreRole, setEditMembreRole]     = useState("");
-  const [editMembrePassword, setEditMembrePassword] = useState("");
-  const [editMembreCouleur, setEditMembreCouleur]   = useState("#c9a84c");
-  const [savingMembre, setSavingMembre]         = useState(false);
-
-  const [deleteMembreId, setDeleteMembreId]     = useState<string|null>(null);
+  const [deleteOverrideId, setDeleteOverrideId] = useState<string|null>(null);
 
   // Role form
   const [showCreateRole, setShowCreateRole]     = useState(false);
@@ -98,11 +88,9 @@ export default function AdminPage() {
   const [filterActType, setFilterActType]       = useState("");
 
   useEffect(() => {
-    const u = getUser();
-    if (!u) { router.replace("/"); return; }
-    setUserState(u);
+    if (!user) return;
     fetchAll();
-  }, []);
+  }, [user]);
 
   async function fetchAll() {
     if (!supabase) {
@@ -112,16 +100,16 @@ export default function AdminPage() {
     }
     setLoading(true);
     setFetchError("");
-    const [{ data: m, error: mErr }, rolesData] = await Promise.all([
-      supabase.from("membres").select("*").order("created_at"),
+    const [{ data: o, error: oErr }, rolesData] = await Promise.all([
+      supabase.from("role_overrides").select("*").order("updated_at", { ascending: false }),
       loadRolesFromSupabase(),
     ]);
-    if (mErr) {
-      setFetchError(`Erreur lors du chargement des membres : ${mErr.message}`);
+    if (oErr) {
+      setFetchError(`Erreur lors du chargement des overrides : ${oErr.message}`);
     }
-    setMembres(m || []);
+    setOverrides(o || []);
     setRoles(rolesData as Role[]);
-    if (rolesData.length === 0 && !mErr) {
+    if (rolesData.length === 0 && !oErr) {
       setFetchError("Aucun rôle trouvé. Vérifiez que la table `roles` existe et contient des données.");
     }
     setLoading(false);
@@ -156,37 +144,26 @@ export default function AdminPage() {
 
   useEffect(() => { if (activeTab === "journaux" && activity.length === 0) loadActivity(); }, [activeTab]);
 
-  // ─── MEMBRES ───────────────────────────────────────────────────────────────
-  async function createMembre() {
-    if (!supabase||!membreForm.nom.trim()||!membreForm.password.trim()||!membreForm.role) return;
-    setCreatingMembre(true); setCreateError("");
-    const { error } = await supabase.from("membres").insert([{ nom:membreForm.nom.trim(), role:membreForm.role, password:membreForm.password, couleur:membreForm.couleur }]);
+  // ─── OVERRIDES DE RÔLE ───────────────────────────────────────────────────────
+  async function createOverride() {
+    if (!supabase||!overrideForm.discord_id.trim()||!overrideForm.role) return;
+    setCreatingOverride(true); setCreateError("");
+    const { error } = await supabase.from("role_overrides").upsert([{
+      discord_id: overrideForm.discord_id.trim(),
+      nom: overrideForm.nom.trim(),
+      role: overrideForm.role,
+      updated_by: user?.nom,
+      updated_at: new Date().toISOString(),
+    }]);
     if (error) { setCreateError(error.message); }
-    else { setShowCreateMembre(false); setMembreForm({ nom:"", role:"", password:"", couleur:"#c9a84c" }); fetchAll(); }
-    setCreatingMembre(false);
+    else { setShowCreateOverride(false); setOverrideForm({ nom:"", discord_id:"", role:"" }); fetchAll(); }
+    setCreatingOverride(false);
   }
 
-  async function saveMembre(id: string) {
+  async function deleteOverride(discordId: string) {
     if (!supabase) return;
-    setSavingMembre(true);
-    const updates: Partial<Membre> = { role:editMembreRole, couleur:editMembreCouleur };
-    if (editMembrePassword.trim()) updates.password = editMembrePassword;
-    await supabase.from("membres").update(updates).eq("id", id);
-    setEditMembreId(null); setEditMembrePassword(""); fetchAll();
-    setSavingMembre(false);
-  }
-
-  async function deleteMembre(id: string) {
-    if (!supabase) return;
-    await supabase.from("membres").delete().eq("id", id);
-    setDeleteMembreId(null); fetchAll();
-  }
-
-  async function toggleActif(id: string, currentlyActive: boolean) {
-    if (!supabase) return;
-    const { error } = await supabase.from("membres").update({ actif: !currentlyActive }).eq("id", id);
-    if (error) setFetchError("Impossible de modifier l'accès : " + error.message);
-    fetchAll();
+    await supabase.from("role_overrides").delete().eq("discord_id", discordId);
+    setDeleteOverrideId(null); fetchAll();
   }
 
   // ─── RÔLES ─────────────────────────────────────────────────────────────────
@@ -225,7 +202,7 @@ export default function AdminPage() {
     (!filterActType || a.type === filterActType)
   );
 
-  if (!user) return null;
+  if (userLoading || !user) return null;
 
   return (
     <div className="page-container">
@@ -261,85 +238,46 @@ export default function AdminPage() {
       {loading ? (
         <div style={{ color:"var(--text-dim)" }}>Chargement…</div>
       ) : activeTab === "membres" ? (
-        /* ─── MEMBRES ─── */
+        /* ─── OVERRIDES DE RÔLE ─── */
         <div>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
-            <div className="section-title">Membres ({membres.length})</div>
-            <button className="btn btn-gold btn-sm" onClick={() => { setMembreForm({ nom:"", role:roles[0]?.nom||"", password:"", couleur:"#c9a84c" }); setCreateError(""); setShowCreateMembre(true); }}>
-              + Nouveau membre
+            <div className="section-title">Overrides de rôle ({overrides.length})</div>
+            <button className="btn btn-gold btn-sm" onClick={() => { setOverrideForm({ nom:"", discord_id:"", role:"" }); setCreateError(""); setShowCreateOverride(true); }}>
+              + Forcer un rôle
             </button>
           </div>
 
-          <div style={{ display:"flex", flexDirection:"column", gap:"0.75rem" }}>
-            {membres.map(m => {
-              const roleData = roles.find(r => r.nom === m.role);
-              const couleur = m.couleur || roleData?.couleur || "#c9a84c";
-              const isEditing = editMembreId === m.id;
-              return (
-                <div key={m.id} className="card" style={{ border:`1px solid ${isEditing?couleur+"40":"var(--border)"}` }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:"1rem", flexWrap:"wrap" }}>
-                    <div style={{ width:44,height:44,borderRadius:"50%",flexShrink:0, background:couleur+"20",border:`2px solid ${couleur}40`, display:"flex",alignItems:"center",justifyContent:"center", fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"1.1rem",color:couleur }}>
-                      {m.nom.charAt(0).toUpperCase()}
-                    </div>
+          <p style={{ fontSize:"0.8rem", color:"var(--text-dim)", marginBottom:"1rem" }}>
+            Les rôles sont normalement calculés depuis Discord. Un override ici prend le dessus, pour un membre en particulier, jusqu'à suppression.
+          </p>
 
-                    <div style={{ flex:1, minWidth:120 }}>
-                      <div style={{ fontWeight:600, marginBottom:"0.2rem", display:"flex", alignItems:"center", gap:"0.5rem" }}>
-                        {m.nom}
-                        {m.actif === false && (
-                          <span style={{ fontSize:"0.62rem", padding:"0.1rem 0.45rem", borderRadius:999, background:"rgba(239,68,68,0.12)", color:"var(--danger)", border:"1px solid rgba(239,68,68,0.3)", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.05em" }}>Désactivé</span>
-                        )}
+          {overrides.length === 0 ? (
+            <div className="empty-state"><div className="empty-icon">🎭</div><div className="empty-title">Aucun override actif</div></div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:"0.75rem" }}>
+              {overrides.map(o => {
+                const roleData = roles.find(r => r.nom === o.role);
+                const couleur = roleData?.couleur || "#c9a84c";
+                return (
+                  <div key={o.discord_id} className="card">
+                    <div style={{ display:"flex", alignItems:"center", gap:"1rem", flexWrap:"wrap" }}>
+                      <div style={{ width:44,height:44,borderRadius:"50%",flexShrink:0, background:couleur+"20",border:`2px solid ${couleur}40`, display:"flex",alignItems:"center",justifyContent:"center", fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"1.1rem",color:couleur }}>
+                        {(o.nom || o.discord_id).charAt(0).toUpperCase()}
                       </div>
-                      {!isEditing ? (
+                      <div style={{ flex:1, minWidth:120 }}>
+                        <div style={{ fontWeight:600, marginBottom:"0.2rem" }}>{o.nom || "(sans nom)"}</div>
                         <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
-                          <span style={{ fontSize:"0.75rem",padding:"0.15rem 0.55rem",borderRadius:999, background:couleur+"18",color:couleur,border:`1px solid ${couleur}30`,fontWeight:600 }}>{m.role}</span>
-                          <div style={{ width:12,height:12,borderRadius:"50%",background:couleur,border:"1px solid rgba(255,255,255,0.1)" }}/>
-                        </div>
-                      ) : (
-                        <div style={{ display:"flex", gap:"0.4rem", flexWrap:"wrap" }}>
-                          {roles.map(r => (
-                            <button key={r.nom} onClick={() => setEditMembreRole(r.nom)} style={{ padding:"0.2rem 0.65rem",borderRadius:999,cursor:"pointer", fontFamily:"'Inter',sans-serif",fontSize:"0.75rem", fontWeight:editMembreRole===r.nom?700:400, background:editMembreRole===r.nom?r.couleur+"20":"var(--surface)", border:`1px solid ${editMembreRole===r.nom?r.couleur+"60":"var(--border)"}`, color:editMembreRole===r.nom?r.couleur:"var(--text-muted)", transition:"all 0.1s" }}>{r.nom}</button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {isEditing && (
-                      <div style={{ display:"flex", flexDirection:"column", gap:"0.375rem" }}>
-                        <div style={{ fontSize:"0.7rem", color:"var(--text-dim)" }}>Couleur</div>
-                        <div style={{ display:"flex", gap:"0.3rem", flexWrap:"wrap", maxWidth:180 }}>
-                          {COULEURS_PRESET.map(c => (
-                            <button key={c} onClick={() => setEditMembreCouleur(c)} style={{ width:20,height:20,borderRadius:"50%",background:c,cursor:"pointer", border:`2px solid ${editMembreCouleur===c?"white":"transparent"}`, outline:`1px solid ${editMembreCouleur===c?c:"transparent"}`, padding:0,flexShrink:0,transition:"all 0.1s" }}/>
-                          ))}
-                          <input type="color" value={editMembreCouleur} onChange={e=>setEditMembreCouleur(e.target.value)} style={{ width:20,height:20,padding:0,border:"none",borderRadius:"50%",cursor:"pointer",background:"none" }}/>
+                          <span style={{ fontSize:"0.75rem",padding:"0.15rem 0.55rem",borderRadius:999, background:couleur+"18",color:couleur,border:`1px solid ${couleur}30`,fontWeight:600 }}>{o.role}</span>
+                          <span style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily:"monospace" }}>{o.discord_id}</span>
                         </div>
                       </div>
-                    )}
-
-                    {isEditing && (
-                      <input type="password" placeholder="Nouveau mot de passe (optionnel)" value={editMembrePassword} onChange={e=>setEditMembrePassword(e.target.value)} style={{ width:220, fontSize:"0.85rem" }}/>
-                    )}
-
-                    <div style={{ display:"flex", gap:"0.5rem", flexShrink:0 }}>
-                      {!isEditing ? (
-                        <>
-                          <button className="btn btn-sm" style={{ background:m.actif===false?"rgba(34,197,94,0.1)":"rgba(239,68,68,0.1)", border:`1px solid ${m.actif===false?"rgba(34,197,94,0.3)":"rgba(239,68,68,0.3)"}`, color:m.actif===false?"var(--success)":"var(--danger)" }} onClick={() => toggleActif(m.id, m.actif!==false)} title={m.actif===false?"Réactiver":"Couper l'accès"}>
-                            {m.actif===false?"🔓 Réactiver":"🔒 Couper l'accès"}
-                          </button>
-                          <button className="btn btn-outline btn-sm" onClick={() => { setEditMembreId(m.id); setEditMembreRole(m.role); setEditMembrePassword(""); setEditMembreCouleur(m.couleur||"#c9a84c"); }}>✏️ Modifier</button>
-                          <button className="btn btn-ghost btn-sm" style={{color:"var(--danger)"}} onClick={()=>setDeleteMembreId(m.id)}>🗑️</button>
-                        </>
-                      ) : (
-                        <>
-                          <button className="btn btn-gold btn-sm" onClick={()=>saveMembre(m.id)} disabled={savingMembre}>{savingMembre?"…":"✓ Sauvegarder"}</button>
-                          <button className="btn btn-ghost btn-sm" onClick={()=>{setEditMembreId(null);setEditMembrePassword("");}}>Annuler</button>
-                        </>
-                      )}
+                      <button className="btn btn-ghost btn-sm" style={{color:"var(--danger)"}} onClick={()=>setDeleteOverrideId(o.discord_id)}>🗑️ Retirer</button>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : activeTab === "roles" ? (
         /* ─── RÔLES ─── */
@@ -463,34 +401,31 @@ export default function AdminPage() {
       )}
 
       {/* ─── Modals ─── */}
-      {showCreateMembre && (
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowCreateMembre(false)}>
+      {showCreateOverride && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowCreateOverride(false)}>
           <div className="modal">
             <div className="modal-header">
-              <h2 className="modal-title">Nouveau membre</h2>
-              <button className="modal-close" onClick={()=>setShowCreateMembre(false)}>×</button>
+              <h2 className="modal-title">Forcer un rôle</h2>
+              <button className="modal-close" onClick={()=>setShowCreateOverride(false)}>×</button>
             </div>
             <div className="modal-body">
-              <div className="form-group"><label>Nom RP *</label><input placeholder="Ex : Marco Varelli" value={membreForm.nom} onChange={e=>setMembreForm(f=>({...f,nom:e.target.value}))} autoFocus/></div>
-              <div className="form-group"><label>Rôle *</label>
-                <select value={membreForm.role} onChange={e=>setMembreForm(f=>({...f,role:e.target.value}))}>
-                  <option value="">Choisir un rôle…</option>
-                  {roles.map(r=><option key={r.nom} value={r.nom}>{r.nom}</option>)}
-                </select>
-              </div>
-              <div className="form-group"><label>Mot de passe *</label><input type="password" placeholder="Mot de passe de connexion" value={membreForm.password} onChange={e=>setMembreForm(f=>({...f,password:e.target.value}))}/></div>
+              <div className="form-group"><label>Nom (repère visuel)</label><input placeholder="Ex : Marco Varelli" value={overrideForm.nom} onChange={e=>setOverrideForm(f=>({...f,nom:e.target.value}))} autoFocus/></div>
               <div className="form-group">
-                <label>Couleur</label>
-                <div style={{ display:"flex", gap:"0.3rem", flexWrap:"wrap", alignItems:"center" }}>
-                  {COULEURS_PRESET.map(c=>(<button key={c} onClick={()=>setMembreForm(f=>({...f,couleur:c}))} style={{ width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",padding:0, border:`2px solid ${membreForm.couleur===c?"white":"transparent"}`, outline:`1px solid ${membreForm.couleur===c?c:"transparent"}`, flexShrink:0,transition:"all 0.1s" }}/>))}
-                  <input type="color" value={membreForm.couleur} onChange={e=>setMembreForm(f=>({...f,couleur:e.target.value}))} style={{ width:24,height:24,padding:0,border:"none",borderRadius:"50%",cursor:"pointer" }}/>
-                </div>
+                <label>ID Discord *</label>
+                <input placeholder="Ex : 460865920278069248" value={overrideForm.discord_id} onChange={e=>setOverrideForm(f=>({...f,discord_id:e.target.value}))} style={{ fontFamily:"monospace" }}/>
+                <div style={{ fontSize:"0.7rem", color:"var(--text-dim)", marginTop:"0.3rem" }}>Mode développeur Discord activé → clic droit sur le pseudo → Copier l'ID</div>
+              </div>
+              <div className="form-group"><label>Rôle à forcer *</label>
+                <select value={overrideForm.role} onChange={e=>setOverrideForm(f=>({...f,role:e.target.value}))}>
+                  <option value="">Choisir un rôle…</option>
+                  {Object.keys(DEFAULT_PERMISSIONS).map(r=><option key={r} value={r}>{r}</option>)}
+                </select>
               </div>
               {createError&&<div style={{ background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius)",padding:"0.75rem",fontSize:"0.84rem",color:"var(--danger)" }}>⚠️ {createError}</div>}
             </div>
             <div className="modal-footer">
-              <button className="btn btn-outline" onClick={()=>setShowCreateMembre(false)}>Annuler</button>
-              <button className="btn btn-gold" onClick={createMembre} disabled={creatingMembre||!membreForm.nom.trim()||!membreForm.password.trim()||!membreForm.role}>{creatingMembre?"Création…":"Créer le membre"}</button>
+              <button className="btn btn-outline" onClick={()=>setShowCreateOverride(false)}>Annuler</button>
+              <button className="btn btn-gold" onClick={createOverride} disabled={creatingOverride||!overrideForm.discord_id.trim()||!overrideForm.role}>{creatingOverride?"Enregistrement…":"Forcer le rôle"}</button>
             </div>
           </div>
         </div>
@@ -525,7 +460,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {deleteMembreId&&(<div className="confirm-overlay"><div className="confirm-box"><div className="confirm-icon">⚠️</div><div className="confirm-title">Supprimer ce membre ?</div><div className="confirm-msg">Il ne pourra plus se connecter.</div><div className="confirm-actions"><button className="btn btn-outline" onClick={()=>setDeleteMembreId(null)}>Annuler</button><button className="btn btn-danger" onClick={()=>deleteMembre(deleteMembreId)}>Supprimer</button></div></div></div>)}
+      {deleteOverrideId&&(<div className="confirm-overlay"><div className="confirm-box"><div className="confirm-icon">⚠️</div><div className="confirm-title">Retirer cet override ?</div><div className="confirm-msg">Le rôle repassera au calcul automatique via Discord.</div><div className="confirm-actions"><button className="btn btn-outline" onClick={()=>setDeleteOverrideId(null)}>Annuler</button><button className="btn btn-danger" onClick={()=>deleteOverride(deleteOverrideId)}>Retirer</button></div></div></div>)}
       {deleteRoleId&&(<div className="confirm-overlay"><div className="confirm-box"><div className="confirm-icon">⚠️</div><div className="confirm-title">Supprimer ce rôle ?</div><div className="confirm-msg">Les membres avec ce rôle perdront leurs accès.</div><div className="confirm-actions"><button className="btn btn-outline" onClick={()=>setDeleteRoleId(null)}>Annuler</button><button className="btn btn-danger" onClick={()=>deleteRole(deleteRoleId)}>Supprimer</button></div></div></div>)}
     </div>
   );

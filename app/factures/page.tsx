@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 interface Facture {
   id: string; numero: string; client: string; dossier: string;
@@ -21,7 +21,7 @@ function genNum() { return `FAC-${new Date().getFullYear()}-${Math.floor(Math.ra
 const EMPTY = { numero:"", client:"", dossier:"", montant:0, description:"", statut:"En attente", date_echeance:"" };
 
 export default function FacturesPage() {
-  const user = getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [factures, setFactures]   = useState<Facture[]>([]);
   const [clients, setClients]     = useState<string[]>([]);
   const [loading, setLoading]     = useState(true);

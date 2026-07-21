@@ -1,14 +1,14 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 const CATS_R=["Vente drogue","Vente arme","Braquage ATM","Braquage superette","Braquage banque","Blanchiment","Cotisation","Autre"];
 const CATS_D=["Achat véhicule","Achat matériel","Achat drogue","Amende","Corruption","Dépense opérationnelle","Autre"];
 const SEMAINES_LABELS=["Cette semaine","Semaine -1","Semaine -2","Semaine -3","Semaine -4","Tout voir"];
 function getWeekStart(offset=0){const d=new Date();d.setDate(d.getDate()-d.getDay()+1-offset*7);d.setHours(0,0,0,0);return d.toISOString().split("T")[0];}
 export default function ComptaPage(){
-  const user=getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [entries,setEntries]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
   const [tab,setTab]=useState<"apercu"|"historique"|"saisie">("apercu");

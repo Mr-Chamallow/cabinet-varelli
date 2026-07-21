@@ -1,60 +1,81 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { getUser } from "@/lib/auth";
+import { signOut } from "next-auth/react";
+import { hasPermission } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
+
+const NAV_SECTIONS = [
+  { label: "⚖️ Cabinet BullHead", items: [
+    { href: "/",            label: "Dashboard",     icon: "◈", permission: "dashboard" },
+    { href: "/clients",     label: "Clients",       icon: "◉", permission: "clients" },
+    { href: "/dossiers",    label: "Dossiers",      icon: "◫", permission: "dossiers" },
+    { href: "/factures",    label: "Factures",      icon: "◬", permission: "factures" },
+    { href: "/casier",      label: "Casier",        icon: "◪", permission: "casier" },
+    { href: "/simulateur",  label: "Simulateur",    icon: "◐", permission: "simulateur" },
+    { href: "/audiences",   label: "Audiences",     icon: "◍", permission: "audiences" },
+    { href: "/juridique",   label: "Code pénal",    icon: "◎", permission: "juridique" },
+    { href: "/calculatrice",label: "Calculatrice",  icon: "◑", permission: "calculatrice" },
+  ]},
+  { label: "🖤 Obsidian Logistics", items: [
+    { href: "/obsidian",               label: "Dashboard OBS",   icon: "▣", permission: "obsidian_dashboard" },
+    { href: "/obsidian/prix",          label: "Tableau des prix", icon: "▤", permission: "obsidian_prix" },
+    { href: "/obsidian/stocks",        label: "Stocks",          icon: "▥", permission: "obsidian_stocks" },
+    { href: "/obsidian/armurerie",     label: "Armurerie",       icon: "▦", permission: "obsidian_armurerie" },
+    { href: "/obsidian/garage",        label: "Garage",          icon: "▧", permission: "obsidian_garage" },
+    { href: "/obsidian/comptabilite",  label: "Comptabilité",    icon: "▨", permission: "obsidian_comptabilite" },
+    { href: "/obsidian/rdv",           label: "Rendez-vous",     icon: "▩", permission: "obsidian_rdv" },
+    { href: "/obsidian/contrats",      label: "Contrats",        icon: "◆", permission: "obsidian_contrats" },
+    { href: "/obsidian/planification", label: "Planification",   icon: "◇", permission: "obsidian_planification" },
+    { href: "/obsidian/stats",         label: "Statistiques",    icon: "◈", permission: "obsidian_stats" },
+    { href: "/obsidian/fiches",        label: "Fiches",          icon: "◉", permission: "obsidian_stats" },
+    { href: "/obsidian/carte",         label: "Carte",           icon: "◊", permission: "obsidian_stats" },
+    { href: "/cahier-vente",           label: "Cahier de vente", icon: "▪", permission: "cahier_vente" },
+  ]},
+  { label: "⚙️ Administration", items: [
+    { href: "/settings",    label: "Personnalisation", icon: "◌", permission: "admin" },
+    { href: "/supervision", label: "Supervision",      icon: "◬", permission: "supervision" },
+    { href: "/admin",       label: "Admin",            icon: "◭", permission: "admin" },
+  ]},
+];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
-  const [user, setUserState] = useState<any>(null);
+  const { user, loading } = useCurrentUser();
 
-  useEffect(() => {
-    const localUser = getUser();
-    setUserState(localUser);
-  }, []);
-
-  // Détection force Patron pour ton ID Discord
-  const isDiscordAdmin = (session?.user as any)?.discord_id === "460865920278069248";
-  const currentUser = isDiscordAdmin 
-    ? { nom: "mrchamallow__", role: "Patron", couleur: "#5865F2" }
-    : user || { nom: "mrchamallow__", role: "Patron" };
-
-  // Ne pas cacher le menu sur la page de login
-  if (pathname === "/login") return null;
+  if (loading || !user) return null;
 
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h2>CABINET BULLHEAD</h2>
-        <span className="badge">{currentUser.role || "Patron"}</span>
+        <div className="logo-text">CABINET BULLHEAD</div>
+        <div className="logo-sub">Law · Finance · Property</div>
       </div>
-
       <nav className="sidebar-nav">
-        <Link href="/" className={pathname === "/" ? "active" : ""}>
-          📊 Tableau de bord
-        </Link>
-        <Link href="/clients" className={pathname?.startsWith("/clients") ? "active" : ""}>
-          👥 Clients
-        </Link>
-        <Link href="/dossiers" className={pathname?.startsWith("/dossiers") ? "active" : ""}>
-          📁 Dossiers
-        </Link>
-        <Link href="/factures" className={pathname?.startsWith("/factures") ? "active" : ""}>
-          📄 Factures
-        </Link>
-        <Link href="/agenda" className={pathname?.startsWith("/agenda") ? "active" : ""}>
-          📅 Agenda
-        </Link>
-        <Link href="/comptabilite" className={pathname?.startsWith("/comptabilite") ? "active" : ""}>
-          💰 Comptabilité
-        </Link>
-        <Link href="/membres" className={pathname?.startsWith("/membres") ? "active" : ""}>
-          ⚙️ Gestion Membres
-        </Link>
+        {NAV_SECTIONS.map(section => (
+          <div key={section.label} className="nav-section">
+            <div className="nav-section-label">{section.label}</div>
+            {section.items.filter(i => hasPermission(user, i.permission)).map(item => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`nav-item ${pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href)) ? "active" : ""}`}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-label">{item.label}</span>
+              </Link>
+            ))}
+          </div>
+        ))}
       </nav>
+      <div className="sidebar-footer">
+        <div className="user-info">
+          <div className="user-name">{user.nom}</div>
+          <div className="user-role">{user.role}</div>
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={() => signOut({ callbackUrl: "/login" })}>↩</button>
+      </div>
     </aside>
   );
 }

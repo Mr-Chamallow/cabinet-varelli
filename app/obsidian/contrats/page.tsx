@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 const TYPES=["Livraison","Surveillance","Intimidation","Récupération","Braquage","Autre"];
 const DIFFS=["Facile","Normale","Difficile","Extrême"];
 const STATUTS=["En attente","En cours","Terminé","Échoué","Annulé"];
@@ -10,7 +10,7 @@ const DCOL:Record<string,string>={Facile:"var(--success)",Normale:"var(--info)",
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 const EMPTY={titre:"",type:"Livraison",difficulte:"Normale",recompense:0,statut:"En attente",membres_affectes:[] as string[],description:"",rapport:"",date_cible:""};
 export default function ContratsPage(){
-  const user=getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [contrats,setContrats]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
   const [showForm,setShowForm]=useState(false);

@@ -1,7 +1,7 @@
-﻿"use client";
-import { useEffect, useState, useMemo } from "react";
+"use client";
+import { useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useScopedTable } from "@/lib/data/useScopedTable";
 
 interface Client {
   id: string; nom_rp: string; telephone: string; organisation: string;
@@ -23,10 +23,11 @@ const dateStr = (s:string) => s ? new Date(s+"T12:00:00").toLocaleDateString("fr
 const EMPTY_FORM = { nom_rp:"", telephone:"", organisation:"", email:"", discord:"", notes:"", statut:"Actif", blacklist:false };
 
 export default function ClientsPage() {
-  const user = getUser();
-  const [clients, setClients]     = useState<Client[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [search, setSearch]       = useState("");
+  const {
+    rows: clients, loading, create, update, remove, user,
+  } = useScopedTable<Client>("clients", { orderBy: "nom_rp", ascending: true });
+
+  const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState("");
   const [showBlacklist, setShowBlacklist] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client|null>(null);
@@ -41,86 +42,40 @@ export default function ClientsPage() {
   const [confirm, setConfirm]     = useState<string|null>(null);
   const [toast, setToast]         = useState<string|null>(null);
 
-  useEffect(() => { load(); }, []);
-
-  async function load() {
-    if (!supabase) { setLoading(false); return; }
-    try {
-      const { data, error } = await supabase.from("clients").select("*").order("nom_rp");
-      if (error) throw error;
-      setClients(data || []);
-    } catch (err) {
-      showT("Erreur lors du chargement des clients");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function openClient(c: Client) {
     setSelectedClient(c); setClientTab("info");
-    if (!supabase) return;
-    try {
-      const [{ data:d },{ data:f },{ data:cas }] = await Promise.all([
-        supabase.from("dossiers").select("id,reference,type_affaire,statut,created_at,created_by").or(`client_id.eq.${c.id},client.eq.${c.nom_rp}`).order("created_at",{ascending:false}),
-        supabase.from("factures").select("id,numero,montant,statut,created_at").eq("client", c.nom_rp).order("created_at",{ascending:false}),
-        supabase.from("casier").select("id,infraction,categorie,date_condamnation,amende_prononcee").eq("client_nom", c.nom_rp).order("date_condamnation",{ascending:false}),
-      ]);
-      setDossiers(d||[]); setFactures(f||[]); setCasier(cas||[]);
-    } catch (e) {
-      showT("Erreur lors de la récupération du profil");
-    }
+    if (!supabase || !user) return;
+    // Scopé par created_by comme le reste de l'appli (avant : non filtré, incohérent)
+    const [{ data:d },{ data:f },{ data:cas }] = await Promise.all([
+      supabase.from("dossiers").select("id,reference,type_affaire,statut,created_at,created_by").eq("client", c.nom_rp).eq("created_by", user.nom).order("created_at",{ascending:false}),
+      supabase.from("factures").select("id,numero,montant,statut,created_at").eq("client", c.nom_rp).eq("created_by", user.nom).order("created_at",{ascending:false}),
+      supabase.from("casier").select("id,infraction,categorie,date_condamnation,amende_prononcee").eq("client_nom", c.nom_rp).eq("created_by", user.nom).order("date_condamnation",{ascending:false}),
+    ]);
+    setDossiers(d||[]); setFactures(f||[]); setCasier(cas||[]);
   }
 
   async function saveClient() {
-    if (!supabase || !user || !form.nom_rp.trim()) return;
+    if (!form.nom_rp.trim()) return;
     setSaving(true);
-    try {
-      if (editMode && selectedClient) {
-        const { data, error } = await supabase.from("clients").update(form).eq("id",selectedClient.id).select().single();
-        if (error) throw error;
-        if (data) {
-          // Mise à jour de la référence textuelle dans dossiers si le nom a changé
-          if (selectedClient.nom_rp !== form.nom_rp.trim()) {
-            await supabase.from("dossiers").update({ client: form.nom_rp.trim() }).eq("client_id", selectedClient.id);
-          }
-          setClients(cs=>cs.map(c=>c.id===selectedClient.id?data:c)); setSelectedClient(data);
-        }
-      } else {
-        const { data, error } = await supabase.from("clients").insert([{...form,created_by:user.nom}]).select().single();
-        if (error) throw error;
-        if (data) { setClients(cs=>[data,...cs]); }
-      }
-      setShowForm(false); setEditMode(false); showT(editMode?"Client mis à jour":"Client créé");
-    } catch (err: any) {
-      showT("Erreur lors de la sauvegarde");
-    } finally {
-      setSaving(false);
+    const result = editMode && selectedClient
+      ? await update(selectedClient.id, form)
+      : await create(form);
+    if (result) {
+      if (editMode) setSelectedClient(result);
+      showT(editMode ? "Client mis à jour" : "Client créé");
     }
+    setShowForm(false); setEditMode(false);
+    setSaving(false);
   }
 
   async function deleteClient(id:string) {
-    if (!supabase) return;
-    try {
-      const { error } = await supabase.from("clients").delete().eq("id",id);
-      if (error) throw error;
-      setClients(cs=>cs.filter(c=>c.id!==id));
-      setSelectedClient(null); setConfirm(null); showT("Client supprimé");
-    } catch (err) {
-      showT("Erreur lors de la suppression");
-    }
+    await remove(id);
+    setSelectedClient(null); setConfirm(null); showT("Client supprimé");
   }
 
   async function toggleBlacklist(c:Client) {
-    if (!supabase) return;
-    try {
-      const { error } = await supabase.from("clients").update({blacklist:!c.blacklist}).eq("id",c.id);
-      if (error) throw error;
-      const updated = {...c,blacklist:!c.blacklist};
-      setClients(cs=>cs.map(x=>x.id===c.id?updated:x));
-      setSelectedClient(updated);
-    } catch (err) {
-      showT("Erreur lors de la modification de la blacklist");
-    }
+    const updated = await update(c.id, { blacklist: !c.blacklist } as Partial<Client>);
+    if (updated) setSelectedClient(updated);
   }
 
   function showT(msg:string){ setToast(msg); setTimeout(()=>setToast(null),3000); }
@@ -156,7 +111,6 @@ export default function ClientsPage() {
         <button className="btn btn-gold" onClick={()=>{setForm({...EMPTY_FORM});setEditMode(false);setShowForm(true);}}>+ Nouveau client</button>
       </div>
 
-      {/* Stats */}
       <div className="stat-grid" style={{marginBottom:"1.5rem"}}>
         {[
           {label:"Total clients",  value:stats.total,     icon:"👥", color:"var(--gold)"},
@@ -174,9 +128,7 @@ export default function ClientsPage() {
 
       <div style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:"1.25rem",alignItems:"start"}}>
 
-        {/* ── LISTE ── */}
         <div>
-          {/* Filtres */}
           <div style={{display:"flex",flexDirection:"column",gap:"0.5rem",marginBottom:"0.875rem"}}>
             <div className="search-bar">
               <span className="search-icon">🔍</span>
@@ -231,10 +183,8 @@ export default function ClientsPage() {
           )}
         </div>
 
-        {/* ── PROFIL ── */}
         {selectedClient ? (
           <div style={{display:"flex",flexDirection:"column",gap:"1rem"}}>
-            {/* Header profil */}
             <div className="card" style={{border:`1px solid ${STATUT_COLORS[selectedClient.statut]||"var(--border)"}30`}}>
               <div style={{display:"flex",alignItems:"flex-start",gap:"1rem",marginBottom:"1rem"}}>
                 <div style={{width:52,height:52,borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:(STATUT_COLORS[selectedClient.statut]||"var(--gold)")+"15",border:`2px solid ${(STATUT_COLORS[selectedClient.statut]||"var(--gold)")}30`,fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"1.4rem",color:STATUT_COLORS[selectedClient.statut]||"var(--gold)"}}>
@@ -257,7 +207,6 @@ export default function ClientsPage() {
                 </div>
               </div>
 
-              {/* Stats client */}
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"0.625rem"}}>
                 {[
                   {l:"Dossiers",v:String(dossiers.length),c:"var(--info)"},
@@ -275,7 +224,6 @@ export default function ClientsPage() {
               </div>
             </div>
 
-            {/* Tabs profil */}
             <div style={{display:"flex",gap:"0.4rem"}}>
               {([["info","ℹ️ Infos"],["dossiers",`📁 Dossiers (${dossiers.length})`],["factures",`🧾 Factures (${factures.length})`],["casier",`⚖️ Casier (${casier.length})`]] as [string,string][]).map(([k,l])=>(
                 <button key={k} onClick={()=>setClientTab(k as any)} style={{padding:"0.4rem 0.875rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.8rem",fontWeight:clientTab===k?700:400,background:clientTab===k?"var(--gold-muted)":"var(--surface)",border:`1px solid ${clientTab===k?"rgba(196,179,137,0.4)":"var(--border)"}`,color:clientTab===k?"var(--gold)":"var(--text-muted)"}}>
@@ -284,7 +232,6 @@ export default function ClientsPage() {
               ))}
             </div>
 
-            {/* Infos */}
             {clientTab==="info" && (
               <div className="card">
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.875rem"}}>
@@ -309,7 +256,6 @@ export default function ClientsPage() {
               </div>
             )}
 
-            {/* Dossiers */}
             {clientTab==="dossiers" && (
               <div>
                 {dossiers.length===0?(<div className="empty-state"><div className="empty-icon">📁</div><div className="empty-title">Aucun dossier</div></div>):(
@@ -333,7 +279,6 @@ export default function ClientsPage() {
               </div>
             )}
 
-            {/* Factures */}
             {clientTab==="factures" && (
               <div>
                 {factures.length===0?(<div className="empty-state"><div className="empty-icon">🧾</div><div className="empty-title">Aucune facture</div></div>):(
@@ -358,7 +303,6 @@ export default function ClientsPage() {
               </div>
             )}
 
-            {/* Casier */}
             {clientTab==="casier" && (
               <div>
                 {casier.length===0?(<div className="empty-state"><div className="empty-icon">⚖️</div><div className="empty-title">Casier vierge</div></div>):(
@@ -393,7 +337,6 @@ export default function ClientsPage() {
         )}
       </div>
 
-      {/* Modal création/édition */}
       {showForm&&(
         <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowForm(false)}>
           <div className="modal modal-lg">

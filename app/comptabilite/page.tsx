@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 interface Op {
   type: string;
@@ -18,7 +18,7 @@ interface Facture {
 }
 
 export default function ComptabilitePage() {
-  const user = getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [ops, setOps] = useState<Op[]>([]);
   const [factures, setFactures] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 interface Result {
   type: "client" | "dossier" | "facture" | "casier" | "page";
@@ -54,7 +54,7 @@ export default function CommandPalette() {
 
   const search = useCallback(async (q: string) => {
     if (!supabase) return;
-    const user = getUser();
+    const { user, loading: userLoading } = useCurrentUser();
     if (!user) return;
 
     if (!q.trim()) {
@@ -68,7 +68,7 @@ export default function CommandPalette() {
       supabase.from("clients").select("id,nom_rp,organisation").eq("created_by", user.nom).ilike("nom_rp", like).limit(5),
       supabase.from("dossiers").select("id,reference,client,type_affaire").eq("created_by", user.nom).or(`reference.ilike.${like},client.ilike.${like}`).limit(5),
       supabase.from("factures").select("id,numero,client,montant").eq("created_by", user.nom).or(`numero.ilike.${like},client.ilike.${like}`).limit(5),
-      supabase.from("casier").select("id,client_nom,infraction").eq("created_by", user.nom).or(`client_nom.ilike.${like},infraction.ilike.${like}`).limit(5),
+      supabase.from("casier").select("id,client_nom,infraction").or(`client_nom.ilike.${like},infraction.ilike.${like}`).limit(5),
     ]);
 
     const r: Result[] = [

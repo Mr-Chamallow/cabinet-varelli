@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 interface Modele {
   id: string;
@@ -440,7 +440,7 @@ Préparé par Maître [Nom] — Cabinet BullHead`,
 ];
 
 export default function ModelesPage() {
-  const user = getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [modeles, setModeles] = useState<Modele[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Modele|null>(null);
@@ -501,7 +501,7 @@ Génère UNIQUEMENT la plaidoirie, sans introduction ni préambule de ta part.`
   async function saveAiResult() {
     if (!aiResult.trim() || !supabase || !user) return;
     const titre = `[IA] ${aiType} — ${aiClient}`;
-    const { data } = await supabase.from("modeles").insert([{ titre, type: aiType, contenu: aiResult, created_by: user.nom }]).select().single();
+    const { data } = await supabase.from("modeles").insert([{ titre, type: aiType, contenu: aiResult, created_by: user.nom, created_by_id: user.id }]).select().single();
     if (data) { setModeles(m => [data, ...m]); setSelected(data); }
     setShowAI(false); setAiResult(""); setAiClient(""); setAiChefs(""); setAiContexte("");
     showT("Plaidoirie générée et sauvegardée");
@@ -527,7 +527,7 @@ Génère UNIQUEMENT la plaidoirie, sans introduction ni préambule de ta part.`
       setModeles(m => m.map(x => x.id===selected.id ? {...x,...form} : x));
       setSelected(prev => prev ? {...prev,...form} : null);
     } else {
-      const { data } = await supabase.from("modeles").insert([{...form, created_by:user.nom}]).select().single();
+      const { data } = await supabase.from("modeles").insert([{...form, created_by:user.nom,created_by_id:user.id}]).select().single();
       if (data) { setModeles(m => [data,...m]); setSelected(data); }
     }
     setSaving(false);
@@ -538,7 +538,7 @@ Génère UNIQUEMENT la plaidoirie, sans introduction ni préambule de ta part.`
 
   async function saveDefault(t: typeof TEMPLATES_DEFAUT[0]) {
     if (!supabase || !user) return;
-    const { data } = await supabase.from("modeles").insert([{...t, created_by:user.nom}]).select().single();
+    const { data } = await supabase.from("modeles").insert([{...t, created_by:user.nom,created_by_id:user.id}]).select().single();
     if (data) { setModeles(m => [data,...m]); setSelected(data); }
     showT("Template importé");
   }

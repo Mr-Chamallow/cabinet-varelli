@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 const TYPES=["Réunion","Braquage","Convoi","Livraison","Anniversaire RP","Entraînement","Surveillance","Autre"];
 const TCOL:Record<string,string>={Réunion:"var(--info)",Braquage:"var(--danger)",Convoi:"var(--warning)",Livraison:"#f97316","Anniversaire RP":"#a855f7",Entraînement:"var(--success)",Surveillance:"#0ea5e9",Autre:"var(--text-dim)"};
 const EMPTY={titre:"",type:"Réunion",date:"",heure:"",lieu:"",description:"",membres:[] as string[],statut:"Planifié"};
 export default function PlanificationPage(){
-  const user=getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [events,setEvents]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
   const [showForm,setShowForm]=useState(false);

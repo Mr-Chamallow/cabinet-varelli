@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 interface Transaction {
   id: string;
@@ -47,7 +47,7 @@ const fmtDate = (s: string) => new Date(s).toLocaleDateString("fr-FR", { day:"2-
 const EMPTY_FORM: FormState = { type:"entrée", montant:0, categorie:"Vente drogue", motif:"", produit_nom:"", quantite:0, type_argent:"propre" };
 
 export default function CahierVentePage() {
-  const user = getUser();
+  const { user, loading: userLoading } = useCurrentUser();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [produits, setProduits]         = useState<Produit[]>([]);

@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 const TYPES=["garage","planque","zone","territoire","opération","point_interet"];
 const TCOL:Record<string,string>={garage:"#3b82f6",planque:"#f97316",zone:"#22c55e",territoire:"#7c3aed",opération:"var(--danger)","point_interet":"var(--gold)"};
 const ICONS:Record<string,string>={garage:"🚗",planque:"🏚️",zone:"🗺️",territoire:"🏴",opération:"⚡","point_interet":"📍"};
 const EMPTY={nom:"",type:"planque",x:0,y:0,couleur:"#c9a84c",description:"",statut:"Actif"};
 export default function CartePage(){
-  const user=getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [points,setPoints]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
   const [showForm,setShowForm]=useState(false);

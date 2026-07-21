@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getUser, canAccess, type User } from "@/lib/auth";
+import { canAccess, type User } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useRouter } from "next/navigation";
 
 interface Config {
@@ -34,20 +35,18 @@ const DEFAULT_CONFIG: Config = {
 
 export default function ParametresPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading: userLoading } = useCurrentUser();
   const [config, setConfig] = useState<Config>({ ...DEFAULT_CONFIG });
   const [saved, setSaved] = useState(false);
   const [activeSection, setActiveSection] = useState("cabinet");
 
   useEffect(() => {
-    const u = getUser();
-    if (!u || !canAccess(u.role, "parametres")) { router.replace("/"); return; }
-    setUser(u);
+    if (!user || !canAccess(user.role, "parametres")) return;
     try {
       const stored = localStorage.getItem("varelli_config");
       if (stored) setConfig(JSON.parse(stored));
     } catch {}
-  }, []);
+  }, [user]);
 
   function handleChange(key: keyof Config, value: string | number) {
     setConfig((prev) => ({ ...prev, [key]: value }));

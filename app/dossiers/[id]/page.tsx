@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 import jsPDF from "jspdf";
 
 const DOCUMENTS_DEFAUT = [
@@ -17,7 +17,64 @@ const DOCUMENTS_DEFAUT = [
   "Convocation officielle",
 ];
 
-import { CHEFS_PENAL } from "@/lib/code-penal";
+// Code pénal simplifié pour la picklist
+const CHEFS_PENAL = [
+  // Contraventions
+  { code:"C-5",  infraction:"Conduite dangereuse",                  categorie:"Contravention", amende:"2 700$",   detention:"—" },
+  { code:"C-7",  infraction:"Excès de vitesse",                     categorie:"Contravention", amende:"1 800$",   detention:"—" },
+  { code:"C-9",  infraction:"Holster interdit",                     categorie:"Contravention", amende:"1 350$",   detention:"—" },
+  { code:"C-18", infraction:"Consommation de drogue",               categorie:"Contravention", amende:"450$",     detention:"—" },
+  // Délits mineurs
+  { code:"DM-1",  infraction:"Agression sur citoyen",               categorie:"Délit mineur",  amende:"4 500$",   detention:"30 min" },
+  { code:"DM-6",  infraction:"Braquage de supérette",               categorie:"Délit mineur",  amende:"3 600$",   detention:"20 min" },
+  { code:"DM-7",  infraction:"Braquage/piratage ATM",               categorie:"Délit mineur",  amende:"2 250$",   detention:"15 min" },
+  { code:"DM-8",  infraction:"Cambriolage",                         categorie:"Délit mineur",  amende:"1 350$",   detention:"15 min" },
+  { code:"DM-12", infraction:"Délit de fuite",                      categorie:"Délit mineur",  amende:"1 350$",   detention:"15 min" },
+  { code:"DM-13", infraction:"Entrave à une opération police",      categorie:"Délit mineur",  amende:"3 500$",   detention:"30 min" },
+  { code:"DM-15", infraction:"Exhibition d'armes de poing",         categorie:"Délit mineur",  amende:"1 350$",   detention:"15 min" },
+  { code:"DM-16", infraction:"Exhibition d'armes lourdes",          categorie:"Délit mineur",  amende:"4 500$",   detention:"30 min" },
+  { code:"DM-20", infraction:"Utilisation d'une arme à feu",        categorie:"Délit mineur",  amende:"1 350$",   detention:"15 min" },
+  { code:"DM-21", infraction:"Intrusion zone restreinte",           categorie:"Délit mineur",  amende:"3 200$",   detention:"30 min" },
+  { code:"DM-22", infraction:"Menace/intimidation envers civil",    categorie:"Délit mineur",  amende:"3 500$",   detention:"15 min" },
+  { code:"DM-23", infraction:"Mise en danger de la vie d'autrui",  categorie:"Délit mineur",  amende:"5 800$",   detention:"15 min" },
+  { code:"DM-26", infraction:"Non présentation à convocation",      categorie:"Délit mineur",  amende:"6 750$",   detention:"20 min" },
+  { code:"DM-47", infraction:"Possession de pistolet",              categorie:"Délit mineur",  amende:"15 000$",  detention:"20 min" },
+  { code:"DM-78", infraction:"Possession de cannabis",              categorie:"Délit mineur",  amende:"32$/u",    detention:"10 min" },
+  { code:"DM-79", infraction:"Possession de cocaïne",               categorie:"Délit mineur",  amende:"45$/u",    detention:"10 min" },
+  { code:"DM-84", infraction:"Possession d'héroïne",               categorie:"Délit mineur",  amende:"72$/u",    detention:"10 min" },
+  { code:"DM-124",infraction:"Vente de drogue",                     categorie:"Délit mineur",  amende:"3 750$",   detention:"10 min" },
+  { code:"DM-127",infraction:"Refus d'obtempérer",                  categorie:"Délit mineur",  amende:"900$",     detention:"15 min" },
+  { code:"DM-130",infraction:"Trafic de stupéfiants",               categorie:"Délit mineur",  amende:"Variable", detention:"Variable" },
+  { code:"DM-133",infraction:"Vol",                                  categorie:"Délit mineur",  amende:"1 350$",   detention:"15 min" },
+  { code:"DM-144",infraction:"Évasion du poste de police",         categorie:"Délit mineur",  amende:"7 500$",   detention:"20 min" },
+  // Délits majeurs
+  { code:"DMJ-9",  infraction:"Agression sur agent / police",       categorie:"Délit majeur",  amende:"8 500$",   detention:"1h" },
+  { code:"DMJ-11", infraction:"Menaces de mort / menaces graves",   categorie:"Délit majeur",  amende:"8 500$",   detention:"45 min" },
+  { code:"DMJ-13", infraction:"Homicide involontaire",              categorie:"Délit majeur",  amende:"12 500$",  detention:"25 min" },
+  { code:"DMJ-14", infraction:"Association de malfaiteurs",         categorie:"Délit majeur",  amende:"4 500$",   detention:"30 min" },
+  { code:"DMJ-17", infraction:"Braquage bijouterie/supermarché",    categorie:"Délit majeur",  amende:"9 000$",   detention:"30 min" },
+  { code:"DMJ-18", infraction:"Braquage banque centrale",           categorie:"Délit majeur",  amende:"25 000$",  detention:"60 min" },
+  { code:"DMJ-21", infraction:"Braquage banque (Fleeca)",           categorie:"Délit majeur",  amende:"15 000$",  detention:"25 min" },
+  { code:"DMJ-28", infraction:"Faux témoignage",                    categorie:"Délit majeur",  amende:"9 000$",   detention:"30 min" },
+  { code:"DMJ-36", infraction:"Participation à une fusillade",      categorie:"Délit majeur",  amende:"3 500$",   detention:"30 min" },
+  { code:"DMJ-54", infraction:"Possession de fusil d'assaut",       categorie:"Délit majeur",  amende:"35 000$",  detention:"25 min" },
+  { code:"DMJ-83", infraction:"Prise d'otage sur civil",            categorie:"Délit majeur",  amende:"4 500$",   detention:"15 min" },
+  { code:"DMJ-91", infraction:"Vol à main armée",                   categorie:"Délit majeur",  amende:"5 000$",   detention:"30 min" },
+  { code:"DMJ-100",infraction:"Corruption",                         categorie:"Délit majeur",  amende:"22 500$",  detention:"30 min" },
+  { code:"DMJ-101",infraction:"Fraude fiscale",                     categorie:"Délit majeur",  amende:"90 000$",  detention:"30 min" },
+  // Crimes
+  { code:"CR-2",  infraction:"Blanchiment",                         categorie:"Crime",         amende:"5$×somme", detention:"15 min" },
+  { code:"CR-4",  infraction:"Assassinat prémédité (MORT RP)",      categorie:"Crime",         amende:"225 000$", detention:"1h" },
+  { code:"CR-8",  infraction:"Meurtre (MORT RP)",                   categorie:"Crime",         amende:"100 800$", detention:"1h" },
+  { code:"CR-11", infraction:"Cavale",                              categorie:"Crime",         amende:"9 000$",   detention:"1h" },
+  { code:"CR-15", infraction:"Meurtre représentant État (MORT RP)", categorie:"Crime",         amende:"300 000$", detention:"30 min" },
+  { code:"CR-17", infraction:"Meurtre (COMA)",                      categorie:"Crime",         amende:"18 000$",  detention:"30 min" },
+  { code:"CR-19", infraction:"Possession de grenade",               categorie:"Crime",         amende:"135 000$", detention:"30 min" },
+  { code:"CR-21", infraction:"Prise d'otage représentant État",     categorie:"Crime",         amende:"18 000$",  detention:"30 min" },
+  { code:"CR-22", infraction:"Séquestration",                       categorie:"Crime",         amende:"15 500$",  detention:"30 min" },
+  { code:"CR-23", infraction:"Terrorisme",                          categorie:"Crime",         amende:"45 000$",  detention:"1h" },
+  { code:"CR-31", infraction:"Violation du secret professionnel",   categorie:"Crime",         amende:"22 500$",  detention:"30 min" },
+];
 
 const STATUTS_AVANCEMENT = [
   "Investigation","Mise en examen","Instruction","Jugement","Appel","Clôturé — Gagné","Clôturé — Perdu",
@@ -59,9 +116,10 @@ interface Event { id:string; type:string; contenu:string; created_by:string; cre
 interface Document { id:string; label:string; obtenu:boolean; }
 interface Audience { id:string; titre:string; date:string; heure:string; }
 
+
 export default function DossierDetailPage() {
   const params = useParams();
-  const user = getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const id = params?.id as string;
 
   const [dossier, setDossier] = useState<Dossier|null>(null);
@@ -78,7 +136,7 @@ export default function DossierDetailPage() {
   const [editForm, setEditForm] = useState<Partial<Dossier>>({});
   const [saving, setSaving] = useState(false);
 
-  // Stratégie défense
+  // Stratégie défense (champ notes enrichi)
   const [strategie, setStrategie] = useState("");
   const [autoSaved, setAutoSaved] = useState(false);
   const strategieTimer = useRef<NodeJS.Timeout|null>(null);
@@ -118,34 +176,27 @@ export default function DossierDetailPage() {
   useEffect(() => { if (id) load(); }, [id]);
 
   async function load() {
-    if (!supabase) { setLoading(false); return; }
+    if (!supabase) return;
     setLoading(true);
-    try {
-      const [{ data:d }, { data:c }, { data:e }, { data:doc }, { data:aud }, { data:mem }] = await Promise.all([
-        supabase.from("dossiers").select("*").eq("id",id).single(),
-        supabase.from("dossier_chefs").select("*").eq("dossier_id",id).order("created_at"),
-        supabase.from("dossier_events").select("*").eq("dossier_id",id).order("created_at",{ascending:false}),
-        supabase.from("dossier_documents").select("*").eq("dossier_id",id).order("created_at"),
-        supabase.from("audiences").select("id,titre,date,heure").order("date"),
-        supabase.from("membres").select("nom"),
-      ]);
-      if (d) {
-        setDossier(d); setEditForm(d); setStrategie(d.notes||"");
-        if (d.audience_id && aud) {
-          const found = aud.find((a:Audience) => a.id === d.audience_id);
-          setLinkedAudience(found || null);
-        }
+    const [{ data:d }, { data:c }, { data:e }, { data:doc }, { data:aud }] = await Promise.all([
+      supabase.from("dossiers").select("*").eq("id",id).single(),
+      supabase.from("dossier_chefs").select("*").eq("dossier_id",id).order("created_at"),
+      supabase.from("dossier_events").select("*").eq("dossier_id",id).order("created_at",{ascending:false}),
+      supabase.from("dossier_documents").select("*").eq("dossier_id",id).order("created_at"),
+      supabase.from("audiences").select("id,titre,date,heure").order("date"),
+    ]);
+    if (d) {
+      setDossier(d); setEditForm(d); setStrategie(d.notes||"");
+      if (d.audience_id && aud) {
+        const found = aud.find((a:Audience) => a.id === d.audience_id);
+        setLinkedAudience(found || null);
       }
-      setChefs(c||[]);
-      setEvents(e||[]);
-      setDocuments(doc||[]);
-      setAudiencesList(aud||[]);
-      setMembersList((mem||[]).map((m:any)=>m.nom));
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
     }
+    setChefs(c||[]);
+    setEvents(e||[]);
+    setDocuments(doc||[]);
+    setAudiencesList(aud||[]);
+    setLoading(false);
   }
 
   async function saveDossier() {
@@ -177,7 +228,7 @@ export default function DossierDetailPage() {
     if (!supabase||!user||!newEvent.trim()) return;
     setAddingEvent(true);
     const { data } = await supabase.from("dossier_events").insert([{
-      dossier_id:id, type:newEventType, contenu:newEvent.trim(), created_by:user.nom,
+      dossier_id:id, type:newEventType, contenu:newEvent.trim(), created_by:user.nom, created_by_id:user.id,
     }]).select().single();
     if (data) setEvents(e=>[data,...e]);
     setNewEvent("");
@@ -190,6 +241,7 @@ export default function DossierDetailPage() {
     setEvents(e=>e.filter(x=>x.id!==evtId));
   }
 
+  // ─── DOCUMENTS ──────────────────────────────────────────────────────────────
   async function addDocument(label:string) {
     if (!supabase || !label.trim()) return;
     const { data } = await supabase.from("dossier_documents").insert([{
@@ -212,6 +264,7 @@ export default function DossierDetailPage() {
     setDocuments(d => d.filter(x => x.id !== docId));
   }
 
+  // ─── AUDIENCE LINK ──────────────────────────────────────────────────────────
   async function linkAudience(aud: Audience | null) {
     if (!supabase) return;
     await supabase.from("dossiers").update({ audience_id: aud?.id || null }).eq("id", id);
@@ -219,6 +272,7 @@ export default function DossierDetailPage() {
     setShowAudiencePicker(false);
   }
 
+  // ─── EXPORT TEXTE ───────────────────────────────────────────────────────────
   function generateExportText(): string {
     if (!dossier) return "";
     const lines = [
@@ -257,7 +311,7 @@ export default function DossierDetailPage() {
         lines.push(`  ${new Date(e.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"short"})} — [${e.type}] ${e.contenu} (par ${e.created_by})`);
       });
     }
-    lines.push(``, `═══════════════════════════════════════`, `Cabinet Varelli — généré le ${new Date().toLocaleDateString("fr-FR")}`);
+    lines.push(``, `═══════════════════════════════════════`, `Cabinet BullHead — généré le ${new Date().toLocaleDateString("fr-FR")}`);
     return lines.join("\n");
   }
 
@@ -274,16 +328,17 @@ export default function DossierDetailPage() {
     const dark: [number,number,number] = [20,22,28];
     let y = 20;
 
+    // Header bandeau noir/or
     doc.setFillColor(...dark);
     doc.rect(0, 0, 210, 32, "F");
     doc.setTextColor(...gold);
     doc.setFont("times", "bold");
     doc.setFontSize(18);
-    doc.text("CABINET VARELLI", 14, 16);
+    doc.text("CABINET BULLHEAD", 14, 16);
     doc.setFontSize(8);
     doc.setTextColor(180,180,180);
     doc.setFont("helvetica", "normal");
-    doc.text("Avocats & Juristes", 14, 23);
+    doc.text("Law · Finance · Property", 14, 23);
     doc.setTextColor(...gold);
     doc.setFontSize(10);
     doc.text(dossier.reference, 196, 16, { align:"right" });
@@ -375,7 +430,7 @@ export default function DossierDetailPage() {
     }
 
     doc.setFontSize(7); doc.setTextColor(150,150,150);
-    doc.text(`Cabinet Varelli — Document généré le ${new Date().toLocaleDateString("fr-FR")}`, 105, 290, { align:"center" });
+    doc.text(`Cabinet BullHead — Document généré le ${new Date().toLocaleDateString("fr-FR")}`, 105, 290, { align:"center" });
 
     doc.save(`${dossier.reference}.pdf`);
   }
@@ -387,6 +442,7 @@ export default function DossierDetailPage() {
   const STATUT_COLORS:Record<string,string> = {Ouvert:"var(--info)","En cours":"var(--warning)",Clôturé:"var(--text-dim)",Gagné:"var(--success)",Perdu:"var(--danger)"};
   const amendeTotal = chefs.reduce((s,c) => { const n=parseInt(c.amende?.replace(/[^0-9]/g,"")||"0"); return s+n; }, 0);
 
+  // Calcul auto honoraires : tarifs cabinet par catégorie × modificateur risque
   const TARIFS_HONORAIRES: Record<string,number> = { "Contravention":1500, "Délit mineur":3000, "Délit majeur":8000, "Crime":15000 };
   const MOD_RISQUE_DOSSIER: Record<string,number> = { Aucun:1.0, Faible:1.15, Moyen:1.3, Élevé:1.5, Extrême:1.8 };
   const honorairesBase = chefs.reduce((s,c) => s + (TARIFS_HONORAIRES[c.categorie]||0), 0);
@@ -404,6 +460,7 @@ export default function DossierDetailPage() {
     <div className="page-container">
       <a className="back-link" href="/dossiers">← Retour aux dossiers</a>
 
+      {/* Header */}
       <div className="page-header">
         <div style={{flex:1}}>
           <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"0.375rem",flexWrap:"wrap"}}>
@@ -439,6 +496,7 @@ export default function DossierDetailPage() {
         </div>
       </div>
 
+      {/* Edit inline */}
       {editMode && (
         <div className="card" style={{marginBottom:"1.5rem",borderColor:"rgba(201,168,76,0.3)"}}>
           <div className="section-title" style={{marginBottom:"1rem"}}>Modifier le dossier</div>
@@ -465,7 +523,11 @@ export default function DossierDetailPage() {
       )}
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:"1.5rem"}}>
+
+        {/* ─── COLONNE GAUCHE ─── */}
         <div style={{display:"flex",flexDirection:"column",gap:"1.25rem"}}>
+
+          {/* Chefs d'inculpation */}
           <div className="card">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}>
               <div>
@@ -512,6 +574,7 @@ export default function DossierDetailPage() {
               </div>
             )}
 
+            {/* Honoraires suggérés selon chefs */}
             {chefs.length > 0 && honorairesSuggeres > 0 && (
               <div style={{marginTop:"1rem",padding:"0.875rem 1rem",background:"var(--gold-muted)",
                 border:"1px solid rgba(201,168,76,0.3)",borderRadius:"var(--radius)",
@@ -532,6 +595,7 @@ export default function DossierDetailPage() {
             )}
           </div>
 
+          {/* Stratégie de défense */}
           <div className="card">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.875rem"}}>
               <div className="section-title">Stratégie de défense</div>
@@ -551,6 +615,7 @@ export default function DossierDetailPage() {
             </div>
           </div>
 
+          {/* Documents / Pièces */}
           <div className="card">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.875rem"}}>
               <div>
@@ -596,7 +661,10 @@ export default function DossierDetailPage() {
           </div>
         </div>
 
+        {/* ─── COLONNE DROITE — TIMELINE ─── */}
         <div style={{display:"flex",flexDirection:"column",gap:"1rem"}}>
+
+          {/* Infos rapides */}
           <div className="card">
             <div className="section-title" style={{marginBottom:"0.875rem"}}>Informations</div>
             <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
@@ -615,6 +683,7 @@ export default function DossierDetailPage() {
             </div>
           </div>
 
+          {/* Audience liée */}
           <div className="card">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.875rem"}}>
               <div className="section-title">Audience liée</div>
@@ -640,10 +709,12 @@ export default function DossierDetailPage() {
             )}
           </div>
 
+          {/* Export */}
           <button className="btn btn-outline" onClick={()=>setShowExport(true)} style={{width:"100%",justifyContent:"center"}}>
             📄 Exporter le résumé
           </button>
 
+          {/* Nouveau événement */}
           <div className="card">
             <div className="section-title" style={{marginBottom:"0.875rem"}}>Ajouter un événement</div>
             <div style={{display:"flex",flexWrap:"wrap",gap:"0.35rem",marginBottom:"0.75rem"}}>
@@ -684,6 +755,7 @@ export default function DossierDetailPage() {
             </button>
           </div>
 
+          {/* Timeline */}
           <div className="card">
             <div className="section-title" style={{marginBottom:"0.875rem"}}>Timeline ({events.length})</div>
             {events.length===0 ? (
@@ -696,9 +768,11 @@ export default function DossierDetailPage() {
                   const t = EVENT_TYPES.find(x=>x.key===e.type)||EVENT_TYPES[0];
                   return (
                     <div key={e.id} style={{display:"flex",gap:"0.75rem",position:"relative"}}>
+                      {/* Ligne verticale */}
                       {i<events.length-1 && (
                         <div style={{position:"absolute",left:11,top:24,bottom:0,width:2,background:"var(--border)"}}/>
                       )}
+                      {/* Dot */}
                       <div style={{width:24,height:24,borderRadius:"50%",flexShrink:0,marginTop:2,
                         background:t.color+"20",border:`2px solid ${t.color}`,
                         display:"flex",alignItems:"center",justifyContent:"center",
@@ -730,6 +804,7 @@ export default function DossierDetailPage() {
         </div>
       </div>
 
+      {/* Modal picker chefs */}
       {showChefPicker && (
         <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowChefPicker(false)}>
           <div className="modal modal-lg" style={{maxHeight:"80vh"}}>
@@ -786,6 +861,7 @@ export default function DossierDetailPage() {
         </div>
       )}
 
+      {/* Modal pièces */}
       {showDocPicker && (
         <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowDocPicker(false)}>
           <div className="modal">
@@ -819,6 +895,7 @@ export default function DossierDetailPage() {
         </div>
       )}
 
+      {/* Modal audience picker */}
       {showAudiencePicker && (
         <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowAudiencePicker(false)}>
           <div className="modal">
@@ -855,6 +932,7 @@ export default function DossierDetailPage() {
         </div>
       )}
 
+      {/* Modal export */}
       {showExport && (
         <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowExport(false)}>
           <div className="modal modal-lg">

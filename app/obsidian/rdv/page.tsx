@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 const TYPES=["Réunion","Livraison","Surveillance","Intimidation","Récupération","Rencontre fournisseur","Braquage","Entraînement","Autre"];
 const PRIOS=["Basse","Normale","Haute","Critique"];
 const STATUTS=["Planifié","En cours","Terminé","Annulé"];
@@ -9,7 +9,7 @@ const PCOL:Record<string,string>={Basse:"var(--text-dim)",Normale:"var(--info)",
 const SCOL:Record<string,string>={Planifié:"var(--info)","En cours":"var(--warning)",Terminé:"var(--success)",Annulé:"var(--text-dim)"};
 const EMPTY={titre:"",date:"",heure:"",type:"Réunion",lieu:"",membres_concernes:[] as string[],priorite:"Normale",statut:"Planifié",notes:""};
 export default function RdvPage(){
-  const user=getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [rdvs,setRdvs]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
   const [showForm,setShowForm]=useState(false);

@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { getUser, canAccess, getMemberColor } from "@/lib/auth";
+import { canAccess, getMemberColor } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 interface MembreStats {
   nom: string;
@@ -40,7 +41,7 @@ const ACTIVITY_CONFIG: Record<ActivityItem["type"], { icon: string; color: strin
 
 export default function SupervisionPage() {
   const router = useRouter();
-  const user = getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [loading, setLoading]       = useState(true);
   const [authorized, setAuthorized] = useState(false);
   const [stats, setStats]           = useState<MembreStats[]>([]);

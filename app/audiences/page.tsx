@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser, getMemberColor } from "@/lib/auth";
+import { getMemberColor } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 interface Audience {
   id: string;
@@ -88,7 +89,7 @@ function relativeDayLabel(dateStr: string, todayStr: string): string | null {
 }
 
 export default function AudiencesPage() {
-  const user = getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const today = new Date();
   const todayStr = toISO(today);
 
@@ -106,28 +107,16 @@ export default function AudiencesPage() {
   const [filterMember, setFilterMember] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [clients, setClients] = useState<string[]>([]);
-  const [memberColors, setMemberColors] = useState<Record<string, string>>({});
   const [detailAudience, setDetailAudience] = useState<Audience | null>(null);
-  const [membersList, setMembersList] = useState<string[]>([]);
   const [dossiersList, setDossiersList] = useState<{id:string;reference:string;client:string}[]>([]);
 
-  useEffect(() => { fetchAudiences(); fetchClients(); fetchMemberColors(); fetchMembersList(); }, []);
+  useEffect(() => { fetchAudiences(); fetchClients(); }, [user]);
 
-  async function fetchMembersList() {
-    if (!supabase) return;
-    const { data } = await supabase.from("membres").select("nom").order("nom");
-    setMembersList((data || []).map((m: any) => m.nom));
-  }
-
-  async function fetchMemberColors() {
-    if (!supabase) return;
-    const { data } = await supabase.from("membres").select("nom, couleur");
-    if (data) {
-      const map: Record<string, string> = {};
-      data.forEach((m: any) => { if (m.couleur) map[m.nom] = m.couleur; });
-      setMemberColors(map);
-    }
-  }
+  // Couleurs et liste des membres : dérivées des audiences existantes
+  // (avant : lues depuis la table `membres`, supprimée)
+  const membersList = [...new Set(audiences.map(a => a.created_by))].filter(Boolean).sort();
+  const memberColors: Record<string, string> = {};
+  membersList.forEach(m => { memberColors[m] = getMemberColor(m); });
 
   async function fetchAudiences() {
     if (!supabase || !user) return;
@@ -156,7 +145,7 @@ export default function AudiencesPage() {
     if (editAudience) {
       await supabase.from("audiences").update({ ...form }).eq("id", editAudience.id);
     } else {
-      await supabase.from("audiences").insert([{ ...form, created_by: user.nom }]);
+      await supabase.from("audiences").insert([{ ...form, created_by: user.nom, created_by_id: user.id }]);
     }
     setSaving(false);
     setShowModal(false);

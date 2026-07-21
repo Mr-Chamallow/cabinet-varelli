@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
+import { getMemberColor as staticMemberColor } from "@/lib/auth";
 
 /* ─── Référentiel pénal ──────────────────────────────────────────────────── */
 import { CHEFS_PENAL, type ChefPenal as ChefPenalType } from "@/lib/code-penal";
@@ -72,11 +73,10 @@ function parseAmende(s: string): number {
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 export default function CasierPage() {
-  const user = getUser();
+  const { user, loading: userLoading } = useCurrentUser();
 
   const [entries, setEntries]     = useState<CasierEntry[]>([]);
   const [clients, setClients]     = useState<string[]>([]);
-  const [members, setMembers]     = useState<MemberColor[]>([]);
   const [loading, setLoading]     = useState(true);
 
   // Filtres
@@ -104,21 +104,19 @@ export default function CasierPage() {
 
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const [{ data: e }, { data: c }, { data: m }] = await Promise.all([
+    const [{ data: e }, { data: c }] = await Promise.all([
       supabase.from("casier").select("*").order("date_condamnation", { ascending: false }),
       supabase.from("clients").select("nom_rp").order("nom_rp"),
-      supabase.from("membres").select("nom, couleur"),
     ]);
     setEntries(e || []);
     setClients([...new Set((c || []).map((x: any) => x.nom_rp as string))].sort());
-    setMembers(m || []);
     setLoading(false);
   }
 
   function showT(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000); }
 
   function getMemberColor(nom: string) {
-    return members.find(m => m.nom === nom)?.couleur || "#c9a84c";
+    return staticMemberColor(nom);
   }
 
   // Filtrage
@@ -164,7 +162,7 @@ export default function CasierPage() {
   async function save() {
     if (!supabase || !user || !form.client_nom.trim() || !form.infraction) return;
     setSaving(true);
-    const { error } = await supabase.from("casier").insert([{ ...form, created_by: user.nom }]);
+    const { error } = await supabase.from("casier").insert([{ ...form, created_by: user.nom, created_by_id: user.id }]);
     if (!error) { showT("Condamnation ajoutée"); setShowForm(false); setForm({ ...EMPTY_FORM }); load(); }
     setSaving(false);
   }

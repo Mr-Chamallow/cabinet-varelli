@@ -1,14 +1,14 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 const CATS=["drogue","arme","accessoire","composant","objet_rare","autre"];
 const fmtN=(n:number)=>n.toLocaleString("fr-FR",{maximumFractionDigits:2});
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 interface Stock{id:string;nom:string;categorie:string;emoji:string;quantite:number;seuil_alerte:number;unite:string;prix_unitaire:number;notes:string;}
 interface Mouvement{id:string;stock_nom:string;type:string;quantite:number;motif:string;membre:string;created_at:string;}
 export default function StocksPage(){
-  const user=getUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [stocks,setStocks]=useState<Stock[]>([]);
   const [mouvements,setMouvements]=useState<Mouvement[]>([]);
   const [loading,setLoading]=useState(true);

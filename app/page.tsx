@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUser, canAccess, getMemberColor, type User } from "@/lib/auth";
+import { canAccess, getMemberColor, type User } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
@@ -36,7 +37,7 @@ interface Facture {
 
 export default function Dashboard() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading: userLoading } = useCurrentUser();
   const [stats, setStats] = useState<Stats | null>(null);
   const [evolutionCA, setEvolutionCA] = useState<{ mois: string; total: number }[]>([]);
   const [audiences, setAudiences] = useState<Audience[]>([]);
@@ -47,13 +48,11 @@ export default function Dashboard() {
   const [defcon, setDefconDash] = useState(5);
 
   useEffect(() => {
-    const u = getUser();
-    if (!u) { router.replace("/login"); return; }
-    setUser(u);
+    if (!user) return;
     const saved = parseInt(localStorage.getItem('cabinet_defcon') || '5');
     setDefconDash(isNaN(saved) ? 5 : Math.min(5, Math.max(1, saved)));
-    load(u);
-  }, []);
+    load(user);
+  }, [user]);
 
   async function load(u: User) {
     if (!supabase) { setLoading(false); return; }
