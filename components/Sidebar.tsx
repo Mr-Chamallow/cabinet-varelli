@@ -7,7 +7,7 @@ import { hasPermission } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const NAV_SECTIONS = [
-  { label: "⚖️ Cabinet BullHead", items: [
+  { label: "Cabinet BullHead", items: [
     { href: "/",            label: "Dashboard",     icon: "◈", permission: "dashboard" },
     { href: "/clients",     label: "Clients",       icon: "◉", permission: "clients" },
     { href: "/dossiers",    label: "Dossiers",      icon: "◫", permission: "dossiers" },
@@ -20,7 +20,7 @@ const NAV_SECTIONS = [
     { href: "/comptabilite",label: "Comptabilité",  icon: "◒", permission: "comptabilite" },
     { href: "/operations",  label: "Opérations",    icon: "◓", permission: "comptabilite" },
   ]},
-  { label: "🖤 Obsidian Logistics", items: [
+  { label: "Obsidian Logistics", items: [
     { href: "/obsidian",               label: "Dashboard OBS",   icon: "▣", permission: "obsidian_dashboard" },
     { href: "/obsidian/prix",          label: "Tableau des prix", icon: "▤", permission: "obsidian_prix" },
     { href: "/obsidian/stocks",        label: "Stocks",          icon: "▥", permission: "obsidian_stocks" },
@@ -35,7 +35,7 @@ const NAV_SECTIONS = [
     { href: "/obsidian/carte",         label: "Carte",           icon: "◊", permission: "obsidian_stats" },
     { href: "/cahier-vente",           label: "Cahier de vente", icon: "▪", permission: "cahier_vente" },
   ]},
-  { label: "⚙️ Administration", items: [
+  { label: "Administration", items: [
     { href: "/settings",    label: "Personnalisation", icon: "◌", permission: "admin" },
     { href: "/supervision", label: "Supervision",      icon: "◬", permission: "supervision" },
     { href: "/admin",       label: "Admin",            icon: "◭", permission: "admin" },
@@ -46,37 +46,45 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user, loading } = useCurrentUser();
 
+  if (pathname === "/login") return null;
   if (loading || !user) return null;
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-header">
-        <div className="logo-text">CABINET BULLHEAD</div>
-        <div className="logo-sub">Law · Finance · Property</div>
+      <div className="sidebar-logo">
+        <div className="sidebar-logo-title">⚖️ CABINET BULLHEAD</div>
+        <div className="sidebar-logo-sub">Law · Finance · Property</div>
       </div>
+
       <nav className="sidebar-nav">
-        {NAV_SECTIONS.map(section => (
-          <div key={section.label} className="nav-section">
-            <div className="nav-section-label">{section.label}</div>
-            {section.items.filter(i => hasPermission(user, i.permission)).map(item => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`nav-item ${pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href)) ? "active" : ""}`}
-              >
-                <span className="nav-icon">{item.icon}</span>
-                <span className="nav-label">{item.label}</span>
-              </Link>
-            ))}
-          </div>
-        ))}
+        {NAV_SECTIONS.map(section => {
+          const visibleItems = section.items.filter(i => hasPermission(user, i.permission));
+          if (visibleItems.length === 0) return null;
+          return (
+            <div key={section.label}>
+              <div className="sidebar-section-label">{section.label}</div>
+              {visibleItems.map(item => {
+                const isActive = item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href);
+                return (
+                  <Link key={item.href} href={item.href} className={`sidebar-link${isActive ? " active" : ""}`}>
+                    <span className="sidebar-link-icon">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          );
+        })}
       </nav>
+
       <div className="sidebar-footer">
-        <div className="user-info">
-          <div className="user-name">{user.nom}</div>
-          <div className="user-role">{user.role}</div>
-        </div>
-        <button className="btn btn-ghost btn-sm" onClick={() => signOut({ callbackUrl: "/login" })}>↩</button>
+        <button className="sidebar-user" onClick={() => signOut({ callbackUrl: "/login" })} title="Se déconnecter">
+          <div className="user-avatar">{user.nom?.charAt(0)?.toUpperCase() || "?"}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: "0.82rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.nom}</div>
+            <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.role}</div>
+          </div>
+        </button>
       </div>
     </aside>
   );

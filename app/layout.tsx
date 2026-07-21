@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { Sidebar } from "@/components/Sidebar";
@@ -17,12 +17,10 @@ export default function RootLayout({
     <html lang="fr">
       <body>
         <Providers>
-          <div style={{ display: "flex", minHeight: "100vh" }}>
-            <Sidebar />
-            <main style={{ flex: 1, padding: "2rem" }}>
-              {children}
-            </main>
-          </div>
+          <Sidebar />
+          <main className="main-content">
+            {children}
+          </main>
         </Providers>
       </body>
     </html>
