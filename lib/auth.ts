@@ -20,7 +20,7 @@ export const ALL_PERMISSIONS = [
   "comptabilite", "h47",
   "obsidian_dashboard", "obsidian_prix", "obsidian_stocks", "obsidian_armurerie",
   "obsidian_garage", "obsidian_comptabilite", "obsidian_rdv", "obsidian_contrats",
-  "obsidian_planification", "obsidian_stats", "cahier_vente"
+  "obsidian_planification", "obsidian_stats", "cahier_vente", "obsidian_paie", "obsidian_employes"
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
@@ -34,7 +34,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   obsidian_armurerie: "Obsidian - Armurerie", obsidian_garage: "Obsidian - Garage",
   obsidian_comptabilite: "Obsidian - Comptabilité", obsidian_rdv: "Obsidian - Rendez-vous",
   obsidian_contrats: "Obsidian - Contrats", obsidian_planification: "Obsidian - Planification",
-  obsidian_stats: "Obsidian - Statistiques", cahier_vente: "Cahier de vente",
+  obsidian_stats: "Obsidian - Statistiques", cahier_vente: "Cahier de vente", obsidian_paie: "Obsidian - Paie & Commissions", obsidian_employes: "Obsidian - Employés",
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
@@ -48,7 +48,7 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   "COO - Directrice opérationnel":  ALL_PERMISSIONS.filter(p => p !== "delete_all"),
   "Responsable juridique":          ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","juridique","calculatrice","obsidian_dashboard","obsidian_rdv"],
   "Agent juridique":                ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","juridique","obsidian_dashboard"],
-  "Responsable logistique":         ["dashboard","obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_planification","obsidian_stats","cahier_vente","h47"],
+  "Responsable logistique":         ["dashboard","obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_planification","obsidian_stats","cahier_vente","h47","obsidian_paie","obsidian_employes"],
   "Agent logistique":               ["dashboard","obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_rdv","cahier_vente","h47"],
   "Responsable sécurité":           ["dashboard","obsidian_dashboard","obsidian_armurerie","obsidian_rdv","obsidian_planification"],
   "Agent de sécurité":              ["dashboard","obsidian_dashboard","obsidian_armurerie","obsidian_rdv"],

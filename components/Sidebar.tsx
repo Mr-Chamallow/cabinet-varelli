@@ -34,6 +34,8 @@ const NAV_SECTIONS = [
     { href: "/obsidian/fiches",        label: "Fiches",          icon: "◉", permission: "obsidian_stats" },
     { href: "/obsidian/carte",         label: "Carte",           icon: "◊", permission: "obsidian_stats" },
     { href: "/cahier-vente",           label: "Cahier de vente", icon: "▪", permission: "cahier_vente" },
+    { href: "/obsidian/paie",          label: "Paie & Commissions", icon: "💰", permission: "obsidian_paie" },
+    { href: "/obsidian/employes",      label: "Employés",        icon: "🧑‍💼", permission: "obsidian_employes" },
   ]},
   { label: "Administration", items: [
     { href: "/settings",    label: "Personnalisation", icon: "◌", permission: "admin" },
