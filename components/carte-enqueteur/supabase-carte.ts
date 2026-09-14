@@ -1,7 +1,7 @@
 // Adapte l'import ci-dessous au chemin réel de ton client Supabase existant
 // (celui déjà utilisé par Cabinet BullHead).
 import { supabase } from '@/lib/supabase';
-import type { CartePoint, Category, Dossier, Personne, Plaque } from './types';
+import type { CartePoint, Category, Dossier, Gang, Personne, Plaque, Preset } from './types';
 
 export async function fetchPoints(): Promise<CartePoint[]> {
   const { data, error } = await supabase.from('carte_points').select('*');
@@ -121,4 +121,32 @@ export async function uploadImage(file: File): Promise<string> {
   if (error) throw error;
   const { data } = supabase.storage.from('carte-enqueteur').getPublicUrl(path);
   return data.publicUrl;
+}
+
+export async function fetchGangs(): Promise<Gang[]> {
+  const { data, error } = await supabase.from('carte_gangs').select('*').order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createGang(g: Omit<Gang, 'id'>): Promise<Gang> {
+  const { data, error } = await supabase.from('carte_gangs').insert(g).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateGang(id: string, patch: Partial<Gang>): Promise<void> {
+  const { error } = await supabase.from('carte_gangs').update(patch).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteGang(id: string): Promise<void> {
+  const { error } = await supabase.from('carte_gangs').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function fetchPresets(): Promise<Preset[]> {
+  const { data, error } = await supabase.from('carte_presets').select('*').order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
 }

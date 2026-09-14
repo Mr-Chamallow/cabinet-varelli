@@ -8,23 +8,38 @@ import {
   Category,
   Dossier,
   DossierPiece,
+  Gang,
+  Personne,
+  Plaque,
+  Preset,
   categoryColor,
+  gangTypeLabel,
+  parseVector3,
   slugify,
 } from './types';
 import {
   createCategory,
+  createGang,
   createPoint,
   deleteCategory,
+  deleteGang,
   deletePoint,
   fetchCategories,
   fetchDossiers,
+  fetchGangs,
+  fetchPersonnes,
+  fetchPlaques,
   fetchPoints,
+  fetchPresets,
   updateCategory,
+  updateGang,
   updatePoint,
   uploadImage,
   upsertDossier,
 } from './supabase-carte';
 import RegistreModal from './RegistreModal';
+import NewPointModal from './NewPointModal';
+import GangsModal from './GangsModal';
 
 // ------------------------------------------------------------------
 // Calibration mesurée sur le pack de tuiles fourni (styleGrid, 8192x8192
@@ -387,9 +402,15 @@ export default function MapCanvas({
   const [points, setPoints] = useState<CartePoint[]>([]);
   const [dossiers, setDossiers] = useState<Record<string, Dossier>>({});
   const [categories, setCategories] = useState<Category[]>([]);
+  const [gangs, setGangs] = useState<Gang[]>([]);
+  const [presets, setPresets] = useState<Preset[]>([]);
+  const [personnesAll, setPersonnesAll] = useState<Personne[]>([]);
+  const [plaquesAll, setPlaquesAll] = useState<Plaque[]>([]);
   const [tagsModalOpen, setTagsModalOpen] = useState(false);
+  const [gangsModalOpen, setGangsModalOpen] = useState(false);
   const [registreOpen, setRegistreOpen] = useState(false);
   const [addMode, setAddMode] = useState(false);
+  const [pendingCoords, setPendingCoords] = useState<{ x: number; y: number } | null>(null);
   const [search, setSearch] = useState('');
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -465,31 +486,11 @@ export default function MapCanvas({
       coordsLabelRef.current.textContent = `X: ${x.toFixed(0)}  Y: ${y.toFixed(0)}`;
     });
 
-    map.on('click', async (e: L.LeafletMouseEvent) => {
+    map.on('click', (e: L.LeafletMouseEvent) => {
       if (!addModeRef.current) return;
       const { x, y } = latLngToGame(e.latlng.lat, e.latlng.lng);
-      const title = window.prompt('Titre du point (ex : "Planque — Vespucci Canals")');
       setAddMode(false);
-      if (!title) return;
-
-      const defaultCategory = categories[0]?.slug ?? 'autre';
-      const localId = `local-${Date.now()}`;
-      const localPoint: CartePoint = { id: localId, x, y, category: defaultCategory, title };
-      setPoints((p) => [...p, localPoint]);
-      try {
-        const saved = await createPoint({ x, y, category: defaultCategory, title });
-        setPoints((p) => p.map((pt) => (pt.id === localId ? saved : pt)));
-        setEditing({
-          point: saved,
-          dossier: { id: '', point_id: saved.id, description: '', tags: [], pieces: [] },
-        });
-      } catch (err) {
-        console.error(err);
-        setEditing({
-          point: localPoint,
-          dossier: { id: '', point_id: localPoint.id, description: '', tags: [], pieces: [] },
-        });
-      }
+      setPendingCoords({ x, y });
     });
 
     mapRef.current = map;
@@ -510,18 +511,55 @@ export default function MapCanvas({
   useEffect(() => {
     (async () => {
       try {
-        const [pts, doss, cats] = await Promise.all([fetchPoints(), fetchDossiers(), fetchCategories()]);
+        const [pts, doss, cats, gs, prs, pers, plq] = await Promise.all([
+          fetchPoints(),
+          fetchDossiers(),
+          fetchCategories(),
+          fetchGangs(),
+          fetchPresets(),
+          fetchPersonnes(),
+          fetchPlaques(),
+        ]);
         setPoints(pts);
         const map: Record<string, Dossier> = {};
         doss.forEach((d) => (map[d.point_id] = d));
         setDossiers(map);
         setCategories(cats);
+        setGangs(gs);
+        setPresets(prs);
+        setPersonnesAll(pers);
+        setPlaquesAll(plq);
       } catch (err) {
         console.error(err);
         setLoadError("Connexion à Supabase indisponible — mode local (rien n'est sauvegardé).");
       }
     })();
   }, []);
+
+  // Confirmation depuis NewPointModal (choix d'un modèle ou titre libre)
+  const confirmNewPoint = async (title: string, iconUrl?: string) => {
+    if (!pendingCoords) return;
+    const { x, y } = pendingCoords;
+    setPendingCoords(null);
+    const defaultCategory = categories[0]?.slug ?? 'autre';
+    const localId = `local-${Date.now()}`;
+    const localPoint: CartePoint = { id: localId, x, y, category: defaultCategory, title, icon_url: iconUrl ?? null };
+    setPoints((p) => [...p, localPoint]);
+    try {
+      const saved = await createPoint({ x, y, category: defaultCategory, title, icon_url: iconUrl ?? null });
+      setPoints((p) => p.map((pt) => (pt.id === localId ? saved : pt)));
+      setEditing({
+        point: saved,
+        dossier: { id: '', point_id: saved.id, description: '', tags: [], pieces: [] },
+      });
+    } catch (err) {
+      console.error(err);
+      setEditing({
+        point: localPoint,
+        dossier: { id: '', point_id: localPoint.id, description: '', tags: [], pieces: [] },
+      });
+    }
+  };
 
   const visiblePoints = points.filter((p) => {
     if (activeFilters.size > 0 && !activeFilters.has(p.category)) return false;
@@ -538,17 +576,24 @@ export default function MapCanvas({
 
     visiblePoints.forEach((p) => {
       const icon = p.icon_url
-        ? L.icon({ iconUrl: p.icon_url, iconSize: [30, 30], iconAnchor: [15, 30] })
+        ? L.divIcon({
+            className: '',
+            html: `<div style="width:40px;height:40px;border-radius:50%;background:#0f172a;border:3px solid ${
+              p.id === selectedId ? '#fff' : categoryColor(categories, p.category)
+            };box-shadow:0 2px 10px rgba(0,0,0,0.6);overflow:hidden;"><img src="${p.icon_url}" style="width:100%;height:100%;object-fit:cover;" /></div>`,
+            iconSize: [40, 40],
+            iconAnchor: [20, 40],
+          })
         : L.divIcon({
             className: '',
-            html: `<div style="width:16px;height:16px;border-radius:50%;background:${categoryColor(
+            html: `<div style="width:24px;height:24px;border-radius:50%;background:${categoryColor(
               categories,
               p.category,
-            )};border:2px solid rgba(255,255,255,0.85);box-shadow:0 0 0 2px rgba(0,0,0,0.35);${
-              p.id === selectedId ? 'outline:2px solid white;' : ''
+            )};border:3px solid rgba(255,255,255,0.95);box-shadow:0 2px 8px rgba(0,0,0,0.6);${
+              p.id === selectedId ? 'outline:3px solid white;outline-offset:1px;' : ''
             }"></div>`,
-            iconSize: [16, 16],
-            iconAnchor: [8, 8],
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
           });
 
       const marker = L.marker(gameToLatLng(p.x, p.y), { icon });
@@ -582,6 +627,10 @@ export default function MapCanvas({
         category: point.category,
         x: point.x,
         y: point.y,
+        z: point.z ?? null,
+        heading: point.heading ?? null,
+        groupe_id: point.groupe_id ?? null,
+        personne_ids: point.personne_ids ?? [],
         icon_url: point.icon_url ?? null,
       });
       await upsertDossier(dossier);
@@ -675,7 +724,10 @@ export default function MapCanvas({
               </button>
             ))}
             <button onClick={() => setTagsModalOpen(true)} style={S.manageTagsBtn}>
-              ⚙ Tags
+              ⚙ Catégories
+            </button>
+            <button onClick={() => setGangsModalOpen(true)} style={S.manageTagsBtn}>
+              ⚙ Groupes
             </button>
             <button onClick={() => setRegistreOpen(true)} style={S.manageTagsBtn}>
               📇 Registre
@@ -693,7 +745,7 @@ export default function MapCanvas({
       </div>
 
       <aside style={S.sidebar}>
-        <h3 style={S.sidebarTitle}>Dossiers ({visiblePoints.length})</h3>
+        <h3 style={S.sidebarTitle}>Points chauds ({visiblePoints.length})</h3>
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {visiblePoints.map((p) => (
             <li key={p.id}>
@@ -735,11 +787,22 @@ export default function MapCanvas({
         </ul>
       </aside>
 
+      {pendingCoords && (
+        <NewPointModal
+          presets={presets}
+          onCancel={() => setPendingCoords(null)}
+          onConfirm={confirmNewPoint}
+        />
+      )}
+
       {editing && (
         <DossierModal
           point={editing.point}
           dossier={editing.dossier}
           categories={categories}
+          gangs={gangs}
+          personnesAll={personnesAll}
+          plaquesAll={plaquesAll}
           onChange={(point, dossier) => setEditing({ point, dossier })}
           onClose={() => setEditing(null)}
           onSave={saveEditing}
@@ -748,6 +811,48 @@ export default function MapCanvas({
       )}
 
       {registreOpen && <RegistreModal onClose={() => setRegistreOpen(false)} />}
+
+      {gangsModalOpen && (
+        <GangsModal
+          gangs={gangs}
+          onClose={() => setGangsModalOpen(false)}
+          onAdd={async (nom, type) => {
+            const localId = `local-${Date.now()}`;
+            const local: Gang = { id: localId, nom, type, sort_order: gangs.length + 1 };
+            setGangs((g) => [...g, local]);
+            try {
+              const saved = await createGang({ nom, type, sort_order: gangs.length + 1 });
+              setGangs((g) => g.map((x) => (x.id === localId ? saved : x)));
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+          onRename={async (id, nom) => {
+            setGangs((g) => g.map((x) => (x.id === id ? { ...x, nom } : x)));
+            try {
+              await updateGang(id, { nom });
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+          onRetype={async (id, type) => {
+            setGangs((g) => g.map((x) => (x.id === id ? { ...x, type } : x)));
+            try {
+              await updateGang(id, { type });
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+          onDelete={async (id) => {
+            setGangs((g) => g.filter((x) => x.id !== id));
+            try {
+              await deleteGang(id);
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+        />
+      )}
 
       {tagsModalOpen && (
         <TagsModal
@@ -799,6 +904,9 @@ function DossierModal({
   point,
   dossier,
   categories,
+  gangs,
+  personnesAll,
+  plaquesAll,
   onChange,
   onClose,
   onSave,
@@ -807,6 +915,9 @@ function DossierModal({
   point: CartePoint;
   dossier: Dossier;
   categories: Category[];
+  gangs: Gang[];
+  personnesAll: Personne[];
+  plaquesAll: Plaque[];
   onChange: (point: CartePoint, dossier: Dossier) => void;
   onClose: () => void;
   onSave: () => void;
@@ -816,6 +927,9 @@ function DossierModal({
   const [pieces, setPieces] = useState<DossierPiece[]>(dossier.pieces);
   const [uploading, setUploading] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [vectorInput, setVectorInput] = useState('');
+  const [personneQuery, setPersonneQuery] = useState('');
+  const [copied, setCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const commit = (patchPoint: Partial<CartePoint>, patchDossier: Partial<Dossier>) => {
@@ -872,6 +986,7 @@ function DossierModal({
           <button onClick={onClose} style={S.closeBtn}>✕</button>
         </div>
 
+        <label style={S.label}>Catégorie</label>
         <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {categories.map((c) => (
             <button
@@ -885,9 +1000,37 @@ function DossierModal({
           ))}
         </div>
 
-        <div style={{ marginBottom: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <label style={S.label}>Groupe (gang / orga)</label>
+        <select
+          value={point.groupe_id ?? ''}
+          onChange={(e) => commit({ groupe_id: e.target.value || null }, {})}
+          style={{ ...S.input, marginBottom: 12 }}
+        >
+          <option value="">— Aucun —</option>
+          {gangs.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.nom} ({gangTypeLabel(g.type)})
+            </option>
+          ))}
+        </select>
+
+        <label style={S.label}>Coller une position en jeu (format Vector3)</label>
+        <input
+          value={vectorInput}
+          onChange={(e) => {
+            setVectorInput(e.target.value);
+            const parsed = parseVector3(e.target.value);
+            if (parsed) {
+              commit({ x: parsed.x, y: parsed.y, z: parsed.z, heading: parsed.heading ?? point.heading }, {});
+            }
+          }}
+          placeholder="{ pos: new Vector3(-116.460, -1137.269, 24.280), heading: 90.261}"
+          style={{ ...S.input, marginBottom: 12, fontFamily: 'monospace', fontSize: 12 }}
+        />
+
+        <div style={{ marginBottom: 12, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
           <div>
-            <label style={S.label}>Coordonnée X</label>
+            <label style={S.label}>X</label>
             <input
               type="number"
               value={point.x}
@@ -896,11 +1039,29 @@ function DossierModal({
             />
           </div>
           <div>
-            <label style={S.label}>Coordonnée Y</label>
+            <label style={S.label}>Y</label>
             <input
               type="number"
               value={point.y}
               onChange={(e) => commit({ y: parseFloat(e.target.value) || 0 }, {})}
+              style={{ ...S.input, fontFamily: 'monospace' }}
+            />
+          </div>
+          <div>
+            <label style={S.label}>Z</label>
+            <input
+              type="number"
+              value={point.z ?? ''}
+              onChange={(e) => commit({ z: e.target.value ? parseFloat(e.target.value) : null }, {})}
+              style={{ ...S.input, fontFamily: 'monospace' }}
+            />
+          </div>
+          <div>
+            <label style={S.label}>Heading</label>
+            <input
+              type="number"
+              value={point.heading ?? ''}
+              onChange={(e) => commit({ heading: e.target.value ? parseFloat(e.target.value) : null }, {})}
               style={{ ...S.input, fontFamily: 'monospace' }}
             />
           </div>
@@ -922,7 +1083,7 @@ function DossierModal({
           style={{ ...S.textarea, marginBottom: 12 }}
         />
 
-        <label style={S.label}>Tags</label>
+        <label style={S.label}>Tags (mots-clés de recherche)</label>
         <input
           value={tagsInput}
           onChange={(e) => {
@@ -932,6 +1093,58 @@ function DossierModal({
           placeholder="braquage, cartel, testimonial…"
           style={{ ...S.input, marginBottom: 12 }}
         />
+
+        <label style={S.label}>Personnes liées (registre)</label>
+        <input
+          value={personneQuery}
+          onChange={(e) => setPersonneQuery(e.target.value)}
+          placeholder="Chercher un nom pour l'ajouter…"
+          style={{ ...S.input, marginBottom: 6 }}
+        />
+        {personneQuery.trim() && (
+          <div style={{ marginBottom: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {personnesAll
+              .filter(
+                (pe) =>
+                  !point.personne_ids?.includes(pe.id) &&
+                  `${pe.nom} ${pe.prenom ?? ''}`.toLowerCase().includes(personneQuery.trim().toLowerCase()),
+              )
+              .slice(0, 6)
+              .map((pe) => (
+                <button
+                  key={pe.id}
+                  onClick={() => {
+                    commit({ personne_ids: [...(point.personne_ids ?? []), pe.id] }, {});
+                    setPersonneQuery('');
+                  }}
+                  style={{ borderRadius: 6, border: `1px solid ${colors.borderLight}`, background: 'rgba(15,23,42,0.7)', color: colors.text, padding: '4px 8px', fontSize: 12, cursor: 'pointer' }}
+                >
+                  + {pe.nom} {pe.prenom ?? ''}
+                </button>
+              ))}
+          </div>
+        )}
+        <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {(point.personne_ids ?? []).map((id) => {
+            const pe = personnesAll.find((x) => x.id === id);
+            if (!pe) return null;
+            const plaquesDe = plaquesAll.filter((pl) => pl.personne_id === id).map((pl) => pl.plaque);
+            return (
+              <div key={id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: 6, background: 'rgba(15,23,42,0.5)', padding: '6px 8px', fontSize: 12 }}>
+                <span>
+                  <strong style={{ color: colors.text }}>{pe.nom} {pe.prenom ?? ''}</strong>
+                  {plaquesDe.length > 0 && <span style={{ color: colors.textDimmer, fontFamily: 'monospace' }}> — {plaquesDe.join(', ')}</span>}
+                </span>
+                <button
+                  onClick={() => commit({ personne_ids: (point.personne_ids ?? []).filter((x) => x !== id) }, {})}
+                  style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer' }}
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
+        </div>
 
         <label style={S.label}>Pièces jointes / photos</label>
         <div
@@ -1012,6 +1225,39 @@ function DossierModal({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button onClick={onDelete} style={S.dangerLink}>Supprimer le point</button>
           <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => {
+                const cat = categories.find((c) => c.slug === point.category);
+                const gang = gangs.find((g) => g.id === point.groupe_id);
+                const linkedPersonnes = (point.personne_ids ?? [])
+                  .map((id) => {
+                    const pe = personnesAll.find((x) => x.id === id);
+                    if (!pe) return null;
+                    const plaquesDe = plaquesAll.filter((pl) => pl.personne_id === id).map((pl) => pl.plaque);
+                    return `- ${pe.nom} ${pe.prenom ?? ''}${plaquesDe.length ? ` — ${plaquesDe.join(', ')}` : ''}`;
+                  })
+                  .filter(Boolean)
+                  .join('\n');
+                const text = [
+                  `**${point.title}**`,
+                  `Catégorie : ${cat?.label ?? point.category}`,
+                  gang ? `Groupe : ${gang.nom} (${gangTypeLabel(gang.type)})` : null,
+                  `Coordonnées : X ${point.x.toFixed(1)} / Y ${point.y.toFixed(1)}${point.z != null ? ` / Z ${point.z.toFixed(1)}` : ''}${point.heading != null ? ` / Heading ${point.heading.toFixed(1)}` : ''}`,
+                  dossier.tags.length ? `Tags : ${dossier.tags.join(', ')}` : null,
+                  dossier.description ? `\n${dossier.description}` : null,
+                  linkedPersonnes ? `\nPersonnes liées :\n${linkedPersonnes}` : null,
+                ]
+                  .filter(Boolean)
+                  .join('\n');
+                navigator.clipboard.writeText(text).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1500);
+                });
+              }}
+              style={S.ghostBtn}
+            >
+              {copied ? '✓ Copié' : '📋 Copier'}
+            </button>
             <button onClick={onClose} style={S.ghostBtn}>Annuler</button>
             <button onClick={onSave} style={S.primaryBtn}>Enregistrer</button>
           </div>

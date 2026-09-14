@@ -8,12 +8,41 @@ export interface Category {
 
 export interface CartePoint {
   id: string;
-  x: number; // coordonnée pixel (colonne) dans l'image de la carte
-  y: number; // coordonnée pixel (ligne) dans l'image de la carte
+  x: number; // coordonnée jeu (X)
+  y: number; // coordonnée jeu (Y)
+  z?: number | null; // altitude (facultative, issue du format Vector3 du jeu)
+  heading?: number | null; // orientation (facultative, issue du format Vector3 du jeu)
   category: string; // slug d'une catégorie (voir Category)
+  groupe_id?: string | null; // gang/orga rattaché (voir Gang)
+  personne_ids?: string[]; // personnes du registre liées à ce point
   title: string;
   icon_url?: string | null; // icône personnalisée (facultative) ; sinon pastille de couleur par catégorie
   created_at?: string;
+}
+
+export interface Gang {
+  id: string;
+  nom: string;
+  type: 'orga' | 'pf' | 'inde';
+  sort_order?: number;
+}
+
+export function gangTypeLabel(type: string): string {
+  return type === 'pf' ? 'PF' : type === 'inde' ? 'Indé' : 'Orga';
+}
+
+// Parse le format Vector3 du jeu, ex :
+// { pos: new Vector3(-116.460, -1137.269, 24.280), heading: 90.261}
+export function parseVector3(input: string): { x: number; y: number; z: number; heading?: number } | null {
+  const posMatch = input.match(/Vector3\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\)/);
+  if (!posMatch) return null;
+  const headingMatch = input.match(/heading\s*:\s*(-?[\d.]+)/);
+  return {
+    x: parseFloat(posMatch[1]),
+    y: parseFloat(posMatch[2]),
+    z: parseFloat(posMatch[3]),
+    heading: headingMatch ? parseFloat(headingMatch[1]) : undefined,
+  };
 }
 
 export interface DossierPiece {
@@ -63,4 +92,12 @@ export interface Plaque {
   personne_id?: string | null;
   notes?: string;
   created_at?: string;
+}
+
+export interface Preset {
+  id: string;
+  groupe: string; // 'composant' | 'drogue'
+  nom: string;
+  icon_url: string;
+  sort_order?: number;
 }
