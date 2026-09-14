@@ -1,7 +1,7 @@
 // Adapte l'import ci-dessous au chemin réel de ton client Supabase existant
 // (celui déjà utilisé par Cabinet BullHead).
 import { supabase } from '@/lib/supabase';
-import type { CartePoint, Dossier } from './types';
+import type { CartePoint, Category, Dossier } from './types';
 
 export async function fetchPoints(): Promise<CartePoint[]> {
   const { data, error } = await supabase.from('carte_points').select('*');
@@ -40,4 +40,26 @@ export async function upsertDossier(dossier: Dossier): Promise<Dossier> {
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function fetchCategories(): Promise<Category[]> {
+  const { data, error } = await supabase.from('carte_categories').select('*').order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createCategory(category: Omit<Category, 'id'>): Promise<Category> {
+  const { data, error } = await supabase.from('carte_categories').insert(category).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateCategory(id: string, patch: Partial<Category>): Promise<void> {
+  const { error } = await supabase.from('carte_categories').update(patch).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  const { error } = await supabase.from('carte_categories').delete().eq('id', id);
+  if (error) throw error;
 }

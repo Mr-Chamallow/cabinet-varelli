@@ -1,18 +1,16 @@
-export type PinCategory = 'suspect' | 'preuve' | 'planque' | 'temoin' | 'autre';
-
-export const PIN_CATEGORIES: { value: PinCategory; label: string; color: string }[] = [
-  { value: 'suspect', label: 'Suspect', color: '#E2A63C' },
-  { value: 'preuve', label: 'Preuve', color: '#C4453B' },
-  { value: 'planque', label: 'Planque', color: '#7C6FD6' },
-  { value: 'temoin', label: 'Témoin', color: '#4FA9A2' },
-  { value: 'autre', label: 'Autre', color: '#8A93A6' },
-];
+export interface Category {
+  id: string;
+  slug: string;
+  label: string;
+  color: string;
+  sort_order?: number;
+}
 
 export interface CartePoint {
   id: string;
   x: number; // coordonnée pixel (colonne) dans l'image de la carte
   y: number; // coordonnée pixel (ligne) dans l'image de la carte
-  category: PinCategory;
+  category: string; // slug d'une catégorie (voir Category)
   title: string;
   icon_url?: string | null; // icône personnalisée (facultative) ; sinon pastille de couleur par catégorie
   created_at?: string;
@@ -32,6 +30,21 @@ export interface Dossier {
   updated_at?: string;
 }
 
-export function categoryColor(cat: PinCategory): string {
-  return PIN_CATEGORIES.find((c) => c.value === cat)?.color ?? '#8A93A6';
+export function categoryColor(categories: Category[], slug: string): string {
+  return categories.find((c) => c.slug === slug)?.color ?? '#8A93A6';
+}
+
+export function categoryLabel(categories: Category[], slug: string): string {
+  return categories.find((c) => c.slug === slug)?.label ?? slug;
+}
+
+export function slugify(label: string): string {
+  return (
+    label
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '') || `tag-${Date.now()}`
+  );
 }

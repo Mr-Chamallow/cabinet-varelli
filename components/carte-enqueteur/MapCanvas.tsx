@@ -5,17 +5,21 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   CartePoint,
+  Category,
   Dossier,
   DossierPiece,
-  PIN_CATEGORIES,
-  PinCategory,
   categoryColor,
+  slugify,
 } from './types';
 import {
+  createCategory,
   createPoint,
+  deleteCategory,
   deletePoint,
+  fetchCategories,
   fetchDossiers,
   fetchPoints,
+  updateCategory,
   updatePoint,
   upsertDossier,
 } from './supabase-carte';
@@ -156,6 +160,19 @@ const S: Record<string, CSSProperties> = {
     color: colors.textDim,
     cursor: 'pointer',
     transition: 'opacity 0.15s',
+  },
+  manageTagsBtn: {
+    pointerEvents: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 999,
+    border: `1px dashed ${colors.borderLight}`,
+    background: 'transparent',
+    padding: '5px 10px',
+    fontSize: 12,
+    color: colors.textDimmer,
+    cursor: 'pointer',
   },
   coordsLabel: {
     pointerEvents: 'none',
@@ -367,9 +384,11 @@ export default function MapCanvas({
 
   const [points, setPoints] = useState<CartePoint[]>([]);
   const [dossiers, setDossiers] = useState<Record<string, Dossier>>({});
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tagsModalOpen, setTagsModalOpen] = useState(false);
   const [addMode, setAddMode] = useState(false);
   const [search, setSearch] = useState('');
-  const [activeFilters, setActiveFilters] = useState<Set<PinCategory>>(new Set());
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ point: CartePoint; dossier: Dossier } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -450,11 +469,12 @@ export default function MapCanvas({
       setAddMode(false);
       if (!title) return;
 
+      const defaultCategory = categories[0]?.slug ?? 'autre';
       const localId = `local-${Date.now()}`;
-      const localPoint: CartePoint = { id: localId, x, y, category: 'autre', title };
+      const localPoint: CartePoint = { id: localId, x, y, category: defaultCategory, title };
       setPoints((p) => [...p, localPoint]);
       try {
-        const saved = await createPoint({ x, y, category: 'autre', title });
+        const saved = await createPoint({ x, y, category: defaultCategory, title });
         setPoints((p) => p.map((pt) => (pt.id === localId ? saved : pt)));
         setEditing({
           point: saved,
@@ -487,11 +507,12 @@ export default function MapCanvas({
   useEffect(() => {
     (async () => {
       try {
-        const [pts, doss] = await Promise.all([fetchPoints(), fetchDossiers()]);
+        const [pts, doss, cats] = await Promise.all([fetchPoints(), fetchDossiers(), fetchCategories()]);
         setPoints(pts);
         const map: Record<string, Dossier> = {};
         doss.forEach((d) => (map[d.point_id] = d));
         setDossiers(map);
+        setCategories(cats);
       } catch (err) {
         console.error(err);
         setLoadError("Connexion à Supabase indisponible — mode local (rien n'est sauvegardé).");
@@ -518,6 +539,7 @@ export default function MapCanvas({
         : L.divIcon({
             className: '',
             html: `<div style="width:16px;height:16px;border-radius:50%;background:${categoryColor(
+              categories,
               p.category,
             )};border:2px solid rgba(255,255,255,0.85);box-shadow:0 0 0 2px rgba(0,0,0,0.35);${
               p.id === selectedId ? 'outline:2px solid white;' : ''
@@ -538,7 +560,7 @@ export default function MapCanvas({
       marker.addTo(layerGroup);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visiblePoints, selectedId, dossiers]);
+  }, [visiblePoints, selectedId, dossiers, categories]);
 
   const flyToPoint = (p: CartePoint) => {
     const map = mapRef.current;
@@ -582,7 +604,7 @@ export default function MapCanvas({
     }
   };
 
-  const toggleFilter = (cat: PinCategory) => {
+  const toggleFilter = (cat: string) => {
     setActiveFilters((f) => {
       const next = new Set(f);
       next.has(cat) ? next.delete(cat) : next.add(cat);
@@ -636,19 +658,22 @@ export default function MapCanvas({
           <div style={S.divider} />
 
           <div style={S.filterRow}>
-            {PIN_CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <button
-                key={c.value}
-                onClick={() => toggleFilter(c.value)}
+                key={c.slug}
+                onClick={() => toggleFilter(c.slug)}
                 style={{
                   ...S.filterChip,
-                  opacity: activeFilters.size === 0 || activeFilters.has(c.value) ? 1 : 0.4,
+                  opacity: activeFilters.size === 0 || activeFilters.has(c.slug) ? 1 : 0.4,
                 }}
               >
                 <span style={dotStyle(c.color, 7)} />
                 {c.label}
               </button>
             ))}
+            <button onClick={() => setTagsModalOpen(true)} style={S.manageTagsBtn}>
+              ⚙ Tags
+            </button>
           </div>
         </div>
 
@@ -677,7 +702,7 @@ export default function MapCanvas({
                 }}
                 style={{ ...S.dossierItem, ...(p.id === selectedId ? S.dossierItemActive : {}) }}
               >
-                <span style={{ ...dotStyle(categoryColor(p.category)), marginTop: 4, flexShrink: 0 }} />
+                <span style={{ ...dotStyle(categoryColor(categories, p.category)), marginTop: 4, flexShrink: 0 }} />
                 <span>
                   <div style={{ color: colors.text }}>{p.title}</div>
                   <div style={{ fontFamily: 'monospace', fontSize: 11, color: colors.textDimmer }}>
@@ -708,10 +733,54 @@ export default function MapCanvas({
         <DossierModal
           point={editing.point}
           dossier={editing.dossier}
+          categories={categories}
           onChange={(point, dossier) => setEditing({ point, dossier })}
           onClose={() => setEditing(null)}
           onSave={saveEditing}
           onDelete={() => removePoint(editing.point.id)}
+        />
+      )}
+
+      {tagsModalOpen && (
+        <TagsModal
+          categories={categories}
+          onClose={() => setTagsModalOpen(false)}
+          onAdd={async (label, color) => {
+            const slug = slugify(label);
+            const localId = `local-${Date.now()}`;
+            const local: Category = { id: localId, slug, label, color, sort_order: categories.length + 1 };
+            setCategories((c) => [...c, local]);
+            try {
+              const saved = await createCategory({ slug, label, color, sort_order: categories.length + 1 });
+              setCategories((c) => c.map((cat) => (cat.id === localId ? saved : cat)));
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+          onRename={async (id, label) => {
+            setCategories((c) => c.map((cat) => (cat.id === id ? { ...cat, label } : cat)));
+            try {
+              await updateCategory(id, { label });
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+          onRecolor={async (id, color) => {
+            setCategories((c) => c.map((cat) => (cat.id === id ? { ...cat, color } : cat)));
+            try {
+              await updateCategory(id, { color });
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+          onDelete={async (id) => {
+            setCategories((c) => c.filter((cat) => cat.id !== id));
+            try {
+              await deleteCategory(id);
+            } catch (err) {
+              console.error(err);
+            }
+          }}
         />
       )}
     </div>
@@ -721,6 +790,7 @@ export default function MapCanvas({
 function DossierModal({
   point,
   dossier,
+  categories,
   onChange,
   onClose,
   onSave,
@@ -728,6 +798,7 @@ function DossierModal({
 }: {
   point: CartePoint;
   dossier: Dossier;
+  categories: Category[];
   onChange: (point: CartePoint, dossier: Dossier) => void;
   onClose: () => void;
   onSave: () => void;
@@ -759,11 +830,11 @@ function DossierModal({
         </div>
 
         <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {PIN_CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <button
-              key={c.value}
-              onClick={() => commit({ category: c.value }, {})}
-              style={categoryBtnStyle(point.category === c.value, c.color)}
+              key={c.slug}
+              onClick={() => commit({ category: c.slug }, {})}
+              style={categoryBtnStyle(point.category === c.slug, c.color)}
             >
               <span style={dotStyle(c.color)} />
               {c.label}
@@ -865,6 +936,97 @@ function DossierModal({
             <button onClick={onClose} style={S.ghostBtn}>Annuler</button>
             <button onClick={onSave} style={S.primaryBtn}>Enregistrer</button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TagsModal({
+  categories,
+  onClose,
+  onAdd,
+  onRename,
+  onRecolor,
+  onDelete,
+}: {
+  categories: Category[];
+  onClose: () => void;
+  onAdd: (label: string, color: string) => void;
+  onRename: (id: string, label: string) => void;
+  onRecolor: (id: string, color: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [newLabel, setNewLabel] = useState('');
+  const [newColor, setNewColor] = useState('#f59e0b');
+
+  return (
+    <div style={S.modalOverlay}>
+      <div style={{ ...S.modal, maxWidth: 420 }}>
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Gérer les tags</h3>
+          <button onClick={onClose} style={S.closeBtn}>✕</button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+          {categories.map((c) => (
+            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="color"
+                value={c.color}
+                onChange={(e) => onRecolor(c.id, e.target.value)}
+                style={{ width: 28, height: 28, padding: 0, border: 'none', borderRadius: 6, background: 'transparent', cursor: 'pointer' }}
+              />
+              <input
+                value={c.label}
+                onChange={(e) => onRename(c.id, e.target.value)}
+                style={{ ...S.input, flex: 1 }}
+              />
+              <button
+                onClick={() => {
+                  if (window.confirm(`Supprimer le tag "${c.label}" ? Les points existants garderont leur pastille grise.`)) {
+                    onDelete(c.id);
+                  }
+                }}
+                style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer', fontSize: 14 }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          {categories.length === 0 && (
+            <div style={{ fontSize: 12, color: colors.textDimmer }}>Aucun tag pour le moment.</div>
+          )}
+        </div>
+
+        <label style={S.label}>Nouveau tag</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            type="color"
+            value={newColor}
+            onChange={(e) => setNewColor(e.target.value)}
+            style={{ width: 28, height: 28, padding: 0, border: 'none', borderRadius: 6, background: 'transparent', cursor: 'pointer' }}
+          />
+          <input
+            value={newLabel}
+            onChange={(e) => setNewLabel(e.target.value)}
+            placeholder="Nom du tag (ex : Véhicule)"
+            style={{ ...S.input, flex: 1 }}
+          />
+          <button
+            onClick={() => {
+              if (!newLabel.trim()) return;
+              onAdd(newLabel.trim(), newColor);
+              setNewLabel('');
+            }}
+            style={S.primaryBtn}
+          >
+            Ajouter
+          </button>
+        </div>
+
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={S.ghostBtn}>Fermer</button>
         </div>
       </div>
     </div>
