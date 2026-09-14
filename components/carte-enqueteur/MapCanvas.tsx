@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
@@ -21,32 +21,36 @@ import {
 } from './supabase-carte';
 
 // ------------------------------------------------------------------
-// Calibration par dÃ©faut, mesurÃ©e sur le pack de cartes 8000Ã—8000
-// (grille + satellite fournis). Le point (0,0) du jeu tombe au pixel
-// (3667, 5395) de l'image, Ã  raison de 0.645 px par unitÃ© de coordonnÃ©e
-// GTA sur les deux axes. Si tu changes d'image (autre rÃ©solution/crop),
-// il faut recalibrer ces trois valeurs â€” voir le README.
+// Calibration mesurée sur le pack de tuiles fourni (styleGrid, 8192x8192
+// à zoom max). Le point (0,0) du jeu tombe au pixel (3755, 5525) de
+// l'image pleine résolution, à raison de 0.66 px par unité de coordonnée
+// GTA sur les deux axes. Si tu changes de pack de tuiles, recalibre ces
+// trois valeurs (voir le README).
 // ------------------------------------------------------------------
-const DEFAULT_SCALE = 0.645;
-const DEFAULT_ORIGIN = { px: 3667, py: 5395 };
+const DEFAULT_SCALE = 0.66;
+const DEFAULT_ORIGIN = { px: 3755, py: 5525 };
+const TILE_SIZE = 256;
+const MAX_ZOOM = 5; // dossiers 0..5 dans le pack de tuiles
+const MAP_PX = TILE_SIZE * Math.pow(2, MAX_ZOOM); // 8192
 
 interface Props {
-  mapImageUrl: string;
-  imageWidth: number;
-  imageHeight: number;
+  satelliteTilesUrl?: string;
+  gridTilesUrl?: string;
+  atlasTilesUrl?: string;
   scale?: number;
   origin?: { px: number; py: number };
 }
 
 export default function MapCanvas({
-  mapImageUrl,
-  imageWidth,
-  imageHeight,
+  satelliteTilesUrl = '/map/tiles/satellite/{z}/{x}/{y}.png',
+  gridTilesUrl = '/map/tiles/grid/{z}/{x}/{y}.png',
+  atlasTilesUrl = '/map/tiles/atlas/{z}/{x}/{y}.png',
   scale = DEFAULT_SCALE,
   origin = DEFAULT_ORIGIN,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const coordsLabelRef = useRef<HTMLDivElement>(null);
   const addModeRef = useRef(false);
@@ -59,12 +63,13 @@ export default function MapCanvas({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ point: CartePoint; dossier: Dossier } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [mapStyle, setMapStyle] = useState<'satellite' | 'grid' | 'atlas'>('satellite');
 
   useEffect(() => {
     addModeRef.current = addMode;
   }, [addMode]);
 
-  // --- Conversions coordonnÃ©es jeu <-> pixels Leaflet (CRS.Simple : [lat,lng] = [row,col]) ---
+  // --- Conversions coordonnées jeu <-> pixels Leaflet (CRS.Simple : [lat,lng] = [row,col]) ---
   const gameToLatLng = (x: number, y: number): L.LatLngExpression => {
     const col = origin.px + x * scale;
     const row = origin.py - y * scale;
@@ -81,17 +86,26 @@ export default function MapCanvas({
 
     const map = L.map(containerRef.current, {
       crs: L.CRS.Simple,
-      minZoom: -4,
-      maxZoom: 3,
-      zoomSnap: 0.25,
+      minZoom: 0,
+      maxZoom: MAX_ZOOM,
+      zoomSnap: 0.5,
       attributionControl: false,
     });
 
     const bounds: L.LatLngBoundsExpression = [
       [0, 0],
-      [imageHeight, imageWidth],
+      [MAP_PX, MAP_PX],
     ];
-    L.imageOverlay(mapImageUrl, bounds).addTo(map);
+    const tileLayer = L.tileLayer(satelliteTilesUrl, {
+      tileSize: TILE_SIZE,
+      minZoom: 0,
+      maxZoom: MAX_ZOOM,
+      noWrap: true,
+      bounds,
+    }).addTo(map);
+    tileLayerRef.current = tileLayer;
+
+    map.setMaxBounds(bounds);
     map.fitBounds(bounds);
 
     const layerGroup = L.layerGroup().addTo(map);
@@ -106,8 +120,8 @@ export default function MapCanvas({
     map.on('click', async (e: L.LeafletMouseEvent) => {
       if (!addModeRef.current) return;
       const { x, y } = latLngToGame(e.latlng.lat, e.latlng.lng);
-      const title = window.prompt('Titre du point (ex : "Planque â€” Vespucci Canals")');
-      setAddModeState(false);
+      const title = window.prompt('Titre du point (ex : "Planque — Vespucci Canals")');
+      setAddMode(false);
       if (!title) return;
 
       const localId = `local-${Date.now()}`;
@@ -135,12 +149,15 @@ export default function MapCanvas({
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapImageUrl, imageWidth, imageHeight]);
+  }, []);
 
-  // petit helper pour Ã©viter la confusion entre le setState React et la ref utilisÃ©e par le handler Leaflet
-  function setAddModeState(v: boolean) {
-    setAddMode(v);
-  }
+  // --- Bascule Satellite / Grille sans recréer la carte ---
+  useEffect(() => {
+    const layer = tileLayerRef.current;
+    if (!layer) return;
+    const urls = { satellite: satelliteTilesUrl, grid: gridTilesUrl, atlas: atlasTilesUrl };
+    layer.setUrl(urls[mapStyle]);
+  }, [mapStyle, satelliteTilesUrl, gridTilesUrl, atlasTilesUrl]);
 
   // --- Chargement initial depuis Supabase ---
   useEffect(() => {
@@ -153,7 +170,7 @@ export default function MapCanvas({
         setDossiers(map);
       } catch (err) {
         console.error(err);
-        setLoadError("Connexion Ã  Supabase indisponible â€” mode local (rien n'est sauvegardÃ©).");
+        setLoadError("Connexion à Supabase indisponible — mode local (rien n'est sauvegardé).");
       }
     })();
   }, []);
@@ -167,7 +184,7 @@ export default function MapCanvas({
     return haystack.includes(search.toLowerCase());
   });
 
-  // --- Rendu des marqueurs Ã  chaque changement pertinent ---
+  // --- Rendu des marqueurs à chaque changement pertinent ---
   useEffect(() => {
     const layerGroup = layerGroupRef.current;
     if (!layerGroup) return;
@@ -204,7 +221,7 @@ export default function MapCanvas({
   const flyToPoint = (p: CartePoint) => {
     const map = mapRef.current;
     if (!map) return;
-    map.flyTo(gameToLatLng(p.x, p.y), Math.max(map.getZoom(), 0));
+    map.flyTo(gameToLatLng(p.x, p.y), Math.max(map.getZoom(), 2));
   };
 
   const saveEditing = async () => {
@@ -262,12 +279,34 @@ export default function MapCanvas({
               addMode ? 'bg-amber-500 text-black' : 'bg-slate-800/90 hover:bg-slate-700'
             }`}
           >
-            {addMode ? 'Clique sur la carteâ€¦' : '+ Nouveau point'}
+            {addMode ? 'Clique sur la carte…' : '+ Nouveau point'}
           </button>
+
+          <div className="pointer-events-auto flex overflow-hidden rounded-md border border-slate-700">
+            <button
+              onClick={() => setMapStyle('satellite')}
+              className={`px-2.5 py-1.5 text-xs ${mapStyle === 'satellite' ? 'bg-amber-500 text-black' : 'bg-slate-900/90 hover:bg-slate-700'}`}
+            >
+              Satellite
+            </button>
+            <button
+              onClick={() => setMapStyle('atlas')}
+              className={`px-2.5 py-1.5 text-xs ${mapStyle === 'atlas' ? 'bg-amber-500 text-black' : 'bg-slate-900/90 hover:bg-slate-700'}`}
+            >
+              Atlas
+            </button>
+            <button
+              onClick={() => setMapStyle('grid')}
+              className={`px-2.5 py-1.5 text-xs ${mapStyle === 'grid' ? 'bg-amber-500 text-black' : 'bg-slate-900/90 hover:bg-slate-700'}`}
+            >
+              Grille
+            </button>
+          </div>
+
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un dossier, un tagâ€¦"
+            placeholder="Rechercher un dossier, un tag…"
             className="pointer-events-auto w-56 rounded-md border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
           />
           {PIN_CATEGORIES.map((c) => (
@@ -283,12 +322,12 @@ export default function MapCanvas({
           ))}
         </div>
 
-        {/* Lecture des coordonnÃ©es sous le curseur */}
+        {/* Lecture des coordonnées sous le curseur */}
         <div
           ref={coordsLabelRef}
           className="pointer-events-none absolute bottom-3 right-3 z-[1000] rounded-md bg-slate-900/90 px-2 py-1 font-mono text-xs text-slate-300"
         >
-          X: â€”  Y: â€”
+          X: —  Y: —
         </div>
 
         {loadError && (
@@ -396,7 +435,7 @@ function DossierModal({
             className="w-full bg-transparent text-lg font-semibold outline-none"
           />
           <button onClick={onClose} className="ml-2 text-slate-500 hover:text-slate-300">
-            âœ•
+            ✕
           </button>
         </div>
 
@@ -419,7 +458,7 @@ function DossierModal({
 
         <div className="mb-3 grid grid-cols-2 gap-2">
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">CoordonnÃ©e X</label>
+            <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">Coordonnée X</label>
             <input
               type="number"
               value={point.x}
@@ -428,7 +467,7 @@ function DossierModal({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">CoordonnÃ©e Y</label>
+            <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">Coordonnée Y</label>
             <input
               type="number"
               value={point.y}
@@ -439,7 +478,7 @@ function DossierModal({
         </div>
 
         <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">
-          IcÃ´ne personnalisÃ©e (URL, facultatif)
+          Icône personnalisée (URL, facultatif)
         </label>
         <input
           value={point.icon_url ?? ''}
@@ -451,7 +490,7 @@ function DossierModal({
         <textarea
           value={dossier.description}
           onChange={(e) => commit({}, { description: e.target.value })}
-          placeholder="Notes d'enquÃªte, observations, Ã©lÃ©ments recueillisâ€¦"
+          placeholder="Notes d'enquête, observations, éléments recueillis…"
           rows={5}
           className="mb-3 w-full resize-none rounded-md border border-slate-700 bg-slate-900/70 p-2 text-sm outline-none focus:ring-1 focus:ring-amber-500"
         />
@@ -466,24 +505,24 @@ function DossierModal({
               { tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) },
             );
           }}
-          placeholder="braquage, cartel, testimonialâ€¦"
+          placeholder="braquage, cartel, testimonial…"
           className="mb-3 w-full rounded-md border border-slate-700 bg-slate-900/70 p-2 text-sm outline-none focus:ring-1 focus:ring-amber-500"
         />
 
-        <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">PiÃ¨ces jointes</label>
+        <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">Pièces jointes</label>
         <div className="mb-2 space-y-1.5">
           {pieces.map((piece, idx) => (
             <div key={idx} className="flex gap-1.5">
               <input
                 value={piece.label}
                 onChange={(e) => updatePiece(idx, { label: e.target.value })}
-                placeholder="LibellÃ©"
+                placeholder="Libellé"
                 className="w-1/3 rounded-md border border-slate-700 bg-slate-900/70 p-1.5 text-xs outline-none"
               />
               <input
                 value={piece.url}
                 onChange={(e) => updatePiece(idx, { url: e.target.value })}
-                placeholder="Lien (photo, fichierâ€¦)"
+                placeholder="Lien (photo, fichier…)"
                 className="flex-1 rounded-md border border-slate-700 bg-slate-900/70 p-1.5 text-xs outline-none"
               />
               <button
@@ -494,7 +533,7 @@ function DossierModal({
                 }}
                 className="text-slate-500 hover:text-red-400"
               >
-                âœ•
+                ✕
               </button>
             </div>
           ))}
@@ -507,7 +546,7 @@ function DossierModal({
           }}
           className="mb-4 text-xs text-amber-500 hover:text-amber-400"
         >
-          + Ajouter une piÃ¨ce
+          + Ajouter une pièce
         </button>
 
         <div className="flex items-center justify-between">

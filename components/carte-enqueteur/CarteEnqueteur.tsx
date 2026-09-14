@@ -6,12 +6,10 @@ import dynamic from 'next/dynamic';
 const MapCanvas = dynamic(() => import('./MapCanvas'), { ssr: false });
 
 interface Props {
-  /** Chemin ou URL de l'image de carte (ta capture d'Ã©cran GTA V, par ex. /map/gta5.png) */
-  mapImageUrl: string;
-  /** Largeur rÃ©elle de l'image en pixels */
-  imageWidth: number;
-  /** Hauteur rÃ©elle de l'image en pixels */
-  imageHeight: number;
+  /** URL du template de tuiles satellite, ex : /map/tiles/satellite/{z}/{x}/{y}.png */
+  satelliteTilesUrl?: string;
+  /** URL du template de tuiles grille, ex : /map/tiles/grid/{z}/{x}/{y}.png */
+  gridTilesUrl?: string;
 }
 
 export default function CarteEnqueteur(props: Props) {

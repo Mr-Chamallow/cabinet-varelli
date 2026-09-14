@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -19,6 +19,7 @@ const NAV_SECTIONS = [
     { href: "/calculatrice",label: "Calculatrice",  icon: "◑", permission: "calculatrice" },
     { href: "/comptabilite",label: "Comptabilité",  icon: "◒", permission: "comptabilite" },
     { href: "/operations",  label: "Opérations",    icon: "◓", permission: "comptabilite" },
+    { href: "/carte-enqueteur", label: "Carte enqueteur", icon: "◔", permission: "carte-enqueteur" },
   ]},
   { label: "Obsidian Logistics", items: [
     { href: "/obsidian",               label: "Dashboard OBS",   icon: "▣", permission: "obsidian_dashboard" },
