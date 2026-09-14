@@ -54,11 +54,9 @@ const colors = {
 const S: Record<string, CSSProperties> = {
   root: {
     display: 'flex',
-    height: 720,
+    height: '100%',
     width: '100%',
     overflow: 'hidden',
-    borderRadius: 8,
-    border: `1px solid ${colors.border}`,
     background: colors.bg,
     color: colors.text,
     fontFamily: 'inherit',
@@ -66,82 +64,111 @@ const S: Record<string, CSSProperties> = {
   mapCol: { position: 'relative', flex: 1 },
   toolbar: {
     position: 'absolute',
-    inset: '0 0 auto 0',
+    top: 16,
+    left: 16,
+    right: 16,
     zIndex: 1000,
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 8,
-    padding: 12,
-    pointerEvents: 'none',
+    gap: 10,
+    padding: '10px 14px',
+    borderRadius: 12,
+    background: 'rgba(15,20,32,0.72)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    border: `1px solid ${colors.border}`,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+  },
+  divider: {
+    width: 1,
+    alignSelf: 'stretch',
+    background: colors.border,
+    margin: '0 2px',
   },
   btn: {
     pointerEvents: 'auto',
-    borderRadius: 6,
-    padding: '6px 12px',
-    fontSize: 14,
-    fontWeight: 500,
-    background: 'rgba(30,41,59,0.9)',
-    color: colors.text,
+    borderRadius: 8,
+    padding: '8px 14px',
+    fontSize: 13,
+    fontWeight: 600,
+    background: colors.amber,
+    color: '#1a1206',
     border: 'none',
     cursor: 'pointer',
+    letterSpacing: '0.01em',
+    transition: 'filter 0.15s',
   },
   btnActive: {
-    background: colors.amber,
-    color: '#000',
+    background: colors.amberDark,
   },
   toggleGroup: {
     pointerEvents: 'auto',
     display: 'flex',
     overflow: 'hidden',
-    borderRadius: 6,
-    border: `1px solid ${colors.borderLight}`,
+    borderRadius: 8,
+    background: 'rgba(15,23,42,0.8)',
+    border: `1px solid ${colors.border}`,
   },
   toggleBtn: {
-    padding: '6px 10px',
+    padding: '7px 12px',
     fontSize: 12,
-    background: 'rgba(15,23,42,0.9)',
-    color: colors.text,
+    fontWeight: 500,
+    background: 'transparent',
+    color: colors.textDim,
     border: 'none',
     cursor: 'pointer',
+    transition: 'background 0.15s, color 0.15s',
   },
   toggleBtnActive: {
-    background: colors.amber,
-    color: '#000',
+    background: colors.borderLight,
+    color: colors.text,
   },
   search: {
     pointerEvents: 'auto',
-    width: 224,
-    borderRadius: 6,
-    border: `1px solid ${colors.borderLight}`,
-    background: 'rgba(15,23,42,0.9)',
+    flex: '1 1 200px',
+    minWidth: 160,
+    maxWidth: 280,
+    borderRadius: 8,
+    border: `1px solid ${colors.border}`,
+    background: 'rgba(15,23,42,0.8)',
     color: colors.text,
-    padding: '6px 12px',
-    fontSize: 14,
+    padding: '7px 12px',
+    fontSize: 13,
     outline: 'none',
+  },
+  filterRow: {
+    pointerEvents: 'auto',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 6,
   },
   filterChip: {
     pointerEvents: 'auto',
     display: 'flex',
     alignItems: 'center',
     gap: 6,
-    borderRadius: 6,
-    border: `1px solid ${colors.borderLight}`,
-    background: 'rgba(15,23,42,0.9)',
-    padding: '4px 8px',
+    borderRadius: 999,
+    border: `1px solid ${colors.border}`,
+    background: 'rgba(15,23,42,0.8)',
+    padding: '5px 10px',
     fontSize: 12,
-    color: colors.text,
+    color: colors.textDim,
     cursor: 'pointer',
+    transition: 'opacity 0.15s',
   },
   coordsLabel: {
     pointerEvents: 'none',
     position: 'absolute',
-    bottom: 12,
-    right: 12,
+    bottom: 16,
+    right: 16,
     zIndex: 1000,
-    borderRadius: 6,
-    background: 'rgba(15,23,42,0.9)',
-    padding: '4px 8px',
+    borderRadius: 8,
+    background: 'rgba(15,20,32,0.72)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    border: `1px solid ${colors.border}`,
+    padding: '6px 10px',
     fontFamily: 'monospace',
     fontSize: 12,
     color: colors.textDim,
@@ -149,11 +176,13 @@ const S: Record<string, CSSProperties> = {
   errorBanner: {
     pointerEvents: 'none',
     position: 'absolute',
-    right: 12,
-    top: 64,
+    right: 16,
+    top: 74,
     zIndex: 1000,
-    borderRadius: 6,
+    borderRadius: 8,
     background: 'rgba(127,29,29,0.85)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
     padding: '6px 12px',
     fontSize: 12,
     color: '#fee2e2',
@@ -381,7 +410,10 @@ export default function MapCanvas({
       wheelPxPerZoomLevel: 120,
       maxBoundsViscosity: 0.8,
       attributionControl: false,
+      zoomControl: false,
     });
+
+    L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
     const bounds: L.LatLngBoundsExpression = [
       [-TILE_SIZE, 0],
@@ -569,6 +601,8 @@ export default function MapCanvas({
             {addMode ? 'Clique sur la carte…' : '+ Nouveau point'}
           </button>
 
+          <div style={S.divider} />
+
           <div style={S.toggleGroup}>
             <button
               onClick={() => setMapStyle('satellite')}
@@ -590,25 +624,32 @@ export default function MapCanvas({
             </button>
           </div>
 
+          <div style={S.divider} />
+
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher un dossier, un tag…"
             style={S.search}
           />
-          {PIN_CATEGORIES.map((c) => (
-            <button
-              key={c.value}
-              onClick={() => toggleFilter(c.value)}
-              style={{
-                ...S.filterChip,
-                opacity: activeFilters.size === 0 || activeFilters.has(c.value) ? 1 : 0.35,
-              }}
-            >
-              <span style={dotStyle(c.color)} />
-              {c.label}
-            </button>
-          ))}
+
+          <div style={S.divider} />
+
+          <div style={S.filterRow}>
+            {PIN_CATEGORIES.map((c) => (
+              <button
+                key={c.value}
+                onClick={() => toggleFilter(c.value)}
+                style={{
+                  ...S.filterChip,
+                  opacity: activeFilters.size === 0 || activeFilters.has(c.value) ? 1 : 0.4,
+                }}
+              >
+                <span style={dotStyle(c.color, 7)} />
+                {c.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div ref={coordsLabelRef} style={S.coordsLabel}>
