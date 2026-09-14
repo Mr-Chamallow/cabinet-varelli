@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, CSSProperties } from 'react';
+import { useEffect, useRef, useState, CSSProperties, ClipboardEvent as ReactClipboardEvent } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
@@ -21,8 +21,10 @@ import {
   fetchPoints,
   updateCategory,
   updatePoint,
+  uploadImage,
   upsertDossier,
 } from './supabase-carte';
+import RegistreModal from './RegistreModal';
 
 // ------------------------------------------------------------------
 // Calibration mesurée sur le pack de tuiles fourni (styleGrid, 8192x8192
@@ -386,6 +388,7 @@ export default function MapCanvas({
   const [dossiers, setDossiers] = useState<Record<string, Dossier>>({});
   const [categories, setCategories] = useState<Category[]>([]);
   const [tagsModalOpen, setTagsModalOpen] = useState(false);
+  const [registreOpen, setRegistreOpen] = useState(false);
   const [addMode, setAddMode] = useState(false);
   const [search, setSearch] = useState('');
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
@@ -674,6 +677,9 @@ export default function MapCanvas({
             <button onClick={() => setTagsModalOpen(true)} style={S.manageTagsBtn}>
               ⚙ Tags
             </button>
+            <button onClick={() => setRegistreOpen(true)} style={S.manageTagsBtn}>
+              📇 Registre
+            </button>
           </div>
         </div>
 
@@ -741,6 +747,8 @@ export default function MapCanvas({
         />
       )}
 
+      {registreOpen && <RegistreModal onClose={() => setRegistreOpen(false)} />}
+
       {tagsModalOpen && (
         <TagsModal
           categories={categories}
@@ -806,6 +814,9 @@ function DossierModal({
 }) {
   const [tagsInput, setTagsInput] = useState(dossier.tags.join(', '));
   const [pieces, setPieces] = useState<DossierPiece[]>(dossier.pieces);
+  const [uploading, setUploading] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const commit = (patchPoint: Partial<CartePoint>, patchDossier: Partial<Dossier>) => {
     onChange({ ...point, ...patchPoint }, { ...dossier, ...patchDossier });
@@ -815,6 +826,38 @@ function DossierModal({
     const next = pieces.map((p, i) => (i === idx ? { ...p, ...patch } : p));
     setPieces(next);
     commit({}, { pieces: next });
+  };
+
+  const handleFiles = async (files: FileList | File[]) => {
+    const list = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (list.length === 0) return;
+    setUploading(true);
+    try {
+      const uploaded: DossierPiece[] = [];
+      for (const file of list) {
+        const url = await uploadImage(file);
+        uploaded.push({ label: file.name || 'Photo', url });
+      }
+      const next = [...pieces, ...uploaded];
+      setPieces(next);
+      commit({}, { pieces: next });
+    } catch (err) {
+      console.error(err);
+      window.alert("Échec de l'envoi de l'image. Vérifie la connexion à Supabase Storage.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handlePaste = (e: ReactClipboardEvent<HTMLDivElement>) => {
+    const files = Array.from(e.clipboardData.items)
+      .filter((item) => item.type.startsWith('image/'))
+      .map((item) => item.getAsFile())
+      .filter((f): f is File => f !== null);
+    if (files.length > 0) {
+      e.preventDefault();
+      handleFiles(files);
+    }
   };
 
   return (
@@ -890,35 +933,71 @@ function DossierModal({
           style={{ ...S.input, marginBottom: 12 }}
         />
 
-        <label style={S.label}>Pièces jointes</label>
-        <div style={{ marginBottom: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label style={S.label}>Pièces jointes / photos</label>
+        <div
+          onPaste={handlePaste}
+          style={{
+            marginBottom: 8,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 8,
+            padding: 10,
+            borderRadius: 8,
+            border: `1px dashed ${colors.borderLight}`,
+            background: 'rgba(15,23,42,0.4)',
+          }}
+        >
           {pieces.map((piece, idx) => (
-            <div key={idx} style={{ display: 'flex', gap: 6 }}>
-              <input
-                value={piece.label}
-                onChange={(e) => updatePiece(idx, { label: e.target.value })}
-                placeholder="Libellé"
-                style={{ ...S.input, width: '33%', padding: 6, fontSize: 12 }}
-              />
-              <input
-                value={piece.url}
-                onChange={(e) => updatePiece(idx, { url: e.target.value })}
-                placeholder="Lien (photo, fichier…)"
-                style={{ ...S.input, flex: 1, padding: 6, fontSize: 12 }}
-              />
-              <button
-                onClick={() => {
-                  const next = pieces.filter((_, i) => i !== idx);
-                  setPieces(next);
-                  commit({}, { pieces: next });
-                }}
-                style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer' }}
-              >
-                ✕
-              </button>
-            </div>
+            <PieceThumb
+              key={idx}
+              piece={piece}
+              onOpen={(url) => setLightboxUrl(url)}
+              onLabelChange={(label) => updatePiece(idx, { label })}
+              onRemove={() => {
+                const next = pieces.filter((_, i) => i !== idx);
+                setPieces(next);
+                commit({}, { pieces: next });
+              }}
+            />
           ))}
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            style={{
+              width: 84,
+              height: 84,
+              borderRadius: 8,
+              border: `1px dashed ${colors.borderLight}`,
+              background: 'transparent',
+              color: colors.textDimmer,
+              fontSize: 11,
+              cursor: uploading ? 'default' : 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+            }}
+          >
+            {uploading ? '…' : <>＋<span>Importer</span></>}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              if (e.target.files) handleFiles(e.target.files);
+              e.target.value = '';
+            }}
+          />
         </div>
+        <p style={{ margin: '0 0 16px', fontSize: 11, color: colors.textDimmer }}>
+          Colle une image (Ctrl+V) directement dans ce cadre, ou clique sur "Importer".
+        </p>
+
         <button
           onClick={() => {
             const next = [...pieces, { label: '', url: '' }];
@@ -927,7 +1006,7 @@ function DossierModal({
           }}
           style={{ marginBottom: 16, background: 'transparent', border: 'none', color: colors.amber, fontSize: 12, cursor: 'pointer' }}
         >
-          + Ajouter une pièce
+          + Ajouter un lien externe
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -938,6 +1017,113 @@ function DossierModal({
           </div>
         </div>
       </div>
+
+      {lightboxUrl && <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
+    </div>
+  );
+}
+
+function PieceThumb({
+  piece,
+  onOpen,
+  onLabelChange,
+  onRemove,
+}: {
+  piece: DossierPiece;
+  onOpen: (url: string) => void;
+  onLabelChange: (label: string) => void;
+  onRemove: () => void;
+}) {
+  const [isImage, setIsImage] = useState(true);
+
+  if (!isImage) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+        <input
+          value={piece.label}
+          onChange={(e) => onLabelChange(e.target.value)}
+          placeholder="Libellé"
+          style={{ width: '33%', borderRadius: 6, border: `1px solid ${colors.borderLight}`, background: 'rgba(15,23,42,0.7)', padding: 6, fontSize: 12, color: colors.text }}
+        />
+        <a href={piece.url} target="_blank" rel="noreferrer" style={{ flex: 1, fontSize: 12, color: colors.amber, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {piece.url}
+        </a>
+        <button onClick={onRemove} style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer' }}>✕</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: 'relative', width: 84 }}>
+      <img
+        src={piece.url}
+        onError={() => setIsImage(false)}
+        onClick={() => onOpen(piece.url)}
+        style={{ width: 84, height: 84, objectFit: 'cover', borderRadius: 8, cursor: 'zoom-in', border: `1px solid ${colors.border}` }}
+      />
+      <button
+        onClick={onRemove}
+        style={{
+          position: 'absolute',
+          top: -6,
+          right: -6,
+          width: 20,
+          height: 20,
+          borderRadius: '50%',
+          background: '#111826',
+          border: `1px solid ${colors.borderLight}`,
+          color: colors.textDim,
+          fontSize: 11,
+          lineHeight: '18px',
+          cursor: 'pointer',
+        }}
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+function ImageLightbox({ url, onClose }: { url: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 3000,
+        background: 'rgba(0,0,0,0.92)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'zoom-out',
+        padding: 32,
+      }}
+    >
+      <img src={url} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 4 }} />
+      <button
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: 20,
+          right: 24,
+          background: 'transparent',
+          border: 'none',
+          color: '#fff',
+          fontSize: 28,
+          cursor: 'pointer',
+        }}
+      >
+        ✕
+      </button>
     </div>
   );
 }

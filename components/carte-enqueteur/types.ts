@@ -48,3 +48,19 @@ export function slugify(label: string): string {
       .replace(/(^-|-$)/g, '') || `tag-${Date.now()}`
   );
 }
+
+export interface Personne {
+  id: string;
+  nom: string;
+  prenom?: string;
+  notes?: string;
+  created_at?: string;
+}
+
+export interface Plaque {
+  id: string;
+  plaque: string;
+  personne_id?: string | null;
+  notes?: string;
+  created_at?: string;
+}
