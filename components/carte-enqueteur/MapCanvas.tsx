@@ -350,15 +350,24 @@ export default function MapCanvas({
     addModeRef.current = addMode;
   }, [addMode]);
 
+  // CRS.Simple attend des coordonnées en unites "zoom 0" (256x256), pas en
+  // pixels pleine resolution (8192x8192). On divise/multiplie par 2^MAX_ZOOM
+  // pour passer de l'un a l'autre. origin/scale restent calibres sur l'image
+  // pleine resolution (plus simple a mesurer), la conversion se fait ici.
+  const ZOOM_FACTOR = Math.pow(2, MAX_ZOOM);
   const gameToLatLng = (x: number, y: number): L.LatLngExpression => {
-    const col = origin.px + x * scale;
-    const row = origin.py - y * scale;
-    return [row, col];
+    const colFullRes = origin.px + x * scale;
+    const rowFullRes = origin.py - y * scale;
+    return [rowFullRes / ZOOM_FACTOR, colFullRes / ZOOM_FACTOR];
   };
-  const latLngToGame = (lat: number, lng: number) => ({
-    x: (lng - origin.px) / scale,
-    y: (origin.py - lat) / scale,
-  });
+  const latLngToGame = (lat: number, lng: number) => {
+    const colFullRes = lng * ZOOM_FACTOR;
+    const rowFullRes = lat * ZOOM_FACTOR;
+    return {
+      x: (colFullRes - origin.px) / scale,
+      y: (origin.py - rowFullRes) / scale,
+    };
+  };
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -376,7 +385,7 @@ export default function MapCanvas({
 
     const bounds: L.LatLngBoundsExpression = [
       [0, 0],
-      [MAP_PX, MAP_PX],
+      [TILE_SIZE, TILE_SIZE],
     ];
     const tileLayer = L.tileLayer(satelliteTilesUrl, {
       tileSize: TILE_SIZE,
@@ -391,7 +400,7 @@ export default function MapCanvas({
     // pyramide de tuiles (indices négatifs -> 404 en boucle). On fixe une
     // vue de départ explicite à la place, centrée sur la carte.
     map.setMaxBounds(bounds);
-    map.setView([MAP_PX / 2, MAP_PX / 2], 1);
+    map.setView([TILE_SIZE / 2, TILE_SIZE / 2], 2);
 
     const layerGroup = L.layerGroup().addTo(map);
     layerGroupRef.current = layerGroup;
