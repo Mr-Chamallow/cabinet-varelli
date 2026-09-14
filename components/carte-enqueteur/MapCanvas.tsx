@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, CSSProperties } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
@@ -24,14 +24,295 @@ import {
 // Calibration mesurée sur le pack de tuiles fourni (styleGrid, 8192x8192
 // à zoom max). Le point (0,0) du jeu tombe au pixel (3755, 5525) de
 // l'image pleine résolution, à raison de 0.66 px par unité de coordonnée
-// GTA sur les deux axes. Si tu changes de pack de tuiles, recalibre ces
-// trois valeurs (voir le README).
+// GTA sur les deux axes.
 // ------------------------------------------------------------------
 const DEFAULT_SCALE = 0.66;
 const DEFAULT_ORIGIN = { px: 3755, py: 5525 };
 const TILE_SIZE = 256;
-const MAX_ZOOM = 5; // dossiers 0..5 dans le pack de tuiles
-const MAP_PX = TILE_SIZE * Math.pow(2, MAX_ZOOM); // 8192
+const MAX_ZOOM = 5;
+const MAP_PX = TILE_SIZE * Math.pow(2, MAX_ZOOM);
+
+// ------------------------------------------------------------------
+// Styles en ligne (ce projet n'utilise pas Tailwind) — palette proche
+// d'un thème sombre "dossier d'enquête".
+// ------------------------------------------------------------------
+const colors = {
+  bg: '#0F1420',
+  bgDarker: '#0B0F18',
+  panel: '#111826',
+  border: '#1e293b',
+  borderLight: '#334155',
+  text: '#e2e8f0',
+  textDim: '#94a3b8',
+  textDimmer: '#64748b',
+  amber: '#f59e0b',
+  amberDark: '#fbbf24',
+  red: '#ef4444',
+  redLight: '#f87171',
+};
+
+const S: Record<string, CSSProperties> = {
+  root: {
+    display: 'flex',
+    height: 720,
+    width: '100%',
+    overflow: 'hidden',
+    borderRadius: 8,
+    border: `1px solid ${colors.border}`,
+    background: colors.bg,
+    color: colors.text,
+    fontFamily: 'inherit',
+  },
+  mapCol: { position: 'relative', flex: 1 },
+  toolbar: {
+    position: 'absolute',
+    inset: '0 0 auto 0',
+    zIndex: 1000,
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    pointerEvents: 'none',
+  },
+  btn: {
+    pointerEvents: 'auto',
+    borderRadius: 6,
+    padding: '6px 12px',
+    fontSize: 14,
+    fontWeight: 500,
+    background: 'rgba(30,41,59,0.9)',
+    color: colors.text,
+    border: 'none',
+    cursor: 'pointer',
+  },
+  btnActive: {
+    background: colors.amber,
+    color: '#000',
+  },
+  toggleGroup: {
+    pointerEvents: 'auto',
+    display: 'flex',
+    overflow: 'hidden',
+    borderRadius: 6,
+    border: `1px solid ${colors.borderLight}`,
+  },
+  toggleBtn: {
+    padding: '6px 10px',
+    fontSize: 12,
+    background: 'rgba(15,23,42,0.9)',
+    color: colors.text,
+    border: 'none',
+    cursor: 'pointer',
+  },
+  toggleBtnActive: {
+    background: colors.amber,
+    color: '#000',
+  },
+  search: {
+    pointerEvents: 'auto',
+    width: 224,
+    borderRadius: 6,
+    border: `1px solid ${colors.borderLight}`,
+    background: 'rgba(15,23,42,0.9)',
+    color: colors.text,
+    padding: '6px 12px',
+    fontSize: 14,
+    outline: 'none',
+  },
+  filterChip: {
+    pointerEvents: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 6,
+    border: `1px solid ${colors.borderLight}`,
+    background: 'rgba(15,23,42,0.9)',
+    padding: '4px 8px',
+    fontSize: 12,
+    color: colors.text,
+    cursor: 'pointer',
+  },
+  coordsLabel: {
+    pointerEvents: 'none',
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    zIndex: 1000,
+    borderRadius: 6,
+    background: 'rgba(15,23,42,0.9)',
+    padding: '4px 8px',
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: colors.textDim,
+  },
+  errorBanner: {
+    pointerEvents: 'none',
+    position: 'absolute',
+    right: 12,
+    top: 64,
+    zIndex: 1000,
+    borderRadius: 6,
+    background: 'rgba(127,29,29,0.85)',
+    padding: '6px 12px',
+    fontSize: 12,
+    color: '#fee2e2',
+  },
+  mapDiv: { height: '100%', width: '100%', background: colors.bgDarker },
+  sidebar: {
+    width: 288,
+    flexShrink: 0,
+    overflowY: 'auto',
+    borderLeft: `1px solid ${colors.border}`,
+    background: colors.bgDarker,
+    padding: 12,
+  },
+  sidebarTitle: {
+    marginBottom: 8,
+    fontFamily: 'monospace',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    color: colors.textDimmer,
+  },
+  dossierItem: {
+    display: 'flex',
+    width: '100%',
+    alignItems: 'flex-start',
+    gap: 8,
+    borderRadius: 6,
+    padding: '6px 8px',
+    textAlign: 'left',
+    fontSize: 14,
+    background: 'transparent',
+    border: 'none',
+    color: colors.text,
+    cursor: 'pointer',
+  },
+  dossierItemActive: { background: colors.border },
+  emptyState: {
+    padding: '16px 8px',
+    textAlign: 'center',
+    fontSize: 12,
+    color: colors.textDimmer,
+  },
+  modalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 2000,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'rgba(0,0,0,0.6)',
+    padding: 16,
+  },
+  modal: {
+    width: '100%',
+    maxWidth: 512,
+    borderRadius: 8,
+    border: `1px solid ${colors.borderLight}`,
+    background: colors.panel,
+    padding: 16,
+    color: colors.text,
+    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+  },
+  modalTitleInput: {
+    width: '100%',
+    background: 'transparent',
+    fontSize: 18,
+    fontWeight: 600,
+    color: colors.text,
+    border: 'none',
+    outline: 'none',
+  },
+  closeBtn: {
+    marginLeft: 8,
+    background: 'transparent',
+    border: 'none',
+    color: colors.textDimmer,
+    cursor: 'pointer',
+    fontSize: 16,
+  },
+  label: {
+    display: 'block',
+    marginBottom: 4,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    color: colors.textDimmer,
+  },
+  input: {
+    width: '100%',
+    borderRadius: 6,
+    border: `1px solid ${colors.borderLight}`,
+    background: 'rgba(15,23,42,0.7)',
+    padding: 8,
+    fontSize: 14,
+    color: colors.text,
+    outline: 'none',
+    boxSizing: 'border-box',
+  },
+  textarea: {
+    width: '100%',
+    resize: 'none',
+    borderRadius: 6,
+    border: `1px solid ${colors.borderLight}`,
+    background: 'rgba(15,23,42,0.7)',
+    padding: 8,
+    fontSize: 14,
+    color: colors.text,
+    outline: 'none',
+    boxSizing: 'border-box',
+    fontFamily: 'inherit',
+  },
+  primaryBtn: {
+    borderRadius: 6,
+    background: colors.amber,
+    color: '#000',
+    fontWeight: 500,
+    fontSize: 14,
+    padding: '6px 12px',
+    border: 'none',
+    cursor: 'pointer',
+  },
+  ghostBtn: {
+    borderRadius: 6,
+    background: 'transparent',
+    color: colors.textDim,
+    fontSize: 14,
+    padding: '6px 12px',
+    border: 'none',
+    cursor: 'pointer',
+  },
+  dangerLink: {
+    background: 'transparent',
+    border: 'none',
+    color: colors.red,
+    fontSize: 14,
+    cursor: 'pointer',
+  },
+};
+
+const dotStyle = (color: string, size = 8): CSSProperties => ({
+  width: size,
+  height: size,
+  borderRadius: '50%',
+  background: color,
+  display: 'inline-block',
+});
+
+const categoryBtnStyle = (active: boolean, color: string): CSSProperties => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  borderRadius: 6,
+  border: `1px solid ${active ? color : '#2A3346'}`,
+  background: active ? `${color}22` : 'transparent',
+  padding: '4px 8px',
+  fontSize: 12,
+  color: colors.text,
+  cursor: 'pointer',
+});
 
 interface Props {
   satelliteTilesUrl?: string;
@@ -69,7 +350,6 @@ export default function MapCanvas({
     addModeRef.current = addMode;
   }, [addMode]);
 
-  // --- Conversions coordonnées jeu <-> pixels Leaflet (CRS.Simple : [lat,lng] = [row,col]) ---
   const gameToLatLng = (x: number, y: number): L.LatLngExpression => {
     const col = origin.px + x * scale;
     const row = origin.py - y * scale;
@@ -80,7 +360,6 @@ export default function MapCanvas({
     y: (origin.py - lat) / scale,
   });
 
-  // --- Initialisation de la carte (une seule fois) ---
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -151,7 +430,6 @@ export default function MapCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- Bascule Satellite / Grille sans recréer la carte ---
   useEffect(() => {
     const layer = tileLayerRef.current;
     if (!layer) return;
@@ -159,7 +437,6 @@ export default function MapCanvas({
     layer.setUrl(urls[mapStyle]);
   }, [mapStyle, satelliteTilesUrl, gridTilesUrl, atlasTilesUrl]);
 
-  // --- Chargement initial depuis Supabase ---
   useEffect(() => {
     (async () => {
       try {
@@ -175,7 +452,6 @@ export default function MapCanvas({
     })();
   }, []);
 
-  // --- Filtrage ---
   const visiblePoints = points.filter((p) => {
     if (activeFilters.size > 0 && !activeFilters.has(p.category)) return false;
     if (!search.trim()) return true;
@@ -184,7 +460,6 @@ export default function MapCanvas({
     return haystack.includes(search.toLowerCase());
   });
 
-  // --- Rendu des marqueurs à chaque changement pertinent ---
   useEffect(() => {
     const layerGroup = layerGroupRef.current;
     if (!layerGroup) return;
@@ -269,35 +544,32 @@ export default function MapCanvas({
   };
 
   return (
-    <div className="flex h-[720px] w-full overflow-hidden rounded-lg border border-slate-800 bg-[#0F1420] text-slate-200">
-      <div className="relative flex-1">
-        {/* Barre d'outils */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1000] flex flex-wrap items-center gap-2 p-3">
+    <div style={S.root}>
+      <div style={S.mapCol}>
+        <div style={S.toolbar}>
           <button
             onClick={() => setAddMode((v) => !v)}
-            className={`pointer-events-auto rounded-md px-3 py-1.5 text-sm font-medium transition ${
-              addMode ? 'bg-amber-500 text-black' : 'bg-slate-800/90 hover:bg-slate-700'
-            }`}
+            style={{ ...S.btn, ...(addMode ? S.btnActive : {}) }}
           >
             {addMode ? 'Clique sur la carte…' : '+ Nouveau point'}
           </button>
 
-          <div className="pointer-events-auto flex overflow-hidden rounded-md border border-slate-700">
+          <div style={S.toggleGroup}>
             <button
               onClick={() => setMapStyle('satellite')}
-              className={`px-2.5 py-1.5 text-xs ${mapStyle === 'satellite' ? 'bg-amber-500 text-black' : 'bg-slate-900/90 hover:bg-slate-700'}`}
+              style={{ ...S.toggleBtn, ...(mapStyle === 'satellite' ? S.toggleBtnActive : {}) }}
             >
               Satellite
             </button>
             <button
               onClick={() => setMapStyle('atlas')}
-              className={`px-2.5 py-1.5 text-xs ${mapStyle === 'atlas' ? 'bg-amber-500 text-black' : 'bg-slate-900/90 hover:bg-slate-700'}`}
+              style={{ ...S.toggleBtn, ...(mapStyle === 'atlas' ? S.toggleBtnActive : {}) }}
             >
               Atlas
             </button>
             <button
               onClick={() => setMapStyle('grid')}
-              className={`px-2.5 py-1.5 text-xs ${mapStyle === 'grid' ? 'bg-amber-500 text-black' : 'bg-slate-900/90 hover:bg-slate-700'}`}
+              style={{ ...S.toggleBtn, ...(mapStyle === 'grid' ? S.toggleBtnActive : {}) }}
             >
               Grille
             </button>
@@ -307,48 +579,35 @@ export default function MapCanvas({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher un dossier, un tag…"
-            className="pointer-events-auto w-56 rounded-md border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            style={S.search}
           />
           {PIN_CATEGORIES.map((c) => (
             <button
               key={c.value}
               onClick={() => toggleFilter(c.value)}
-              className="pointer-events-auto flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900/90 px-2 py-1 text-xs"
-              style={{ opacity: activeFilters.size === 0 || activeFilters.has(c.value) ? 1 : 0.35 }}
+              style={{
+                ...S.filterChip,
+                opacity: activeFilters.size === 0 || activeFilters.has(c.value) ? 1 : 0.35,
+              }}
             >
-              <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />
+              <span style={dotStyle(c.color)} />
               {c.label}
             </button>
           ))}
         </div>
 
-        {/* Lecture des coordonnées sous le curseur */}
-        <div
-          ref={coordsLabelRef}
-          className="pointer-events-none absolute bottom-3 right-3 z-[1000] rounded-md bg-slate-900/90 px-2 py-1 font-mono text-xs text-slate-300"
-        >
+        <div ref={coordsLabelRef} style={S.coordsLabel}>
           X: —  Y: —
         </div>
 
-        {loadError && (
-          <div className="pointer-events-none absolute right-3 top-16 z-[1000] rounded-md bg-red-900/80 px-3 py-1.5 text-xs text-red-100">
-            {loadError}
-          </div>
-        )}
+        {loadError && <div style={S.errorBanner}>{loadError}</div>}
 
-        <div
-          ref={containerRef}
-          className={`h-full w-full ${addMode ? 'cursor-crosshair' : ''}`}
-          style={{ background: '#0B0F18' }}
-        />
+        <div ref={containerRef} style={{ ...S.mapDiv, cursor: addMode ? 'crosshair' : undefined }} />
       </div>
 
-      {/* Sidebar dossiers */}
-      <aside className="w-72 shrink-0 overflow-y-auto border-l border-slate-800 bg-[#0B0F18] p-3">
-        <h3 className="mb-2 font-mono text-xs uppercase tracking-wide text-slate-500">
-          Dossiers ({visiblePoints.length})
-        </h3>
-        <ul className="space-y-1.5">
+      <aside style={S.sidebar}>
+        <h3 style={S.sidebarTitle}>Dossiers ({visiblePoints.length})</h3>
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {visiblePoints.map((p) => (
             <li key={p.id}>
               <button
@@ -360,26 +619,32 @@ export default function MapCanvas({
                     dossier: dossiers[p.id] ?? { id: '', point_id: p.id, description: '', tags: [], pieces: [] },
                   });
                 }}
-                className={`flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-slate-800/70 ${
-                  p.id === selectedId ? 'bg-slate-800' : ''
-                }`}
+                style={{ ...S.dossierItem, ...(p.id === selectedId ? S.dossierItemActive : {}) }}
               >
-                <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: categoryColor(p.category) }} />
+                <span style={{ ...dotStyle(categoryColor(p.category)), marginTop: 4, flexShrink: 0 }} />
                 <span>
-                  <div className="text-slate-100">{p.title}</div>
-                  <div className="font-mono text-[11px] text-slate-600">
+                  <div style={{ color: colors.text }}>{p.title}</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: 11, color: colors.textDimmer }}>
                     X {p.x.toFixed(0)} / Y {p.y.toFixed(0)}
                   </div>
-                  <div className="line-clamp-2 text-xs text-slate-500">
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: colors.textDim,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                    }}
+                  >
                     {dossiers[p.id]?.description || 'Aucune note pour le moment.'}
                   </div>
                 </span>
               </button>
             </li>
           ))}
-          {visiblePoints.length === 0 && (
-            <li className="px-2 py-4 text-center text-xs text-slate-600">Aucun point ne correspond.</li>
-          )}
+          {visiblePoints.length === 0 && <li style={S.emptyState}>Aucun point ne correspond.</li>}
         </ul>
       </aside>
 
@@ -426,65 +691,57 @@ function DossierModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-lg rounded-lg border border-slate-700 bg-[#111826] p-4 text-slate-200 shadow-2xl">
-        <div className="mb-3 flex items-center justify-between">
+    <div style={S.modalOverlay}>
+      <div style={S.modal}>
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <input
             value={point.title}
             onChange={(e) => commit({ title: e.target.value }, {})}
-            className="w-full bg-transparent text-lg font-semibold outline-none"
+            style={S.modalTitleInput}
           />
-          <button onClick={onClose} className="ml-2 text-slate-500 hover:text-slate-300">
-            ✕
-          </button>
+          <button onClick={onClose} style={S.closeBtn}>✕</button>
         </div>
 
-        <div className="mb-3 flex flex-wrap gap-1.5">
+        <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {PIN_CATEGORIES.map((c) => (
             <button
               key={c.value}
               onClick={() => commit({ category: c.value }, {})}
-              className="flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs"
-              style={{
-                borderColor: point.category === c.value ? c.color : '#2A3346',
-                background: point.category === c.value ? `${c.color}22` : 'transparent',
-              }}
+              style={categoryBtnStyle(point.category === c.value, c.color)}
             >
-              <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />
+              <span style={dotStyle(c.color)} />
               {c.label}
             </button>
           ))}
         </div>
 
-        <div className="mb-3 grid grid-cols-2 gap-2">
+        <div style={{ marginBottom: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">Coordonnée X</label>
+            <label style={S.label}>Coordonnée X</label>
             <input
               type="number"
               value={point.x}
               onChange={(e) => commit({ x: parseFloat(e.target.value) || 0 }, {})}
-              className="w-full rounded-md border border-slate-700 bg-slate-900/70 p-1.5 font-mono text-sm outline-none"
+              style={{ ...S.input, fontFamily: 'monospace' }}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">Coordonnée Y</label>
+            <label style={S.label}>Coordonnée Y</label>
             <input
               type="number"
               value={point.y}
               onChange={(e) => commit({ y: parseFloat(e.target.value) || 0 }, {})}
-              className="w-full rounded-md border border-slate-700 bg-slate-900/70 p-1.5 font-mono text-sm outline-none"
+              style={{ ...S.input, fontFamily: 'monospace' }}
             />
           </div>
         </div>
 
-        <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">
-          Icône personnalisée (URL, facultatif)
-        </label>
+        <label style={S.label}>Icône personnalisée (URL, facultatif)</label>
         <input
           value={point.icon_url ?? ''}
           onChange={(e) => commit({ icon_url: e.target.value || null }, {})}
           placeholder="/icons/suspect-1.png"
-          className="mb-3 w-full rounded-md border border-slate-700 bg-slate-900/70 p-2 text-sm outline-none focus:ring-1 focus:ring-amber-500"
+          style={{ ...S.input, marginBottom: 12 }}
         />
 
         <textarea
@@ -492,38 +749,35 @@ function DossierModal({
           onChange={(e) => commit({}, { description: e.target.value })}
           placeholder="Notes d'enquête, observations, éléments recueillis…"
           rows={5}
-          className="mb-3 w-full resize-none rounded-md border border-slate-700 bg-slate-900/70 p-2 text-sm outline-none focus:ring-1 focus:ring-amber-500"
+          style={{ ...S.textarea, marginBottom: 12 }}
         />
 
-        <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">Tags</label>
+        <label style={S.label}>Tags</label>
         <input
           value={tagsInput}
           onChange={(e) => {
             setTagsInput(e.target.value);
-            commit(
-              {},
-              { tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) },
-            );
+            commit({}, { tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) });
           }}
           placeholder="braquage, cartel, testimonial…"
-          className="mb-3 w-full rounded-md border border-slate-700 bg-slate-900/70 p-2 text-sm outline-none focus:ring-1 focus:ring-amber-500"
+          style={{ ...S.input, marginBottom: 12 }}
         />
 
-        <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">Pièces jointes</label>
-        <div className="mb-2 space-y-1.5">
+        <label style={S.label}>Pièces jointes</label>
+        <div style={{ marginBottom: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {pieces.map((piece, idx) => (
-            <div key={idx} className="flex gap-1.5">
+            <div key={idx} style={{ display: 'flex', gap: 6 }}>
               <input
                 value={piece.label}
                 onChange={(e) => updatePiece(idx, { label: e.target.value })}
                 placeholder="Libellé"
-                className="w-1/3 rounded-md border border-slate-700 bg-slate-900/70 p-1.5 text-xs outline-none"
+                style={{ ...S.input, width: '33%', padding: 6, fontSize: 12 }}
               />
               <input
                 value={piece.url}
                 onChange={(e) => updatePiece(idx, { url: e.target.value })}
                 placeholder="Lien (photo, fichier…)"
-                className="flex-1 rounded-md border border-slate-700 bg-slate-900/70 p-1.5 text-xs outline-none"
+                style={{ ...S.input, flex: 1, padding: 6, fontSize: 12 }}
               />
               <button
                 onClick={() => {
@@ -531,7 +785,7 @@ function DossierModal({
                   setPieces(next);
                   commit({}, { pieces: next });
                 }}
-                className="text-slate-500 hover:text-red-400"
+                style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer' }}
               >
                 ✕
               </button>
@@ -544,25 +798,16 @@ function DossierModal({
             setPieces(next);
             commit({}, { pieces: next });
           }}
-          className="mb-4 text-xs text-amber-500 hover:text-amber-400"
+          style={{ marginBottom: 16, background: 'transparent', border: 'none', color: colors.amber, fontSize: 12, cursor: 'pointer' }}
         >
           + Ajouter une pièce
         </button>
 
-        <div className="flex items-center justify-between">
-          <button onClick={onDelete} className="text-sm text-red-500 hover:text-red-400">
-            Supprimer le point
-          </button>
-          <div className="flex gap-2">
-            <button onClick={onClose} className="rounded-md px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800">
-              Annuler
-            </button>
-            <button
-              onClick={onSave}
-              className="rounded-md bg-amber-500 px-3 py-1.5 text-sm font-medium text-black hover:bg-amber-400"
-            >
-              Enregistrer
-            </button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button onClick={onDelete} style={S.dangerLink}>Supprimer le point</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={onClose} style={S.ghostBtn}>Annuler</button>
+            <button onClick={onSave} style={S.primaryBtn}>Enregistrer</button>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
-﻿// Adapte l'import ci-dessous au chemin rÃ©el de ton client Supabase existant
-// (celui dÃ©jÃ  utilisÃ© par Cabinet BullHead).
+// Adapte l'import ci-dessous au chemin réel de ton client Supabase existant
+// (celui déjà utilisé par Cabinet BullHead).
 import { supabase } from '@/lib/supabase';
 import type { CartePoint, Dossier } from './types';
 
@@ -27,7 +27,7 @@ export async function updatePoint(id: string, patch: Partial<CartePoint>): Promi
 }
 
 export async function deletePoint(id: string): Promise<void> {
-  // La suppression du dossier liÃ© est gÃ©rÃ©e par ON DELETE CASCADE cÃ´tÃ© SQL
+  // La suppression du dossier lié est gérée par ON DELETE CASCADE côté SQL
   const { error } = await supabase.from('carte_points').delete().eq('id', id);
   if (error) throw error;
 }

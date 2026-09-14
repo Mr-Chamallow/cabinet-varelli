@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import dynamic from 'next/dynamic';
 
-// Leaflet a besoin de `window`/`document` : on dÃ©sactive le SSR pour ce composant.
+// Leaflet a besoin de `window`/`document` : on désactive le SSR pour ce composant.
 const MapCanvas = dynamic(() => import('./MapCanvas'), { ssr: false });
 
 interface Props {
