@@ -323,9 +323,9 @@ interface Props {
 }
 
 export default function MapCanvas({
-  satelliteTilesUrl = '/map/tiles/satellite/{z}/{x}/{y}.png',
+  satelliteTilesUrl = '/map/tiles/satellite/{z}/{x}/{y}.jpg',
   gridTilesUrl = '/map/tiles/grid/{z}/{x}/{y}.png',
-  atlasTilesUrl = '/map/tiles/atlas/{z}/{x}/{y}.png',
+  atlasTilesUrl = '/map/tiles/atlas/{z}/{x}/{y}.jpg',
   scale = DEFAULT_SCALE,
   origin = DEFAULT_ORIGIN,
 }: Props) {
