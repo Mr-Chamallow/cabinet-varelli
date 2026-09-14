@@ -367,7 +367,10 @@ export default function MapCanvas({
       crs: L.CRS.Simple,
       minZoom: 0,
       maxZoom: MAX_ZOOM,
-      zoomSnap: 0.5,
+      zoomSnap: 1,
+      zoomDelta: 1,
+      wheelPxPerZoomLevel: 120,
+      maxBoundsViscosity: 0.8,
       attributionControl: false,
     });
 
@@ -384,8 +387,11 @@ export default function MapCanvas({
     }).addTo(map);
     tileLayerRef.current = tileLayer;
 
+    // fitBounds() peut calculer un zoom fractionnaire mal aligné avec la
+    // pyramide de tuiles (indices négatifs -> 404 en boucle). On fixe une
+    // vue de départ explicite à la place, centrée sur la carte.
     map.setMaxBounds(bounds);
-    map.fitBounds(bounds);
+    map.setView([MAP_PX / 2, MAP_PX / 2], 1);
 
     const layerGroup = L.layerGroup().addTo(map);
     layerGroupRef.current = layerGroup;
