@@ -26,7 +26,7 @@ export const ALL_PERMISSIONS = [
 export const PERMISSION_LABELS: Record<string, string> = {
   dashboard: "Tableau de bord", clients: "Gestion clients", dossiers: "Dossiers juridiques",
   factures: "Facturation", casier: "Casier judiciaire", simulateur: "Simulateur",
-  audiences: "Audiences", "carte-enqueteur": "Carte enqu�teur", juridique: "Espace juridique", calculatrice: "Calculatrice",
+  audiences: "Audiences", "carte-enqueteur": "Carte enquêteur", juridique: "Espace juridique", calculatrice: "Calculatrice",
   supervision: "Supervision", admin: "Administration", delete_all: "Suppression globale",
   edit_all: "Édition globale", comptabilite: "Comptabilité (Cabinet)", h47: "H-47 (Tracker de vente)",
   obsidian_dashboard: "Obsidian - Dashboard",
@@ -43,7 +43,7 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   "Avocat Senior":                  ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","carte-enqueteur","juridique","calculatrice","supervision"],
   "Avocat":                         ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","carte-enqueteur","juridique","calculatrice"],
   "Avocat Stagiaire":               ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","carte-enqueteur","juridique"],
-  "Secrétaire":                     ["dashboard","clients","dossiers","factures","audiences","juridique"],
+  "Secrétaire":                     ["dashboard","clients","dossiers","factures","audiences","carte-enqueteur","juridique"],
   "CEO - Directeur général":        [...ALL_PERMISSIONS],
   "COO - Directrice opérationnel":  ALL_PERMISSIONS.filter(p => p !== "delete_all"),
   "Responsable juridique":          ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","carte-enqueteur","juridique","calculatrice","obsidian_dashboard","obsidian_rdv"],
