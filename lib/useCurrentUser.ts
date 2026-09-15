@@ -5,14 +5,15 @@ import { useSession } from "next-auth/react";
 import { AppUser } from "@/lib/auth";
 
 export function useCurrentUser(): { user: AppUser | null; loading: boolean } {
-  const { data: session, status } = useSession();
+  const sessionState = useSession();
 
+  if (!sessionState) {
+    return { user: null, loading: true };
+  }
+
+  const { data: session, status } = sessionState;
   const s = session?.user as any;
 
-  // Dépendances primitives (string) pour que `user` garde la même référence
-  // tant que les valeurs réelles ne changent pas. Sans ça, un nouvel objet
-  // était recréé à chaque rendu -> useEffect([user]) partout dans l'app
-  // se redéclenchait en boucle infinie.
   const discordId = s?.discord_id;
   const discordName = s?.discord_name;
   const role = s?.site_role;

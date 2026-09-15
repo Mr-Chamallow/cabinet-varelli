@@ -1,5 +1,6 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
+import { Providers } from '@/components/Providers';
 
 export const metadata: Metadata = {
   title: 'Obsidian Logistique',
@@ -19,7 +20,9 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="bg-slate-900 text-slate-100 antialiased">
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
