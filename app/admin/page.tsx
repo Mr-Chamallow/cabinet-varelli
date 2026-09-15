@@ -6,6 +6,9 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
+// Force le rendu dynamique côté serveur/client et désactive le pré-rendu statique au build Vercel
+export const dynamic = "force-dynamic";
+
 interface RoleOverride {
   discord_id: string;
   nom: string;
@@ -99,46 +102,56 @@ export default function AdminPage() {
     }
     setLoading(true);
     setFetchError("");
-    const [{ data: o, error: oErr }, rolesData] = await Promise.all([
-      supabase.from("role_overrides").select("*").order("updated_at", { ascending: false }),
-      loadRolesFromSupabase(),
-    ]);
-    if (oErr) {
-      setFetchError(`Erreur lors du chargement des overrides : ${oErr.message}`);
+    try {
+      const [{ data: o, error: oErr }, rolesData] = await Promise.all([
+        supabase.from("role_overrides").select("*").order("updated_at", { ascending: false }),
+        loadRolesFromSupabase(),
+      ]);
+      if (oErr) {
+        setFetchError(`Erreur lors du chargement des overrides : ${oErr.message}`);
+      }
+      setOverrides(o || []);
+      setRoles((rolesData as Role[]) || []);
+      if ((!rolesData || rolesData.length === 0) && !oErr) {
+        setFetchError("Aucun rôle trouvé. Vérifiez que la table `roles` existe et contient des données.");
+      }
+    } catch (e: any) {
+      setFetchError(`Erreur lors de la récupération des données : ${e.message || e}`);
+    } finally {
+      setLoading(false);
     }
-    setOverrides(o || []);
-    setRoles(rolesData as Role[]);
-    if (rolesData.length === 0 && !oErr) {
-      setFetchError("Aucun rôle trouvé. Vérifiez que la table `roles` existe et contient des données.");
-    }
-    setLoading(false);
   }
 
   async function loadActivity() {
     if (!supabase) return;
     setActLoading(true);
-    const [
-      { data: casiers },
-      { data: dossiers },
-      { data: factures },
-      { data: audiences },
-      { data: clients },
-    ] = await Promise.all([
-      supabase.from("casier").select("client_nom,infraction,categorie,created_by,created_at").order("created_at",{ascending:false}).limit(40),
-      supabase.from("dossiers").select("reference,client,type_affaire,statut,created_by,created_at").order("created_at",{ascending:false}).limit(40),
-      supabase.from("factures").select("numero,client,montant,statut,created_by,created_at").order("created_at",{ascending:false}).limit(40),
-      supabase.from("audiences").select("titre,client,type,created_by,created_at").order("created_at",{ascending:false}).limit(40),
-      supabase.from("clients").select("nom_rp,type_client,created_by,created_at").order("created_at",{ascending:false}).limit(40),
-    ]);
-    const items: ActivityItem[] = [
-      ...(casiers||[]).map((r:any) => ({ type:"casier" as const, icon:"⚖️", color:"#7c3aed", label:r.client_nom, detail:`${r.infraction} · ${r.categorie}`, by:r.created_by, at:r.created_at })),
-      ...(dossiers||[]).map((r:any) => ({ type:"dossier" as const, icon:"📁", color:"#c9a84c", label:r.reference, detail:`${r.client} — ${r.type_affaire} · ${r.statut}`, by:r.created_by, at:r.created_at })),
-      ...(factures||[]).map((r:any) => ({ type:"facture" as const, icon:"🧾", color:"#22c55e", label:r.numero||"Facture", detail:`${r.client} — ${(r.montant||0).toLocaleString("fr-FR")} $ · ${r.statut}`, by:r.created_by, at:r.created_at })),
-      ...(audiences||[]).map((r:any) => ({ type:"audience" as const, icon:"🏛️", color:"#3b82f6", label:r.titre, detail:`${r.type}${r.client?` · ${r.client}`:""}`, by:r.created_by, at:r.created_at })),
-      ...(clients||[]).map((r:any) => ({ type:"client" as const, icon:"👤", color:"#f97316", label:r.nom_rp, detail:`Nouveau client · ${r.type_client||"—"}`, by:r.created_by, at:r.created_at })),
-    ].sort((a,b) => b.at.localeCompare(a.at));
-    setActivity(items);
-    setActLoading(false);
+    try {
+      const [
+        { data: casiers },
+        { data: dossiers },
+        { data: factures },
+        { data: audiences },
+        { data: clients },
+      ] = await Promise.all([
+        supabase.from("casier").select("client_nom,infraction,categorie,created_by,created_at").order("created_at",{ascending:false}).limit(40),
+        supabase.from("dossiers").select("reference,client,type_affaire,statut,created_by,created_at").order("created_at",{ascending:false}).limit(40),
+        supabase.from("factures").select("numero,client,montant,statut,created_by,created_at").order("created_at",{ascending:false}).limit(40),
+        supabase.from("audiences").select("titre,client,type,created_by,created_at").order("created_at",{ascending:false}).limit(40),
+        supabase.from("clients").select("nom_rp,type_client,created_by,created_at").order("created_at",{ascending:false}).limit(40),
+      ]);
+      const items: ActivityItem[] = [
+        ...(casiers||[]).map((r:any) => ({ type:"casier" as const, icon:"⚖️", color:"#7c3aed", label:r.client_nom, detail:`${r.infraction} · ${r.categorie}`, by:r.created_by, at:r.created_at })),
+        ...(dossiers||[]).map((r:any) => ({ type:"dossier" as const, icon:"📁", color:"#c9a84c", label:r.reference, detail:`${r.client} — ${r.type_affaire} · ${r.statut}`, by:r.created_by, at:r.created_at })),
+        ...(factures||[]).map((r:any) => ({ type:"facture" as const, icon:"🧾", color:"#22c55e", label:r.numero||"Facture", detail:`${r.client} — ${(r.montant||0).toLocaleString("fr-FR")} $ · ${r.statut}`, by:r.created_by, at:r.created_at })),
+        ...(audiences||[]).map((r:any) => ({ type:"audience" as const, icon:"🏛️", color:"#3b82f6", label:r.titre, detail:`${r.type}${r.client?` · ${r.client}`:""}`, by:r.created_by, at:r.created_at })),
+        ...(clients||[]).map((r:any) => ({ type:"client" as const, icon:"👤", color:"#f97316", label:r.nom_rp, detail:`Nouveau client · ${r.type_client||"—"}`, by:r.created_by, at:r.created_at })),
+      ].sort((a,b) => (b.at || "").localeCompare(a.at || ""));
+      setActivity(items);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActLoading(false);
+    }
   }
 
   useEffect(() => { 
@@ -310,8 +323,8 @@ export default function AdminPage() {
             )}
             {roles.map(r => {
               const isEditing = editRoleId === r.id;
-              const currentPerms = isEditing ? editRolePerms : r.permissions;
-              const currentCouleur = isEditing ? editRoleCouleur : r.couleur;
+              const currentPerms = isEditing ? editRolePerms : (r.permissions || []);
+              const currentCouleur = isEditing ? editRoleCouleur : (r.couleur || "#c9a84c");
               return (
                 <div key={r.id} className="card" style={{ border:`1px solid ${isEditing?currentCouleur+"40":"var(--border)"}` }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"1rem" }}>
@@ -323,7 +336,7 @@ export default function AdminPage() {
                     <div style={{ display:"flex", gap:"0.4rem", flexShrink:0 }}>
                       {!isEditing ? (
                         <>
-                          <button className="btn btn-outline btn-sm" onClick={() => { setEditRoleId(r.id); setEditRolePerms([...r.permissions]); setEditRoleCouleur(r.couleur); }}>✏️ Modifier</button>
+                          <button className="btn btn-outline btn-sm" onClick={() => { setEditRoleId(r.id); setEditRolePerms([...(r.permissions || [])]); setEditRoleCouleur(r.couleur || "#c9a84c"); }}>✏️ Modifier</button>
                           <button className="btn btn-ghost btn-sm" style={{color:"var(--danger)"}} onClick={()=>setDeleteRoleId(r.id)}>🗑️</button>
                         </>
                       ) : (
