@@ -1,11 +1,14 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import { Providers } from "@/components/Providers";
-import { Sidebar } from "@/components/Sidebar";
+﻿import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Cabinet BullHead",
-  description: "Gestion cabinet et logistique",
+  title: 'Obsidian Logistique',
+  description: 'Solutions de transport, de stockage et d\'import/export d\'urgence.',
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({
@@ -15,13 +18,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body>
-        <Providers>
-          <Sidebar />
-          <main className="main-content">
-            {children}
-          </main>
-        </Providers>
+      <body className="bg-slate-900 text-slate-100 antialiased">
+        {children}
       </body>
     </html>
   );
