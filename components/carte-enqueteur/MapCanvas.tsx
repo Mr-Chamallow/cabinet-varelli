@@ -89,8 +89,7 @@ const S: Record<string, CSSProperties> = {
     right: 16,
     zIndex: 500,
     display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
+    flexDirection: 'column',
     gap: 10,
     padding: '10px 14px',
     borderRadius: 12,
@@ -99,6 +98,23 @@ const S: Record<string, CSSProperties> = {
     WebkitBackdropFilter: 'blur(10px)',
     border: `1px solid ${colors.border}`,
     boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+  },
+  toolbarRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+  },
+  filterRowCentered: {
+    pointerEvents: 'auto',
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+    paddingTop: 4,
+    borderTop: `1px solid ${colors.border}`,
   },
   divider: {
     width: 1,
@@ -148,7 +164,7 @@ const S: Record<string, CSSProperties> = {
     pointerEvents: 'auto',
     flex: '1 1 200px',
     minWidth: 160,
-    maxWidth: 280,
+    maxWidth: '100%',
     borderRadius: 8,
     border: `1px solid ${colors.border}`,
     background: 'rgba(15,23,42,0.8)',
@@ -156,12 +172,6 @@ const S: Record<string, CSSProperties> = {
     padding: '7px 12px',
     fontSize: 13,
     outline: 'none',
-  },
-  filterRow: {
-    pointerEvents: 'auto',
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 6,
   },
   filterChip: {
     pointerEvents: 'auto',
@@ -669,48 +679,50 @@ export default function MapCanvas({
     <div style={S.root}>
       <div style={S.mapCol}>
         <div style={S.toolbar}>
-          <button
-            onClick={() => setAddMode((v) => !v)}
-            style={{ ...S.btn, ...(addMode ? S.btnActive : {}) }}
-          >
-            {addMode ? 'Clique sur la carte…' : '+ Nouveau point'}
-          </button>
+          {/* Ligne 1 : Contrôles principaux & Recherche */}
+          <div style={S.toolbarRow}>
+            <button
+              onClick={() => setAddMode((v) => !v)}
+              style={{ ...S.btn, ...(addMode ? S.btnActive : {}) }}
+            >
+              {addMode ? 'Clique sur la carte…' : '+ Nouveau point'}
+            </button>
 
-          <div style={S.divider} />
+            <div style={S.divider} />
 
-          <div style={S.toggleGroup}>
-            <button
-              onClick={() => setMapStyle('satellite')}
-              style={{ ...S.toggleBtn, ...(mapStyle === 'satellite' ? S.toggleBtnActive : {}) }}
-            >
-              Satellite
-            </button>
-            <button
-              onClick={() => setMapStyle('atlas')}
-              style={{ ...S.toggleBtn, ...(mapStyle === 'atlas' ? S.toggleBtnActive : {}) }}
-            >
-              Atlas
-            </button>
-            <button
-              onClick={() => setMapStyle('grid')}
-              style={{ ...S.toggleBtn, ...(mapStyle === 'grid' ? S.toggleBtnActive : {}) }}
-            >
-              Grille
-            </button>
+            <div style={S.toggleGroup}>
+              <button
+                onClick={() => setMapStyle('satellite')}
+                style={{ ...S.toggleBtn, ...(mapStyle === 'satellite' ? S.toggleBtnActive : {}) }}
+              >
+                Satellite
+              </button>
+              <button
+                onClick={() => setMapStyle('atlas')}
+                style={{ ...S.toggleBtn, ...(mapStyle === 'atlas' ? S.toggleBtnActive : {}) }}
+              >
+                Atlas
+              </button>
+              <button
+                onClick={() => setMapStyle('grid')}
+                style={{ ...S.toggleBtn, ...(mapStyle === 'grid' ? S.toggleBtnActive : {}) }}
+              >
+                Grille
+              </button>
+            </div>
+
+            <div style={S.divider} />
+
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher un dossier, un tag…"
+              style={S.search}
+            />
           </div>
 
-          <div style={S.divider} />
-
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un dossier, un tag…"
-            style={S.search}
-          />
-
-          <div style={S.divider} />
-
-          <div style={S.filterRow}>
+          {/* Ligne 2 : Filtres centrés & Modales */}
+          <div style={S.filterRowCentered}>
             {categories.map((c) => (
               <button
                 key={c.slug}
@@ -724,6 +736,7 @@ export default function MapCanvas({
                 {c.label}
               </button>
             ))}
+            <div style={S.divider} />
             <button onClick={() => setTagsModalOpen(true)} style={S.manageTagsBtn}>
               ⚙ Catégories
             </button>
