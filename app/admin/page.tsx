@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ALL_PERMISSIONS, PERMISSION_LABELS, DEFAULT_PERMISSIONS, loadRolesFromSupabase, type User } from "@/lib/auth";
+import { ALL_PERMISSIONS, PERMISSION_LABELS, DEFAULT_PERMISSIONS, loadRolesFromSupabase } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -57,40 +57,39 @@ export default function AdminPage() {
   const router = useRouter();
   const { user, loading: userLoading } = useCurrentUser();
   const [overrides, setOverrides] = useState<RoleOverride[]>([]);
-  const [roles, setRoles]   = useState<Role[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"membres"|"roles"|"journaux">("membres");
 
-  // Override form
   const [showCreateOverride, setShowCreateOverride] = useState(false);
   const [overrideForm, setOverrideForm] = useState({ nom:"", discord_id:"", role:"" });
   const [creatingOverride, setCreatingOverride] = useState(false);
   const [createError, setCreateError] = useState("");
   const [deleteOverrideId, setDeleteOverrideId] = useState<string|null>(null);
 
-  // Role form
-  const [showCreateRole, setShowCreateRole]     = useState(false);
-  const [roleForm, setRoleForm]                 = useState({ nom:"", permissions:[] as string[], couleur:"#6366f1" });
-  const [creatingRole, setCreatingRole]         = useState(false);
+  const [showCreateRole, setShowCreateRole] = useState(false);
+  const [roleForm, setRoleForm] = useState({ nom:"", permissions:[] as string[], couleur:"#6366f1" });
+  const [creatingRole, setCreatingRole] = useState(false);
 
-  // Edit role
-  const [editRoleId, setEditRoleId]             = useState<string|null>(null);
-  const [editRolePerms, setEditRolePerms]       = useState<string[]>([]);
-  const [editRoleCouleur, setEditRoleCouleur]   = useState("#c9a84c");
-  const [savingRole, setSavingRole]             = useState(false);
-  const [deleteRoleId, setDeleteRoleId]         = useState<string|null>(null);
+  const [editRoleId, setEditRoleId] = useState<string|null>(null);
+  const [editRolePerms, setEditRolePerms] = useState<string[]>([]);
+  const [editRoleCouleur, setEditRoleCouleur] = useState("#c9a84c");
+  const [savingRole, setSavingRole] = useState(false);
+  const [deleteRoleId, setDeleteRoleId] = useState<string|null>(null);
 
-  // Journaux
-  const [activity, setActivity]                 = useState<ActivityItem[]>([]);
-  const [actLoading, setActLoading]             = useState(false);
-  const [filterActMember, setFilterActMember]   = useState("");
-  const [filterActType, setFilterActType]       = useState("");
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [actLoading, setActLoading] = useState(false);
+  const [filterActMember, setFilterActMember] = useState("");
+  const [filterActType, setFilterActType] = useState("");
 
   useEffect(() => {
-    if (!user) return;
-    fetchAll();
-  }, [user]);
+    if (!userLoading && !user) {
+      router.push("/");
+      return;
+    }
+    if (user) fetchAll();
+  }, [user, userLoading]);
 
   async function fetchAll() {
     if (!supabase) {
@@ -142,12 +141,14 @@ export default function AdminPage() {
     setActLoading(false);
   }
 
-  useEffect(() => { if (activeTab === "journaux" && activity.length === 0) loadActivity(); }, [activeTab]);
+  useEffect(() => { 
+    if (activeTab === "journaux" && activity.length === 0) loadActivity(); 
+  }, [activeTab]);
 
-  // ─── OVERRIDES DE RÔLE ───────────────────────────────────────────────────────
   async function createOverride() {
     if (!supabase||!overrideForm.discord_id.trim()||!overrideForm.role) return;
-    setCreatingOverride(true); setCreateError("");
+    setCreatingOverride(true); 
+    setCreateError("");
     const { error } = await supabase.from("role_overrides").upsert([{
       discord_id: overrideForm.discord_id.trim(),
       nom: overrideForm.nom.trim(),
@@ -155,25 +156,35 @@ export default function AdminPage() {
       updated_by: user?.nom,
       updated_at: new Date().toISOString(),
     }]);
-    if (error) { setCreateError(error.message); }
-    else { setShowCreateOverride(false); setOverrideForm({ nom:"", discord_id:"", role:"" }); fetchAll(); }
+    if (error) { 
+      setCreateError(error.message); 
+    } else { 
+      setShowCreateOverride(false); 
+      setOverrideForm({ nom:"", discord_id:"", role:"" }); 
+      await fetchAll(); 
+    }
     setCreatingOverride(false);
   }
 
   async function deleteOverride(discordId: string) {
     if (!supabase) return;
     await supabase.from("role_overrides").delete().eq("discord_id", discordId);
-    setDeleteOverrideId(null); fetchAll();
+    setDeleteOverrideId(null); 
+    await fetchAll();
   }
 
-  // ─── RÔLES ─────────────────────────────────────────────────────────────────
   async function createRole() {
     if (!supabase||!roleForm.nom.trim()) return;
     setCreatingRole(true);
     const { error } = await supabase.from("roles").insert([{ nom:roleForm.nom.trim(), permissions:roleForm.permissions, couleur:roleForm.couleur }]);
-    if (error) setFetchError(`Impossible de créer le rôle : ${error.message}`);
-    else { setShowCreateRole(false); setRoleForm({ nom:"", permissions:[], couleur:"#6366f1" }); }
-    await fetchAll(); setCreatingRole(false);
+    if (error) {
+      setFetchError(`Impossible de créer le rôle : ${error.message}`);
+    } else { 
+      await fetchAll();
+      setShowCreateRole(false); 
+      setRoleForm({ nom:"", permissions:[], couleur:"#6366f1" }); 
+    }
+    setCreatingRole(false);
   }
 
   async function saveRole(id: string) {
@@ -182,14 +193,16 @@ export default function AdminPage() {
     const { error } = await supabase.from("roles").update({ permissions:editRolePerms, couleur:editRoleCouleur }).eq("id", id);
     if (error) setFetchError(`Impossible de sauvegarder le rôle : ${error.message}`);
     else setEditRoleId(null);
-    await fetchAll(); setSavingRole(false);
+    await fetchAll(); 
+    setSavingRole(false);
   }
 
   async function deleteRole(id: string) {
     if (!supabase) return;
     const { error } = await supabase.from("roles").delete().eq("id", id);
     if (error) setFetchError(`Impossible de supprimer le rôle : ${error.message}`);
-    setDeleteRoleId(null); await fetchAll();
+    setDeleteRoleId(null); 
+    await fetchAll();
   }
 
   function togglePerm(perms: string[], perm: string): string[] {
@@ -206,7 +219,9 @@ export default function AdminPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Tableau de bord</a>
+      <button className="back-link" onClick={() => router.push("/")} style={{ background: "none", border: "none", cursor: "pointer" }}>
+        ← Tableau de bord
+      </button>
       <div className="page-header">
         <div>
           <h1 className="page-title">Administration</h1>
@@ -238,7 +253,6 @@ export default function AdminPage() {
       {loading ? (
         <div style={{ color:"var(--text-dim)" }}>Chargement…</div>
       ) : activeTab === "membres" ? (
-        /* ─── OVERRIDES DE RÔLE ─── */
         <div>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
             <div className="section-title">Overrides de rôle ({overrides.length})</div>
@@ -280,7 +294,6 @@ export default function AdminPage() {
           )}
         </div>
       ) : activeTab === "roles" ? (
-        /* ─── RÔLES ─── */
         <div>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
             <div className="section-title">Rôles ({roles.length})</div>
@@ -351,7 +364,6 @@ export default function AdminPage() {
           </div>
         </div>
       ) : (
-        /* ─── JOURNAUX ─── */
         <div>
           {/* Filtres */}
           <div style={{ display:"flex", gap:"0.75rem", marginBottom:"1.25rem", flexWrap:"wrap", alignItems:"center" }}>
@@ -404,7 +416,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ─── Modals ─── */}
+      {/* Modals */}
       {showCreateOverride && (
         <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowCreateOverride(false)}>
           <div className="modal">
