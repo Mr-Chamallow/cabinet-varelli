@@ -4,20 +4,20 @@
    VARIABLES — Obsidian logistique — Style exécutif noir bleuté / or froid
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  /* Noir bleuté — corporate, plus froid que le noir pur */
-  --bg:           #06070d;
-  --surface:      #0a0d16;
-  --card:         #10131e;
-  --card-hover:   #151a28;
-  --border:       #1c2236;
-  --border-light: #28304a;
+  --bg:           #050506;
+  --surface:      #0a0a0d;
+  --card:         #111116;
+  --card-hover:   #17171d;
+  --border:       #232329;
+  --border-light: #33333b;
 
-  /* Or froid — désaturé vers le champagne/platine */
-  --gold:         #c4b389;
-  --gold-light:   #ddd0a8;
-  --gold-dark:    #8f8260;
-  --gold-muted:   rgba(196,179,137,0.08);
-  --gold-glow:    rgba(196,179,137,0.14);
+  --gold:         #a78bfa;
+  --gold-light:   #c4b5fd;
+  --gold-dark:    #7c3aed;
+  --gold-muted:   rgba(167,139,250,0.08);
+  --gold-glow:    rgba(167,139,250,0.14);
+
+  --purple-obsidian: #8b5cf6;
 
   --text:         #eaedf5;
   --text-muted:   #8a92ab;
@@ -36,7 +36,7 @@
   --shadow-sm:    0 1px 4px rgba(2,4,12,0.4);
   --shadow:       0 4px 24px rgba(2,4,12,0.55);
   --shadow-lg:    0 16px 56px rgba(2,4,12,0.65);
-  --shadow-gold:  0 0 24px rgba(196,179,137,0.07);
+  --shadow-gold:  0 0 24px rgba(167,139,250,0.07);
 
   --ease:         cubic-bezier(0.22, 1, 0.36, 1);
   --t-fast:       0.15s;

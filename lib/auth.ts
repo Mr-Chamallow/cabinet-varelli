@@ -2,7 +2,6 @@
 
 import { supabase } from "@/lib/supabase";
 
-
 export interface AppUser {
   id: string;
   nom: string;
@@ -15,45 +14,35 @@ export interface AppUser {
 export type User = AppUser;
 
 export const ALL_PERMISSIONS = [
-  "dashboard", "clients", "dossiers", "factures", "casier", "simulateur", "audiences", "carte-enqueteur",
-  "juridique", "calculatrice", "supervision", "admin", "delete_all", "edit_all",
-  "comptabilite", "h47",
   "obsidian_dashboard", "obsidian_prix", "obsidian_stocks", "obsidian_armurerie",
   "obsidian_garage", "obsidian_comptabilite", "obsidian_rdv", "obsidian_contrats",
-  "obsidian_planification", "obsidian_stats", "cahier_vente", "obsidian_paie", "obsidian_employes"
+  "obsidian_planification", "obsidian_stats", "cahier_vente", "obsidian_paie",
+  "obsidian_employes", "h47", "admin", "supervision", "delete_all", "edit_all",
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
-  dashboard: "Tableau de bord", clients: "Gestion clients", dossiers: "Dossiers juridiques",
-  factures: "Facturation", casier: "Casier judiciaire", simulateur: "Simulateur",
-  audiences: "Audiences", "carte-enqueteur": "Carte enquêteur", juridique: "Espace juridique", calculatrice: "Calculatrice",
-  supervision: "Supervision", admin: "Administration", delete_all: "Suppression globale",
-  edit_all: "Édition globale", comptabilite: "Comptabilité (Cabinet)", h47: "H-47 (Tracker de vente)",
-  obsidian_dashboard: "Obsidian - Dashboard",
-  obsidian_prix: "Obsidian - Prix", obsidian_stocks: "Obsidian - Stocks",
-  obsidian_armurerie: "Obsidian - Armurerie", obsidian_garage: "Obsidian - Garage",
-  obsidian_comptabilite: "Obsidian - Comptabilité", obsidian_rdv: "Obsidian - Rendez-vous",
-  obsidian_contrats: "Obsidian - Contrats", obsidian_planification: "Obsidian - Planification",
-  obsidian_stats: "Obsidian - Statistiques", cahier_vente: "Cahier de vente", obsidian_paie: "Obsidian - Paie & Commissions", obsidian_employes: "Obsidian - Employés",
+  obsidian_dashboard: "Dashboard",
+  obsidian_prix: "Tableau des prix", obsidian_stocks: "Stocks",
+  obsidian_armurerie: "Armurerie", obsidian_garage: "Garage",
+  obsidian_comptabilite: "Comptabilité", obsidian_rdv: "Rendez-vous",
+  obsidian_contrats: "Contrats", obsidian_planification: "Planification",
+  obsidian_stats: "Statistiques", cahier_vente: "Cahier de vente",
+  obsidian_paie: "Paie & Commissions", obsidian_employes: "Employés",
+  h47: "H-47 (Tracker de vente)", admin: "Administration", supervision: "Supervision",
+  delete_all: "Suppression globale", edit_all: "Édition globale",
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  "Associé / Patron":               [...ALL_PERMISSIONS],
-  "Associé":                        ALL_PERMISSIONS.filter(p => p !== "admin"),
-  "Avocat Senior":                  ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","carte-enqueteur","juridique","calculatrice","supervision"],
-  "Avocat":                         ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","carte-enqueteur","juridique","calculatrice"],
-  "Avocat Stagiaire":               ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","carte-enqueteur","juridique"],
-  "Secrétaire":                     ["dashboard","clients","dossiers","factures","audiences","carte-enqueteur","juridique"],
   "CEO - Directeur général":        [...ALL_PERMISSIONS],
   "COO - Directrice opérationnel":  ALL_PERMISSIONS.filter(p => p !== "delete_all"),
-  "Responsable juridique":          ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","carte-enqueteur","juridique","calculatrice","obsidian_dashboard","obsidian_rdv"],
-  "Agent juridique":                ["dashboard","clients","dossiers","factures","casier","simulateur","audiences","carte-enqueteur","juridique","obsidian_dashboard"],
-  "Responsable logistique":         ["dashboard","obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_planification","obsidian_stats","cahier_vente","h47","obsidian_paie","obsidian_employes"],
-  "Agent logistique":               ["dashboard","obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_rdv","cahier_vente","h47"],
-  "Responsable sécurité":           ["dashboard","obsidian_dashboard","obsidian_armurerie","obsidian_rdv","obsidian_planification"],
-  "Agent de sécurité":              ["dashboard","obsidian_dashboard","obsidian_armurerie","obsidian_rdv"],
-  "Opérateur":                      ["dashboard","obsidian_dashboard","obsidian_rdv"],
-  "Opérateur stagiaire":            ["dashboard","obsidian_dashboard"],
+  "Responsable juridique":          ["obsidian_dashboard","obsidian_rdv","obsidian_contrats","obsidian_stats"],
+  "Agent juridique":                ["obsidian_dashboard","obsidian_rdv"],
+  "Responsable logistique":         ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_planification","obsidian_stats","cahier_vente","h47","obsidian_paie","obsidian_employes"],
+  "Agent logistique":               ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_rdv","cahier_vente","h47"],
+  "Responsable sécurité":           ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","obsidian_planification"],
+  "Agent de sécurité":              ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv"],
+  "Opérateur":                      ["obsidian_dashboard","obsidian_rdv"],
+  "Opérateur stagiaire":            ["obsidian_dashboard"],
 };
 
 export function hasPermission(userOrRole: AppUser | string | null, permission: string): boolean {
@@ -71,9 +60,9 @@ export const canAccess = hasPermission;
 export function getMemberColor(roleOrName?: string, customColor?: string): string {
   if (customColor) return customColor;
   switch (roleOrName) {
-    case "CEO - Directeur général": return "#7c3aed";
+    case "CEO - Directeur général": return "#8b5cf6";
     case "COO - Directrice opérationnel": return "#6366f1";
-    case "Responsable juridique": return "#c9a84c";
+    case "Responsable juridique": return "#a78bfa";
     case "Agent juridique": return "#a0916d";
     case "Responsable logistique": return "#ef4444";
     case "Agent logistique": return "#f97316";
@@ -85,6 +74,7 @@ export function getMemberColor(roleOrName?: string, customColor?: string): strin
 
 export async function loadRolesFromSupabase(): Promise<any[]> {
   try {
+    if (!supabase) return [];
     const { data, error } = await supabase.from("roles").select("*");
     if (error) return [];
     return data || [];

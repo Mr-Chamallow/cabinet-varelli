@@ -15,15 +15,14 @@ interface Result {
 }
 
 const QUICK_PAGES: Result[] = [
-  { type:"page", id:"p1", title:"Tableau de bord", subtitle:"Accueil", href:"/", icon:"◈" },
-  { type:"page", id:"p2", title:"Clients",   subtitle:"Liste des clients", href:"/clients", icon:"◉" },
-  { type:"page", id:"p3", title:"Dossiers",  subtitle:"Tous les dossiers", href:"/dossiers", icon:"◫" },
-  { type:"page", id:"p4", title:"Factures",  subtitle:"Facturation", href:"/factures", icon:"◳" },
-  { type:"page", id:"p5", title:"Simulateur",subtitle:"Calcul des honoraires", href:"/simulateur", icon:"◐" },
-  { type:"page", id:"p6", title:"Audiences", subtitle:"Calendrier partagé", href:"/audiences", icon:"◷" },
-  { type:"page", id:"p7", title:"Casiers",   subtitle:"Casiers judiciaires", href:"/casier", icon:"◪" },
-  { type:"page", id:"p8", title:"Modèles",   subtitle:"Modèles de plaidoirie", href:"/modeles", icon:"◧" },
-  { type:"page", id:"p9", title:"Code pénal",subtitle:"Référence juridique", href:"/juridique", icon:"◎" },
+  { type:"page", id:"p1", title:"Dashboard", subtitle:"Accueil", href:"/", icon:"◈" },
+  { type:"page", id:"p2", title:"Stocks",   subtitle:"Inventaire", href:"/obsidian/stocks", icon:"◉" },
+  { type:"page", id:"p3", title:"Armurerie",  subtitle:"Armes & munitions", href:"/obsidian/armurerie", icon:"◫" },
+  { type:"page", id:"p4", title:"Comptabilité",  subtitle:"Recettes & dépenses", href:"/obsidian/comptabilite", icon:"◳" },
+  { type:"page", id:"p5", title:"Garage",subtitle:"Véhicules", href:"/obsidian/garage", icon:"◐" },
+  { type:"page", id:"p6", title:"RDV", subtitle:"Rendez-vous", href:"/obsidian/rdv", icon:"◷" },
+  { type:"page", id:"p7", title:"Contrats",   subtitle:"Missions", href:"/obsidian/contrats", icon:"◪" },
+  { type:"page", id:"p8", title:"Fiches",   subtitle:"Personnes / orgas", href:"/obsidian/fiches", icon:"◧" },
 ];
 
 const TYPE_COLORS: Record<string,string> = {
@@ -33,13 +32,13 @@ const TYPE_COLORS: Record<string,string> = {
 
 export default function CommandPalette() {
   const router = useRouter();
+  const { user } = useCurrentUser();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Result[]>([]);
   const [selected, setSelected] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // Raccourci Cmd/Ctrl+K
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -53,9 +52,7 @@ export default function CommandPalette() {
   }, []);
 
   const search = useCallback(async (q: string) => {
-    if (!supabase) return;
-    const { user, loading: userLoading } = useCurrentUser();
-    if (!user) return;
+    if (!supabase || !user) { setResults(QUICK_PAGES); return; }
 
     if (!q.trim()) {
       setResults(QUICK_PAGES);
@@ -64,25 +61,20 @@ export default function CommandPalette() {
 
     setLoading(true);
     const like = `%${q}%`;
-    const [{ data: clients }, { data: dossiers }, { data: factures }, { data: casiers }] = await Promise.all([
-      supabase.from("clients").select("id,nom_rp,organisation").eq("created_by", user.nom).ilike("nom_rp", like).limit(5),
-      supabase.from("dossiers").select("id,reference,client,type_affaire").eq("created_by", user.nom).or(`reference.ilike.${like},client.ilike.${like}`).limit(5),
-      supabase.from("factures").select("id,numero,client,montant").eq("created_by", user.nom).or(`numero.ilike.${like},client.ilike.${like}`).limit(5),
-      supabase.from("casier").select("id,client_nom,infraction").or(`client_nom.ilike.${like},infraction.ilike.${like}`).limit(5),
+    const [{ data: fiches }, { data: contrats }] = await Promise.all([
+      supabase.from("obsidian_fiches").select("id,nom,organisation").ilike("nom", like).limit(5),
+      supabase.from("obsidian_contrats").select("id,titre,type").ilike("titre", like).limit(5),
     ]);
 
     const r: Result[] = [
-      ...(clients||[]).map((c:any) => ({ type:"client" as const, id:c.id, title:c.nom_rp, subtitle:c.organisation||"Client", href:"/clients", icon:"◉" })),
-      ...(dossiers||[]).map((d:any) => ({ type:"dossier" as const, id:d.id, title:d.reference, subtitle:`${d.client} · ${d.type_affaire}`, href:`/dossiers/${d.id}`, icon:"◫" })),
-      ...(factures||[]).map((f:any) => ({ type:"facture" as const, id:f.id, title:f.numero, subtitle:`${f.client} · ${f.montant?.toLocaleString("fr-FR")}$`, href:"/factures", icon:"◳" })),
-      ...(casiers||[]).map((c:any) => ({ type:"casier" as const, id:c.id, title:c.client_nom, subtitle:c.infraction, href:"/casier", icon:"◪" })),
+      ...(fiches||[]).map((f:any) => ({ type:"client" as const, id:f.id, title:f.nom, subtitle:f.organisation||"Fiche", href:"/obsidian/fiches", icon:"◉" })),
+      ...(contrats||[]).map((c:any) => ({ type:"dossier" as const, id:c.id, title:c.titre, subtitle:c.type, href:"/obsidian/contrats", icon:"◫" })),
     ];
 
-    // Inclure les pages qui matchent aussi
     const pageMatches = QUICK_PAGES.filter(p => p.title.toLowerCase().includes(q.toLowerCase()));
     setResults([...r, ...pageMatches]);
     setLoading(false);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (open) {
@@ -110,7 +102,7 @@ export default function CommandPalette() {
 
   const grouped: Record<string, Result[]> = {};
   results.forEach(r => { if (!grouped[r.type]) grouped[r.type] = []; grouped[r.type].push(r); });
-  const sectionLabels: Record<string,string> = { client:"Clients", dossier:"Dossiers", facture:"Factures", casier:"Casiers", page:"Pages" };
+  const sectionLabels: Record<string,string> = { client:"Fiches", dossier:"Contrats", facture:"Factures", casier:"Casiers", page:"Pages" };
 
   let flatIndex = 0;
 
@@ -121,7 +113,7 @@ export default function CommandPalette() {
           <span style={{ color:"var(--text-dim)" }}>🔍</span>
           <input
             autoFocus
-            placeholder="Rechercher clients, dossiers, factures, casiers…"
+            placeholder="Rechercher fiches, contrats, pages…"
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyNav}

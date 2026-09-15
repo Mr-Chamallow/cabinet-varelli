@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ALL_PERMISSIONS, PERMISSION_LABELS, DEFAULT_PERMISSIONS, loadRolesFromSupabase } from "@/lib/auth";
+import { ALL_PERMISSIONS, PERMISSION_LABELS, DEFAULT_PERMISSIONS, loadRolesFromSupabase, canAccess } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -86,12 +86,11 @@ export default function AdminPage() {
   const [filterActMember, setFilterActMember] = useState("");
   const [filterActType, setFilterActType] = useState("");
 
+  // ✅ FIX SÉCURITÉ : vérifie maintenant la permission "admin", pas juste la connexion
   useEffect(() => {
-    if (!userLoading && !user) {
-      router.push("/");
-      return;
-    }
-    if (user) fetchAll();
+    if (!userLoading && !user) { router.push("/"); return; }
+    if (!userLoading && user && !canAccess(user.role, "admin")) { router.push("/"); return; }
+    if (user && !userLoading && canAccess(user.role, "admin")) fetchAll();
   }, [user, userLoading]);
 
   async function fetchAll() {
@@ -228,7 +227,8 @@ export default function AdminPage() {
     (!filterActType || a.type === filterActType)
   );
 
-  if (userLoading || !user) return null;
+  // ✅ FIX SÉCURITÉ : bloque le rendu si pas admin (empêche le flash de contenu avant redirect)
+  if (userLoading || !user || !canAccess(user.role, "admin")) return null;
 
   return (
     <div className="page-container">
