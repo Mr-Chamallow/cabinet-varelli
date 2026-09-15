@@ -40,22 +40,21 @@ import {
 import RegistreModal from './RegistreModal';
 import NewPointModal from './NewPointModal';
 import GangsModal from './GangsModal';
+import TagsModal from './TagsModal';
 
-// ------------------------------------------------------------------
-// Calibration mesurée sur le pack de tuiles fourni (styleGrid, 8192x8192
-// à zoom max). Le point (0,0) du jeu tombe au pixel (3755, 5525) de
-// l'image pleine résolution, à raison de 0.66 px par unité de coordonnée
-// GTA sur les deux axes.
-// ------------------------------------------------------------------
+// Fix icônes Leaflet sous Next.js
+delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
 const DEFAULT_SCALE = 0.66;
 const DEFAULT_ORIGIN = { px: 3755, py: 5525 };
 const TILE_SIZE = 256;
 const MAX_ZOOM = 5;
 
-// ------------------------------------------------------------------
-// Styles en ligne (ce projet n'utilise pas Tailwind) — palette proche
-// d'un thème sombre "dossier d'enquête".
-// ------------------------------------------------------------------
 const colors = {
   bg: '#0F1420',
   bgDarker: '#0B0F18',
@@ -74,27 +73,28 @@ const colors = {
 const S: Record<string, CSSProperties> = {
   root: {
     display: 'flex',
-    height: '100%',
+    height: '100vh',
     width: '100%',
     overflow: 'hidden',
     background: colors.bg,
     color: colors.text,
     fontFamily: 'inherit',
+    position: 'relative',
   },
-  mapCol: { position: 'relative', flex: 1 },
+  mapCol: { position: 'relative', flex: 1, height: '100%', width: '100%', overflow: 'hidden' },
   toolbar: {
     position: 'absolute',
     top: 16,
     left: 16,
     right: 16,
-    zIndex: 1000,
+    zIndex: 500,
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: 10,
     padding: '10px 14px',
     borderRadius: 12,
-    background: 'rgba(15,20,32,0.72)',
+    background: 'rgba(15,20,32,0.85)',
     backdropFilter: 'blur(10px)',
     WebkitBackdropFilter: 'blur(10px)',
     border: `1px solid ${colors.border}`,
@@ -195,7 +195,7 @@ const S: Record<string, CSSProperties> = {
     position: 'absolute',
     bottom: 16,
     right: 16,
-    zIndex: 1000,
+    zIndex: 500,
     borderRadius: 8,
     background: 'rgba(15,20,32,0.72)',
     backdropFilter: 'blur(10px)',
@@ -211,7 +211,7 @@ const S: Record<string, CSSProperties> = {
     position: 'absolute',
     right: 16,
     top: 74,
-    zIndex: 1000,
+    zIndex: 500,
     borderRadius: 8,
     background: 'rgba(127,29,29,0.85)',
     backdropFilter: 'blur(10px)',
@@ -220,7 +220,7 @@ const S: Record<string, CSSProperties> = {
     fontSize: 12,
     color: '#fee2e2',
   },
-  mapDiv: { height: '100%', width: '100%', background: colors.bgDarker },
+  mapDiv: { height: '100%', width: '100%', background: colors.bgDarker, zIndex: 0 },
   sidebar: {
     width: 288,
     flexShrink: 0,
@@ -430,6 +430,7 @@ export default function MapCanvas({
     const rowFullRes = origin.py - y * scale;
     return [-(rowFullRes / ZOOM_FACTOR), colFullRes / ZOOM_FACTOR];
   };
+
   const latLngToGame = (lat: number, lng: number) => {
     const colFullRes = lng * ZOOM_FACTOR;
     const rowFullRes = -lat * ZOOM_FACTOR;
@@ -489,6 +490,12 @@ export default function MapCanvas({
     });
 
     mapRef.current = map;
+
+    // Forcer le calcul des dimensions de la carte
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+
     return () => {
       map.remove();
       mapRef.current = null;
@@ -922,7 +929,6 @@ function DossierModal({
   const [uploading, setUploading] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [vectorInput, setVectorInput] = useState('');
-  const [personneQuery, setPersonneQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const commit = (patchPoint: Partial<CartePoint>, patchDossier: Partial<Dossier>) => {
@@ -1057,56 +1063,92 @@ function DossierModal({
             </div>
           </div>
 
-          <label style={S.label}>Icône personnalisée (URL, facultatif)</label>
-          <input
-            value={point.icon_url ?? ''}
-            onChange={(e) => commit({ icon_url: e.target.value || null }, {})}
-            placeholder="https://…"
-            style={{ ...S.input, marginBottom: 12 }}
-          />
-
-          <label style={S.label}>Notes d'enquête, observations, éléments recueillis…</label>
+          <label style={S.label}>Description / Notes d'enquête</label>
           <textarea
             rows={4}
             value={dossier.description}
             onChange={(e) => commit({}, { description: e.target.value })}
-            placeholder="Notes d'enquête, observations, éléments recueillis…"
+            placeholder="Écris tes observations, détails, suspects aperçus..."
             style={{ ...S.textarea, marginBottom: 12 }}
           />
 
-          <label style={S.label}>Tags (mots-clés de recherche)</label>
+          <label style={S.label}>Tags (séparés par des virgules)</label>
           <input
             value={tagsInput}
             onChange={(e) => {
               setTagsInput(e.target.value);
-              const parsed = e.target.value.split(',').map((t) => t.trim()).filter(Boolean);
-              commit({}, { tags: parsed });
+              const array = e.target.value.split(',').map((t) => t.trim()).filter(Boolean);
+              commit({}, { tags: array });
             }}
-            placeholder="Fertilisant, Entrepôt, Suspect A…"
-            style={{ ...S.input, marginBottom: 12 }}
+            placeholder="Drogue, Armes, Suspect, Enquête"
+            style={{ ...S.input, marginBottom: 16 }}
           />
 
-          <label style={S.label}>Personnes liées (Registre)</label>
-          <input
-            value={personneQuery}
-            onChange={(e) => setPersonneQuery(e.target.value)}
-            placeholder="Chercher un nom pour l'ajouter…"
-            style={{ ...S.input, marginBottom: 8 }}
-          />
+          <label style={S.label}>Pièces jointes / Preuves ({pieces.length})</label>
+          <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {pieces.map((p, idx) => (
+              <div
+                key={idx}
+                style={{
+                  position: 'relative',
+                  width: 80,
+                  height: 80,
+                  borderRadius: 6,
+                  overflow: 'hidden',
+                  border: `1px solid ${colors.borderLight}`,
+                  cursor: 'pointer',
+                }}
+                onClick={() => setLightboxUrl(p.url)}
+              >
+                <img src={p.url} alt={p.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const next = pieces.filter((_, i) => i !== idx);
+                    setPieces(next);
+                    commit({}, { pieces: next });
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    right: 2,
+                    background: 'rgba(0,0,0,0.7)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: 18,
+                    height: 18,
+                    fontSize: 10,
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
 
-          <label style={S.label}>Pièces jointes / Photos</label>
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              border: `2px dashed ${colors.borderLight}`,
-              borderRadius: 8,
-              padding: 16,
-              textAlign: 'center',
-              cursor: 'pointer',
-              marginBottom: 12,
-              background: 'rgba(15,23,42,0.4)',
-            }}
-          >
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: 6,
+                border: `1px dashed ${colors.borderLight}`,
+                background: 'rgba(15,23,42,0.4)',
+                color: colors.textDim,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              {uploading ? 'Envoi...' : '+ Image'}
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -1115,37 +1157,19 @@ function DossierModal({
               style={{ display: 'none' }}
               onChange={(e) => e.target.files && handleFiles(e.target.files)}
             />
-            <div style={{ fontSize: 13, color: colors.textDim }}>
-              {uploading ? 'Envoi en cours…' : 'Colle une image (Ctrl+V) directement dans ce cadre, ou clique sur "Importer"'}
-            </div>
           </div>
-
-          {pieces.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-              {pieces.map((piece, i) => (
-                <div key={i} style={{ position: 'relative', width: 80, height: 80, borderRadius: 6, overflow: 'hidden', border: `1px solid ${colors.border}` }}>
-                  <img
-                    src={piece.url}
-                    alt={piece.label}
-                    onClick={() => setLightboxUrl(piece.url)}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Pied de page fixe */}
-        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <button onClick={onDelete} style={S.dangerLink}>
-            Supprimer ce point
+        {/* Actions du bas */}
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button type="button" onClick={onDelete} style={S.dangerLink}>
+            Supprimer
           </button>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={onClose} style={S.ghostBtn}>
+            <button type="button" onClick={onClose} style={S.ghostBtn}>
               Annuler
             </button>
-            <button onClick={onSave} style={S.primaryBtn}>
+            <button type="button" onClick={onSave} style={S.primaryBtn}>
               Enregistrer
             </button>
           </div>
@@ -1166,93 +1190,9 @@ function DossierModal({
             padding: 24,
           }}
         >
-          <img src={lightboxUrl} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8 }} />
+          <img src={lightboxUrl} alt="Agrandissement" style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8 }} />
         </div>
       )}
-    </div>
-  );
-}
-
-function TagsModal({
-  categories,
-  onClose,
-  onAdd,
-  onRename,
-  onRecolor,
-  onDelete,
-}: {
-  categories: Category[];
-  onClose: () => void;
-  onAdd: (label: string, color: string) => void;
-  onRename: (id: string, label: string) => void;
-  onRecolor: (id: string, color: string) => void;
-  onDelete: (id: string) => void;
-}) {
-  const [newLabel, setNewLabel] = useState('');
-  const [newColor, setNewColor] = useState('#f59e0b');
-
-  return (
-    <div style={S.modalOverlay}>
-      <div style={S.modal}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, fontSize: 16 }}>Gérer les catégories</h3>
-          <button onClick={onClose} style={S.closeBtn}>✕</button>
-        </div>
-
-        <div style={{ flex: 1, overflowY: 'auto', marginBottom: 16 }}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            <input
-              type="text"
-              placeholder="Nom de la catégorie"
-              value={newLabel}
-              onChange={(e) => setNewLabel(e.target.value)}
-              style={S.input}
-            />
-            <input
-              type="color"
-              value={newColor}
-              onChange={(e) => setNewColor(e.target.value)}
-              style={{ width: 40, height: 38, border: 'none', background: 'transparent', cursor: 'pointer' }}
-            />
-            <button
-              onClick={() => {
-                if (!newLabel.trim()) return;
-                onAdd(newLabel.trim(), newColor);
-                setNewLabel('');
-              }}
-              style={S.primaryBtn}
-            >
-              Ajouter
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {categories.map((c) => (
-              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(15,23,42,0.5)', padding: 8, borderRadius: 6 }}>
-                <input
-                  type="color"
-                  value={c.color}
-                  onChange={(e) => onRecolor(c.id, e.target.value)}
-                  style={{ width: 28, height: 28, border: 'none', background: 'transparent', cursor: 'pointer' }}
-                />
-                <input
-                  type="text"
-                  value={c.label}
-                  onChange={(e) => onRename(c.id, e.target.value)}
-                  style={{ ...S.input, flex: 1 }}
-                />
-                <button onClick={() => onDelete(c.id)} style={S.dangerLink}>
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={S.ghostBtn}>Fermer</button>
-        </div>
-      </div>
     </div>
   );
 }
