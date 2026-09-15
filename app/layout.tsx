@@ -5,7 +5,7 @@ import { Sidebar } from '@/components/Sidebar';
 
 export const metadata: Metadata = {
   title: 'Cabinet Varelli',
-  description: 'Gestion et opérations',
+  description: 'Gestion et opï¿½rations',
   icons: {
     icon: '/logo.png',
     shortcut: '/logo.png',
