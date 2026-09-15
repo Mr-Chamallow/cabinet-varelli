@@ -51,7 +51,6 @@ const DEFAULT_SCALE = 0.66;
 const DEFAULT_ORIGIN = { px: 3755, py: 5525 };
 const TILE_SIZE = 256;
 const MAX_ZOOM = 5;
-const MAP_PX = TILE_SIZE * Math.pow(2, MAX_ZOOM);
 
 // ------------------------------------------------------------------
 // Styles en ligne (ce projet n'utilise pas Tailwind) — palette proche
@@ -272,6 +271,9 @@ const S: Record<string, CSSProperties> = {
   modal: {
     width: '100%',
     maxWidth: 512,
+    maxHeight: '90vh',
+    display: 'flex',
+    flexDirection: 'column',
     borderRadius: 8,
     border: `1px solid ${colors.borderLight}`,
     background: colors.panel,
@@ -422,10 +424,6 @@ export default function MapCanvas({
     addModeRef.current = addMode;
   }, [addMode]);
 
-  // CRS.Simple attend des coordonnées en unites "zoom 0" (256x256), pas en
-  // pixels pleine resolution (8192x8192) : on divise/multiplie par 2^MAX_ZOOM.
-  // CRS.Simple inverse aussi le signe de l'axe lat (Transformation interne
-  // de Leaflet) : on neutralise ça en negant systematiquement le "row".
   const ZOOM_FACTOR = Math.pow(2, MAX_ZOOM);
   const gameToLatLng = (x: number, y: number): L.LatLngExpression => {
     const colFullRes = origin.px + x * scale;
@@ -471,9 +469,6 @@ export default function MapCanvas({
     }).addTo(map);
     tileLayerRef.current = tileLayer;
 
-    // fitBounds() peut calculer un zoom fractionnaire mal aligné avec la
-    // pyramide de tuiles (indices négatifs -> 404 en boucle). On fixe une
-    // vue de départ explicite à la place, centrée sur la carte.
     map.setMaxBounds(bounds);
     map.setView([-TILE_SIZE / 2, TILE_SIZE / 2], 2);
 
@@ -536,7 +531,6 @@ export default function MapCanvas({
     })();
   }, []);
 
-  // Confirmation depuis NewPointModal (choix d'un modèle ou titre libre)
   const confirmNewPoint = async (title: string, iconUrl?: string) => {
     if (!pendingCoords) return;
     const { x, y } = pendingCoords;
@@ -929,17 +923,10 @@ function DossierModal({
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [vectorInput, setVectorInput] = useState('');
   const [personneQuery, setPersonneQuery] = useState('');
-  const [copied, setCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const commit = (patchPoint: Partial<CartePoint>, patchDossier: Partial<Dossier>) => {
     onChange({ ...point, ...patchPoint }, { ...dossier, ...patchDossier });
-  };
-
-  const updatePiece = (idx: number, patch: Partial<DossierPiece>) => {
-    const next = pieces.map((p, i) => (i === idx ? { ...p, ...patch } : p));
-    setPieces(next);
-    commit({}, { pieces: next });
   };
 
   const handleFiles = async (files: FileList | File[]) => {
@@ -977,7 +964,8 @@ function DossierModal({
   return (
     <div style={S.modalOverlay}>
       <div style={S.modal}>
-        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* En-tête fixe */}
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <input
             value={point.title}
             onChange={(e) => commit({ title: e.target.value }, {})}
@@ -986,390 +974,201 @@ function DossierModal({
           <button onClick={onClose} style={S.closeBtn}>✕</button>
         </div>
 
-        <label style={S.label}>Catégorie</label>
-        <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {categories.map((c) => (
-            <button
-              key={c.slug}
-              onClick={() => commit({ category: c.slug }, {})}
-              style={categoryBtnStyle(point.category === c.slug, c.color)}
-            >
-              <span style={dotStyle(c.color)} />
-              {c.label}
-            </button>
-          ))}
-        </div>
-
-        <label style={S.label}>Groupe (gang / orga)</label>
-        <select
-          value={point.groupe_id ?? ''}
-          onChange={(e) => commit({ groupe_id: e.target.value || null }, {})}
-          style={{ ...S.input, marginBottom: 12 }}
-        >
-          <option value="">— Aucun —</option>
-          {gangs.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.nom} ({gangTypeLabel(g.type)})
-            </option>
-          ))}
-        </select>
-
-        <label style={S.label}>Coller une position en jeu (format Vector3)</label>
-        <input
-          value={vectorInput}
-          onChange={(e) => {
-            setVectorInput(e.target.value);
-            const parsed = parseVector3(e.target.value);
-            if (parsed) {
-              commit({ x: parsed.x, y: parsed.y, z: parsed.z, heading: parsed.heading ?? point.heading }, {});
-            }
-          }}
-          placeholder="{ pos: new Vector3(-116.460, -1137.269, 24.280), heading: 90.261}"
-          style={{ ...S.input, marginBottom: 12, fontFamily: 'monospace', fontSize: 12 }}
-        />
-
-        <div style={{ marginBottom: 12, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
-          <div>
-            <label style={S.label}>X</label>
-            <input
-              type="number"
-              value={point.x}
-              onChange={(e) => commit({ x: parseFloat(e.target.value) || 0 }, {})}
-              style={{ ...S.input, fontFamily: 'monospace' }}
-            />
+        {/* Corps de modale défilable */}
+        <div style={{ flex: 1, overflowY: 'auto', paddingRight: 6 }} onPaste={handlePaste}>
+          <label style={S.label}>Catégorie</label>
+          <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {categories.map((c) => (
+              <button
+                key={c.slug}
+                onClick={() => commit({ category: c.slug }, {})}
+                style={categoryBtnStyle(point.category === c.slug, c.color)}
+              >
+                <span style={dotStyle(c.color)} />
+                {c.label}
+              </button>
+            ))}
           </div>
-          <div>
-            <label style={S.label}>Y</label>
-            <input
-              type="number"
-              value={point.y}
-              onChange={(e) => commit({ y: parseFloat(e.target.value) || 0 }, {})}
-              style={{ ...S.input, fontFamily: 'monospace' }}
-            />
+
+          <label style={S.label}>Groupe (gang / orga)</label>
+          <select
+            value={point.groupe_id ?? ''}
+            onChange={(e) => commit({ groupe_id: e.target.value || null }, {})}
+            style={{ ...S.input, marginBottom: 12 }}
+          >
+            <option value="">— Aucun —</option>
+            {gangs.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.nom} ({gangTypeLabel(g.type)})
+              </option>
+            ))}
+          </select>
+
+          <label style={S.label}>Coller une position en jeu (format Vector3)</label>
+          <input
+            value={vectorInput}
+            onChange={(e) => {
+              setVectorInput(e.target.value);
+              const parsed = parseVector3(e.target.value);
+              if (parsed) {
+                commit({ x: parsed.x, y: parsed.y, z: parsed.z, heading: parsed.heading ?? point.heading }, {});
+              }
+            }}
+            placeholder="{ pos: new Vector3(-116.460, -1137.269, 24.280), heading: 90.261}"
+            style={{ ...S.input, marginBottom: 12, fontFamily: 'monospace', fontSize: 12 }}
+          />
+
+          <div style={{ marginBottom: 12, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
+            <div>
+              <label style={S.label}>X</label>
+              <input
+                type="number"
+                value={point.x}
+                onChange={(e) => commit({ x: parseFloat(e.target.value) || 0 }, {})}
+                style={S.input}
+              />
+            </div>
+            <div>
+              <label style={S.label}>Y</label>
+              <input
+                type="number"
+                value={point.y}
+                onChange={(e) => commit({ y: parseFloat(e.target.value) || 0 }, {})}
+                style={S.input}
+              />
+            </div>
+            <div>
+              <label style={S.label}>Z</label>
+              <input
+                type="number"
+                value={point.z ?? ''}
+                onChange={(e) => commit({ z: e.target.value !== '' ? parseFloat(e.target.value) : undefined }, {})}
+                style={S.input}
+              />
+            </div>
+            <div>
+              <label style={S.label}>Heading</label>
+              <input
+                type="number"
+                value={point.heading ?? ''}
+                onChange={(e) => commit({ heading: e.target.value !== '' ? parseFloat(e.target.value) : undefined }, {})}
+                style={S.input}
+              />
+            </div>
           </div>
-          <div>
-            <label style={S.label}>Z</label>
-            <input
-              type="number"
-              value={point.z ?? ''}
-              onChange={(e) => commit({ z: e.target.value ? parseFloat(e.target.value) : null }, {})}
-              style={{ ...S.input, fontFamily: 'monospace' }}
-            />
-          </div>
-          <div>
-            <label style={S.label}>Heading</label>
-            <input
-              type="number"
-              value={point.heading ?? ''}
-              onChange={(e) => commit({ heading: e.target.value ? parseFloat(e.target.value) : null }, {})}
-              style={{ ...S.input, fontFamily: 'monospace' }}
-            />
-          </div>
-        </div>
 
-        <label style={S.label}>Icône personnalisée (URL, facultatif)</label>
-        <input
-          value={point.icon_url ?? ''}
-          onChange={(e) => commit({ icon_url: e.target.value || null }, {})}
-          placeholder="/icons/suspect-1.png"
-          style={{ ...S.input, marginBottom: 12 }}
-        />
+          <label style={S.label}>Icône personnalisée (URL, facultatif)</label>
+          <input
+            value={point.icon_url ?? ''}
+            onChange={(e) => commit({ icon_url: e.target.value || null }, {})}
+            placeholder="https://…"
+            style={{ ...S.input, marginBottom: 12 }}
+          />
 
-        <textarea
-          value={dossier.description}
-          onChange={(e) => commit({}, { description: e.target.value })}
-          placeholder="Notes d'enquête, observations, éléments recueillis…"
-          rows={5}
-          style={{ ...S.textarea, marginBottom: 12 }}
-        />
+          <label style={S.label}>Notes d'enquête, observations, éléments recueillis…</label>
+          <textarea
+            rows={4}
+            value={dossier.description}
+            onChange={(e) => commit({}, { description: e.target.value })}
+            placeholder="Notes d'enquête, observations, éléments recueillis…"
+            style={{ ...S.textarea, marginBottom: 12 }}
+          />
 
-        <label style={S.label}>Tags (mots-clés de recherche)</label>
-        <input
-          value={tagsInput}
-          onChange={(e) => {
-            setTagsInput(e.target.value);
-            commit({}, { tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) });
-          }}
-          placeholder="braquage, cartel, testimonial…"
-          style={{ ...S.input, marginBottom: 12 }}
-        />
+          <label style={S.label}>Tags (mots-clés de recherche)</label>
+          <input
+            value={tagsInput}
+            onChange={(e) => {
+              setTagsInput(e.target.value);
+              const parsed = e.target.value.split(',').map((t) => t.trim()).filter(Boolean);
+              commit({}, { tags: parsed });
+            }}
+            placeholder="Fertilisant, Entrepôt, Suspect A…"
+            style={{ ...S.input, marginBottom: 12 }}
+          />
 
-        <label style={S.label}>Personnes liées (registre)</label>
-        <input
-          value={personneQuery}
-          onChange={(e) => setPersonneQuery(e.target.value)}
-          placeholder="Chercher un nom pour l'ajouter…"
-          style={{ ...S.input, marginBottom: 6 }}
-        />
-        {personneQuery.trim() && (
-          <div style={{ marginBottom: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {personnesAll
-              .filter(
-                (pe) =>
-                  !point.personne_ids?.includes(pe.id) &&
-                  `${pe.nom} ${pe.prenom ?? ''}`.toLowerCase().includes(personneQuery.trim().toLowerCase()),
-              )
-              .slice(0, 6)
-              .map((pe) => (
-                <button
-                  key={pe.id}
-                  onClick={() => {
-                    commit({ personne_ids: [...(point.personne_ids ?? []), pe.id] }, {});
-                    setPersonneQuery('');
-                  }}
-                  style={{ borderRadius: 6, border: `1px solid ${colors.borderLight}`, background: 'rgba(15,23,42,0.7)', color: colors.text, padding: '4px 8px', fontSize: 12, cursor: 'pointer' }}
-                >
-                  + {pe.nom} {pe.prenom ?? ''}
-                </button>
-              ))}
-          </div>
-        )}
-        <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {(point.personne_ids ?? []).map((id) => {
-            const pe = personnesAll.find((x) => x.id === id);
-            if (!pe) return null;
-            const plaquesDe = plaquesAll.filter((pl) => pl.personne_id === id).map((pl) => pl.plaque);
-            return (
-              <div key={id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: 6, background: 'rgba(15,23,42,0.5)', padding: '6px 8px', fontSize: 12 }}>
-                <span>
-                  <strong style={{ color: colors.text }}>{pe.nom} {pe.prenom ?? ''}</strong>
-                  {plaquesDe.length > 0 && <span style={{ color: colors.textDimmer, fontFamily: 'monospace' }}> — {plaquesDe.join(', ')}</span>}
-                </span>
-                <button
-                  onClick={() => commit({ personne_ids: (point.personne_ids ?? []).filter((x) => x !== id) }, {})}
-                  style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer' }}
-                >
-                  ✕
-                </button>
-              </div>
-            );
-          })}
-        </div>
+          <label style={S.label}>Personnes liées (Registre)</label>
+          <input
+            value={personneQuery}
+            onChange={(e) => setPersonneQuery(e.target.value)}
+            placeholder="Chercher un nom pour l'ajouter…"
+            style={{ ...S.input, marginBottom: 8 }}
+          />
 
-        <label style={S.label}>Pièces jointes / photos</label>
-        <div
-          onPaste={handlePaste}
-          style={{
-            marginBottom: 8,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 8,
-            padding: 10,
-            borderRadius: 8,
-            border: `1px dashed ${colors.borderLight}`,
-            background: 'rgba(15,23,42,0.4)',
-          }}
-        >
-          {pieces.map((piece, idx) => (
-            <PieceThumb
-              key={idx}
-              piece={piece}
-              onOpen={(url) => setLightboxUrl(url)}
-              onLabelChange={(label) => updatePiece(idx, { label })}
-              onRemove={() => {
-                const next = pieces.filter((_, i) => i !== idx);
-                setPieces(next);
-                commit({}, { pieces: next });
-              }}
-            />
-          ))}
-
-          <button
+          <label style={S.label}>Pièces jointes / Photos</label>
+          <div
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
             style={{
-              width: 84,
-              height: 84,
+              border: `2px dashed ${colors.borderLight}`,
               borderRadius: 8,
-              border: `1px dashed ${colors.borderLight}`,
-              background: 'transparent',
-              color: colors.textDimmer,
-              fontSize: 11,
-              cursor: uploading ? 'default' : 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 4,
+              padding: 16,
+              textAlign: 'center',
+              cursor: 'pointer',
+              marginBottom: 12,
+              background: 'rgba(15,23,42,0.4)',
             }}
           >
-            {uploading ? '…' : <>＋<span>Importer</span></>}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              if (e.target.files) handleFiles(e.target.files);
-              e.target.value = '';
-            }}
-          />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => e.target.files && handleFiles(e.target.files)}
+            />
+            <div style={{ fontSize: 13, color: colors.textDim }}>
+              {uploading ? 'Envoi en cours…' : 'Colle une image (Ctrl+V) directement dans ce cadre, ou clique sur "Importer"'}
+            </div>
+          </div>
+
+          {pieces.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+              {pieces.map((piece, i) => (
+                <div key={i} style={{ position: 'relative', width: 80, height: 80, borderRadius: 6, overflow: 'hidden', border: `1px solid ${colors.border}` }}>
+                  <img
+                    src={piece.url}
+                    alt={piece.label}
+                    onClick={() => setLightboxUrl(piece.url)}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <p style={{ margin: '0 0 16px', fontSize: 11, color: colors.textDimmer }}>
-          Colle une image (Ctrl+V) directement dans ce cadre, ou clique sur "Importer".
-        </p>
 
-        <button
-          onClick={() => {
-            const next = [...pieces, { label: '', url: '' }];
-            setPieces(next);
-            commit({}, { pieces: next });
-          }}
-          style={{ marginBottom: 16, background: 'transparent', border: 'none', color: colors.amber, fontSize: 12, cursor: 'pointer' }}
-        >
-          + Ajouter un lien externe
-        </button>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button onClick={onDelete} style={S.dangerLink}>Supprimer le point</button>
+        {/* Pied de page fixe */}
+        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <button onClick={onDelete} style={S.dangerLink}>
+            Supprimer ce point
+          </button>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={() => {
-                const cat = categories.find((c) => c.slug === point.category);
-                const gang = gangs.find((g) => g.id === point.groupe_id);
-                const linkedPersonnes = (point.personne_ids ?? [])
-                  .map((id) => {
-                    const pe = personnesAll.find((x) => x.id === id);
-                    if (!pe) return null;
-                    const plaquesDe = plaquesAll.filter((pl) => pl.personne_id === id).map((pl) => pl.plaque);
-                    return `- ${pe.nom} ${pe.prenom ?? ''}${plaquesDe.length ? ` — ${plaquesDe.join(', ')}` : ''}`;
-                  })
-                  .filter(Boolean)
-                  .join('\n');
-                const text = [
-                  `**${point.title}**`,
-                  `Catégorie : ${cat?.label ?? point.category}`,
-                  gang ? `Groupe : ${gang.nom} (${gangTypeLabel(gang.type)})` : null,
-                  `Coordonnées : X ${point.x.toFixed(1)} / Y ${point.y.toFixed(1)}${point.z != null ? ` / Z ${point.z.toFixed(1)}` : ''}${point.heading != null ? ` / Heading ${point.heading.toFixed(1)}` : ''}`,
-                  dossier.tags.length ? `Tags : ${dossier.tags.join(', ')}` : null,
-                  dossier.description ? `\n${dossier.description}` : null,
-                  linkedPersonnes ? `\nPersonnes liées :\n${linkedPersonnes}` : null,
-                ]
-                  .filter(Boolean)
-                  .join('\n');
-                navigator.clipboard.writeText(text).then(() => {
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 1500);
-                });
-              }}
-              style={S.ghostBtn}
-            >
-              {copied ? '✓ Copié' : '📋 Copier'}
+            <button onClick={onClose} style={S.ghostBtn}>
+              Annuler
             </button>
-            <button onClick={onClose} style={S.ghostBtn}>Annuler</button>
-            <button onClick={onSave} style={S.primaryBtn}>Enregistrer</button>
+            <button onClick={onSave} style={S.primaryBtn}>
+              Enregistrer
+            </button>
           </div>
         </div>
       </div>
 
-      {lightboxUrl && <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
-    </div>
-  );
-}
-
-function PieceThumb({
-  piece,
-  onOpen,
-  onLabelChange,
-  onRemove,
-}: {
-  piece: DossierPiece;
-  onOpen: (url: string) => void;
-  onLabelChange: (label: string) => void;
-  onRemove: () => void;
-}) {
-  const [isImage, setIsImage] = useState(true);
-
-  if (!isImage) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
-        <input
-          value={piece.label}
-          onChange={(e) => onLabelChange(e.target.value)}
-          placeholder="Libellé"
-          style={{ width: '33%', borderRadius: 6, border: `1px solid ${colors.borderLight}`, background: 'rgba(15,23,42,0.7)', padding: 6, fontSize: 12, color: colors.text }}
-        />
-        <a href={piece.url} target="_blank" rel="noreferrer" style={{ flex: 1, fontSize: 12, color: colors.amber, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {piece.url}
-        </a>
-        <button onClick={onRemove} style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer' }}>✕</button>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ position: 'relative', width: 84 }}>
-      <img
-        src={piece.url}
-        onError={() => setIsImage(false)}
-        onClick={() => onOpen(piece.url)}
-        style={{ width: 84, height: 84, objectFit: 'cover', borderRadius: 8, cursor: 'zoom-in', border: `1px solid ${colors.border}` }}
-      />
-      <button
-        onClick={onRemove}
-        style={{
-          position: 'absolute',
-          top: -6,
-          right: -6,
-          width: 20,
-          height: 20,
-          borderRadius: '50%',
-          background: '#111826',
-          border: `1px solid ${colors.borderLight}`,
-          color: colors.textDim,
-          fontSize: 11,
-          lineHeight: '18px',
-          cursor: 'pointer',
-        }}
-      >
-        ✕
-      </button>
-    </div>
-  );
-}
-
-function ImageLightbox({ url, onClose }: { url: string; onClose: () => void }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 3000,
-        background: 'rgba(0,0,0,0.92)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'zoom-out',
-        padding: 32,
-      }}
-    >
-      <img src={url} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 4 }} />
-      <button
-        onClick={onClose}
-        style={{
-          position: 'absolute',
-          top: 20,
-          right: 24,
-          background: 'transparent',
-          border: 'none',
-          color: '#fff',
-          fontSize: 28,
-          cursor: 'pointer',
-        }}
-      >
-        ✕
-      </button>
+      {lightboxUrl && (
+        <div
+          onClick={() => setLightboxUrl(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 3000,
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <img src={lightboxUrl} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8 }} />
+        </div>
+      )}
     </div>
   );
 }
@@ -1394,70 +1193,63 @@ function TagsModal({
 
   return (
     <div style={S.modalOverlay}>
-      <div style={{ ...S.modal, maxWidth: 420 }}>
-        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Gérer les tags</h3>
+      <div style={S.modal}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h3 style={{ margin: 0, fontSize: 16 }}>Gérer les catégories</h3>
           <button onClick={onClose} style={S.closeBtn}>✕</button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-          {categories.map((c) => (
-            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input
-                type="color"
-                value={c.color}
-                onChange={(e) => onRecolor(c.id, e.target.value)}
-                style={{ width: 28, height: 28, padding: 0, border: 'none', borderRadius: 6, background: 'transparent', cursor: 'pointer' }}
-              />
-              <input
-                value={c.label}
-                onChange={(e) => onRename(c.id, e.target.value)}
-                style={{ ...S.input, flex: 1 }}
-              />
-              <button
-                onClick={() => {
-                  if (window.confirm(`Supprimer le tag "${c.label}" ? Les points existants garderont leur pastille grise.`)) {
-                    onDelete(c.id);
-                  }
-                }}
-                style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer', fontSize: 14 }}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-          {categories.length === 0 && (
-            <div style={{ fontSize: 12, color: colors.textDimmer }}>Aucun tag pour le moment.</div>
-          )}
+        <div style={{ flex: 1, overflowY: 'auto', marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            <input
+              type="text"
+              placeholder="Nom de la catégorie"
+              value={newLabel}
+              onChange={(e) => setNewLabel(e.target.value)}
+              style={S.input}
+            />
+            <input
+              type="color"
+              value={newColor}
+              onChange={(e) => setNewColor(e.target.value)}
+              style={{ width: 40, height: 38, border: 'none', background: 'transparent', cursor: 'pointer' }}
+            />
+            <button
+              onClick={() => {
+                if (!newLabel.trim()) return;
+                onAdd(newLabel.trim(), newColor);
+                setNewLabel('');
+              }}
+              style={S.primaryBtn}
+            >
+              Ajouter
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {categories.map((c) => (
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(15,23,42,0.5)', padding: 8, borderRadius: 6 }}>
+                <input
+                  type="color"
+                  value={c.color}
+                  onChange={(e) => onRecolor(c.id, e.target.value)}
+                  style={{ width: 28, height: 28, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                />
+                <input
+                  type="text"
+                  value={c.label}
+                  onChange={(e) => onRename(c.id, e.target.value)}
+                  style={{ ...S.input, flex: 1 }}
+                />
+                <button onClick={() => onDelete(c.id)} style={S.dangerLink}>
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <label style={S.label}>Nouveau tag</label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <input
-            type="color"
-            value={newColor}
-            onChange={(e) => setNewColor(e.target.value)}
-            style={{ width: 28, height: 28, padding: 0, border: 'none', borderRadius: 6, background: 'transparent', cursor: 'pointer' }}
-          />
-          <input
-            value={newLabel}
-            onChange={(e) => setNewLabel(e.target.value)}
-            placeholder="Nom du tag (ex : Véhicule)"
-            style={{ ...S.input, flex: 1 }}
-          />
-          <button
-            onClick={() => {
-              if (!newLabel.trim()) return;
-              onAdd(newLabel.trim(), newColor);
-              setNewLabel('');
-            }}
-            style={S.primaryBtn}
-          >
-            Ajouter
-          </button>
-        </div>
-
-        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={S.ghostBtn}>Fermer</button>
         </div>
       </div>
