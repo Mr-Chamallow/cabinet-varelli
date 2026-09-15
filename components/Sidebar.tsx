@@ -20,11 +20,12 @@ const NAV_SECTIONS = [
     { href: "/obsidian/stats",         label: "Statistiques",    icon: "◈", permission: "obsidian_stats" },
     { href: "/obsidian/fiches",        label: "Fiches",          icon: "◉", permission: "obsidian_stats" },
     { href: "/obsidian/carte",         label: "Carte",           icon: "◊", permission: "obsidian_stats" },
-    { href: "/carte-enqueteur",        label: "Carte enquêteur", icon: "◔", permission: "obsidian_stats" },
     { href: "/cahier-vente",           label: "Cahier de vente", icon: "▪", permission: "cahier_vente" },
     { href: "/obsidian/paie",          label: "Paie & Commissions", icon: "💰", permission: "obsidian_paie" },
     { href: "/obsidian/employes",      label: "Employés",        icon: "🧑‍💼", permission: "obsidian_employes" },
     { href: "/h47",                    label: "H-47",            icon: "◑", permission: "h47" },
+    { href: "/juridique",       label: "Code pénal",       icon: "📖", permission: "juridique" },
+    { href: "/carte-enqueteur", label: "Carte enquêteur",  icon: "◔", permission: "carte-enqueteur" },
   ]},
   { label: "Administration", items: [
     { href: "/settings",    label: "Personnalisation", icon: "◌", permission: "admin" },
