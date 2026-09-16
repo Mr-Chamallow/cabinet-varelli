@@ -35,6 +35,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
+  "Associé / Patron":               [...ALL_PERMISSIONS], // ← LA CLÉ QUI MANQUAIT
   "CEO - Directeur général":        [...ALL_PERMISSIONS],
   "COO - Directrice opérationnel":  ALL_PERMISSIONS.filter(p => p !== "delete_all"),
   "Responsable juridique":          ["obsidian_dashboard","obsidian_rdv","obsidian_contrats","obsidian_stats","juridique","carte-enqueteur"],
