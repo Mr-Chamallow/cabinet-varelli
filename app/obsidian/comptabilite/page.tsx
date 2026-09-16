@@ -21,7 +21,7 @@ export default function ComptaPage(){
   useEffect(()=>{load();},[]);
   async function load(){if(!supabase){setLoading(false);return;}const{data}=await supabase.from("obsidian_comptabilite").select("*").order("created_at",{ascending:false});setEntries(data||[]);setLoading(false);}
   function showT(m:string){setToast(m);setTimeout(()=>setToast(null),3000);}
-  async function save(){if(!supabase||!form.motif||form.montant<=0)return;setSaving(true);const semaine=getWeekStart(weekOffset);const{data}=await supabase.from("obsidian_comptabilite").insert([{...form,semaine,created_by:user?.nom||""}]).select().single();if(data)setEntries(e=>[data,...e]);setForm({type:"recette",categorie:"Vente drogue",montant:0,type_argent:"sale",motif:"",membre:""});showT("Enregistré");setSaving(false);setTab("apercu");}
+  async function save(){if(!supabase||!form.motif||form.montant<=0)return;setSaving(true);const semaine=getWeekStart(weekOffset);const{data,error}=await supabase.from("obsidian_comptabilite").insert([{...form,semaine,created_by:user?.nom||""}]).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setEntries(e=>[data,...e]);setForm({type:"recette",categorie:"Vente drogue",montant:0,type_argent:"sale",motif:"",membre:""});showT("Enregistré");setSaving(false);setTab("apercu");}
   async function del(id:string){if(!supabase)return;await supabase.from("obsidian_comptabilite").delete().eq("id",id);setEntries(e=>e.filter(x=>x.id!==id));}
   const weekStart=getWeekStart(weekOffset);
   const weekEntries=useMemo(()=>entries.filter(e=>e.semaine>=weekStart),[entries,weekStart]);

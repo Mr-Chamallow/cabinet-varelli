@@ -54,10 +54,9 @@ export function hasPermission(userOrRole: AppUser | string | null, permission: s
     const perms = DEFAULT_PERMISSIONS[userOrRole] || [];
     return perms.includes(permission) || perms.includes("admin");
   }
-  // Fallback : si les permissions Supabase sont vides/absentes, on retombe sur les defaults du code
-  const perms = (userOrRole.permissions && userOrRole.permissions.length > 0)
-    ? userOrRole.permissions
-    : (DEFAULT_PERMISSIONS[userOrRole.role] || []);
+  const supaPerms = userOrRole.permissions || [];
+  const defaultPerms = DEFAULT_PERMISSIONS[userOrRole.role] || [];
+  const perms = [...new Set([...supaPerms, ...defaultPerms])]; // union — toujours à jour même si Supabase pas migré
   return perms.includes(permission) || perms.includes("admin");
 }
 

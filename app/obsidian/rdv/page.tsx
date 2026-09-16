@@ -151,20 +151,27 @@ export default function PlanningOperationsPage() {
     setContratsList(data || []);
   }
 
-  async function saveOperation() {
-    if (!supabase || !user) return;
-    setSaving(true);
-    if (editOperation) {
-      await supabase.from("obsidian_rdv").update({ ...form }).eq("id", editOperation.id);
-    } else {
-      await supabase.from("obsidian_rdv").insert([{ ...form, created_by: user.nom, created_by_id: user.id }]);
-    }
-    setSaving(false);
-    setShowModal(false);
-    setEditOperation(null);
-    setForm({ ...EMPTY });
-    fetchOperations();
+async function saveOperation() {
+  if (!supabase || !user) return;
+  setSaving(true);
+  let error = null;
+  if (editOperation) {
+    const res = await supabase.from("obsidian_rdv").update({ ...form }).eq("id", editOperation.id);
+    error = res.error;
+  } else {
+    const res = await supabase.from("obsidian_rdv").insert([{ ...form, created_by: user.nom, created_by_id: user.id }]);
+    error = res.error;
   }
+  setSaving(false);
+  if (error) {
+    alert("❌ Erreur : " + error.message);
+    return;
+  }
+  setShowModal(false);
+  setEditOperation(null);
+  setForm({ ...EMPTY });
+  fetchOperations();
+}
 
   async function deleteOperation(id: string) {
     if (!supabase) return;
