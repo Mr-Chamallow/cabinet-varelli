@@ -450,6 +450,7 @@ export default function MapCanvas({
     };
   };
 
+  // ─── Init de la carte (SANS créer le tileLayer ici — géré par le useEffect [mapStyle]) ───
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -471,15 +472,6 @@ export default function MapCanvas({
       [-TILE_SIZE, 0],
       [0, TILE_SIZE],
     ];
-    const tileLayer = L.tileLayer(satelliteTilesUrl, {
-      tileSize: TILE_SIZE,
-      minZoom: 0,
-      maxZoom: MAX_ZOOM,
-      noWrap: true,
-      bounds,
-    }).addTo(map);
-    tileLayerRef.current = tileLayer;
-
     map.setMaxBounds(bounds);
     map.setView([-TILE_SIZE / 2, TILE_SIZE / 2], 2);
 
@@ -501,7 +493,6 @@ export default function MapCanvas({
 
     mapRef.current = map;
 
-    // Forcer le calcul des dimensions de la carte
     setTimeout(() => {
       map.invalidateSize();
     }, 100);
@@ -509,15 +500,39 @@ export default function MapCanvas({
     return () => {
       map.remove();
       mapRef.current = null;
+      tileLayerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ─── Switch de style : détruit vraiment l'ancien layer avant d'en créer un nouveau ───
+  // (fix mémoire : setUrl() gardait les anciennes tuiles en cache → fuite RAM → crash navigateur)
   useEffect(() => {
-    const layer = tileLayerRef.current;
-    if (!layer) return;
+    const map = mapRef.current;
+    if (!map) return;
     const urls = { satellite: satelliteTilesUrl, grid: gridTilesUrl, atlas: atlasTilesUrl };
-    layer.setUrl(urls[mapStyle]);
+
+    if (tileLayerRef.current) {
+      map.removeLayer(tileLayerRef.current);
+      tileLayerRef.current = null;
+    }
+
+    const bounds: L.LatLngBoundsExpression = [
+      [-TILE_SIZE, 0],
+      [0, TILE_SIZE],
+    ];
+    const newLayer = L.tileLayer(urls[mapStyle], {
+      tileSize: TILE_SIZE,
+      minZoom: 0,
+      maxZoom: MAX_ZOOM,
+      noWrap: true,
+      bounds,
+      updateWhenIdle: true,
+      keepBuffer: 1,
+      updateWhenZooming: false,
+    });
+    newLayer.addTo(map);
+    tileLayerRef.current = newLayer;
   }, [mapStyle, satelliteTilesUrl, gridTilesUrl, atlasTilesUrl]);
 
   useEffect(() => {
@@ -679,7 +694,6 @@ export default function MapCanvas({
     <div style={S.root}>
       <div style={S.mapCol}>
         <div style={S.toolbar}>
-          {/* Ligne 1 : Contrôles principaux & Recherche */}
           <div style={S.toolbarRow}>
             <button
               onClick={() => setAddMode((v) => !v)}
@@ -721,7 +735,6 @@ export default function MapCanvas({
             />
           </div>
 
-          {/* Ligne 2 : Filtres centrés & Modales */}
           <div style={S.filterRowCentered}>
             {categories.map((c) => (
               <button
@@ -983,7 +996,6 @@ function DossierModal({
   return (
     <div style={S.modalOverlay}>
       <div style={S.modal}>
-        {/* En-tête fixe */}
         <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <input
             value={point.title}
@@ -993,7 +1005,6 @@ function DossierModal({
           <button onClick={onClose} style={S.closeBtn}>✕</button>
         </div>
 
-        {/* Corps de modale défilable */}
         <div style={{ flex: 1, overflowY: 'auto', paddingRight: 6 }} onPaste={handlePaste}>
           <label style={S.label}>Catégorie</label>
           <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -1173,7 +1184,6 @@ function DossierModal({
           </div>
         </div>
 
-        {/* Actions du bas */}
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button type="button" onClick={onDelete} style={S.dangerLink}>
             Supprimer
