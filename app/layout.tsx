@@ -4,8 +4,8 @@ import { Providers } from '@/components/Providers';
 import { Sidebar } from '@/components/Sidebar';
 
 export const metadata: Metadata = {
-  title: 'Cabinet Varelli',
-  description: 'Gestion et op�rations',
+  title: 'Obsidian Logistique',
+  description: 'Plateforme de gestion - Obsidian Logistique',
   icons: {
     icon: '/logo.png',
     shortcut: '/logo.png',
