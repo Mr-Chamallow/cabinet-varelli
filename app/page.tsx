@@ -1,142 +1,48 @@
 "use client";
-
 import { useEffect, useState } from "react";
-import { canAccess, getMemberColor, type User } from "@/lib/auth";
-import { useCurrentUser } from "@/lib/useCurrentUser";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 
-interface Stats {
-  clients: number;
-  livraisons: number;
-  factures: number;
-  livraisonsEnCours: number;
-  chiffreAffaires: number;
-  facturesEnAttente: number;
-  livraisonsReussies: number;
-  livraisonsEchouees: number;
-}
+const fmt = (n:number) => n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 
-interface PlanningLivraison {
-  id: string;
-  titre: string;
-  client: string;
-  date: string;
-  heure: string;
-  type: string;
-  created_by: string;
-}
-
-interface Facture {
-  id: string;
-  numero: string;
-  client: string;
-  montant: number;
-  statut: string;
-}
-
-export default function Dashboard() {
-  const router = useRouter();
+export default function ObsidianDashboard() {
   const { user, loading: userLoading } = useCurrentUser();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [evolutionCA, setEvolutionCA] = useState<{ mois: string; total: number }[]>([]);
-  const [planning, setPlanning] = useState<PlanningLivraison[]>([]);
-  const [memberColors, setMemberColors] = useState<Record<string, string>>({});
-  const [factures, setFactures] = useState<Facture[]>([]);
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_dashboard"))) { window.location.href = "/login"; } }, [user, userLoading]);
+
+  const [stats, setStats] = useState({recettes:0,depenses:0,argSale:0,nbArmes:0,nbDrogues:0});
+  const [events, setEvents] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [retardsRecurrents, setRetardsRecurrents] = useState<{ nom: string; count: number }[]>([]);
-  const [defcon, setDefconDash] = useState(5);
 
-  useEffect(() => {
-    if (!user) return;
-    const saved = parseInt(localStorage.getItem('obsidian_defcon') || '5');
-    setDefconDash(isNaN(saved) ? 5 : Math.min(5, Math.max(1, saved)));
-    load(user);
-  }, [user]);
+  useEffect(()=>{ if(user) load(); },[user]);
 
-  async function load(u: User) {
-    if (!supabase) { setLoading(false); return; }
-
-    const today = new Date().toISOString().split("T")[0];
-
-    supabase.from("membres").select("nom, couleur").then(({ data }) => {
-      if (data) {
-        const map: Record<string, string> = {};
-        data.forEach((m: any) => { if (m.couleur) map[m.nom] = m.couleur; });
-        setMemberColors(map);
-      }
-    });
-
-    const [
-      { count: clients },
-      { count: livraisons },
-      { count: factureCount },
-      { count: livraisonsEnCours },
-      { count: livraisonsReussies },
-      { count: livraisonsEchouees },
-      { data: factureData },
-      { data: planningData },
-      { data: facturesRecentes },
-    ] = await Promise.all([
-      supabase.from("clients").select("*", { count: "exact", head: true }).eq("created_by", u.nom),
-      supabase.from("livraisons").select("*", { count: "exact", head: true }).eq("created_by", u.nom),
-      supabase.from("factures").select("*", { count: "exact", head: true }).eq("created_by", u.nom),
-      supabase.from("livraisons").select("*", { count: "exact", head: true }).eq("created_by", u.nom).eq("statut", "En cours"),
-      supabase.from("livraisons").select("*", { count: "exact", head: true }).eq("created_by", u.nom).eq("statut", "Librée"),
-      supabase.from("livraisons").select("*", { count: "exact", head: true }).eq("created_by", u.nom).eq("statut", "Annulée"),
-      supabase.from("factures").select("montant, statut, created_at").eq("created_by", u.nom),
-      supabase.from("planning").select("id, titre, client, date, heure, type, created_by")
-        .gte("date", today).order("date").order("heure").limit(6),
-      supabase.from("factures").select("id, numero, client, montant, statut")
-        .eq("created_by", u.nom).eq("statut", "En attente").order("created_at", { ascending: false }).limit(4),
+  async function load() {
+    if(!supabase){setLoading(false);return;}
+    const [{data:compta},{data:stocks},{data:rdv},{data:contrats}] = await Promise.all([
+      supabase.from("obsidian_comptabilite").select("type,montant,type_argent"),
+      supabase.from("obsidian_stocks").select("*"),
+      supabase.from("obsidian_rdv").select("id,titre,type,date,statut").order("date").limit(5),
+      supabase.from("obsidian_contrats").select("id,titre,statut,date_cible").eq("statut","En cours").limit(5),
     ]);
-
-    const ca = (factureData || []).filter((f: any) => f.statut === "Payée").reduce((s: number, f: any) => s + f.montant, 0);
-    const enAttente = (factureData || []).filter((f: any) => f.statut === "En attente").reduce((s: number, f: any) => s + f.montant, 0);
-
+    const r=(compta||[]).filter((c:any)=>c.type==="recette").reduce((s:number,c:any)=>s+c.montant,0);
+    const d=(compta||[]).filter((c:any)=>c.type==="dépense").reduce((s:number,c:any)=>s+c.montant,0);
+    const sal=(compta||[]).filter((c:any)=>c.type_argent==="sale").reduce((s:number,c:any)=>s+c.montant,0);
     setStats({
-      clients: clients || 0,
-      livraisons: livraisons || 0,
-      factures: factureCount || 0,
-      livraisonsEnCours: livraisonsEnCours || 0,
-      livraisonsReussies: livraisonsReussies || 0,
-      livraisonsEchouees: livraisonsEchouees || 0,
-      chiffreAffaires: ca,
-      facturesEnAttente: enAttente,
+      recettes:r,depenses:d,argSale:sal,
+      nbArmes:(stocks||[]).filter((s:any)=>s.categorie==="arme").reduce((a:number,x:any)=>a+x.quantite,0),
+      nbDrogues:(stocks||[]).filter((s:any)=>s.categorie==="drogue").reduce((a:number,x:any)=>a+x.quantite,0),
     });
-
-    const moisLabels = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
-    const now = new Date();
-    const buckets: { mois: string; total: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      buckets.push({ mois: moisLabels[d.getMonth()], total: 0 });
-    }
-    (factureData || []).filter((f: any) => f.statut === "Payée").forEach((f: any) => {
-      const fd = new Date(f.created_at);
-      const diffMonths = (now.getFullYear() - fd.getFullYear()) * 12 + (now.getMonth() - fd.getMonth());
-      if (diffMonths >= 0 && diffMonths <= 5) {
-        buckets[5 - diffMonths].total += f.montant;
-      }
-    });
-    setEvolutionCA(buckets);
-
-    setPlanning(planningData || []);
-    setFactures(facturesRecentes || []);
-
-    const { data: incidentData } = await supabase.from("incidents").select("client_nom");
-    if (incidentData) {
-      const counts: Record<string, number> = {};
-      incidentData.forEach((r: any) => { counts[r.client_nom] = (counts[r.client_nom] || 0) + 1; });
-      const retards = Object.entries(counts).filter(([, n]) => n >= 3).map(([nom, count]) => ({ nom, count })).sort((a, b) => b.count - a.count).slice(0, 5);
-      setRetardsRecurrents(retards);
-    }
-
+    setAlerts((stocks||[]).filter((s:any)=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte));
+    setEvents([
+      ...(rdv||[]).map((r:any)=>({...r,_type:"Opération"})),
+      ...(contrats||[]).map((c:any)=>({...c,titre:c.titre,date:c.date_cible,_type:"Contrat"})),
+    ].sort((a,b)=>(a.date||"").localeCompare(b.date||"")));
     setLoading(false);
   }
 
-  const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-  const today = new Date().toISOString().split("T")[0];
+  const s = stats;
+  const solde = s.recettes - s.depenses;
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -145,25 +51,24 @@ export default function Dashboard() {
     return "Bonsoir";
   };
 
-  if (!user) return null;
+  if (userLoading || !user) return null;
 
   return (
     <div className="page-container" style={{ position: "relative" }}>
       <div className="ambient-glow" style={{ top: "-10%", left: "60%" }} />
 
-      {/* Header */}
       <div style={{ marginBottom: "2.25rem", position: "relative", zIndex: 1 }}>
         <div style={{
           fontFamily: "'Inter', sans-serif", fontSize: "2.1rem", fontWeight: 900,
           letterSpacing: "-0.02em", marginBottom: "0.3rem", lineHeight: 1.1,
           textTransform: "uppercase"
         }}>
-          {greeting()}, <span style={{ color: "var(--purple-obsidian, #8b5cf6)" }}>{user.nom.split(" ")[0]}</span>
+          {greeting()}, <span style={{ color: "var(--gold)" }}>{user.nom.split(" ")[0]}</span>
         </div>
         <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
           Obsidian Logistique — {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
         </div>
-        <div className="accent-line" style={{ marginTop: "0.8rem", height: "2px", background: "var(--purple-obsidian, #8b5cf6)", width: "60px" }} />
+        <div className="gold-line" style={{ marginTop: "0.8rem" }} />
       </div>
 
       {loading ? (
@@ -175,300 +80,111 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          {/* Stats */}
+          {alerts.length > 0 && (
+            <div style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "var(--radius-lg)", padding: "0.875rem 1.125rem", marginBottom: "1.25rem" }}>
+              <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--danger)", marginBottom: "0.4rem" }}>⚠️ Stock bas</div>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                {alerts.map((a:any) => (
+                  <a key={a.id} href="/obsidian/stocks" style={{ textDecoration: "none" }}>
+                    <span style={{ fontSize: "0.75rem", padding: "0.2rem 0.65rem", borderRadius: 999, background: "rgba(239,68,68,0.12)", color: "var(--danger)", border: "1px solid rgba(239,68,68,0.25)", fontWeight: 600 }}>
+                      {a.emoji} {a.nom} : {a.quantite}/{a.seuil_alerte}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Stats principales */}
           <div className="stat-grid">
             {[
-              { label: "Partenaires / Clients", value: stats?.clients || 0, icon: "🏢", href: "/clients" },
-              { label: "Ordres de transport", value: stats?.livraisons || 0, icon: "📦", href: "/livraisons" },
-              { label: "En transit", value: stats?.livraisonsEnCours || 0, icon: "🚚", href: "/livraisons" },
-              { label: "Factures", value: stats?.factures || 0, icon: "📄", href: "/factures" },
-            ].map((s) => (
-              <a key={s.label} href={s.href} style={{ textDecoration: "none" }} className="stagger-item">
+              { label: "Solde", value: fmt(solde), icon: "⚖️", href: "/obsidian/comptabilite", color: solde>=0?"var(--success)":"var(--danger)" },
+              { label: "Argent sale", value: fmt(s.argSale), icon: "💰", href: "/obsidian/comptabilite", color: "var(--warning)" },
+              { label: "Stock armes", value: s.nbArmes+"u.", icon: "🔫", href: "/obsidian/armurerie", color: "var(--danger)" },
+              { label: "Stock drogues", value: s.nbDrogues+"u.", icon: "💊", href: "/obsidian/stocks", color: "#8b5cf6" },
+            ].map((st) => (
+              <a key={st.label} href={st.href} style={{ textDecoration: "none" }} className="stagger-item">
                 <div className="stat-card">
-                  <div className="stat-icon" style={{ opacity: 0.8, fontSize: "1.2rem" }}>{s.icon}</div>
-                  <div className="stat-value">{s.value}</div>
-                  <div className="stat-label" style={{ marginTop: "0.35rem" }}>{s.label}</div>
+                  <div className="stat-icon" style={{ opacity: 0.8, fontSize: "1.2rem" }}>{st.icon}</div>
+                  <div className="stat-value" style={{ color: st.color, fontSize: "1.1rem" }}>{st.value}</div>
+                  <div className="stat-label" style={{ marginTop: "0.35rem" }}>{st.label}</div>
                 </div>
               </a>
             ))}
           </div>
 
-          {/* Alertes Logistiques */}
-          {retardsRecurrents.length > 0 && (
-            <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "var(--radius-lg)", padding: "0.875rem 1.125rem", marginBottom: "0.875rem", display: "flex", gap: "1rem", alignItems: "flex-start", flexWrap: "wrap" }}>
-              <div style={{ flexShrink: 0 }}>
-                <div style={{ fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--danger)", fontWeight: 700, marginBottom: "0.35rem" }}>⚠ Alertes Paiements / Litiges (3+ incidents)</div>
-                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                  {retardsRecurrents.map((r) => (
-                    <a key={r.nom} href="/incidents" style={{ textDecoration: "none" }}>
-                      <span style={{ fontSize: "0.72rem", padding: "0.2rem 0.65rem", borderRadius: 999, background: "rgba(239,68,68,0.12)", color: "var(--danger)", border: "1px solid rgba(239,68,68,0.25)", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                        {r.nom} <span style={{ opacity: 0.7 }}>×{r.count}</span>
-                      </span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Chiffres financiers */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem", marginBottom: "0.875rem" }}>
+          {/* Recettes/Dépenses */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem", marginBottom: "1.75rem" }}>
             <div className="card stagger-item" style={{ borderColor: "rgba(34,197,94,0.18)" }}>
-              <div className="stat-label" style={{ marginBottom: "0.5rem" }}>Chiffre d&apos;affaires (prestations réglées)</div>
-              <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--success)" }}>
-                {fmt(stats?.chiffreAffaires || 0)}
-              </div>
+              <div className="stat-label" style={{ marginBottom: "0.5rem" }}>Recettes cumulées</div>
+              <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--success)" }}>{fmt(s.recettes)}</div>
             </div>
-            <div className="card stagger-item" style={{ borderColor: "rgba(234,179,8,0.18)" }}>
-              <div className="stat-label" style={{ marginBottom: "0.5rem" }}>Factures en attente d&apos;encaissement</div>
-              <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--warning)" }}>
-                {fmt(stats?.facturesEnAttente || 0)}
-              </div>
+            <div className="card stagger-item" style={{ borderColor: "rgba(239,68,68,0.18)" }}>
+              <div className="stat-label" style={{ marginBottom: "0.5rem" }}>Dépenses cumulées</div>
+              <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--danger)" }}>{fmt(s.depenses)}</div>
             </div>
           </div>
 
-          {/* Taux d'accomplissement des livraisons */}
-          {((stats?.livraisonsReussies || 0) + (stats?.livraisonsEchouees || 0)) > 0 && (
-            <div className="card" style={{ marginBottom: "1.75rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.75rem" }}>
-                <div className="stat-label" style={{ marginBottom: 0 }}>Taux d&apos;efficacité du charroi</div>
-                <div style={{ fontWeight: 800, fontSize: "1.15rem", color: "var(--purple-obsidian, #8b5cf6)" }}>
-                  {Math.round((stats!.livraisonsReussies / (stats!.livraisonsReussies + stats!.livraisonsEchouees)) * 100)}%
-                </div>
-              </div>
-              <div className="progress-bar-track" style={{ marginBottom: "0.625rem" }}>
-                <div className="progress-bar-fill" style={{
-                  width: `${(stats!.livraisonsReussies / (stats!.livraisonsReussies + stats!.livraisonsEchouees)) * 100}%`,
-                  background: "linear-gradient(90deg, var(--success), #16a34a)",
-                }} />
-              </div>
-              <div style={{ display: "flex", gap: "1.25rem", fontSize: "0.78rem" }}>
-                <span style={{ color: "var(--success)" }}>● {stats?.livraisonsReussies} conforme{stats?.livraisonsReussies !== 1 ? "s" : ""}</span>
-                <span style={{ color: "var(--danger)" }}>● {stats?.livraisonsEchouees} litige{stats?.livraisonsEchouees !== 1 ? "s" : ""} / annulée{stats?.livraisonsEchouees !== 1 ? "s" : ""}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Évolution du CA */}
-          {evolutionCA.some((b) => b.total > 0) && (
-            <div className="card" style={{ marginBottom: "1.75rem" }}>
-              <div className="stat-label" style={{ marginBottom: "1rem" }}>Volume d&apos;affaires mensuel (6 derniers mois)</div>
-              <div style={{ display: "flex", alignItems: "flex-end", gap: "0.75rem", height: 120 }}>
-                {evolutionCA.map((b, i) => {
-                  const max = Math.max(...evolutionCA.map((x) => x.total), 1);
-                  const h = Math.max((b.total / max) * 100, b.total > 0 ? 6 : 2);
-                  return (
-                    <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem" }}>
-                      <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>
-                        {b.total > 0 ? fmt(b.total).replace(",00 $", "$").replace(" $", "$") : ""}
-                      </div>
-                      <div style={{
-                        width: "100%", maxWidth: 36, height: `${h}%`, minHeight: 4,
-                        borderRadius: "4px 4px 0 0",
-                        background: i === 5 ? "linear-gradient(180deg, var(--purple-obsidian, #8b5cf6), #6d28d9)" : "var(--border-light)",
-                        transition: "height 0.6s var(--ease)",
-                      }} />
-                      <div style={{ fontSize: "0.68rem", color: "var(--text-dim)" }}>{b.mois}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Planning + Factures */}
+          {/* Prochains événements + Accès rapide */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
-            {/* Prochains convois / livraisons */}
             <div className="card">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.125rem" }}>
                 <div>
-                  <div className="section-title">Planning des convois</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.15rem" }}>Feuille de route partagée</div>
+                  <div className="section-title">Prochaines opérations</div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.15rem" }}>Agenda partagé</div>
                 </div>
-                <a href="/planning" className="btn btn-ghost btn-sm">Planning complet →</a>
+                <a href="/obsidian/rdv" className="btn btn-ghost btn-sm">Planning complet →</a>
               </div>
 
-              {planning.length === 0 ? (
+              {events.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "1.5rem 0", color: "var(--text-dim)", fontSize: "0.825rem" }}>
-                  Aucune livraison planifiée
+                  Aucune opération planifiée
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  {planning.map((a) => {
-                    const isToday = a.date === today;
-                    const memberColor = getMemberColor(a.created_by || "default", memberColors[a.created_by]);
-                    return (
-                      <a key={a.id} href="/planning" style={{ textDecoration: "none" }} className="stagger-item">
-                        <div style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.875rem",
-                          padding: "0.7rem 0.875rem",
-                          borderRadius: "var(--radius)",
-                          background: isToday ? "rgba(139, 92, 246, 0.1)" : "var(--surface)",
-                          border: `1px solid ${isToday ? "rgba(139, 92, 246, 0.3)" : "var(--border)"}`,
-                          transition: "border-color var(--t-fast) var(--ease)",
-                        }}>
-                          <div style={{ width: 3, height: 36, borderRadius: 2, background: memberColor, flexShrink: 0 }} />
-
-                          <div style={{ flexShrink: 0, textAlign: "center", minWidth: 36 }}>
-                            <div style={{ fontSize: "1rem", fontWeight: 700, color: isToday ? "var(--purple-obsidian, #8b5cf6)" : "var(--text)", lineHeight: 1 }}>
-                              {new Date(a.date + "T12:00:00").getDate()}
-                            </div>
-                            <div style={{ fontSize: "0.62rem", color: "var(--text-dim)", textTransform: "uppercase" }}>
-                              {new Date(a.date + "T12:00:00").toLocaleDateString("fr-FR", { month: "short" })}
-                            </div>
-                          </div>
-
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 600, fontSize: "0.825rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {a.titre}
-                            </div>
-                            <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.1rem", display: "flex", gap: "0.5rem" }}>
-                              {a.heure && <span>⏱ {a.heure}</span>}
-                              {a.client && <span>· {a.client}</span>}
-                            </div>
-                          </div>
-
-                          <div style={{
-                            fontSize: "0.62rem",
-                            padding: "0.15rem 0.45rem",
-                            borderRadius: 999,
-                            background: memberColor + "18",
-                            color: memberColor,
-                            border: `1px solid ${memberColor}30`,
-                            flexShrink: 0,
-                            fontWeight: 600,
-                          }}>
-                            {(a.created_by || "?").split(" ")[0]}
-                          </div>
-
-                          {isToday && (
-                            <span className="badge" style={{ fontSize: "0.6rem", flexShrink: 0, background: "var(--purple-obsidian, #8b5cf6)", color: "#fff" }}>Aujourd&apos;hui</span>
-                          )}
-                        </div>
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-
-              <a href="/planning" className="btn btn-outline btn-sm" style={{ width: "100%", justifyContent: "center", marginTop: "1rem" }}>
-                + Planifier un convoi
-              </a>
-            </div>
-
-            {/* Factures en attente */}
-            <div className="card">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.125rem" }}>
-                <div>
-                  <div className="section-title">Factures à régler</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.15rem" }}>Créances clients à relancer</div>
-                </div>
-                <a href="/factures" className="btn btn-ghost btn-sm">Voir tout →</a>
-              </div>
-
-              {factures.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "1.5rem 0", color: "var(--text-dim)", fontSize: "0.825rem" }}>
-                  Aucune facture en attente
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  {factures.map((f) => (
-                    <a key={f.id} href="/factures" style={{ textDecoration: "none" }} className="stagger-item">
+                  {events.slice(0, 6).map((e:any) => (
+                    <a key={e.id} href={e._type === "Opération" ? "/obsidian/rdv" : "/obsidian/contrats"} style={{ textDecoration: "none" }} className="stagger-item">
                       <div style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "0.7rem 0.875rem",
-                        borderRadius: "var(--radius)",
-                        background: "var(--surface)",
-                        border: "1px solid var(--border)",
-                        transition: "border-color var(--t-fast) var(--ease)",
-                        gap: "0.75rem",
+                        display: "flex", alignItems: "center", gap: "0.75rem",
+                        padding: "0.7rem 0.875rem", borderRadius: "var(--radius)",
+                        background: "var(--surface)", border: "1px solid var(--border)",
                       }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, fontSize: "0.825rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {f.client}
+                          <div style={{ fontWeight: 600, fontSize: "0.825rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.titre}</div>
+                          <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.1rem" }}>
+                            {e._type}{e.date ? " · " + new Date(e.date+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"short"}) : ""}
                           </div>
-                          <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", fontFamily: "monospace" }}>{f.numero}</div>
                         </div>
-                        <div style={{ fontWeight: 700, color: "var(--warning)", fontSize: "0.9rem", flexShrink: 0 }}>
-                          {fmt(f.montant)}
-                        </div>
+                        <span style={{ fontSize: "0.6rem", padding: "0.15rem 0.45rem", borderRadius: 999, background: "var(--gold-muted)", color: "var(--gold)", border: "1px solid rgba(139,92,246,0.3)", flexShrink: 0, fontWeight: 600 }}>{e.statut}</span>
                       </div>
                     </a>
                   ))}
                 </div>
               )}
 
-              <a href="/factures" className="btn btn-outline btn-sm" style={{ width: "100%", justifyContent: "center", marginTop: "1rem" }}>
-                + Créer une facture
+              <a href="/obsidian/rdv" className="btn btn-outline btn-sm" style={{ width: "100%", justifyContent: "center", marginTop: "1rem" }}>
+                + Planifier une opération
               </a>
             </div>
-          </div>
 
-          {/* Aperçu 7 prochains jours */}
-          <div className="card" style={{ marginTop: "1.25rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <div className="stat-label" style={{ marginBottom: 0 }}>Charge de travail sur 7 jours</div>
-              <a href="/planning" className="btn btn-ghost btn-sm">Vue mensuelle →</a>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "0.4rem" }}>
-              {Array.from({ length: 7 }).map((_, i) => {
-                const d = new Date(); d.setDate(d.getDate() + i);
-                const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-                const count = planning.filter((a) => a.date === dStr).length;
-                const isToday = i === 0;
-                return (
-                  <a key={i} href="/planning" style={{ textDecoration: "none" }}>
-                    <div style={{
-                      textAlign: "center", padding: "0.625rem 0.3rem", borderRadius: "var(--radius)",
-                      background: isToday ? "rgba(139, 92, 246, 0.1)" : count > 0 ? "var(--surface)" : "transparent",
-                      border: `1px solid ${isToday ? "rgba(139, 92, 246, 0.3)" : count > 0 ? "var(--border)" : "transparent"}`,
-                      transition: "border-color var(--t-fast) var(--ease)",
-                    }}>
-                      <div style={{ fontSize: "0.62rem", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: "0.25rem" }}>
-                        {d.toLocaleDateString("fr-FR", { weekday: "short" })}
-                      </div>
-                      <div style={{ fontWeight: isToday ? 700 : 500, fontSize: "0.95rem", color: isToday ? "var(--purple-obsidian, #8b5cf6)" : "var(--text)" }}>
-                        {d.getDate()}
-                      </div>
-                      {count > 0 && (
-                        <div style={{
-                          marginTop: "0.3rem", width: 6, height: 6, borderRadius: "50%",
-                          background: "var(--purple-obsidian, #8b5cf6)", margin: "0.3rem auto 0",
-                        }} />
-                      )}
-                    </div>
+            <div className="card">
+              <div className="section-title" style={{ marginBottom: "0.875rem" }}>🚀 Accès rapide</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                {[
+                  ["/obsidian/prix","💲 Prix","var(--gold)"],
+                  ["/obsidian/stocks","📦 Stocks","var(--info)"],
+                  ["/obsidian/armurerie","🔫 Armurerie","var(--danger)"],
+                  ["/obsidian/comptabilite","💳 Compta","var(--success)"],
+                  ["/obsidian/rdv","📅 Planning","var(--warning)"],
+                  ["/obsidian/contrats","📋 Contrats","#8b5cf6"],
+                  ["/obsidian/garage","🚗 Garage","var(--text-muted)"],
+                  ["/obsidian/fiches","👤 Fiches","#f97316"],
+                ].map(([h,l,c]) => (
+                  <a key={h as string} href={h as string} style={{ textDecoration: "none", padding: "0.625rem 0.875rem", background: "var(--surface)", borderRadius: "var(--radius)", border: "1px solid var(--border)", fontSize: "0.82rem", fontWeight: 500, color: c as string, display: "block" }}>
+                    {l as string}
                   </a>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Accès rapides Logistique */}
-          <div style={{ marginTop: "1.5rem" }}>
-            <div className="section-title" style={{ marginBottom: "0.875rem" }}>Accès rapides Ops</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-              {[
-                { label: "Nouveau client", href: "/clients", icon: "🏢" },
-                { label: "Créer un ordre de transport", href: "/livraisons", icon: "🚚" },
-                { label: "Gestion des stocks", href: "/stocks", icon: "📦" },
-                { label: "Calculateur de tarification", href: "/tarifs", icon: "📐" },
-                { label: "Registre des véhicules", href: "/flotte", icon: "🚛" },
-              ].filter((a) => {
-                const permMap: Record<string, string> = {
-                  "/clients": "clients", "/livraisons": "livraisons",
-                  "/stocks": "stocks", "/tarifs": "tarifs", "/flotte": "flotte",
-                };
-                return canAccess(user.role, permMap[a.href] || "dashboard");
-              }).map((a) => (
-                <a key={a.href} href={a.href} className="btn btn-outline">
-                  <span style={{ marginRight: "0.4rem" }}>{a.icon}</span>
-                  {a.label}
-                </a>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </>

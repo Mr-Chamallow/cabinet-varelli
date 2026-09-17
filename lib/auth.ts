@@ -15,8 +15,7 @@ export type User = AppUser;
 
 export const ALL_PERMISSIONS = [
   "obsidian_dashboard", "obsidian_prix", "obsidian_stocks", "obsidian_armurerie",
-  "obsidian_garage", "obsidian_comptabilite", "obsidian_rdv", "obsidian_contrats",
-  "obsidian_planification", "obsidian_stats", "cahier_vente", "obsidian_paie",
+  "obsidian_garage", "obsidian_comptabilite", "obsidian_rdv", "obsidian_contrats", "obsidian_stats", "cahier_vente", "obsidian_paie",
   "obsidian_employes", "h47", "admin", "supervision", "delete_all", "edit_all",
   "juridique", "calculatrice", "carte-enqueteur",
 ];
