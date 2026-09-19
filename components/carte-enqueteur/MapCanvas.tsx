@@ -563,16 +563,16 @@ export default function MapCanvas({
     })();
   }, []);
 
-  const confirmNewPoint = async (title: string, iconUrl?: string) => {
+  const confirmNewPoint = async (title: string, iconUrl?: string, drogueLiee?: string) => {
     if (!pendingCoords) return;
     const { x, y } = pendingCoords;
     setPendingCoords(null);
     const defaultCategory = categories[0]?.slug ?? 'autre';
     const localId = `local-${Date.now()}`;
-    const localPoint: CartePoint = { id: localId, x, y, category: defaultCategory, title, icon_url: iconUrl ?? null };
+    const localPoint: CartePoint = { id: localId, x, y, category: defaultCategory, title, icon_url: iconUrl ?? null, drogue_liee: drogueLiee ?? null } as any;
     setPoints((p) => [...p, localPoint]);
     try {
-      const saved = await createPoint({ x, y, category: defaultCategory, title, icon_url: iconUrl ?? null });
+      const saved = await createPoint({ x, y, category: defaultCategory, title, icon_url: iconUrl ?? null, drogue_liee: drogueLiee ?? null } as any);
       setPoints((p) => p.map((pt) => (pt.id === localId ? saved : pt)));
       setEditing({
         point: saved,

@@ -1,4 +1,4 @@
-export interface Category {
+﻿export interface Category {
   id: string;
   slug: string;
   label: string;
@@ -18,6 +18,7 @@ export interface CartePoint {
   title: string;
   icon_url?: string | null; // icône personnalisée (facultative) ; sinon pastille de couleur par catégorie
   created_at?: string;
+  drogue_liee?: string | null;
 }
 
 export interface Gang {
