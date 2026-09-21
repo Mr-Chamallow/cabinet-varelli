@@ -17,3 +17,5 @@ export async function requirePermission(permission: string) {
   const authorized = hasPermission({ id: user.discord_id, nom: user.discord_name, role, permissions } as any, permission);
   return { authorized, user, supabaseAdmin };
 }
+
+export { supabaseAdmin };
