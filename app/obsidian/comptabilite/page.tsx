@@ -21,8 +21,26 @@ export default function ComptaPage(){
   useEffect(()=>{load();},[]);
   async function load(){if(!supabase){setLoading(false);return;}const{data}=await supabase.from("obsidian_comptabilite").select("*").order("created_at",{ascending:false});setEntries(data||[]);setLoading(false);}
   function showT(m:string){setToast(m);setTimeout(()=>setToast(null),3000);}
-  async function save(){if(!supabase||!form.motif||form.montant<=0)return;setSaving(true);const semaine=getWeekStart(weekOffset);const{data,error}=await supabase.from("obsidian_comptabilite").insert([{...form,semaine,created_by:user?.nom||""}]).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setEntries(e=>[data,...e]);setForm({type:"recette",categorie:"Vente drogue",montant:0,type_argent:"sale",motif:"",membre:""});showT("Enregistré");setSaving(false);setTab("apercu");}
-  async function del(id:string){if(!supabase)return;await supabase.from("obsidian_comptabilite").delete().eq("id",id);setEntries(e=>e.filter(x=>x.id!==id));}
+  async function save(){
+  if(!form.motif||form.montant<=0)return;
+  setSaving(true);
+  const semaine=getWeekStart(weekOffset);
+  const res = await fetch("/api/obsidian/comptabilite", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({...form,semaine,created_by:user?.nom||""}),
+  });
+  const data = await res.json();
+  if (!res.ok) { alert("❌ "+data.error); setSaving(false); return; }
+  setEntries(e=>[data,...e]);
+  setForm({type:"recette",categorie:"Vente drogue",montant:0,type_argent:"sale",motif:"",membre:""});
+  showT("Enregistré");setSaving(false);setTab("apercu");
+}
+  async function del(id:string){
+  const res = await fetch("/api/obsidian/comptabilite", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+  if (!res.ok) { alert("❌ Erreur suppression"); return; }
+  setEntries(e=>e.filter(x=>x.id!==id));
+}
   const weekStart=getWeekStart(weekOffset);
   const weekEntries=useMemo(()=>entries.filter(e=>e.semaine>=weekStart),[entries,weekStart]);
   const recettes=weekEntries.filter(e=>e.type==="recette").reduce((s,e)=>s+e.montant,0);

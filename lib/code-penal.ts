@@ -1,551 +1,3263 @@
-﻿"use client";
-
-// ─── SOURCE DE VÉRITÉ — Code Pénal San Andreas · FlashBackFA ─────────────────
-// Ce fichier est la seule source. Toutes les pages importent depuis ici.
-
-export type Categorie = "constitution" | "penal_contravention" | "penal_delit_mineur" | "penal_delit_majeur" | "penal_crime" | "procedure" | "civil" | "travail" | "commerce" | "federal" | "miranda";
-
-export interface Article {
+﻿export interface Infraction {
   id: string;
-  categorie: Categorie;
+  categorieId: number;
+  categorieNom: 'Contravention' | 'Délit mineur' | 'Délit majeur' | 'Crime' | 'Délit routier';
   titre: string;
-  contenu: string;
-  amende?: string;
-  detention?: string;
-  tags?: string[];
+  amendeDeBase: number;
+  peineDeBaseMin: number; // Temps de détention en minutes
+  description: string;
+  coefficientType: 'Global' | 'Cible';
 }
 
-// ─── ARTICLES (448 entrées) ───────────────────────────────────────────────────
-export const ARTICLES: Article[] = [
-  // CONSTITUTION
-  { id: "CONST-1", categorie: "constitution", titre: "Libertés fondamentales", contenu: "Sont garanties sans restriction injustifiée : liberté d'expression, liberté d'opinion politique, liberté de presse, liberté de création.", tags: ["liberté", "expression"] },
-  { id: "CONST-2", categorie: "constitution", titre: "Libertés d'association", contenu: "Tout citoyen peut créer ou rejoindre une organisation, créer un parti politique, créer une entreprise, former des syndicats ou groupes civils. Aucun citoyen ne peut être forcé à quitter une organisation sans motif légal.", tags: ["association", "organisation"] },
-  { id: "CONST-3", categorie: "constitution", titre: "Libertés de circulation", contenu: "Tout citoyen peut circuler librement sur le territoire de San Andreas. Exceptions : décision judiciaire, zones sécurisées ou restreintes, événements officiels fermés.", tags: ["circulation"] },
-  { id: "CONST-4", categorie: "constitution", titre: "Libertés de réunion et manifestation", contenu: "Les citoyens peuvent organiser meetings politiques, manifestations, grèves, rassemblements publics. Sous réserve du maintien de l'ordre et de déclaration préalable aux autorités administratives.", tags: ["manifestation", "réunion"] },
-  { id: "CONST-5", categorie: "constitution", titre: "Droit de propriété", contenu: "Tout citoyen peut posséder des biens, posséder une entreprise, acheter/vendre librement. Sous réserve des lois et décisions judiciaires.", tags: ["propriété"] },
-  { id: "CONST-6", categorie: "constitution", titre: "Droit au travail", contenu: "Tout citoyen peut exercer librement une activité légale, entrepreneuriale ou salariée.", tags: ["travail"] },
-  { id: "CONST-7", categorie: "constitution", titre: "Droit à la sécurité", contenu: "L'État garantit : protection policière, services médicaux, sécurité publique.", tags: ["sécurité"] },
-  { id: "CONST-8", categorie: "constitution", titre: "Droit à un procès équitable", contenu: "Toute personne accusée a droit à : un avocat, une audience publique, un juge impartial, des preuves débattues. Sauf ordonnance judiciaire restrictive.", tags: ["procès", "équitable", "avocat"] },
-  { id: "CONST-9", categorie: "constitution", titre: "Présomption d'innocence", contenu: "Toute personne est présumée innocente jusqu'à décision finale.", tags: ["innocence", "présomption"] },
-  { id: "CONST-10", categorie: "constitution", titre: "Droit à la défense", contenu: "Tout citoyen peut se défendre librement via un avocat, arguments et contre-preuves.", tags: ["défense"] },
-  { id: "CONST-11", categorie: "constitution", titre: "Égalité devant la loi", contenu: "Tous les citoyens sont égaux sans distinction de richesse, statut ou fonction politique.", tags: ["égalité"] },
-  { id: "CONST-13", categorie: "constitution", titre: "Protection contre l'abus de pouvoir", contenu: "Aucune autorité ne peut sanctionner sans procédure, agir arbitrairement ou détourner les règles.", tags: ["abus", "pouvoir"] },
+export interface CategorieInfraction {
+  id: number;
+  nom: string;
+}
 
-
-  // ═══ CODE PÉNAL — CONTRAVENTIONS ═══════════════════════════════════════════
-  { id: "C-1", categorie: "penal_contravention", titre: "Stationnement d'un bateau sur la côte hors d'un port", contenu: "Stationner un bateau sur une côte dépourvue de port est passible d'une amende de 450 $ et d'une mise en fourrière du bateau en infraction.", amende: "450$" },
-  { id: "C-2", categorie: "penal_contravention", titre: "Atterrissage d'un avion ou hélicoptère sur un site inapproprié à son utilisation", contenu: "Atterrir avec un avion ou un hélicoptère sur un site non autorisé pour ce type d'appareil est passible d'une amende de 450 $ et d'une mise en fourrière de l'appareil.", amende: "450$" },
-  { id: "C-3", categorie: "penal_contravention", titre: "Survol d'un avion ou hélicoptère sur un site inapproprié à son utilisation", contenu: "Survoler un site non autorisé en avion ou en hélicoptère est passible d'une amende de 135 $.", amende: "135$" },
-  { id: "C-4", categorie: "penal_contravention", titre: "Atteinte à la pudeur", contenu: "Se déplacer nu ou en sous-vêtements dans un lieu public ou accessible au public, est passible d'une amende de 450 $.", amende: "450$" },
-  { id: "C-5", categorie: "penal_contravention", titre: "Conduite dangereuse en véhicule (aérien, maritime ou terrestre)", contenu: "La conduite dangereuse, incluant le fait de ne pas maîtriser son véhicule, qu'il soit aérien, maritime ou terrestre, est passible d'une amende de 2700 $. Cette infraction couvre tout comportement imprudent ou irresponsable qui pourrait compromettre la sécurité des personnes ou causer des dommages matériels.", amende: "2 700$" },
-  { id: "C-6", categorie: "penal_contravention", titre: "Dissimulation du visage", contenu: "La dissimulation du visage dans un lieu public ou accessible au public est passible d'une amende de 540 $. Est considéré comme Dissimulation du visage tout objet/masque rendant difficile l'identification des personnes. L'utilisation non correcte d'un masque justifie la saisie de celui-ci.", amende: "540$" },
-  { id: "C-7", categorie: "penal_contravention", titre: "Excès de vitesse (contrôle radar)", contenu: "Un excès de vitesse détecté par contrôle radar est passible d'une amende de 1800 $.", amende: "1 800$" },
-  { id: "C-8", categorie: "penal_contravention", titre: "Grand excès de vitesse (contrôle radar >50km/h)", contenu: "Un grand excès de vitesse, défini par un dépassement de plus de 50 km/h au-delà de la limite autorisée et détecté par contrôle radar, est passible d'une amende de 3 000 $ ainsi que d'un retrait de permis.", amende: "3 000$" },
-  { id: "C-9", categorie: "penal_contravention", titre: "Holster interdit", contenu: "La possession d'un holster interdit est passible d'une amende de 1 350 $.", amende: "1 350$" },
-  { id: "C-10", categorie: "penal_contravention", titre: "Insulte envers un civil", contenu: "Le fait d’insulter un civil est puni d’une amende de 270 $. L’insulte est définie comme une expression outrageante adressée à un civil, utilisant des termes de mépris ou d’invectives.", amende: "270$" },
-  { id: "C-11", categorie: "penal_contravention", titre: "Ivresse ou consommation de stupéfiants sur la voie publique", contenu: "Être en état d'ivresse ou consommer des stupéfiants sur la voie publique est passible d'une amende de 270 $.", amende: "270$", tags: ["drogues"] },
-  { id: "C-12", categorie: "penal_contravention", titre: "Mendicité en lieu public", contenu: "Le fait de demander de l’argent aux passants dans un lieu public est puni d’une amende de 1350$.", amende: "1 350$" },
-  { id: "C-13", categorie: "penal_contravention", titre: "Non présentation des papiers d'identité", contenu: "Le fait de ne pas présenter ses papiers d’identité à la demande d’une personne dépositaire de l’autorité publique est puni d’une amende de 450$. Cela peut entraîner des vérifications complémentaires au poste de police", amende: "450$" },
-  { id: "C-14", categorie: "penal_contravention", titre: "Participation à une manifestation illégale", contenu: "Le fait de participer à une manifestation qui n’a pas été autorisée par les autorités publiques est puni d’une amende de 135$.", amende: "135$" },
-  { id: "C-15", categorie: "penal_contravention", titre: "Stationnement Gênant", contenu: "Le fait de stationner son véhicule sur un emplacement gênant et/ou interdit (sortie de garage/de parking, intersection etc.) est puni d’une amende de 270$. Le véhicule peut être mis en fourrière en cas d'absence de propriétaire", amende: "270$" },
-  { id: "C-16", categorie: "penal_contravention", titre: "Tapage nocturne", contenu: "Le fait de produire des nuisances sonores trop fortes le soir est puni d’une amende de 360$.", amende: "360$" },
-  { id: "C-17", categorie: "penal_contravention", titre: "Usage abusif du Klaxon", contenu: "Le fait d’utiliser de manière abusive sans cadre de réel danger le klaxon d’un véhicule est puni d’une amende de 450$.", amende: "450$" },
-  { id: "C-18", categorie: "penal_contravention", titre: "Consommation de drogue", contenu: "Le fait de consommer des substances classifiées comme étant des stupéfiants est puni d’une amende de 450$. Toute la drogue possédée est également saisie.", amende: "450$", tags: ["drogues"] },
-  { id: "C-19", categorie: "penal_contravention", titre: "Faux Appels (Canulars)", contenu: "Le fait d'appeler intentionnellement des numéros inconnus dans le but de faire une blague est puni d’une amende de 405$.", amende: "405$" },
-  { id: "C-20", categorie: "penal_contravention", titre: "Possession ou prise en flagrant délit de crochetage", contenu: "La possession sur soi ou dans l’un de ses biens d’un outil de crochetage est illégale. En conséquence, la possession de cet objet est punie d’une amende de 225$ et d’un temps de détention de 10 minutes. La possession est de fait saisie. Le fait d’être pris en flagrant délit de crochetage vaut également la même peine.", amende: "225$" },
-  { id: "C-21", categorie: "penal_contravention", titre: "Conduite en contresens", contenu: "Conduire à contresens, y compris circuler de manière prolongée sur une voie opposée, constitue une infraction passible d'une amende de 2700 $. Cette violation englobe tout comportement dangereux ou irresponsable susceptible de mettre en péril la sécurité des usagers de la route ou d'entraîner des dommages matériels en empruntant une voie en sens interdit.", amende: "2 700$" },
-  { id: "C-22", categorie: "penal_contravention", titre: "Dégradations de biens publics/privés/matériels", contenu: "Le fait de porter atteinte à l’état d’un bien (public ou privé) de manière volontaire ou involontaire (par le non-respect des lois et réglementations) est puni d’une amende de 1100$ et d’un temps de détention de 10 minutes.", amende: "1 100$" },
-  { id: "C-23", categorie: "penal_contravention", titre: "Défaut de plaque d'immatriculation", contenu: "Le défaut d'afficher une plaque d'immatriculation, ou le fait d'afficher une plaque illisible ou modifiée sur un véhicule, est passible d'une amende de 1 750 $,", amende: "1 750$" },
-
-  // ═══ CODE PÉNAL — DÉLITS MINEURS ════════════════════════════════════════════
-  { id: "DM-1", categorie: "penal_delit_mineur", titre: "Agression sur citoyen / maltraitance animal", contenu: "Agresser physiquement un autre citoyen sans risque de mort est puni d'une amende de 4 500 $ et d'une détention de 30 minutes. De plus, la violence volontaire envers un animal ou un mauvais traitement est également sanctionnée par la même peine.", amende: "4 500$", detention: "30 minutes", tags: ["animaux"] },
-  { id: "DM-2", categorie: "penal_delit_mineur", titre: "Possession de poisson illégaux (tortues, requins, dauphin, piranha et espadons)", contenu: "La possession de poissons classés comme illégaux (tels que les tortues, requins, piranhas, dauphins et espadons) sur soi, dans son véhicule ou dans ses biens est punie d'une amende de 900 $ multipliée par le nombre d'animaux détenus, ainsi que d'une détention de 10 minutes. Les animaux saisis seront saisis. Cet article n'est pas applicable sur l'île de Cayo Perico.", amende: "900$", detention: "10 minutes", tags: ["poisson"] },
-  { id: "DM-3", categorie: "penal_delit_mineur", titre: "Outrage de base envers représentant de l'état et/ou magistrat", contenu: "Le fait de porter atteinte à l’honneur d’un représentant de l'État et/ou d'un magistrat dans l'exercice de ses fonctions officielles (insultes, manque de respect abusif, etc.) est puni d’une amende de 2 500 $ et d’une détention de 10 minutes de GAV", amende: "2 500$", detention: "10 minutes" },
-  { id: "DM-4", categorie: "penal_delit_mineur", titre: "Appel abusif service publics", contenu: "Le fait d'appeler de manière abusive un numéro du service public sans raison valable et légitime est puni d’une amende de 1.800$ et d’un temps de détention de 15 minutes.", amende: "1 800$" },
-  { id: "DM-5", categorie: "penal_delit_mineur", titre: "Braconnage - Chasse", contenu: "Le fait de chasser illégalement (chasser les espèces protégées et ne pas respecter les règlements) est puni d’une amende de 1.350$ et d’un temps de détention de 10 minutes. Cela entraîne également un retrait du permis de chasse s’il est possédé.", amende: "1 350$", detention: "10 minutes", tags: ["poisson", "animaux"] },
-  { id: "DM-6", categorie: "penal_delit_mineur", titre: "Braquage de Supérette", contenu: "Le fait de voler de l’argent dans une supérette par le moyen de la menace est puni d’une amende de 3.600$ et d’un temps de détention de 20 minutes. L’argent liquide possédé par le délinquant est entièrement saisi.", amende: "3 600$", detention: "20 minutes" },
-  { id: "DM-7", categorie: "penal_delit_mineur", titre: "Braquage d'ATM / Piratage d'ATM", contenu: "Le fait de voler de l’argent d’un ATM (distributeur automatique de billets) est puni d’une amende de 2.250$ et d’un temps de détention de 15 minutes. L’argent liquide possédé par le délinquant est entièrement saisi.", amende: "2 250$" },
-  { id: "DM-8", categorie: "penal_delit_mineur", titre: "Cambriolage", contenu: "Le fait de s'introduire par effraction pour voler des biens dans une résidence est puni d’une amende de 1.350$ et d’un temps de détention de 15 minutes. Les biens volés (que l'on peut raisonnablement penser venir de cambriolages) sont également saisis.", amende: "1 350$", detention: "15 minutes" },
-  { id: "DM-9", categorie: "penal_delit_mineur", titre: "Conduite sans permis", contenu: "Le fait de conduire sans permis un véhicule en nécessitant un est puni d’une amende de 1.350$ et d’un temps de détention de 15 minutes. Le véhicule est également mis en fourrière si aucune personne muni d'un permis n'est présente sur place. Cela peut mener également à une convocation de police pour présenter son permis de conduire", amende: "1 350$" },
-  { id: "DM-10", categorie: "penal_delit_mineur", titre: "Conduite d'un véhicule volé", contenu: "Le fait de conduire un véhicule ayant été volé, est puni d’une amende de 1.350$ et d’un temps de détention de 15 minutes. Tout conducteur est considéré comme responsable de s'assurer de la provenance du véhicule. Si le conducteur à connaissance que le véhicule est volé, alors il encourt aussi une peine pour recel de véhicule volé.", amende: "1 350$", detention: "15 minutes" },
-  { id: "DM-11", categorie: "penal_delit_mineur", titre: "Course de rue illégale", contenu: "Le fait pour des individus de faire la course avec des véhicules sans qu’elle n’ait été déclarée et autorisée est puni d’une amende de 1.350$ et d’un temps de détention de 10 minutes. Les véhicules sont également mis en fourrière.", amende: "1 350$" },
-  { id: "DM-12", categorie: "penal_delit_mineur", titre: "Délit de fuite", contenu: "Le fait de provoquer un accident impliquant des préjudices matériels et/ou physiques et de ne pas s’arrêter en fuyant sa responsabilité civile et/ou pénale est puni d’une amende de 1.350$ et d’un temps de détention de 15 minutes.", amende: "1 350$" },
-  { id: "DM-13", categorie: "penal_delit_mineur", titre: "Entrave à une opération/enquête (police/justice)", contenu: "Le fait de gêner volontairement en s'interposant avec les forces de l’ordre lorsqu'elles sont manifestement en opération (gyrophares et/ou sirènes) est puni d’une amende de 3.500$ et d’un temps de détention de 30 minutes. Cette disposition s’applique également au cas d’entrave volontaire et manifeste à une enquête menée par la police ou une autre autorité publique agréée. Cela s’applique également pour les déclarations volontairement biaisées qui mettent en péril le bon déroulement de l’enquête.", amende: "3 500$", detention: "30 minutes" },
-  { id: "DM-14", categorie: "penal_delit_mineur", titre: "Entrave espaces aériens", contenu: "Le fait d’entraver volontairement un espace aérien avec un engin en restant en stationnement dans une certaine zone et en bloquant ainsi la bonne marche du trafic des avions et hélicoptères est puni d’une amende de 900$ et d’un temps de détention de 10 minutes. L’engin bloquant l’espace aérien est ainsi confisqué et le permis aérien est retiré.", amende: "900$", detention: "10 minutes" },
-  { id: "DM-15", categorie: "penal_delit_mineur", titre: "Exhibition d’armes de poing", contenu: "Le fait d’exhiber toute arme de poing (type pistolet) n’entrant pas dans la catégorie des armes lourdes/automatique est puni d’une amende de 1.350$ et d’un temps de détention de 15 minutes. Cela implique automatiquement le chef d'accusation en lien avec la possession de l'arme en question.", amende: "1 350$", detention: "15 minutes" },
-  { id: "DM-16", categorie: "penal_delit_mineur", titre: "Exhibition d’armes lourdes/automatique", contenu: "Le fait d’exhiber toute arme lourde/automatique (pouvant tirer en rafale) est puni d’une amende de 4,500$ et d’un temps de détention de 30 minutes. Cela implique automatiquement le chef d'accusation en lien avec la possession de l'arme en question.", amende: "4 500$", detention: "30 minutes" },
-  { id: "DM-17", categorie: "penal_delit_mineur", titre: "Go fast", contenu: "Le fait d'être missioné pour rouler à très grande vitesse en transportant des marchandises illégales afin d’éviter tout contrôle de la police est considéré comme un Go Fast. Cette infraction est punie par une amende de 2.250$ et un temps de détention de 20 minutes. En outre, le véhicule utilisé est envoyé en fourrière.", amende: "2 250$", detention: "20 minutes" },
-  { id: "DM-18", categorie: "penal_delit_mineur", titre: "Utilisation illégale de drone en zone réglementée", contenu: "Le fait, pour toute personne, d’exploiter un drone de transport en violation des zones réglementées constitue un délit. (Postes de police, Centres de formation de la police ,Hôpitaux, Bases militaires, Mairie, Aéroport, Héliports et site Gouvernementale.)", amende: "12 000$" },
-  { id: "DM-19", categorie: "penal_delit_mineur", titre: "Organisateur d'une manifestation illégale", contenu: "L'organisateur d'une manifestation illégale, sachant que la participation à celle-ci constitue une contravention, est passible d'une amende de 4 100 $ et de 15minutes de GAV", amende: "4 100$", detention: "15 minutes" },
-  { id: "DM-20", categorie: "penal_delit_mineur", titre: "Utilisation d’une arme à feu", contenu: "Le fait d’avoir un test de résidus de poudre positif à la suite d’une fusillade non observée par les agents constitue un élément indiquant l’utilisation d’une arme à feu.", amende: "1 350$" },
-  { id: "DM-21", categorie: "penal_delit_mineur", titre: "Intrusion dans une zone à accès restreinte", contenu: "L'intrusion dans une zone à accès restreint et/ou sécurisé sans autorisation préalable est passible d'une amende de 3 200 $ et de 30minutes de GAV.", amende: "3 200$", detention: "30 minutes" },
-  { id: "DM-22", categorie: "penal_delit_mineur", titre: "Menace et/ou intimidation envers un civil", contenu: "Le fait pour une personne de démontrer manifestement une intention de nuire à un autre individu civil est puni d’une amende de 3,500$ et d’un temps de détention de 15 minutes. La démonstration de cette intention peut être verbale, écrite, dématérialisée ou bien physique.", amende: "3 500$" },
-  { id: "DM-23", categorie: "penal_delit_mineur", titre: "Mise en danger de la vie d’autrui", contenu: "Est considéré comme mise en danger de la vie d’autrui tout acte d’une personne violant délibérément une règle de sécurité imposée par le code pénal ayant comme conséquence un risque immédiat pour l'intégrité de la personne. Cette infraction est punie d’une amende de 5.800$ et d’un temps de détention de 15 minutes.", amende: "5 800$" },
-  { id: "DM-24", categorie: "penal_delit_mineur", titre: "Non assistance à personne en danger", contenu: "Le fait de ne pas porter assistance à une personne, qui est manifestement en besoin de secours, et que les conditions d’espèce rendent possible cette assistance est considéré comme une non-assistance à personne en danger. Cette infraction est punie d’une amende de 4.050$ et d’un temps de détention de 20 minutes.", amende: "4 050$", detention: "20 minutes" },
-  { id: "DM-25", categorie: "penal_delit_mineur", titre: "Non dénonciation d'un acte illégal", contenu: "Est considéré comme coupable de non-dénonciation d’un crime tout individu qui a connaissance de la commission ou de la préparation manifeste d’un crime et qui omet volontairement de le rapporter aux autorités compétentes.", amende: "2 700$" },
-  { id: "DM-26", categorie: "penal_delit_mineur", titre: "Non présentation à une convocation de police", contenu: "Le fait de ne pas se présenter à une convocation donnée par un agent des forces de l’ordre, dans les délais donnés, qu’elle soit orale ou écrite, est puni d’une amende de 6.750$ et d’un temps de détention de 20 minutes.", amende: "6 750$", detention: "20 minutes" },
-  { id: "DM-27", categorie: "penal_delit_mineur", titre: "Non respect de l'assignation géographique", contenu: "Le fait de ne pas respecter l’assignation géographique donnée à un individu dans le cadre d’une décision de justice ou d’une mesure de sûreté est puni d’une amende de 18.000$ et d’un temps de détention de 10 minutes.", amende: "18 000$", detention: "10 minutes" },
-  { id: "DM-28", categorie: "penal_delit_mineur", titre: "Non respect du code du travail", contenu: "Le fait pour un employeur de ne pas respecter le code du travail, qui est l’ensemble des règles encadrant la réglementation du travail entre directions et salariés (cf.Code du travail), est puni d’une amende de 7.200$ et d’un temps de détention de 10 minutes.", amende: "7 200$" },
-  { id: "DM-29", categorie: "penal_delit_mineur", titre: "Non respect du contrôle judiciaire", contenu: "Le contrôle judiciaire correspond aux mesures de sûreté (qui restreignent les libertés) prises à l'égard d’un individu en l’attente d’une condamnation et/ou suite à une condamnation comme peine complémentaire. Cette infraction est punie d’une amende de 2.700$ et d’un temps de détention de 10 minutes.", amende: "2 700$" },
-  { id: "DM-30", categorie: "penal_delit_mineur", titre: "Pêche illégal (Espèce Protégée)", contenu: "Le fait de pêcher des espèces protégées est interdit. De fait, pécher sur une zone de pêche protégée ou pêcher avec des appâts illégaux est considéré comme pêche illégale. Cette infraction est punie d’une amende de 3.600$ et d’un temps de détention de 10 minutes. Les espèces protégées possédées sont également saisies.", amende: "3 600$", detention: "10 minutes", tags: ["poisson", "animaux"] },
-  { id: "DM-31", categorie: "penal_delit_mineur", titre: "Possession d'espèce protégée (viande, poisson)", contenu: "Le fait de posséder sur soi ou dans l’un de ses biens une espèce animale maritime protégée est puni d’une amende de 18$ multipliée par la quantité possédée et d’un temps de détention de 10 minutes. L’intégralité des possessions est saisie.", amende: "18$", detention: "10 minutes", tags: ["poisson", "animaux"] },
-  { id: "DM-32", categorie: "penal_delit_mineur", titre: "Possession appât illégal (piranha, requin, espadon, tortue, dauphin)", contenu: "Le fait de posséder sur soi ou dans l’un de ses biens un appât pour pêcher une espèce protégée est puni d’une amende de 45$ multiplié par la quantité d'appât et d’un temps de détention de 10 minutes. L’intégralité des possessions est saisie. Cet article n'est pas applicable sur l'île de Cayo Perico.", amende: "45$", detention: "10 minutes", tags: ["poisson"] },
-  { id: "DM-33", categorie: "penal_delit_mineur", titre: "Possession boîtier de piratage", contenu: "Le fait de posséder sur soi ou dans l’un de ses biens un boîtier Darknet est puni d’une amende de 1.000$ et d’un temps de détention de 10 minutes. Le fait que cette possession soit dans un véhicule n’appartenant pas à la personne qui le conduit mais dont on peut raisonnablement penser qu’elle appartient à cette dernière s’expose également à cette peine. L’intégralité des possessions est saisie.", amende: "270$", detention: "10 minutes" },
-  { id: "DM-34", categorie: "penal_delit_mineur", titre: "Possession de boîtier Darknet", contenu: "Le fait de posséder sur soi ou dans l’un de ses biens un boîtier Darknet est puni d’une amende de 1.000$ et d’un temps de détention de 10 minutes. L’intégralité des possessions est saisie.", amende: "1 000$", detention: "10 minutes" },
-  { id: "DM-35", categorie: "penal_delit_mineur", titre: "Possession de Canon d'arme (Pompe, fusil d'assault, glock, lourd, pistolet, SMG)", contenu: "Le fait de posséder sur soi ou dans l’un de ses biens un canon d'arme est puni d’une amende de 1.500$ et d’un temps de détention de 10 minutes. L’intégralité des possessions est saisie.", amende: "2 000$", tags: ["armes"] },
-  { id: "DM-36", categorie: "penal_delit_mineur", titre: "Possession de carte fleeca / banque", contenu: "Le fait de posséder sur soi ou dans l’un de ses biens une carte fleeca/banque est puni d’une amende de 2.700$ et d’un temps de détention de 25 minutes. L’intégralité des possessions est saisie.", amende: "2 700$", detention: "25 minutes" },
-  { id: "DM-37", categorie: "penal_delit_mineur", titre: "Port d'arme de chasse non réglementaire", contenu: "Le fait de porter une arme de chasse de façon non réglementaire (en dehors d'une zone de chasse ou sans permis de chasse) est puni d’une amende de 1.350$ et d’un temps de détention de 10 minutes. L’intégralité des possessions est saisie.", amende: "1 350$", tags: ["animaux"] },
-  { id: "DM-38", categorie: "penal_delit_mineur", titre: "Utilisation illégale d'une arme légale", contenu: "Utiliser une arme catégorisée comme légale dans le but de commettre un acte illégal est puni d’une amende de 1.500$ et de 10minutes de GAV. L'utilisation est caractérisée dès lors que l'arme légale est sortie de manière visible en parallèle d'un autre acte illégal.", amende: "1 500$", detention: "10 minutes" },
-  { id: "DM-39", categorie: "penal_delit_mineur", titre: "Possession de Machette", contenu: "La possession sur soi ou dans l’un de ses biens d’une machette est illégale. En conséquence, la possession de cet objet est punie d’une amende de 2.000$ et d’un temps de détention de 15 minutes. L’arme est également saisie.", amende: "2 000$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-40", categorie: "penal_delit_mineur", titre: "Possession de Fourchette Tordue", contenu: "La possession sur soi ou dans l’un de ses biens d’une Fourchette Tordue est illégale. En conséquence, la possession de cet objet est punie d’une amende de 2.000$ et d’un temps de détention de 15 minutes. L’arme est également saisie.", amende: "2 000$", detention: "10 minutes" },
-  { id: "DM-41", categorie: "penal_delit_mineur", titre: "Possession de Couteau Artisanal", contenu: "La possession sur soi ou dans l’un de ses biens d’une Couteau artisanal est illégale. En conséquence, la possession de cet objet est punie d’une amende de 2.000$ et d’un temps de détention de 15 minutes. L’arme est également saisie.", amende: "2 000$", tags: ["armes"] },
-  { id: "DM-42", categorie: "penal_delit_mineur", titre: "Possession de tesson de bouteille", contenu: "La possession sur soi ou dans l’un de ses biens d’un tesson de bouteille est illégale. En conséquence, la possession de cet objet est punie d’une amende de 2.000$ et d’un temps de détention de 15 minutes. L’arme est également saisie.", amende: "2 000$", detention: "10 minutes" },
-  { id: "DM-43", categorie: "penal_delit_mineur", titre: "Possession de Hache", contenu: "La possession sur soi ou dans l’un de ses biens d’une hache est illégale. En conséquence, la possession de cet objet est punie d’une amende de 2.000$ et d’un temps de détention de 15 minutes. L’arme est également saisie.", amende: "2 000$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-44", categorie: "penal_delit_mineur", titre: "Possession de Hache de GUERRE", contenu: "La possession sur soi ou dans l’un de ses biens d’une hache du guerre est illégale. En conséquence, la possession de cet objet est punie d’une amende de 2.000$ et d’un temps de détention de 15 minutes. L’arme est également saisie.", amende: "2 000$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-45", categorie: "penal_delit_mineur", titre: "Possession de Dague antique", contenu: "La possession sur soi ou dans l’un de ses biens d’une dague antique est illégale. En conséquence, la possession de cet objet est punie d’une amende de 2.000$ et d’un temps de détention de 15 minutes. L’arme est également saisie.", amende: "2 000$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-46", categorie: "penal_delit_mineur", titre: "Possession de Pistolet 17", contenu: "La possession sur soi, dans son coffre ou dans l’un de ses biens d’un Pistolet 17 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 10 minutes. L’arme est également saisie.", amende: "15 000$", tags: ["armes"] },
-  { id: "DM-47", categorie: "penal_delit_mineur", titre: "Possession de Pistolet Compact", contenu: "La possession sur soi ou dans l’un de ses biens d’un Pistolet Compact est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 10 minutes. L’arme est également saisie.", amende: "15 000$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-48", categorie: "penal_delit_mineur", titre: "Possession de Pistolet Artisanal", contenu: "La possession sur soi ou dans l’un de ses biens d’un Pistolet artisanal est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "15 000$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-49", categorie: "penal_delit_mineur", titre: "Possession de Pistolet", contenu: "La possession sur soi ou dans l’un de ses biens d’un pistolet est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "15 000$", detention: "20 minutes", tags: ["armes"] },
-  { id: "DM-50", categorie: "penal_delit_mineur", titre: "Possession de Pistolet MXP45", contenu: "La possession sur soi ou dans l’un de ses biens d’un Pistolet MXP45 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "15 000$", detention: "20 minutes", tags: ["armes"] },
-  { id: "DM-51", categorie: "penal_delit_mineur", titre: "Possession de Pistolet Calibre 50", contenu: "La possession sur soi ou dans l’un de ses biens d’un pistolet calibre 50 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "15 000$", tags: ["armes"] },
-  { id: "DM-52", categorie: "penal_delit_mineur", titre: "Possession de Pistolet MKII", contenu: "La possession sur soi ou dans l’un de ses biens d’un pistolet MKII est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "15 000$", tags: ["armes"] },
-  { id: "DM-53", categorie: "penal_delit_mineur", titre: "Possession de Pistolet combat", contenu: "La possession sur soi ou dans l’un de ses biens d’un pistolet de combat (Glock) est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "15 000$", detention: "20 minutes", tags: ["armes"] },
-  { id: "DM-54", categorie: "penal_delit_mineur", titre: "Possession de Pistolet en céramique", contenu: "La possession sur soi ou dans l’un de ses biens d’un pistolet en céramique est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "15 000$", tags: ["armes"] },
-  { id: "DM-55", categorie: "penal_delit_mineur", titre: "Possession de Pistolet Lourd", contenu: "La possession sur soi ou dans l’un de ses biens d’un pistolet lourd est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "15 000$", tags: ["armes"] },
-  { id: "DM-56", categorie: "penal_delit_mineur", titre: "Possession de Pistolet Paralysant (Taser)", contenu: "La possession sur soi ou dans l’un de ses biens d’un pistolet paralysant (Taser) est illégale. En conséquence, la possession de cet objet est punie d’une amende de 13.500$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "13 500$", tags: ["armes"] },
-  { id: "DM-57", categorie: "penal_delit_mineur", titre: "Possession de Pistolet perforant", contenu: "La possession sur soi ou dans l’un de ses biens d’un pistolet perforant est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "15 000$", detention: "20 minutes", tags: ["armes"] },
-  { id: "DM-58", categorie: "penal_delit_mineur", titre: "Possession de Pistolet SNS", contenu: "La possession sur soi ou dans l’un de ses biens d’un pistolet SNS est illégale. En conséquence, la possession de cet objet est punie d’une amende de 11.700$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "11 700$", detention: "20 minutes", tags: ["armes"] },
-  { id: "DM-59", categorie: "penal_delit_mineur", titre: "Possession de SNS Pico", contenu: "La possession sur soi ou dans l’un de ses biens d’un pétoire est illégale. En conséquence, la possession de cet objet est punie d’une amende de 11.700$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "11 700$", detention: "20 minutes" },
-  { id: "DM-60", categorie: "penal_delit_mineur", titre: "Possession de Pétoire Event", contenu: "La possession sur soi ou dans l’un de ses biens d’un pétoire event est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "15 000$", detention: "20 minutes" },
-  { id: "DM-61", categorie: "penal_delit_mineur", titre: "Possession de Revolver Lourd", contenu: "La possession sur soi ou dans l’un de ses biens d’un revolver lourd est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "15 000$", detention: "20 minutes", tags: ["armes"] },
-  { id: "DM-62", categorie: "penal_delit_mineur", titre: "Possession de Revolver Lourd MKII", contenu: "La possession sur soi ou dans l’un de ses biens d’un revolver lourd MKII est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 20 minutes. L’arme est également saisie.", amende: "15 000$", detention: "20 minutes", tags: ["armes"] },
-  { id: "DM-63", categorie: "penal_delit_mineur", titre: "Possession de Munition de pistolet", contenu: "La possession sur soi ou dans l’un de ses biens de munition de pistolet est illégale. En conséquence, la possession de cet objet est punie d’une amende de 18$ par munition et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "18$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-64", categorie: "penal_delit_mineur", titre: "Possession de  Munition de SMG", contenu: "La possession sur soi ou dans l’un de ses biens de munition de SMG est illégale. En conséquence, la possession de cet objet est punie d’une amende de 23$ par munition et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "23$", tags: ["armes"] },
-  { id: "DM-65", categorie: "penal_delit_mineur", titre: "Possession de  Munition de fusil à pompe", contenu: "La possession sur soi ou dans l’un de ses biens de munition de fusil à pompe est illégale. En conséquence, la possession de cet objet est punie d’une amende de 27$ par munition et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "27$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-66", categorie: "penal_delit_mineur", titre: "Possession de  Munitions fusil d'assaut", contenu: "La possession sur soi ou dans l’un de ses biens de munition de fusil d’assaut est illégale. En conséquence, la possession de cet objet est punie d’une amende de 32$ par munition et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "32$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-67", categorie: "penal_delit_mineur", titre: "Possession de  Munitions machine gun", contenu: "La possession sur soi ou dans l’un de ses biens de munition de machine gun est illégale. En conséquence, la possession de cet objet est punie d’une amende de 36$ par munition et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "36$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-68", categorie: "penal_delit_mineur", titre: "Possession boîte de Munition de pistolet", contenu: "La possession sur soi ou dans l’un de ses biens de munition de pistolet est illégale. En conséquence, la possession de cet objet est punie d’une amende de 180$ par boîte et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "180$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-69", categorie: "penal_delit_mineur", titre: "Possession boîte de Munition de SMG", contenu: "La possession sur soi ou dans l’un de ses biens de munition de SMG est illégale. En conséquence, la possession de cet objet est punie d’une amende de 230$ par boîte et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "230$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-70", categorie: "penal_delit_mineur", titre: "Possession boîte de Munition de Fusil à pompe", contenu: "La possession sur soi ou dans l’un de ses biens de munition de fusil à pompe est illégale. En conséquence, la possession de cet objet est punie d’une amende de 270$ par bote et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "270$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-71", categorie: "penal_delit_mineur", titre: "Possession boîte de Munition de Fusil d'assaut", contenu: "La possession sur soi ou dans l’un de ses biens de munition de fusil d’assaut est illégale. En conséquence, la possession de cet objet est punie d’une amende de 320$ par boîte et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "320$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-72", categorie: "penal_delit_mineur", titre: "Possession boîte de Munition de Machine Gun", contenu: "La possession sur soi ou dans l’un de ses biens de munition de machine gun est illégale. En conséquence, la possession de cet objet est punie d’une amende de 360$ par boite et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "360$", detention: "10 minutes", tags: ["armes"] },
-  { id: "DM-73", categorie: "penal_delit_mineur", titre: "Possession de Graine de strawberry", contenu: "La possession sur soi ou dans l’un de ses biens de graine de strawberry est illégale. En conséquence, la possession de cet objet est punie d’une amende de 30$ et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "30$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-74", categorie: "penal_delit_mineur", titre: "Possession de fertilisant", contenu: "La possession sur soi ou dans l’un de ses biens de fertilisant est illégale. En conséquence, la possession de cet objet est punie d’une amende de 1$ par fertilisant et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "1$", detention: "10 minutes" },
-  { id: "DM-75", categorie: "penal_delit_mineur", titre: "Possession de kit de fabrication de meth", contenu: "La possession sur soi ou dans l’un de ses biens d’un kit de fabrication de meth est illégale. En conséquence, la possession de cet objet est punie d’une amende de 5.000$ par kit et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "5 000$", detention: "10 minutes" },
-  { id: "DM-76", categorie: "penal_delit_mineur", titre: "Possession de Gaz BZ", contenu: "La possession sur soi ou dans l’un de ses biens de gaz BZ est illégale. En conséquence, la possession de cet objet est punie d’une amende de 250$ par gaz BZ et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "250$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-77", categorie: "penal_delit_mineur", titre: "Possession de Poudre à canon", contenu: "La possession sur soi ou dans l’un de ses biens de poudre à canon est illégale. En conséquence, la possession de cet objet est punie d’une amende de 2$ par poudre et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "2$", detention: "10 minutes", tags: ["armes", "drogues"] },
-  { id: "DM-78", categorie: "penal_delit_mineur", titre: "Possession de B-Magic", contenu: "La possession sur soi ou dans l’un de ses biens de B-Magic est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-79", categorie: "penal_delit_mineur", titre: "Possession de H-47", contenu: "La possession sur soi ou dans l’un de ses biens de H-47 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-80", categorie: "penal_delit_mineur", titre: "Possession de Cannabis", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon de cannabis est illégale En conséquence, la possession de cet objet est punie d’une amende de 32$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "32$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-81", categorie: "penal_delit_mineur", titre: "Possession de Cocaïne", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon de cocaïne est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-82", categorie: "penal_delit_mineur", titre: "Possession de Crack", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon de crack est illégale. En conséquence, la possession de cet objet est punie d’une amende de 90$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "90$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-83", categorie: "penal_delit_mineur", titre: "Possession d'Ecstasy", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon d’ecstasy est illégale. En conséquence, la possession de cet objet est punie d’une amende de 90$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "90$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-84", categorie: "penal_delit_mineur", titre: "Possession d'Opium", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon d’opium est illégale. En conséquence, la possession de cet objet est punie d’une amende de 90$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "90$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-85", categorie: "penal_delit_mineur", titre: "Possession de Tranq", contenu: "La possession sur soi ou dans l’un de ses biens d’une seringue de tranq est illégale. En conséquence, la possession de cet objet est punie d’une amende de 90$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "90$", detention: "10 minutes" },
-  { id: "DM-86", categorie: "penal_delit_mineur", titre: "Possession d'Héroïne", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon d’héroïne est illégale. En conséquence, la possession de cet objet est punie d’une amende de 72$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "72$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-87", categorie: "penal_delit_mineur", titre: "Possession de Purple Haze", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon de purple haze est illégale. En conséquence, la possession de cet objet est punie d’une amende de 90$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "90$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-88", categorie: "penal_delit_mineur", titre: "Possession d'Acide sulfurique", contenu: "La possession sur soi ou dans l’un de ses biens d’une portion d’acide sulfurique est illégale. En conséquence, la possession de cet objet est punie d’une amende de 41$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "41$", detention: "10 minutes" },
-  { id: "DM-89", categorie: "penal_delit_mineur", titre: "Possession de Feuilles de salvia", contenu: "La possession sur soi ou dans l’un de ses biens d’un bouquet de feuilles de salvia est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "20$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-90", categorie: "penal_delit_mineur", titre: "Possession de Branche de Cannabis", contenu: "La possession sur soi ou dans l’un de ses biens d’une branche de cannabis est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "15$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-91", categorie: "penal_delit_mineur", titre: "Possession d'Encodeur", contenu: "La possession sur soi ou dans l’un de ses biens d’Encodeur est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "20$", detention: "10 minutes" },
-  { id: "DM-92", categorie: "penal_delit_mineur", titre: "Possession de Méthamphétamine", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon de méthamphétamine est illégale. En conséquence, la possession de cet objet est punie d’une amende de 72$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "72$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-93", categorie: "penal_delit_mineur", titre: "Possession de Pavot", contenu: "La possession sur soi ou dans l’un de ses biens d’une graine de pavot est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-94", categorie: "penal_delit_mineur", titre: "Possession de Feuilles de coca", contenu: "La possession sur soi ou dans l’un de ses biens d’un bouquet de feuilles de coca est illégale. En conséquence, la possession de cet objet est punie d’une amende de 41$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "41$", detention: "10 minutes" },
-  { id: "DM-95", categorie: "penal_delit_mineur", titre: "Possession de Phosphore rouge", contenu: "La possession sur soi ou dans l’un de ses biens d’une portion de phosphore rouge est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-96", categorie: "penal_delit_mineur", titre: "Possession de Pseudoéphédrine", contenu: "La possession sur soi ou dans l’un de ses biens d’une portion de pseudoéphédrine est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-97", categorie: "penal_delit_mineur", titre: "Possession d'Ammoniaque Anhydre", contenu: "La possession sur soi ou dans l’un de ses biens d’une portion de Ammoniaque Anhydre est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-98", categorie: "penal_delit_mineur", titre: "Possession d'Ether", contenu: "La possession sur soi ou dans l’un de ses biens d’une portion de Ether est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes" },
-  { id: "DM-99", categorie: "penal_delit_mineur", titre: "Possession de Lithium", contenu: "La possession sur soi ou dans l’un de ses biens d’une portion de Lithium est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-100", categorie: "penal_delit_mineur", titre: "Possession de Meth Bleue", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon de Meth Bleue est illégale. En conséquence, la possession de cet objet est punie d’une amende de 72$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "72$", detention: "10 minutes" },
-  { id: "DM-101", categorie: "penal_delit_mineur", titre: "Possession de Prométhazine", contenu: "La possession sur soi ou dans l’un de ses biens d’une portion de Prométhazine est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-102", categorie: "penal_delit_mineur", titre: "Possession de Fentanyl", contenu: "La possession sur soi ou dans l’un de ses biens d’une portion de fentanyl est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-103", categorie: "penal_delit_mineur", titre: "Possession de Xylazine", contenu: "La possession sur soi ou dans l’un de ses biens d’une portion de xylazine est illégale. En conséquence, la possession de cet objet est punie d’une amende de 41$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-104", categorie: "penal_delit_mineur", titre: "Possession de Belladone", contenu: "La possession sur soi ou dans l’un de ses biens d’une portion de belladone est illégale. En conséquence, la possession de cet objet est punie d’une amende de 41$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-105", categorie: "penal_delit_mineur", titre: "Possession de Morphine", contenu: "La possession sur soi ou dans l’un de ses biens d’une portion de morphine est illégale. En conséquence, la possession de cet objet est punie d’une amende de 41$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "41$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-106", categorie: "penal_delit_mineur", titre: "Possession de Datura", contenu: "La possession sur soi ou dans l’un de ses biens d’un plant de datura est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-107", categorie: "penal_delit_mineur", titre: "Possession de Salvia", contenu: "La possession sur soi ou dans l’un de ses biens d’un plant de salvia est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "25$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-108", categorie: "penal_delit_mineur", titre: "Possession de Mexicana", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon de mexicana est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "90$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-109", categorie: "penal_delit_mineur", titre: "Possession de Blacktrip", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon de blacktrip est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-110", categorie: "penal_delit_mineur", titre: "Possession de Spore X", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon de spore x est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-111", categorie: "penal_delit_mineur", titre: "Possession de Oyster Rouge", contenu: "La possession sur soi ou dans l’un de ses biens d’un oyster rouge est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "20$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-112", categorie: "penal_delit_mineur", titre: "Possession de Oyster Bleu", contenu: "La possession sur soi ou dans l’un de ses biens d’un oyster bleu est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "20$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-113", categorie: "penal_delit_mineur", titre: "Possession de Amanita Rouge", contenu: "La possession sur soi ou dans l’un de ses biens d’un amanita rouge est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "20$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-114", categorie: "penal_delit_mineur", titre: "Possession de Amanita Vert", contenu: "La possession sur soi ou dans l’un de ses biens d’un amanita vert est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "20$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-115", categorie: "penal_delit_mineur", titre: "Possession de Psilocybe Vert", contenu: "La possession sur soi ou dans l’un de ses biens d’un psilocybe vert est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "20$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-116", categorie: "penal_delit_mineur", titre: "Possession de Moisissures Spectrales", contenu: "La possession sur soi ou dans l’un de ses biens de Moisissures Spectrales est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "20$", detention: "10 minutes" },
-  { id: "DM-117", categorie: "penal_delit_mineur", titre: "Possession deSpores De Véloceps", contenu: "La possession sur soi ou dans l’un de ses biens de Spores De Véloceps est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes.", amende: "20$", detention: "10 minutes" },
-  { id: "DM-118", categorie: "penal_delit_mineur", titre: "Possession de Carte Prépayée", contenu: "La possession sur soi ou dans l’un de ses biens d’une Carte Prépayée est illégale. En conséquence, la possession de cet objet est punie d’une amende de 45$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "45$", detention: "10 minutes" },
-  { id: "DM-119", categorie: "penal_delit_mineur", titre: "Possession de Psilocybe Rouge", contenu: "La possession sur soi ou dans l’un de ses biens d’un psilocybe rouge est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "20$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-120", categorie: "penal_delit_mineur", titre: "Possession de Psilocybe Violet", contenu: "La possession sur soi ou dans l’un de ses biens d’un psilocybe vert est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "20$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-121", categorie: "penal_delit_mineur", titre: "Possession de Red Fang", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon de Red Fang est illégale. En conséquence, la possession de cet objet est punie d’une amende de 90$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "90$", detention: "10 minutes" },
-  { id: "DM-122", categorie: "penal_delit_mineur", titre: "Possession de Lean", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon de Lean est illégale. En conséquence, la possession de cet objet est punie d’une amende de 90$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "90$", detention: "10 minutes", tags: ["drogues"] },
-  { id: "DM-123", categorie: "penal_delit_mineur", titre: "Possession de Acide Acétylsalicylique", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon d'Acide Acétylsalicylique est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "20$", detention: "10 minutes" },
-  { id: "DM-124", categorie: "penal_delit_mineur", titre: "Possession de Ma-Huang", contenu: "La possession sur soi ou dans l’un de ses biens d’une branche de Ma-Huang est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "20$", detention: "10 minutes" },
-  { id: "DM-125", categorie: "penal_delit_mineur", titre: "Possession de Ladanum", contenu: "La possession sur soi ou dans l’un de ses biens d’un échantillon de ladanum est illégale. En conséquence, la possession de cet objet est punie d’une amende de 90$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "90$", detention: "10 minutes" },
-  { id: "DM-126", categorie: "penal_delit_mineur", titre: "Vente de Drogue ou assimilé", contenu: "La vente de drogue ou assimilé correspond à l'acte de passer de la drogue ou autre objet assimilé (telles les cartes prépayées par exemple) à une autre personne, que ce soit contre de l'argent ou non. C'est une transaction rapide, souvent réalisée directement entre deux individus.", amende: "3 750$", tags: ["drogues"] },
-  { id: "DM-127", categorie: "penal_delit_mineur", titre: "Recel de véhicule volé", contenu: "Le fait de cacher ou garder, ou de servir d'intermédiaire pour un véhicule dont on sait qu’il a été volé est considéré comme du recel de véhicule volé. Cette infraction est punie par une amende de 2.025$ et un temps de détention de 10 minutes. Cela peut éventuellement être cumulé avec la conduite de véhicule volé.", amende: "2 025$", detention: "10 minutes" },
-  { id: "DM-128", categorie: "penal_delit_mineur", titre: "Recel de vol (objets + armes légales)", contenu: "Le fait de cacher ou garder, ou de servir d'intermédiaire pour un objet dont on sait qu’il a été volé est considéré comme du recel de vol. Cette infraction est punie par une amende de 50$ par objet volé et un temps de détention de 10 minutes. Cela ne rentre pas en compte pour les véhicules.", amende: "50$", detention: "10 minutes" },
-  { id: "DM-129", categorie: "penal_delit_mineur", titre: "Refus d’obtempérer", contenu: "Le refus d’obtempérer est le refus de se soumettre à une sommation de la Police lors d'un contrôle, notamment en prenant la fuite dès lors que l'on est sommé de s'arrêter (que ce soit verbalement, physiquement ou lors d'un contrôle routier) Cette infraction est punie par une amende de 900$ et un temps de détention de 15 minutes.", amende: "900$", detention: "15 minutes" },
-  { id: "DM-130", categorie: "penal_delit_mineur", titre: "Refus de comparaître", contenu: "Le fait de ne pas se présenter à une convocation pour comparution ou pour un subpoena (témoignage) à la date et l’heure indiquées sans motif valable donné au préalable au magistrat (ou policier pour les bracelets) qui a émis le document est considéré comme un refus de comparaître. Le fait de ne pas comparaître entraîne une amende de 1.800$ et un temps de détention de 30 minutes.", amende: "1 800$", detention: "30 minutes" },
-  { id: "DM-131", categorie: "penal_delit_mineur", titre: "Refus de se soumettre à une injonction", contenu: "l’injonction se présente comme une ordonnance délivrée par un magistrat qui exige d’une partie qu’elle accomplisse ou cesse une action spécifique. Le fait de ne pas se conformer à une injonction écrite émise par un magistrat est considéré comme un refus de se soumettre à une injonction. Cette infraction entraîne une amende de 1.080$ et un temps de détention de 1 heure.", amende: "1 080$", detention: "1 heure" },
-  { id: "DM-132", categorie: "penal_delit_mineur", titre: "Trafic de Stupéfiant ou assimilé", contenu: "Le trafic de stupéfiants ou assimilé désigne l'organisation et la gestion des activités liées à la production, au transport, et à la distribution de drogues ou assimilé en grandes quantités. Il s'agit d'un processus structuré qui inclut plusieurs étapes, allant de la fabrication des substances illicites à leur livraison, souvent impliquant plusieurs individus agissant de manière coordonnée. Le trafic doit être prouvé avec des éléments d'enquête.", amende: "6 000$", tags: ["drogues"] },
-  { id: "DM-133", categorie: "penal_delit_mineur", titre: "Troubles à l’ordre public", contenu: "Est considéré comme Trouble à l'ordre public toute atteinte portée à la paix publique. Il peut s'agir du fait d'une personne seule, qui commet des actes ou tient des paroles déplacées dans le but de déranger le calme, et n'écoutant pas les directives des services publiques. Mais aussi des actes collectifs, comme des manifestations, des émeutes, des attroupements non organisés et dérangeant le calme. Un aspect dérangeant doit être constaté. Tout refus de faire revenir la situation au calme sur la voie publique suite aux demandes des forces de police et considéré comme trouble à l'ordre public. Cette infraction est punie par une amende de 1.350$ et un temps de détention de 15 minutes.", amende: "1 350$", detention: "15 minutes" },
-  { id: "DM-134", categorie: "penal_delit_mineur", titre: "Violation de propriété privée (Entreprise,logement ...)", contenu: "Le fait d’entrer illégalement dans le périmètre d’une propriété privée (d’une entreprise ou d’un particulier) est considéré comme une violation de propriété privée. Cette infraction est punie par une amende de 1.800$ et un temps de détention de 15 minutes.", amende: "1 800$" },
-  { id: "DM-135", categorie: "penal_delit_mineur", titre: "Vol", contenu: "Le fait de soustraire de manière frauduleuse la chose d’autrui est considéré comme du vol. Cette disposition s’applique sur toutes les choses qui ne sont pas définies autrement dans le code pénal. Cette infraction est punie d’une amende unique de 1.350$ et un temps de détention de 15 minutes. Le fruit du vol est restitué au propriétaire dans la mesure du possible.", amende: "1 350$" },
-  { id: "DM-136", categorie: "penal_delit_mineur", titre: "Vol d'équipements d'entreprise", contenu: "Cette disposition reprend les mêmes termes que celle sur le vol mais s’applique aux équipements d’entreprise. Sont considérés comme des équipements d’entreprise tous les outils permettant à une entreprise de réaliser son activité. Cette infraction est punie par une amende de 450$ multipliée par le nombre de larcins et un temps de détention de 10 minutes.", amende: "450$" },
-  { id: "DM-137", categorie: "penal_delit_mineur", titre: "Possession d'un disjoncteur modifié", contenu: "La possession sur soi ou dans l’un de ses biens d’un pochon d'un disjoncteur modifié. En conséquence, la possession de cet objet est punie d’une amende de 2500$ par unité et d’un temps de détention de 10 minutes. La possession est de fait saisie.", amende: "2 500$", detention: "10 minutes" },
-  { id: "DM-138", categorie: "penal_delit_mineur", titre: "Vol de produits d'entreprise", contenu: "Cette disposition reprend les mêmes termes que celle sur le vol mais s’applique aux produits d’entreprise. Sont considérés comme des produits d’entreprise tous les produits résultant de l’activité de l’entreprise. Cette infraction est punie par une amende de 45$ multipliée par le nombre de larcins et un temps de détention de 10 minutes.", amende: "45$", detention: "10 minutes" },
-  { id: "DM-139", categorie: "penal_delit_mineur", titre: "Vol de véhicule", contenu: "Cette disposition reprend les mêmes termes que celle sur le vol mais s’applique aux véhicules de manière générale. Tout conducteur doit être en mesure de justifier la provenance de son véhicule. Le fait de posséder les clef d'un véhicule est considéré comme preuve de la possession légale du véhicule. Cette infraction est punie par une amende de 2.000$ et un temps de détention de 10 minutes.", amende: "2 000$", detention: "10 minutes" },
-  { id: "DM-140", categorie: "penal_delit_mineur", titre: "Vente d'objet illégaux", contenu: "Le fait de réaliser une vente dans laquelle sont impliqués des biens illégaux (sauf infractions spécifiques pour certains) est considéré comme une vente d’objets illégaux. Cette vente concerne uniquement des objets servant à une activité illégale et ne remet pas en cause la légalité de la vente aux yeux du département des taxes par exemple. Cette infraction est punie par une amende 5.500$ et un temps de détention de 20 minutes.", amende: "5 500$", detention: "20 minutes" },
-  { id: "DM-141", categorie: "penal_delit_mineur", titre: "Non respect des licences et des papiers officiels", contenu: "Le fait de ne pas respecter les conditions qu’il incombe d’observer concernant les licences et les papiers officiels est considéré comme une infraction. Cela ne concerne pas les justificatifs d'identité. Cette infraction est punie par une amende de 10.000$ et un temps de détention de 30 minutes s’il s’agit d’une personne physique ou du représentant de la personne morale.", amende: "10 000$", detention: "15 minutes" },
-  { id: "DM-142", categorie: "penal_delit_mineur", titre: "Utilisation illégale de menottes/serflex", contenu: "L'utilisation de tout objet dans le but de restreindre la liberté d'agir d'un individu (menottes, serflex ...) peut être considéré comme utilisation illégale de menottes/Serflex. Cette infraction est punie d'une amende de 120$ et d'un temps de détention de 5 minutes. La possession est de fait saisie en cas d'utilisation.", amende: "120$", detention: "5 minutes" },
-  { id: "DM-143", categorie: "penal_delit_mineur", titre: "Possession ou utilisation d'une fausse plaque d'immatriculation", contenu: "La possession ou l’utilisation sur soi ou dans l’un de ses biens d’une fausse plaque ou d'une plaque modifiée est illégale. En conséquence, la possession ou l’utilisation de cet objet est punie d’une amende de 120$ par unité et d’un temps de détention de 5 minutes. L’objet en possession est de fait saisi.", amende: "120$", detention: "5 minutes" },
-  { id: "DM-144", categorie: "penal_delit_mineur", titre: "Non respect du code de commerce", contenu: "Le fait de ne pas respecter le code du commerce peut être source de poursuites judiciaires par les autorités gouvernementales compétentes. En cas de non-respect avéré, une amende de 7.200$ ainsi qu'une détention de 10 minutes peut être appliquée.", amende: "7 200$", detention: "10 minutes" },
-  { id: "DM-145", categorie: "penal_delit_mineur", titre: "Revente à perte", contenu: "Toute revente d'objets, de produits ou de services à perte par rapport au coût de production et d'exploitation est punie d'une amende de 5.000$ et d'une détention de 10minutes. Il appartient aux services compétents de la volonté de cette vente.", amende: "5 000$", detention: "10 minutes" },
-  { id: "DM-146", categorie: "penal_delit_mineur", titre: "Évasion du poste de police", contenu: "L’évasion du poste de police consiste pour une personne détenue à s’échapper illégalement d’un lieu de garde à vue ou de détention provisoire au sein d’un commissariat ou poste de police, avant d'avoir été présentée à un juge ou sans autorisation légale. Cela peut se produire par la force, la ruse ou en profitant d’une faille dans la surveillance.", amende: "7 500$" },
-  { id: "DM-147", categorie: "penal_delit_mineur", titre: "Non respect des consignes de l'État d'Urgence", contenu: "Le fait de ne pas respecter les consignes données par les organes exécutifs publics (Gouvernement/Mairies) lors de l'état d'urgence ou d'un defcon est puni par une amende de 4.500$ et un temps de détention de 30 minutes. Cela peut s'appliquer qu'après avertissement préalable et rappel oral du décret conduisant toujours au refus de l'individu.", amende: "4 500$", detention: "30 minutes" },
-
-  // ═══ CODE PÉNAL — DÉLITS MAJEURS ════════════════════════════════════════════
-  { id: "DMJ-1", categorie: "penal_delit_majeur", titre: "Abus de confiance", contenu: "L'abus de confiance est le fait par une personne de détourner, au préjudice d'autrui, des fonds, des valeurs ou un bien quelconque qui lui ont été remis et qu'elle a acceptés à charge de les rendre, de les représenter ou d'en faire un usage déterminé. Il doit y avoir un accord préalable (verbale ou écrit) entre l'auteur et la victime. Cette infraction est punie d'une amende de 12.500$ et d'une détention de 20minutes.", amende: "12 500$", detention: "20 minutes" },
-  { id: "DMJ-2", categorie: "penal_delit_majeur", titre: "Braquage de Société", contenu: "Le fait de voler braquer une société ne rentrant pas dans une autre catégorie d'infraction, par le moyen de la menace d’une arme est puni d’une amende de 44.000$ et d’un temps de détention de 20 minutes. Les armes possédées sont également saisies. L’argent liquide possédé par le délinquant est entièrement saisi.", amende: "44 000$" },
-  { id: "DMJ-3", categorie: "penal_delit_majeur", titre: "Plagiat", contenu: "Le plagiat, qui consiste à copier ou reproduire le travail intellectuel d'autrui sans autorisation, est passible d'une amende de 17 500 $ et d'une détention de 30 minutes.", amende: "17 500$", detention: "30 minutes" },
-  { id: "DMJ-4", categorie: "penal_delit_majeur", titre: "Contrefaçon", contenu: "La contrefaçon, qui implique la reproduction illégale d'un produit ou d'une marque protégée, est punie par une amende de 15 000 $ et d'une détention de 25 minutes.", amende: "15 000$", detention: "25 minutes" },
-  { id: "DMJ-5", categorie: "penal_delit_majeur", titre: "Attaque convoi de fonds (Brinks, Convoi SAMP)", contenu: "Le fait de mettre en péril le bon déroulement et la bonne marche d’un convoi organisé par l’Etat ou pour l’Etat par le biais de la violence, la menace ou la ruse est considéré comme une attaque de convoi. Cette infraction est punie d’une amende de 8.500$ et d’un temps de détention de 45 minutes. En outre, les armes et l’argent possédés par les délinquants se voient saisir l’ensemble. Les potentiels objets dérobés du convoi seront également récupérés.", amende: "8 500$", detention: "45 minutes" },
-  { id: "DMJ-6", categorie: "penal_delit_majeur", titre: "Sollicitation ou incitation à la prostitution", contenu: "Le fait d’encourager une personne à se livrer à des actes de prostitution, fait de vendre son corps lors d’activités sexuelles en dehors de tout cadre légal, est considéré comme un incitation à la prostitution. Cette infraction est punie par une amende de 9.000$ et un temps de détention de 1 heures.", amende: "9 000$", detention: "1 heure" },
-  { id: "DMJ-7", categorie: "penal_delit_majeur", titre: "Discrimination", contenu: "Le fait d’organiser une différence de traitement sur des critères purement ethniques, religieux, ou sexuels dans le cadre de : l’obtention d’un emploi, l’obtention d’un logement, l’obtention de services divers, l’obtention d’aides de l’Etat etc. hors du cadre légal de la loi (green card, visa etc.) sera considéré comme de la discrimination. Cette infraction est punie à hauteur de 7.200$ et 20 minutes de détention.", amende: "7 200$", detention: "20 minutes" },
-  { id: "DMJ-8", categorie: "penal_delit_majeur", titre: "Chantage", contenu: "Le fait d’utiliser une information sur quelqu’un, un moyen de pression matériel ou mental, une menace de réaliser un acte etc. en échange d’un bien ou d’un service, que ce soit sur le moment ou sur la durée, est considéré comme du chantage. Cette infraction est punie à hauteur de 3.150$ et 15 minutes de détention.", amende: "3 150$", detention: "15 minutes" },
-  { id: "DMJ-9", categorie: "penal_delit_majeur", titre: "Agression sur agent (employé d'état ou police)", contenu: "Le fait de porter atteinte physiquement à un agent des forces de l’ordre ou bien à un employé d’Etat (EMS, Gouvernement etc.) lorsqu’il est dans le cadre de ses fonctions, est considéré comme un agression sur représentant sur agent. Cette infraction est punie à hauteur de 8.500$ et 1 heure de détention. Cette application s'applique s'il n'y pas de danger pour la vie de l'employé d'état.", amende: "8 500$", detention: "1 heure" },
-  { id: "DMJ-10", categorie: "penal_delit_majeur", titre: "Menaces de Mort et ou Menaces graves", contenu: "Le fait de proférer des menaces impliquant la mort de la victime est considéré comme une menace de mort. Le fait de proférer des menaces violentes et/ou choquantes est considéré comme une menace grave. Cette infraction est punie à hauteur de 8.500$ et 45 minutes de détention.", amende: "8 500$" },
-  { id: "DMJ-11", categorie: "penal_delit_majeur", titre: "Harcèlement", contenu: "Le fait de harceler une personne par des propos ou comportements répétés ayant pour but de nuire est puni d’une amende de 15.000$ et un temps de détention de 20 minutes.", amende: "15 000$", detention: "20 minutes", tags: ["armes"] },
-  { id: "DMJ-12", categorie: "penal_delit_majeur", titre: "Homicide involontaire", contenu: "Le fait de causer la mort d’autrui sans le vouloir par maladresse, négligence, non-respect d’une obligation de sécurité, imprudence ou inattention est considéré comme un homicide involontaire. Cette infraction est punie d’une amende de 12.500$ et d’un temps de détention de 25 minutes.", amende: "12 500$", detention: "25 minutes" },
-  { id: "DMJ-13", categorie: "penal_delit_majeur", titre: "Port de Kevlar / Gilet par Balle", contenu: "Le fait de porter un kevlar ou un gilet pare-balles pour un individu n’étant pas autorisé à le faire par la loi, le règlement ou la directive des autorités publiques est en infraction. Cette dernière est punie d’une amende de 5.000$ et d’un temps de détention de 15 minutes. Cela implique automatiquement la possession de kevlar.", amende: "5 000$", detention: "15 minutes", tags: ["armes"] },
-  { id: "DMJ-14", categorie: "penal_delit_majeur", titre: "Braquage d'armurerie", contenu: "Le fait de voler de l’argent ou des objets dans une armurerie par le moyen de la menace d’une arme est puni d’une amende de 7.200$ et d’un temps de détention de 25 minutes. L’argent liquide possédé par le délinquant est entièrement saisi. Les individus non armés mais participant à la commission de l’infraction grâce aux individus armés dès lors qu'ils ne sont pas considérés comme étant sous la contrainte sont également concernés par ce chef d’inculpation.", amende: "7 200$", detention: "25 minutes" },
-  { id: "DMJ-15", categorie: "penal_delit_majeur", titre: "Braquage à main armée bijouterie/supermarché", contenu: "Le fait de braquer une bijouterie ou le supermarché de roxwood est puni d’une amende de 9.000$ et d’un temps de détention de 30 minutes. L’argent liquide possédé par le délinquant est entièrement saisi. Les individus non armés mais participant à la commission de l’infraction grâce aux individus armés dès lors qu'ils ne sont pas considéré comme étant sous la contrainte sont également concernés par ce chef d’inculpation.", amende: "9 000$", detention: "30 minutes", tags: ["armes"] },
-  { id: "DMJ-16", categorie: "penal_delit_majeur", titre: "Braquage de banque centrale (Pacifique banque)", contenu: "Le fait de braquer une banque centrale est puni d’une amende de 25.000$ et d’un temps de détention de 60 minutes. L’argent liquide possédé par le délinquant est entièrement saisi. Les individus non armés mais participant à la commission de l’infraction grâce aux individus armés dès lors qu'ils ne sont pas considéré comme étant sous la contrainte sont également concernés par ce chef d’inculpation.", amende: "25 000$", detention: "1 heure" },
-  { id: "DMJ-17", categorie: "penal_delit_majeur", titre: "Participation à une transaction illégale (DOA)", contenu: "La participation à une transaction illégale est un article uniquement à but d'utilisation pour les agents de la DOA. Ce chef d'inculpation comprend un échange en direct entre plusieurs personnes avec des véhicules, dont le contenu des véhicules est soit de la drogue, soit des armes ou de l'équipement militaire. La saisie de la totalité de la cargaison illégale, plus de l'argent est faite, mais pas notifiée dans la fiche de calcul. Ce délit est amendable de 8 000$ et 15 minutes de détention,", amende: "8 000$", detention: "15 minutes" },
-  { id: "DMJ-18", categorie: "penal_delit_majeur", titre: "Braquage Du Human Labs", contenu: "Le fait de braquer le Human Labs est puni d’une amende de 18.000$ et d’un temps de détention de 60 minutes. L’argent liquide possédé par le délinquant est entièrement saisi. Les individus non armés mais participant à la commission de l’infraction grâce aux individus armés dès lors qu'ils ne sont pas considérés comme étant sous la contrainte sont également concernés par ce chef d’inculpation.", amende: "18 000$", detention: "1 heure" },
-  { id: "DMJ-19", categorie: "penal_delit_majeur", titre: "Braquage de banque (fleeca, Pine Banque Roxwood)", contenu: "Le fait de voler de l’argent ou des objets dans une banque par le moyen de la menace d’une arme est puni d’une amende de 15.000$ et d’un temps de détention de 25 minutes. L’argent liquide possédé par le délinquant est entièrement saisi. Les individus non armés mais participant à la commission de l’infraction grâce aux individus armés dès lors qu'ils ne sont pas considérés comme étant sous la contrainte sont également concernés par ce chef d’inculpation.", amende: "15 000$", detention: "25 minutes" },
-  { id: "DMJ-20", categorie: "penal_delit_majeur", titre: "Achat d'armes illégales", contenu: "Le fait d’effectuer un achat d’armes classifiées comme étant non légales est considéré comme un achat d’armes illégales. Cette infraction est punie d’une amende de 12.500$ multipliée par la quantité d’armes achetées et d’un temps de détention de 30 minutes. Les armes et l'argent sont également saisis.", amende: "12 500$", detention: "30 minutes" },
-  { id: "DMJ-21", categorie: "penal_delit_majeur", titre: "Divulgation d'informations confidentielles", contenu: "Le fait de révéler des informations à caractère confidentiel dans le cadre des fonctions ou de l’emploi d’un individu hors du cadre autorisé par la loi ou le règlement est considéré comme une divulgation d’informations confidentielles. Cette infraction est punie par une amende de 2.000$ et un temps de détention de 30 minutes.", amende: "2 000$" },
-  { id: "DMJ-22", categorie: "penal_delit_majeur", titre: "Diffamation", contenu: "Le fait de présenter une personne de façon fallacieuse, à savoir atteindre à son honneur et tenter de lui porter préjudice que l’information soit vraie ou non, est considéré comme de la diffamation. Cette infraction est punie de 3.500$ d’amende et 15 minutes de détention.", amende: "3 500$", detention: "15 minutes" },
-  { id: "DMJ-23", categorie: "penal_delit_majeur", titre: "Entreposage d'armes illégales (≥ 3)", contenu: "Le fait d’entreposer des armes classifiées comme illégales dans l’un de ses biens à un nombre supérieur ou égal à 3 est considéré comme de l'entreposage d’armes illégales. Cette infraction est punie d’une amende de 9.000$ multipliée par le nombre d’armes et d’un temps de détention de 30 minutes.", amende: "9 000$" },
-  { id: "DMJ-24", categorie: "penal_delit_majeur", titre: "Bande organisée", contenu: "Groupe d'au moins 3 personnes étant coordonnées pour la commission d'une infraction. La coordination peut donc être des appels radios, une revendication. La peine serait 2500$ d'amende et 30 minutes de prison.", amende: "2 500$" },
-  { id: "DMJ-25", categorie: "penal_delit_majeur", titre: "Escroquerie à l'entreprise", contenu: "Le fait de tromper une personne physique ou morale afin d’obtenir quelque chose d’elle (argent, renonciation à un droit, fourniture d’un service etc.) de la part d’une entreprise est considéré comme une escroquerie à l’entreprise. Cette infraction est punie par une amende de 9.000$ et un temps détention de 30 minutes. La victime est indemnisée à hauteur du préjudice.", amende: "9 000$", detention: "30 minutes" },
-  { id: "DMJ-26", categorie: "penal_delit_majeur", titre: "Extorsion/Escroquerie", contenu: "Le fait d’obtenir par la violence, la menace ou la contrainte des fonds, une signature, une renonciation de droit etc. est considéré comme de l’extorsion. Le fait de tromper une personne physique ou morale afin d’obtenir quelque chose d’elle (argent, renonciation à un droit, fourniture d’un service etc.) de la part d’un individu est considéré comme de l’escroquerie. Cette infraction est punie par une amende de 8.500$ et un temps de détention de 30 minutes. La personne peut se voir saisir ses biens et son argent.", amende: "8 500$", detention: "30 minutes" },
-  { id: "DMJ-27", categorie: "penal_delit_majeur", titre: "Faux témoignage", contenu: "Le fait de produire un faux témoignage ou un témoignage falsifié en tout ou partie de manière volontaire ayant pour conséquence de mal orienter une enquête ou de porter préjudice à un individu pouvant se voir accuser à tort est considéré comme un faux témoignage. Cette infraction est punie par une amende de 9.000$ et un temps de détention de 30 minutes.", amende: "9 000$" },
-  { id: "DMJ-28", categorie: "penal_delit_majeur", titre: "Intimidation/Chantage envers Magistrat", contenu: "Le fait de formuler des menaces orales, comportementales, physiques etc. à l’endroit d’un individu considéré comme magistrat (juges, procureurs) est considéré comme de l’intimidation envers un magistrat. Le fait de menacer de produire ou de ne pas produire une action d’une quelconque nature (révéler des informations, imputer un fait frauduleux, menacer de violence) en échange d’une chose venant d’un magistrat (effacement de casier, obtention d’informations judiciaires, étouffement d’une affaire etc.) est considéré comme du chantage envers un magistrat. Cette infraction est punie par une amende de 7.500$ et un temps détention de 30 minutes.", amende: "7 500$" },
-  { id: "DMJ-29", categorie: "penal_delit_majeur", titre: "Menace et/ou intimidation envers un représentant de l'état", contenu: "Le fait pour une personne de démontrer manifestement une intention de nuire à un représentant de l’Etat (EMS/agents de police en service) ou fonctionnaire considéré comme personnalité publique (gouvernement/mairie/DOJ/DOT etc.) est puni d’une amende de 4.500$ et d’un temps de détention de 20 minutes. La démonstration de cette intention peut être verbale, écrite, dématérialisée ou bien physique (montrer une arme pour intimider).", amende: "4 500$" },
-  { id: "DMJ-30", categorie: "penal_delit_majeur", titre: "Non respect d'une décision de justice d'un citoyen", contenu: "Le fait, pour un individu, de ne pas se soumettre à une décision de justice rendue par un Tribunal est puni par une amende de 9.000$ et un temps de détention de 30 minutes.", amende: "9 000$" },
-  { id: "DMJ-31", categorie: "penal_delit_majeur", titre: "Non respect d'une décision de justice d'une entreprise", contenu: "Le fait, pour une entreprise, de ne pas se soumettre à une décision de justice rendue par un Tribunal est puni par une amende de 18.000$ et un temps de détention de 30 minutes pour le représentant de la personne morale à l’origine de cette décision.", amende: "18 000$" },
-  { id: "DMJ-32", categorie: "penal_delit_majeur", titre: "Non respect des normes incendie (entreprise)", contenu: "Le fait pour une entreprise de ne pas respecter les normes incendie est puni d’une amende de 18.000$.", amende: "18 000$" },
-  { id: "DMJ-33", categorie: "penal_delit_majeur", titre: "Organisation d'insolvabilité", contenu: "Le fait de s’appauvrir frauduleusement dans le but de se soustraire à une obligation de paiement relative à une décision de justice est considéré comme une organisation d’insolvabilité. Cette infraction est punie d’une amende de 13.500$ et entraîne la saisie des biens et de l’argent dissimulés.", amende: "13 500$" },
-  { id: "DMJ-34", categorie: "penal_delit_majeur", titre: "Parjure", contenu: "Le fait de produire volontairement un témoignage frauduleux en tout ou partie lorsque l’on est sous serment (par la fonction ou par la prestation devant un magistrat au cours d’une audition ou d’un procès) est considéré comme un parjure. Cette infraction entraîne une amende de 5.500$ et un temps de détention de 30 minutes.", amende: "5 500$" },
-  { id: "DMJ-35", categorie: "penal_delit_majeur", titre: "Participation à une fusillade", contenu: "Le fait de participer à un affrontement entre groupes ou contre les forces de l’ordre par le biais d’armes à feu est considéré comme une participation à une fusillade. Le fait de se trouver volontairement sur place et de faire partie de l’un des groupes peut entraîner l’exposition à cette infraction. Être inculpé pour ce chef d’inculpation lors d’une fusillade avec les forces de l’ordre peut entraîner l’exposition aux chefs d’inculpation relatifs aux atteintes à la vie des agents de par la réunion d’individus faisant feu. Cette infraction est punie par une amende de 3.500$ et un temps de détention de 30 minutes.", amende: "3 500$", detention: "30 minutes", tags: ["armes"] },
-  { id: "DMJ-36", categorie: "penal_delit_majeur", titre: "Possession de ADP de Combat", contenu: "La possession sur soi ou dans l’un de ses biens d’un ADP de combat est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-37", categorie: "penal_delit_majeur", titre: "Possession de SMG", contenu: "La possession sur soi ou dans l’un de ses biens d’une SMG est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-38", categorie: "penal_delit_majeur", titre: "Possession de SMG MKII", contenu: "La possession sur soi ou dans l’un de ses biens d’une SMG MKII est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-39", categorie: "penal_delit_majeur", titre: "Possession de SMG d'assaut", contenu: "La possession sur soi ou dans l’un de ses biens d’une SMG d'assaut est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-40", categorie: "penal_delit_majeur", titre: "Possession de Mini-SMG", contenu: "La possession sur soi ou dans l’un de ses biens d’une Mini-SMG est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-41", categorie: "penal_delit_majeur", titre: "Phantom 10", contenu: "La possession sur soi ou dans l’un de ses biens d’un Phantom 10 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes" },
-  { id: "DMJ-42", categorie: "penal_delit_majeur", titre: "Possession de Pistolet Mitrailleur", contenu: "La possession sur soi ou dans l’un de ses biens d’un pistolet mitrailleur est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-43", categorie: "penal_delit_majeur", titre: "Possession de MX Tactic", contenu: "La possession sur soi ou dans l’un de ses biens d’un MX Tactic est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes" },
-  { id: "DMJ-44", categorie: "penal_delit_majeur", titre: "Possession de Sulfateuse Gusenberg", contenu: "La possession sur soi ou dans l’un de ses biens d’une sulfateuse Gusenberg est illégale. En conséquence, la possession de cet objet est punie d’une amende de 30.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "30 000$", detention: "25 minutes" },
-  { id: "DMJ-45", categorie: "penal_delit_majeur", titre: "Possession de Carabine", contenu: "La possession sur soi ou dans l’un de ses biens d’une carabine est illégale. En conséquence, la possession de cet objet est punie d’une amende de 35.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "35 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-46", categorie: "penal_delit_majeur", titre: "Possession de Carabine MKII", contenu: "La possession sur soi ou dans l’un de ses biens d’une carabine MKII est illégale. En conséquence, la possession de cet objet est punie d’une amende de 30.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "30 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-47", categorie: "penal_delit_majeur", titre: "Possession de Fusil Tactique", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil tactique est illégale. En conséquence, la possession de cet objet est punie d’une amende de 30.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "30 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-48", categorie: "penal_delit_majeur", titre: "Possession de Carabine Spéciale", contenu: "La possession sur soi ou dans l’un de ses biens d’une carabine spéciale est illégale. En conséquence, la possession de cet objet est punie d’une amende de 30.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "30 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-49", categorie: "penal_delit_majeur", titre: "Possession de Fusil amélioré (Tar-21)", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil amélioré TAR-21 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 35.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "35 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-50", categorie: "penal_delit_majeur", titre: "Possession de Fusil compact", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil compact est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-51", categorie: "penal_delit_majeur", titre: "Possession de SMG-45", contenu: "La possession sur soi ou dans l’un de ses biens d’un SMG-45 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 30.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "30 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-52", categorie: "penal_delit_majeur", titre: "Possession de Fusil d'assaut", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil d’assaut est illégale. En conséquence, la possession de cet objet est punie d’une amende de 35.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "35 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-53", categorie: "penal_delit_majeur", titre: "Possession de AR7", contenu: "La possession sur soi ou dans l’un de ses biens d’un AR7 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 35.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "35 000$", detention: "25 minutes" },
-  { id: "DMJ-54", categorie: "penal_delit_majeur", titre: "Possession de Mk Priss", contenu: "La possession sur soi ou dans l’un de ses biens d’un Mk Priss est illégale. En conséquence, la possession de cet objet est punie d’une amende de 35.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "35 000$", detention: "25 minutes" },
-  { id: "DMJ-55", categorie: "penal_delit_majeur", titre: "Possession de Battle Rifle", contenu: "La possession sur soi ou dans l’un de ses biens d’un Fusils Battle Rifle est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "35 000$", tags: ["armes"] },
-  { id: "DMJ-56", categorie: "penal_delit_majeur", titre: "Possession de Fusil Lourd", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil lourd est illégale. En conséquence, la possession de cet objet est punie d’une amende de 35.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "35 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-57", categorie: "penal_delit_majeur", titre: "Possession de Fusil SBR-52", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil SBR-52 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 35.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "35 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-58", categorie: "penal_delit_majeur", titre: "Possession de Fusils à Pompe Bullpup", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil SBR-52 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 35.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-59", categorie: "penal_delit_majeur", titre: "Possession de Fusil d'assaut Bullpup", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil d’assaut Bullpup est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-60", categorie: "penal_delit_majeur", titre: "Possession de Fusil d'assaut Bullpup Mk II", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil d’assaut Bullpup MKII est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-61", categorie: "penal_delit_majeur", titre: "Possession de Fusil d'assaut Mk II", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil d’assaut MKII est illégale. En conséquence, la possession de cet objet est punie d’une amende de 35.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "35 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-62", categorie: "penal_delit_majeur", titre: "Possession de Fusil militaire", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil militaire est illégale. En conséquence, la possession de cet objet est punie d’une amende de 30.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "30 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-63", categorie: "penal_delit_majeur", titre: "Possession de Mousquet", contenu: "La possession sur soi ou dans l’un de ses biens d’un mousquet est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "15 000$", detention: "25 minutes" },
-  { id: "DMJ-64", categorie: "penal_delit_majeur", titre: "Possession de Fusil à canon scié (Sawed Off)", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil à canon scié Sawed Off est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-65", categorie: "penal_delit_majeur", titre: "Possession de Striker 12", contenu: "La possession sur soi ou dans l’un de ses biens d’un Striker 12 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes" },
-  { id: "DMJ-66", categorie: "penal_delit_majeur", titre: "Possession de Fusil à double canon", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil à double canon est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-67", categorie: "penal_delit_majeur", titre: "Possession de Fusil à pompe", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil à pompe est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-68", categorie: "penal_delit_majeur", titre: "Possession de Spas 12", contenu: "La possession sur soi ou dans l’un de ses biens d’un SPAS-12 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes" },
-  { id: "DMJ-69", categorie: "penal_delit_majeur", titre: "Possession de Fusil à pompe Mk II", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil à pompe MKII est illégale. En conséquence, la possession de cet objet est punie d’une amende de 30.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "30 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-70", categorie: "penal_delit_majeur", titre: "Possession de Fusil à pompe d'assaut", contenu: "La possession sur soi ou dans l'un de ses biens d'un fusil à pompe d'assaut est illégale. En conséquence, la possession de cet objet est punie d'une amende de 25.000$ et d'un temps de détention de 25 minutes. L'arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },  { id: "DMJ-71", categorie: "penal_delit_majeur", titre: "Possession de Pistolet automatique", contenu: "La possession sur soi ou dans l’un de ses biens d’un pistolet automatique est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "20 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-72", categorie: "penal_delit_majeur", titre: "Possession de Vesper 9", contenu: "La possession sur soi ou dans l’un de ses biens d’un Vesper 9 est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "20 000$", detention: "25 minutes" },
-  { id: "DMJ-73", categorie: "penal_delit_majeur", titre: "Possession de Vortex", contenu: "La possession sur soi ou dans l’un de ses biens d’un Vortex est illégale. En conséquence, la possession de cet objet est punie d’une amende de 20.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "20 000$", detention: "25 minutes" },
-  { id: "DMJ-74", categorie: "penal_delit_majeur", titre: "Possession de Fusil à pompe de combat", contenu: "La possession sur soi ou dans l'un de ses biens d'un fusil à pompe de combat est illégale. En conséquence, la possession de cet objet est punie d'une amende de 25.000$ et d'un temps de détention de 25 minutes. L'arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },  { id: "DMJ-75", categorie: "penal_delit_majeur", titre: "Possession de Fusil à pompe lourd", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil à pompe lourd est illégale. En conséquence, la possession de cet objet est punie d’une amende de 25.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "25 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-76", categorie: "penal_delit_majeur", titre: "Possession de Tactical SMG", contenu: "La possession sur soi ou dans l’un de ses biens d’un tactical SMG est illégale. En conséquence, la possession de cet objet est punie d’une amende de 22.500$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "22 500$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-77", categorie: "penal_delit_majeur", titre: "Possession de Fusil de combat", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil de combat est illégale. En conséquence, la possession de cet objet est punie d’une amende de 35.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "35 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-78", categorie: "penal_delit_majeur", titre: "Possession de Fusil d'élite", contenu: "La possession sur soi ou dans l’un de ses biens d’un fusil d'élite est illégale. En conséquence, la possession de cet objet est punie d’une amende de 40.000$ et d’un temps de détention de 25 minutes. L’arme est également saisie.", amende: "40 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-79", categorie: "penal_delit_majeur", titre: "Possession de Gilet par balle", contenu: "La possession sur soi ou dans l’un de ses biens d’un gilet pare-balles est illégale si elle n’est pas autorisée de par la loi, le règlement ou les directives exécutives des pouvoirs publics pour certaines fonctions. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 25 minutes. Le gilet pare-balles est également saisi.", amende: "15 000$", detention: "25 minutes", tags: ["armes"] },
-  { id: "DMJ-80", categorie: "penal_delit_majeur", titre: "Possession d’argent liquide obtenu illégalement ou > 5000$ sans justificatifs", contenu: "La possession sur soi ou dans l’un de ses biens d’une somme d’argent supérieure à 5.000$ sans justificatifs est illégale ou dans le cas ou l'individu a eu cet argent suite à un acte illégal, même en dessous de 5,000$. En conséquence, la possession de cette somme est punie d’une amende de 1$ multipliée par la somme totale et d’un temps de détention de 10 minutes. Le ou les justificatifs doivent obligatoirement être par écrit pour être irréfutables. La somme est entièrement saisie. Dans le cas où un délit a été commis avec une somme d'argent possédant un justificatif, l'argent est quand même saisi et il n'est pas possible de récupérer", amende: "1$", detention: "10 minutes" },
-  { id: "DMJ-81", categorie: "penal_delit_majeur", titre: "Prise d'otage sur un civil", contenu: "Le fait, par la menace, la violence ou la contrainte, armée ou non, de restreindre un individu civil de sa liberté en vue d’obtenir quelque chose en échange de sa libération est considéré comme une prise d’otage sur civil. Cette infraction est punie par une amende de 4.500$ ainsi qu’un temps de détention de 15 minutes. Cette infraction peut être appliquée à tout un groupe d’individus qui commettent une infraction connexes (braquages, attaques de convois etc.) en vue de fuir.", amende: "4 500$", detention: "15 minutes" },
-  { id: "DMJ-82", categorie: "penal_delit_majeur", titre: "Rapport de vol non enregistré", contenu: "Le fait de ne pas enregistrer son rapport de vol après un vol officiel est puni d’une amende de 9.000$ et d’un temps de détention de 10 minutes.", amende: "9 000$", detention: "10 minutes" },
-  { id: "DMJ-83", categorie: "penal_delit_majeur", titre: "Recel de malfaiteurs", contenu: "Le fait de dissimuler, de détenir ou de transmettre une chose, ou de faire office d'intermédiaire afin de la transmettre, en sachant que cette chose provient d'un crime ou d'un délit en agissant au sein d’un réseau criminel est considéré comme un recel de malfaiteurs. Cette infraction est punie par une amende de 1.800$ et un temps de détention de 30 minutes.", amende: "1 800$", detention: "30 minutes" },
-  { id: "DMJ-84", categorie: "penal_delit_majeur", titre: "Témoignage ou fausse déclaration dans le but de réaliser un profit", contenu: "Le fait de produire un faux témoignage ou une fausse déclaration, par oral ou par écrit, dans le but de réaliser un profit quelconque est puni par une amende de 8.500$ et un temps de détention de 30 minutes.", amende: "8 500$" },
-  { id: "DMJ-85", categorie: "penal_delit_majeur", titre: "Acte / Trafic illégale sur Bleeter", contenu: "Le fait d’utiliser une plateforme de réseau social afin de réaliser des actes illégaux ou un trafic quelconque est illégal. Cette infraction est punie d’une amende de 18.000$ et d’un temps de détention de 30 minutes.", amende: "18 000$", detention: "30 minutes" },
-  { id: "DMJ-86", categorie: "penal_delit_majeur", titre: "Usage de Faux", contenu: "Le fait d’utiliser un document officiel dont on sait qu’il a été falsifié est considéré comme un usage de faux, peu importe que la personne soit à l’origine ou non de la production du faux. Cette infraction est punie par une amende de 2.700$ et un temps de détention de 30 minutes. Les documents sont également saisis.", amende: "2 700$" },
-  { id: "DMJ-87", categorie: "penal_delit_majeur", titre: "Abus de fonction", contenu: "Le fait d’utiliser les attributions et informations données par sa fonction dans le seul et unique but de parvenir à des fins personnelles est considéré comme abus de fonction. Cette infraction est punie par une amende de 7.200$ et un temps de détention de 30 minutes.", amende: "7 200$", detention: "30 minutes" },
-  { id: "DMJ-88", categorie: "penal_delit_majeur", titre: "Usurpation (identité et/ou fonction)", contenu: "Le fait de se faire sciemment passer pour quelqu’un d’autre ou une fonction dans un objectif crapuleux, que ce soit dans un cadre réel ou qu’il s’agisse d’une invention, est considéré comme de l’usurpation d’identité. Cette infraction est punie par une amende de 4,600$ et un temps de détention de 30 minutes.", amende: "4 600$", detention: "30 minutes" },
-  { id: "DMJ-89", categorie: "penal_delit_majeur", titre: "Vol à main armée", contenu: "Le fait de voler un bien (non spécifié ailleurs) à un citoyen par le moyen de la menace d’une arme est puni d’une amende de 5.000$ et d’un temps de détention de 30 minutes. Cela n'implique plus le vol dès lors qu'il est à main armée. Le ou les biens volés sont alors restitués au propriétaire.", amende: "5 000$", detention: "30 minutes" },
-  { id: "DMJ-90", categorie: "penal_delit_majeur", titre: "Possession de Cocktail molotov", contenu: "La possession sur soi ou dans l’un de ses biens d’un cocktail molotov est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 30 minutes. L’arme est également saisie.", amende: "15 000$", detention: "30 minutes", tags: ["armes"] },
-  { id: "DMJ-91", categorie: "penal_delit_majeur", titre: "Possession de charge thermite / Explosive", contenu: "La possession sur soi ou dans l’un de ses biens d’une charge thermique est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 30 minutes. L’arme est également saisie.", amende: "15 000$", detention: "30 minutes" },
-  { id: "DMJ-92", categorie: "penal_delit_majeur", titre: "Possession de Grenade lacrymogène", contenu: "La possession sur soi ou dans l’un de ses biens d’une grenade lacrymogène est illégale. En conséquence, la possession de cet objet est punie d’une amende de 15.000$ et d’un temps de détention de 30 minutes. L’arme est également saisie.", amende: "15 000$", detention: "30 minutes", tags: ["armes"] },
-  { id: "DMJ-93", categorie: "penal_delit_majeur", titre: "Destruction/Dissimulation de preuve", contenu: "Le fait de dissimuler ou de détruire tout élément matériel ou immatériel pouvant mener à une responsabilité pénale d’un individu est considéré comme une destruction/dissimulation de preuve. Dans le cadre de l’arme du crime, si cette dernière a clairement été identifiée et n’est pas retrouvée sur l’accusé, cette infraction peut en conséquent être mise. Cette infraction est punie par une amende de 5.500$ et un temps de détention de 30 minutes.", amende: "5 500$" },
-  { id: "DMJ-94", categorie: "penal_delit_majeur", titre: "Travail dissimulé par dissimulation d'activité", contenu: "Le travail dissimulé par dissimulation d’activité peut aussi bien frapper une entreprise déclarée qu’une entreprise non déclarée. Dans le cadre d’une entreprise déclarée, elle peut s’appliquer dès lors qu’une entreprise réalise du chiffre d'affaires sur une activité économique qui n’est pas prévue par ses statuts et qui n’est pas déclarée auprès des autorités compétentes en matière fiscale. Dans le cadre d’une dissimulation d’activité lorsqu’il s’agit d’une entreprise non déclarée, on distinguera ici un système établi permettant de réaliser du chiffre d’affaires régulier sans que rien ne soit déclaré auprès de l’Etat, tant l’existence de ce système que de l’activité économique visée en elle-même. Cette infraction entraîne une amende de 58.500$ et un temps de détention de 1 heure (pour le représentant de la personnalité morale si c’est le cas). En outre, dans le cadre d’une entreprise déclarée, la direction peut se voir licencier et l’entreprise peut temporairement être saisie par l’Etat.", amende: "58 500$" },
-  { id: "DMJ-95", categorie: "penal_delit_majeur", titre: "Travail dissimulé par dissimulation d'emploie salarié", contenu: "Le travail dissimulé par dissimulation d’emploi salarié correspond au cas où toute entreprise déclarée vient à embaucher de manière illégale et non déclarée des salariés pour son entreprise. On notera ainsi un salarié ne disposant pas de l’encadrement légal nécessaire à tout salarié (fiche de salaire, salarié déclaré au fisc etc.). Cette infraction est punie par une amende de 45.000$ et un temps de détention de 1 heure (pour le représentant de la personnalité morale si c’est le cas). En outre, la direction peut se voir licencier et l’entreprise peut être saisie de manière temporaire par l’Etat.", amende: "45 000$" },
-  { id: "DMJ-96", categorie: "penal_delit_majeur", titre: "Travail dissimulé", contenu: "Le travail dissimulé, dans sa forme générale, correspond à un travail clandestin qui n’est pas déclaré à l’Etat et dont la légalité n’est en conséquence pas établie puisque les documents établissant l’activité et le droit d’exercer ne sont en conséquence pas présents. Cette infraction peut frapper aussi bien une entreprise déclarée qui a recours à cette méthode frauduleuse, mais peut également frapper tout individu exerçant une activité professionnelle rémunérée qui n’est pas déclarée du tout. Cette infraction est punie par une amende de 45.000$ et un temps de détention de 1 heure (pour le représentant de la personnalité morale si c’est le cas). En outre, un licenciement peut intervenir à l’encontre de la direction mais également une saisie de l’entreprise de manière temporaire par l’Etat.", amende: "45 000$" },
-  { id: "DMJ-97", categorie: "penal_delit_majeur", titre: "Absence de documents légaux d'une entreprise", contenu: "Le fait, pour une entreprise déclarée, de ne pas posséder son autorisation d’exploitation lui autorisant l’exercice de son activité sur le sol, mais également tous les documents entourant ses statuts et son domaine d’activité est considéré comme une absence de documents légaux d’une entreprise. Ne pas établir de contrats de travail en fonction des emplois peut également exposer l’entreprise à cette infraction. Cette infraction est punie par une amende de 63.000$ et un temps de détention de 1 heure (pour le représentant de la personnalité morale si c’est le cas). En outre, le patron peut se voir retirer son entreprise et celle-ci peut être saisie par l’Etat temporairement.", amende: "63 000$" },
-  { id: "DMJ-98", categorie: "penal_delit_majeur", titre: "Corruption", contenu: "Est considéré comme corruption tout acte visant à obtenir un service de quelqu’un disposant d’une position d’autorité publique en échange d’un bien ou d’un service. Cette infraction est punie par une amende de 22.500$ et un temps de détention de 30 minutes. Cette infraction sera appliquée pour les deux parties si celle à qui on fait l’offre l’accepte.", amende: "8 000$", detention: "15 minutes" },
-  { id: "DMJ-99", categorie: "penal_delit_majeur", titre: "Fraude Fiscale", contenu: "La soustraction illégale à la loi fiscale, d’une personne morale ou physique, de tout ou partie de la matière imposable qu’elle devrait frapper est considérée comme de la fraude fiscale. Cette infraction est punie par une amende de 90.000$ et un temps de détention de 30 minutes.", amende: "90 000$", detention: "30 minutes" },
-  { id: "DMJ-100", categorie: "penal_delit_majeur", titre: "Incendie criminel", contenu: "Le fait de provoquer volontairement le départ d’un feu à des fins criminelles, peu importe le lieu, est considéré comme un incendie criminel. Cette infraction est punie par une amende 20.500$ et un temps de détention de 30 minutes.", amende: "20 500$", detention: "30 minutes" },
-  { id: "DMJ-101", categorie: "penal_delit_majeur", titre: "Abus de Pouvoir", contenu: "L’abus de pouvoir est une forme d’agression perpétrée par un individu au détriment d’autrui, souvent cachée et se produisant dans des endroits où l’on devrait être en sécurité. Il s’agit d’une violence interpersonnelle qui consiste à utiliser illégitimement un pouvoir ou une position hiérarchique pour obtenir des avantages personnels. Cette infraction est punie par une amende de 7.500$ et un temps de détention de 15 minutes.", amende: "7 500$", detention: "15 minutes" },
-  { id: "DMJ-102", categorie: "penal_delit_majeur", titre: "Vente de biens Immobilier abusif", contenu: "La vente de biens immobiliers à un prix trop élevé, également connue sous le nom de “vente abusive”, peut engager la responsabilité pénale du vendeur. Le vendeur s'expose à une amende correspondant au montant dépassant le prix légal.", amende: "1$", detention: "30 minutes" },
-  { id: "DMJ-103", categorie: "penal_delit_majeur", titre: "Braquage organisé de grande envergure", contenu: "Le braquage organisé de grande envergure est un vol commis par un groupe de personnes, souvent armées, qui planifient à l'avance de s'emparer de biens ou d'argent généralement de grande valeur en utilisant la violence ou la menace. Ce type de braquage implique une organisation poussée. Ce délit n'est pas cumulable avec les autres délits de braquage disponibles dans le Code Pénal.Cette infraction est punie par une amende 22.500$ et un temps de détention de 30 minutes.", amende: "22 500$", detention: "30 minutes" },
-  { id: "DMJ-104", categorie: "penal_delit_majeur", titre: "Exploitation d'une entreprise sans autorisation", contenu: "Lorsqu'une entreprise fonctionne sans avoir obtenu les autorisations nécessaires pour son exploitation pendant une période de deux semaines, et que la mairie confirme ce manquement, l'entreprise est passible d'une amende de 100 000 $.", amende: "100 000$" },
-  { id: "DMJ-105", categorie: "penal_delit_majeur", titre: "Absence d'autorisation d'exploitation", contenu: "Si une entreprise continue à opérer sans autorisation pendant un mois, et que ce défaut est confirmé par la mairie, l'entreprise s'expose à une amende de 250 000 $. De plus, le patron et le co-patron de l'entreprise seront convoqués en justice pour évaluer leur légitimité à diriger l'entreprise.", amende: "250 000$" },
-  { id: "DMJ-106", categorie: "penal_delit_majeur", titre: "Attaque à l’explosif", contenu: "Le fait de dégrader pour empêcher de manière temporaire la pleine jouissance d'un bien immobilier, est illégal. Cela comprend le fait de couper l'électricité, l'eau, l'accès par la route au bâtiment par une solution nécessitant l'intervention d'une réparation de l'infrastructure. Le responsable d'un tel acte s'expose à une amende de 7500$ et d’un temps de détention de 30 minutes.", amende: "7 500$", detention: "30 minutes" },
-  { id: "DMJ-107", categorie: "penal_delit_majeur", titre: "Possession d'accessoires d'armes (poignée, silencieux, viseur, chargeur)", contenu: "La possession sur soi ou dans l’un de ses biens d’un accessoire d’arme est illégale. En conséquence, la possession de cet objet est punie d’une amende de 2.000$ par accessoire et d’un temps de détention de 10 minutes. Les possessions sont de fait saisies.", amende: "10 000$", detention: "20 minutes", tags: ["armes"] },
-
-  // ═══ CODE PÉNAL — CRIMES ════════════════════════════════════════════════════
-  { id: "CR-1", categorie: "penal_crime", titre: "Acte lié au terrorisme", contenu: "Le fait, pour un individu ou un groupe d’individu, de commettre des actes pouvant faciliter la mise en oeuvre d’actes terroristes est considéré comme un acte lié au terrorisme. On notera ainsi les actes pouvant s’apparenter à du terrorisme, les actes pouvant financer le terrorisme ou encore les actes pouvant aider des terroristes par exemple. Il reviendra d’apprécier chaque cas distinctement. Cette infraction est punie par une amende de 15.000$ et un temps de détention de 1 heure.", amende: "15 000$" },
-  { id: "CR-2", categorie: "penal_crime", titre: "Blanchiment", contenu: "Est considéré comme du blanchiment le fait de dissimuler l’origine de fonds obtenus de manière illégale afin qu’ils soient perçus comme légaux. Cette infraction est punie d’une amende de 5$ multipliée par la somme totale blanchie, ainsi que d’un temps de détention de 15 minutes.", amende: "5$" },
-  { id: "CR-3", categorie: "penal_crime", titre: "Possession de Drone Explosif/Utilisation", contenu: "La possession, l’utilisation, la fabrication ou la vente d’un drone explosif sont strictement interdites, en raison du danger majeur qu’elles représentent pour la sécurité publique et l’ordre de l’État.", amende: "150 000$" },
-  { id: "CR-4", categorie: "penal_crime", titre: "Assassinat (Meurtre prémédité) (MORT RP UNIQUEMENT)", contenu: "Le fait de réaliser un homicide dont la préparation, les moyens et la mise en oeuvre ont été mûrement réfléchis en amont par son auteur est considéré comme un assassinat. Cette infraction est punie par une amende de 225.000$ et un temps de détention de 1 heure.", amende: "225 000$" },
-  { id: "CR-5", categorie: "penal_crime", titre: "Assassinat (Meurtre prémédité) sur représentant de l'état (MORT RP UNIQUEMENT)", contenu: "Le fait de réaliser un homicide sur un représentant de l'état dont la préparation, les moyens et la mise en oeuvre ont été mûrement réfléchis en amont par son auteur est considéré comme un assassinat. Cette infraction est punie par une amende de 225.000$ et un temps de détention de 1 heure.", amende: "300 000$" },
-  { id: "CR-6", categorie: "penal_crime", titre: "Pratique illégale de la médecine", contenu: "Le fait de réaliser tout acte médical professionnel sans y être autorisé par la formation ou par un diplôme autorisant à pratiquer la médecine constitue une pratique illégale de la médecine. Constitue également cette infraction tout professionnel de la santé autorisé à pratiquer la médecine mais qui ne respecte pas les protocoles établis par la loi et les organes professionnels de la santé en ce qui concerne les procédés utilisés ou encore le lieu de la pratique. Cette infraction est punie par une amende de 9.000$ et un temps de détention de 30 minutes.", amende: "9 000$", detention: "30 minutes" },
-  { id: "CR-7", categorie: "penal_crime", titre: "Vente illégale d'armes", contenu: "Le fait de réaliser des transactions visant à échanger des armes considérées comme illégales est considéré comme de la vente illégale d’armes. La vente d'armes légales n'est concernée que lorsque l'on sait pertinemment que le projet de l'acheteur est de commettre un crime par l'achat de cette arme. Cette infraction est punie par une amende de 12.500$ et un temps de détention de 30 minutes. L'intégralité des sommes monétaires seront saisies.", amende: "12 500$", detention: "30 minutes" },
-  { id: "CR-8", categorie: "penal_crime", titre: "Meurtre (MORT RP UNIQUEMENT)", contenu: "Le fait de commettre un homicide volontaire sans que celui-ci n’ait été préparé en amont constitue un meurtre. Cette infraction est punie par une amende de 100.800$ et un temps de détention de 1 heure. [N.B. : Cette infraction n’est applicable que si le personnage est réellement mort et qu’il implique un wipe.]", amende: "100 800$", detention: "1 heure" },
-  { id: "CR-9", categorie: "penal_crime", titre: "Procurer frauduleusement à un tiers un document délivré par une administration publique", contenu: "Réaliser la production d’un document délivré par une administration publique dans un but frauduleux et ce, afin de le transmettre à un tiers constitue une infraction. On notera à titre d’exemple la réalisation d’une fausse identité, un faux passeport, un faux permis etc. Cette infraction est punie par une amende de 13.500$ et un temps de détention de 30 minutes.", amende: "13 500$", detention: "30 minutes" },
-  { id: "CR-10", categorie: "penal_crime", titre: "Atteinte à la sécurité intérieure", contenu: "Le fait de réaliser des actes pouvant compromettre et porter atteinte à la stabilité et la bonne marche de la sécurité intérieure, notamment par des attaques à grande échelle sur des représentants de l’Etat, des atteintes à grande échelle sur des civils ou encore des bâtiments publics relevant de la sécurité intérieure constitue une infraction. Cette infraction est punie par une amende de 12.500$ et un temps de détention de 30 minutes.", amende: "12 500$", detention: "30 minutes" },
-  { id: "CR-11", categorie: "penal_crime", titre: "Cavale", contenu: "La cavale pénale désigne l’évasion ou la fuite d’un condamné qui a échappé à la justice et se cache pour éviter d’être repris et puni. Dans le contexte du Code pénal, la cavale peut être liée à la prescription de peine, c’est-à-dire au délai pendant lequel la peine ne peut être exécutée. Cette infraction est punie par une amende de 9.000$ et un temps de détention de 1 heure.", amende: "9 000$" },
-  { id: "CR-12", categorie: "penal_crime", titre: "Association de malfaiteurs", contenu: "L’association de malfaiteurs est caractérisée par la préméditation, résultant d’un projet commun préalable visant la commission de plusieurs délits ou crimes. Cette préméditation peut être établie par l’existence d’un accord explicite entre les individus, démontré notamment par leurs déclarations ou échanges, ou être déduite de manière certaine de leurs comportements coordonnés lors de l’infraction (Minimum 8 individus).", amende: "4 500$" },
-  { id: "CR-13", categorie: "penal_crime", titre: "Détournement de fonds", contenu: "L’appropriation frauduleuse par une personne au préjudice d’autrui, de fonds, pour son propre intérêt (ou pour le compte de l’intérêt d’une autre personne) est considéré comme un détournement de fonds. Cette disposition peut aussi bien s’appliquer à du détournement de fonds privés qu’à du détournement de fonds publics. Cette infraction est punie par une amende de 18.000$ et un temps de détention de 30 minutes.", amende: "18 000$", detention: "30 minutes" },
-  { id: "CR-14", categorie: "penal_crime", titre: "Espionnage", contenu: "Le fait, pour une personne, de renforcer les renseignements concernant les Etats-Unis, ou affaiblir les intérêts de la nation, pour le compte d’une autre puissance étrangère (ou d’une entité terroriste) ou d'une entreprise est considéré comme de l’espionnage. Si cette infraction est réalisée par une personne de nationalité américaine ou faisant partie de l’armée américaine, cette infraction se verra complétée par la trahison. Cette infraction est punie par une amende de 7.000$ et un temps de détention de 30 minutes.", amende: "7 000$", detention: "30 minutes" },
-  { id: "CR-15", categorie: "penal_crime", titre: "Meurtre sur représentant de l'état (MORT RP UNIQUEMENT)", contenu: "Le fait de commettre un homicide volontaire sur un représentant de l’Etat ((EMS/agents de police en service) ou fonctionnaire considéré comme personnalité publique (gouvernement/mairie/DOJ/DOT etc.)), sans être prémédité en amont, est considéré comme un meurtre sur représentant de l’Etat. Cette infraction est punie par une amende de 300.000$ et une détention de 30 minutes.", amende: "250 000$" },
-  { id: "CR-16", categorie: "penal_crime", titre: "Meurtre sur représentant de l'état (COMA)", contenu: "Le fait d’utiliser une force meurtrière à l’encontre d’un représentant de l’Etat ((EMS/agents de police en service) ou fonctionnaire considéré comme personnalité publique (gouvernement/mairie/DOJ/DOT etc.)) qui entraîne le coma de cette dernière (personne qui n’est plus consciente) est considéré comme un meurtre sur représentant de l’Etat (COMA). On appliquera la tentative si la force meurtrière utilisée n’entraîne pas le coma du représentant de l’Etat .Cette infraction est punie par une amende de 30.000$ et une détention de 30 minutes.", amende: "30 000$" },
-  { id: "CR-17", categorie: "penal_crime", titre: "Meurtre (COMA)", contenu: "Le fait d’utiliser une force meurtrière à l’encontre d’un civil et que ce dernier tombe dans le coma (état d’inconscience) du fait de cette attaque, est considéré comme un meurtre (COMA). On appliquera la tentative si la force meurtrière utilisée n’entraîne pas le coma du civil. Cette infraction est punie par une amende de 18.000$ et une détention de 30 minutes.", amende: "10 800$" },
-  { id: "CR-18", categorie: "penal_crime", titre: "Participation et/ou assistance à un acte ayant comme but de commettre un crime contre l'état", contenu: "Le fait de participer ou d’assister volontairement à des actes ayant comme finalité de commettre un crime contre l’Etat entraîne l’exposition à cette infraction. Cette infraction est punie par une amende de 35.500$ et un temps de détention de 30 minutes.", amende: "35 500$", detention: "30 minutes" },
-  { id: "CR-19", categorie: "penal_crime", titre: "Possession de Grenade", contenu: "La possession sur soi ou dans l’un de ses biens d’une grenade est illégale. En conséquence, la possession de cet objet est punie d’une amende de 135.000$ et d’un temps de détention de 30 minutes. L’arme est également saisie.", amende: "135 000$", detention: "30 minutes", tags: ["armes"] },
-  { id: "CR-20", categorie: "penal_crime", titre: "Possession de Bombe", contenu: "La possession sur soi ou dans l’un de ses biens d’une bombe collante est illégale. En conséquence, la possession de cet objet est punie d’une amende de 135.000$ et d’un temps de détention de 30 minutes. L’arme est également saisie.", amende: "135 000$", detention: "30 minutes" },
-  { id: "CR-21", categorie: "penal_crime", titre: "Prise d'otage sur représentant de l'état", contenu: "Le fait, par la menace, la violence ou la contrainte, armée ou non, de restreindre un individu représentant l'État ((EMS/agents de police en service) ou fonctionnaire considéré comme personnalité publique (gouvernement/mairie/DOJ/DOT etc.)) de sa liberté en vue d’obtenir quelque chose en échange de sa libération est considéré comme une prise d’otage sur représentant de l’Etat. Cette infraction est punie par une amende de 18.000$ et un temps de détention de 30 minutes. Cette infraction peut être appliquée à tout un groupe d’individus qui commettent une infraction connexes (braquages, attaques de convois etc.) en vue de fuir. Cette infraction peut également entraîner l’interdiction de suppression du casier judiciaire.", amende: "18 000$" },
-  { id: "CR-22", categorie: "penal_crime", titre: "Séquestration", contenu: "Le fait, par la menace, la violence ou la contraire, qu’elle soit armée ou non, sans ordre des autorités constituées et hors les cas prévus par la loi, d’arrêter, d’enlever, de détenir ou de séquestrer une personne constitue une séquestration. Cette infraction est punie par une amende de 15.500$ et un temps de détention de 30 minutes.", amende: "15 500$", detention: "30 minutes" },
-  { id: "CR-23", categorie: "penal_crime", titre: "Terrorisme", contenu: "Tout acte individuel ou collectif ayant pour but de troubler gravement l’ordre public par l’intimidation et la terreur est considéré comme du terrorisme. Cette infraction est punie par une amende de 45.000$ et un temps de détention d’une heure. En outre, l’intégralité des biens de la personne sont saisies.", amende: "45 000$", detention: "1 heure" },
-  { id: "CR-24", categorie: "penal_crime", titre: "Trafic d'organe", contenu: "Est considéré comme trafic d'organes tous les actes entourant le commerce de tous membres du corps humain (organes, fluides etc.). Cette infraction est punie d’une amende de 18.000$ ainsi que d’un temps de détention de 45 minutes.", amende: "18 000$" },
-  { id: "CR-25", categorie: "penal_crime", titre: "Trahison", contenu: "Ensemble d’infractions commises par un représentant, un dépositaire de l'autorité publique ou un militaire au service des Etats-Unis remettant en cause la sécurité et les intérêts fondamentaux de la nation américaine. Cette infraction est punie par une amende de 225.000$ et un temps de détention de 1 heure.", amende: "225 000$", detention: "1 heure" },
-  { id: "CR-26", categorie: "penal_crime", titre: "Trafic d’armes à grande échelle", contenu: "Toute vente organisée et régulière d’objets liés à l’armement menant ainsi à un trafic organisé, que ce soit par un individu ou un groupe d’individus, constitue un trafic d’armes à grande échelle. Cette infraction est punie par une amende de 27.000$ et un temps de détention d’une heure. L’ensemble des armes sont saisies.", amende: "27 000$", detention: "1 heure" },
-  { id: "CR-27", categorie: "penal_crime", titre: "Torture", contenu: "La torture correspond à des souffrances physiques et à des traitements inhumains et cruels que l’on fait subir volontairement à autrui. La torture peut être physique mais également mentale en fonction des actes réalisés et infligés. Cette infraction est punie par une amende de 25.000$ par personne et un temps de détention de 30 minutes.", amende: "25 000$", detention: "30 minutes" },
-  { id: "CR-28", categorie: "penal_crime", titre: "Violation d'un ordre/décret gouvernemental", contenu: "Le fait de ne pas se plier à un ordre ou un décret gouvernemental établi exceptionnellement en période de crise, et où il est clairement mentionné dessus que de ne pas s’y conformer constitue un crime, est considéré comme une violation d’un ordre/décret gouvernemental. Cette infraction est punie par une amende de 40.500$ et un temps de détention de 1 heure.", amende: "40 500$" },
-  { id: "CR-29", categorie: "penal_crime", titre: "Atteintes aux intérêts fondamentaux de la nation", contenu: "Sont considérés comme des atteintes aux intérêts fondamentaux de la nation, tous les actes qui peuvent mettre en péril les valeurs sociales protégées, notamment en ce qui a trait à l’intégrité du territoire, de son environnement, de son potentiel scientifique, de sa population, de son patrimoine, de sa culture, de ses institutions etc. Cette infraction est punie par une amende de 30.600$ et un temps de détention de 1 heure.", amende: "30 600$", detention: "1 heure" },
-  { id: "CR-30", categorie: "penal_crime", titre: "Atteintes aux institution de la nation", contenu: "Sont considérées comme des atteintes aux institutions de la nation, toutes les infractions en direction d’un organe public national, qui mettent en péril son intégrité ou sa sécurité. Cette infraction est punie par une amende de 18.000$ et un temps de détention de 1 heure.", amende: "18 000$", detention: "1 heure" },
-  { id: "CR-31", categorie: "penal_crime", titre: "Violation du Secret Profesionnel", contenu: "Le secret professionnel correspond à une obligation de tenir secrètes certaines informations obtenues dans le cadre d’une profession ou d’une fonction. Cela peut aussi bien confirmer certaines confidences faites (notamment à titre d’exemple pour les professionnels de la santé ou les avocats) ou bien des informations recueillies (fonctions du service public par exemple). Cette infraction est punie par une amende de 22.500$ et un temps de détention de 30 minutes.", amende: "22 500$", detention: "30 minutes" },
-
-  // PROCÉDURE PÉNALE
-  { id: "PROC-1", categorie: "procedure", titre: "Légalité de la procédure", contenu: "Toute procédure pénale doit être fondée sur la loi et respecter les droits fondamentaux.", tags: ["légalité", "procédure"] },
-  { id: "PROC-2", categorie: "procedure", titre: "Présomption d'innocence", contenu: "Toute personne est présumée innocente jusqu'à décision judiciaire définitive. Il incombe à l'accusation de prouver la culpabilité au-delà de tout doute raisonnable.", tags: ["innocence", "preuve"] },
-  { id: "PROC-3", categorie: "procedure", titre: "Proportionnalité", contenu: "Les mesures prises doivent être strictement nécessaires et proportionnées aux faits reprochés.", tags: ["proportionnalité"] },
-  { id: "PROC-4", categorie: "procedure", titre: "Loyauté de la preuve", contenu: "Les preuves doivent être obtenues légalement et de manière loyale.", tags: ["preuve", "loyauté"] },
-  { id: "PROC-13", categorie: "procedure", titre: "Convocation — Conditions de validité", contenu: "Pour être juridiquement valide, une convocation de police doit comporter : nom du convoqué, date/heure/lieu, motif de l'audition (statut, infraction visée), et notification des droits dont celui à un avocat. L'absence d'une mention entraîne la nullité de plein droit.", tags: ["convocation", "validité"] },
-  { id: "PROC-37", categorie: "procedure", titre: "Procédure de sécurité (déroulement)", contenu: "1. Constater l'infraction · 2. Menotter l'individu · 3. Palper (armes uniquement) · 4. Mettre dans le véhicule · 5. Citer les droits Miranda (délai max 15 min) · 6. Fouille complète · 7. Saisir ce qui est illégal · 8. Tenue de prisonnier · 9. Amende et peine de détention.", tags: ["procédure", "Miranda", "arrestation"] },
-  { id: "PROC-38", categorie: "procedure", titre: "Contact obligatoire de la Justice", contenu: "Dès lors que la fiche comporte à minima un crime, trois délits majeurs ou cinq délits mineurs, l'appel d'un procureur ou juge est obligatoire.", tags: ["procureur", "juge", "obligation"] },
-  { id: "PROC-40", categorie: "procedure", titre: "Conditions de fouille et de palpation", contenu: "Fouille véhicule : délit mineur commis / dépôt dans le coffre / mandat / accord conducteur. Palpation individu : test poudre positif / délit mineur commis / fusillade / holster / DEFCON 3+ / dissimulation du visage.", tags: ["fouille", "palpation"] },
-  { id: "PROC-41", categorie: "procedure", titre: "Droits Miranda", contenu: "Tout individu arrêté doit être informé dans un délai de 15 minutes des raisons de son arrestation et de ses droits, y compris son droit de garder le silence et son droit à une assistance juridique. La lecture doit être effectuée dans un endroit calme.", tags: ["Miranda", "droits", "arrestation"] },
-  { id: "PROC-42", categorie: "procedure", titre: "Vices de procédure", contenu: "Constituent des vices : arrestation abusive / palpation ou fouille sans raison / fouille avant droits Miranda / dépassement du délai de 15 minutes / mauvaise lecture des droits / oubli des 3 droits fondamentaux (avocat, EMS, nourriture) / oubli d'appeler procureur/juge quand requis / bavure policière / parjure avéré.", tags: ["vice", "procédure", "nullité"] },
-  { id: "PROC-43", categorie: "procedure", titre: "Abandon des charges", contenu: "Conditions d'abandon : inculpation à tort d'un individu / absence de rapport complet expliquant l'arrestation et les chefs d'inculpation retenus.", tags: ["abandon", "charges"] },
-
-  // DROITS MIRANDA (onglet dédié)
-  { id: "MIR-1", categorie: "miranda", titre: "Droit de garder le silence", contenu: "Tout individu arrêté a le droit de garder le silence. Nul n'est obligé de s'auto-incriminer. Tout ce que vous direz pourra être retenu contre vous.", tags: ["silence", "Miranda"] },
-  { id: "MIR-2", categorie: "miranda", titre: "Droit à un avocat", contenu: "Tout individu a droit à un avocat dès la mise en examen. Si vous ne pouvez pas vous offrir un avocat, il vous en sera commis un d'office.", tags: ["avocat", "Miranda"] },
-  { id: "MIR-3", categorie: "miranda", titre: "Droit à l'EMS", contenu: "Tout individu en garde à vue a le droit de demander une assistance médicale (EMS) si son état de santé le nécessite.", tags: ["EMS", "médical", "Miranda"] },
-  { id: "MIR-4", categorie: "miranda", titre: "Droit à la nourriture", contenu: "Tout individu en garde à vue a le droit de bénéficier d'une alimentation pendant la durée de sa détention.", tags: ["nourriture", "Miranda"] },
-  { id: "MIR-5", categorie: "miranda", titre: "Délai de lecture des droits", contenu: "La lecture des droits Miranda doit être effectuée dans un délai maximum de 15 minutes suivant l'arrestation, dans un endroit calme ne pouvant pas distraire l'individu.", tags: ["délai", "Miranda"] },
-  { id: "MIR-6", categorie: "miranda", titre: "Nullité pour violation Miranda", contenu: "Tout dépassement du délai de 15 minutes, toute omission d'un droit, toute lecture effectuée à une personne masquée ou avec une mauvaise identité constitue un vice de procédure pouvant entraîner la nullité.", tags: ["nullité", "Miranda", "vice"] },
-
-  // ═══ CODE DU TRAVAIL ═══════════════════════════════════════════════════════
-  { id: "TRAV-1", categorie: "travail", titre: "Champ d'application", contenu: "Le Code du travail s'applique à toute relation professionnelle. Il garantit la liberté du travail, la protection des salariés et la sécurité des relations professionnelles.", tags: ["travail", "champ"] },
-  { id: "TRAV-2", categorie: "travail", titre: "Liberté du travail", contenu: "Toute personne est libre de travailler et de choisir son emploi, à partir de 16 ans minimum.", tags: ["liberté", "emploi", "âge"] },
-  { id: "TRAV-4", categorie: "travail", titre: "Non-discrimination", contenu: "Toute discrimination dans le cadre professionnel est interdite.", tags: ["discrimination"] },
-  { id: "TRAV-5", categorie: "travail", titre: "Protection du salarié", contenu: "Le salarié est protégé contre les abus de pouvoir, les sanctions arbitraires, et bénéficie de médiations préalables pour résoudre les situations conflictuelles.", tags: ["protection", "salarié", "abus"] },
-  { id: "TRAV-6", categorie: "travail", titre: "Définition du contrat de travail", contenu: "Le contrat de travail lie un employeur et un employé.", tags: ["contrat", "définition"] },
-  { id: "TRAV-7", categorie: "travail", titre: "Formation du contrat", contenu: "Le contrat doit comporter l'identité des parties, la fonction occupée et la rémunération prévue.", tags: ["contrat", "formation"] },
-  { id: "TRAV-8", categorie: "travail", titre: "Types de contrat", contenu: "Les contrats de travail reconnus sont : CDI, CDD, et Contrat de Stage.", tags: ["CDI", "CDD", "stage"] },
-  { id: "TRAV-12", categorie: "travail", titre: "Absence de contrat", contenu: "En l'absence de contrat écrit, l'employé est présumé en CDI. Un contrat doit être établi dans un délai maximum de 48 heures, à défaut l'employeur peut être sanctionné pour travail dissimulé.", tags: ["contrat", "absence", "dissimulé"] },
-  { id: "TRAV-14", categorie: "travail", titre: "Durée du stage", contenu: "Le stage ne peut excéder 2 semaines et est renouvelable une seule fois. La durée doit rester inférieure ou équivalente à un CDD.", tags: ["stage", "durée"] },
-  { id: "TRAV-15", categorie: "travail", titre: "Contrat à durée déterminée (CDD)", contenu: "Le CDD est autorisé mais ne peut pas dépasser 1 mois et n'est pas renouvelable.", tags: ["CDD", "durée"] },
-  { id: "TRAV-19", categorie: "travail", titre: "Armes et équipements", contenu: "Toute possession d'armes ou d'équipement dangereux dans le cadre professionnel est interdite sauf autorisation légale. Les règles applicables sont définies par le Code pénal.", tags: ["armes", "équipement"] },
-  { id: "TRAV-20", categorie: "travail", titre: "Principe de rémunération", contenu: "Tout travail doit être rémunéré.", tags: ["rémunération", "principe"] },
-  { id: "TRAV-21", categorie: "travail", titre: "Délai de paiement", contenu: "Le salaire doit être versé au maximum le mardi.", tags: ["paiement", "salaire", "délai"] },
-  { id: "TRAV-22", categorie: "travail", titre: "Retard ou non-paiement", contenu: "Tout retard de paiement de salaire peut entraîner une action en justice.", tags: ["retard", "non-paiement"] },
-  { id: "TRAV-24", categorie: "travail", titre: "Preuve d'activité", contenu: "Le salarié peut justifier son activité par tout moyen. Certains avantages peuvent être conditionnés à une activité minimale en présentiel (10 heures de service).", tags: ["preuve", "activité", "présentiel"] },
-  { id: "TRAV-26", categorie: "travail", titre: "Semaine entamée", contenu: "Toute semaine de travail significativement entamée ouvre droit à rémunération selon le travail accompli ou selon les usages internes de l'entreprise.", tags: ["semaine", "rémunération"] },
-  { id: "TRAV-27", categorie: "travail", titre: "Paiement après départ régulier", contenu: "Lorsque le salarié a quitté l'entreprise après information préalable et remplit les conditions de rémunération, le paiement reste dû et peut être effectué par virement.", tags: ["paiement", "départ"] },
-  { id: "TRAV-28", categorie: "travail", titre: "Départ sans préavis", contenu: "L'entreprise n'est pas tenue de verser immédiatement la rémunération lorsque le salarié a quitté sans prévenir et sans justification préalable, sous réserve de décision judiciaire contraire.", tags: ["départ", "préavis"] },
-  { id: "TRAV-29", categorie: "travail", titre: "Non-discrimination salariale", contenu: "Aucune prime ou avantage ne peut être attribué sur des critères discriminatoires (ethnicité, sexe, religion, âge, santé, handicap, orientation sexuelle, nationalité, etc.).", tags: ["discrimination", "salaire", "prime"] },
-  { id: "TRAV-30", categorie: "travail", titre: "Critères objectifs de prime", contenu: "Les primes peuvent être attribuées selon la présence, la performance, l'ancienneté, le mérite, les résultats ou les responsabilités exercées.", tags: ["prime", "critères"] },
-  { id: "TRAV-31", categorie: "travail", titre: "Sécurité au travail", contenu: "L'employeur doit garantir la sécurité physique et morale, la sécurité des données professionnelles, et des conditions de travail adaptées.", tags: ["sécurité"] },
-  { id: "TRAV-33", categorie: "travail", titre: "Harcèlement", contenu: "Toute forme de harcèlement dans le cadre professionnel est strictement interdite.", tags: ["harcèlement"] },
-  { id: "TRAV-34", categorie: "travail", titre: "Charge de travail", contenu: "La charge de travail doit être raisonnable et proportionnée aux fonctions et au contrat de travail du salarié.", tags: ["charge", "travail"] },
-  { id: "TRAV-35", categorie: "travail", titre: "Modes de rupture du contrat", contenu: "Le contrat peut être rompu par démission, démission non conventionnelle (abandon de poste), licenciement, ou rupture conventionnelle (accord des deux parties).", tags: ["rupture", "licenciement", "démission"] },
-  { id: "TRAV-36", categorie: "travail", titre: "Licenciement pour motif objectif", contenu: "En cas de motif irréfutable ou objectif, l'employeur peut notifier le licenciement par message écrit motivé.", tags: ["licenciement", "motif"] },
-  { id: "TRAV-37", categorie: "travail", titre: "Procédure disciplinaire", contenu: "En cas de faute reprochée, l'employeur doit organiser un entretien préalable permettant au salarié de présenter ses explications. La décision finale est notifiée par écrit avec rappel des griefs retenus.", tags: ["discipline", "procédure", "entretien"] },
-  { id: "TRAV-38", categorie: "travail", titre: "Motifs de licenciement", contenu: "L'employeur peut licencier pour faute, inactivité (2 semaines), motif économique, ou absence justifiée de minimum 1 mois. En cas de motif économique, une solution de reclassement doit être recherchée.", tags: ["licenciement", "faute", "économique"] },
-  { id: "TRAV-39", categorie: "travail", titre: "Licenciement abusif", contenu: "Tout licenciement sans motif valable est sanctionné.", tags: ["licenciement", "abusif"] },
-  { id: "TRAV-40", categorie: "travail", titre: "Préavis de démission", contenu: "En cas de démission, un préavis de 2 jours est obligatoire si l'ancienneté dépasse 2 semaines, porté à 7 jours pour un poste à haute responsabilité.", tags: ["préavis", "démission"] },
-  { id: "TRAV-41", categorie: "travail", titre: "Indemnisation pour licenciement irrégulier", contenu: "Si l'employeur ne respecte pas la procédure de licenciement, le salarié bénéficie d'une indemnité égale à 2 semaines de salaire, portée à 6 semaines si l'ancienneté dépasse 3 mois, et 8 semaines si elle dépasse 10 mois.", amende: "2 à 8 semaines de salaire", tags: ["indemnité", "licenciement"] },
-  { id: "TRAV-42", categorie: "travail", titre: "Droit de retrait", contenu: "Le salarié peut exercer un droit de retrait en cas de danger, mais l'abus peut entraîner une suspension de salaire proportionnelle.", tags: ["retrait", "danger"] },
-  { id: "TRAV-43", categorie: "travail", titre: "Sanctions disciplinaires", contenu: "Les sanctions disciplinaires (avertissement, suspension, licenciement) doivent être proportionnées à la faute commise.", tags: ["sanction", "discipline"] },
-  { id: "TRAV-45", categorie: "travail", titre: "Sanctions économiques", contenu: "Peuvent être sanctionnés : l'absence injustifiée de long terme, la dégradation volontaire, et le manquement grave aux obligations.", tags: ["sanction", "économique"] },
-  { id: "TRAV-46", categorie: "travail", titre: "Transparence financière", contenu: "Les entreprises doivent assurer la transparence des salaires et des dépenses professionnelles.", tags: ["transparence", "finances"] },
-  { id: "TRAV-47", categorie: "travail", titre: "Position dominante", contenu: "Toute situation de monopole abusif ou de position dominante exploitée de manière déloyale peut être sanctionnée.", tags: ["monopole", "concurrence"] },
-  { id: "TRAV-48", categorie: "travail", titre: "Contrôles administratifs", contenu: "Le Département des taxes et l'Inspection du travail peuvent effectuer des contrôles dans un délai raisonnable entre deux interventions, sauf suspicion grave.", tags: ["contrôle", "DOT"] },
-  { id: "TRAV-52", categorie: "travail", titre: "Hiérarchie des normes", contenu: "Le Code du travail est subordonné à la Constitution et au Code civil.", tags: ["hiérarchie"] },
-
-  // ═══ CODE DU COMMERCE ══════════════════════════════════════════════════════
-  { id: "COM-1", categorie: "commerce", titre: "Liberté du commerce", contenu: "Toute activité commerciale légale est libre.", tags: ["liberté", "commerce"] },
-  { id: "COM-2", categorie: "commerce", titre: "Définition de l'activité commerciale", contenu: "Est commerciale toute activité de production, de distribution ou de service à but lucratif.", tags: ["définition"] },
-  { id: "COM-3", categorie: "commerce", titre: "Bonne foi commerciale", contenu: "Les relations commerciales doivent être exécutées de bonne foi.", tags: ["bonne foi"] },
-  { id: "COM-6", categorie: "commerce", titre: "Création d'entreprise", contenu: "Toute personne majeure (18 ans) et diplômée peut créer une entreprise.", tags: ["création", "entreprise", "âge"] },
-  { id: "COM-7", categorie: "commerce", titre: "Déclaration obligatoire", contenu: "Toute entreprise doit être déclarée auprès des autorités compétentes (Mairie, DOT et Inspection du travail).", tags: ["déclaration", "DOT"] },
-  { id: "COM-8", categorie: "commerce", titre: "Formes d'entreprises", contenu: "Les entreprises peuvent prendre la forme de sociétés ou d'associations.", tags: ["forme", "société", "association"] },
-  { id: "COM-9", categorie: "commerce", titre: "Responsabilité du dirigeant", contenu: "Le dirigeant engage la responsabilité de l'entreprise.", tags: ["dirigeant", "responsabilité"] },
-  { id: "COM-12", categorie: "commerce", titre: "Comptabilité hebdomadaire", contenu: "Une comptabilité hebdomadaire doit être tenue, au maximum le mardi à 20h.", tags: ["comptabilité", "délai"] },
-  { id: "COM-13", categorie: "commerce", titre: "Conservation des documents", contenu: "Les documents comptables doivent être conservés 8 semaines et rester accessibles en cas de contrôle.", tags: ["conservation", "documents"] },
-  { id: "COM-14", categorie: "commerce", titre: "Responsabilité du dirigeant en gestion", contenu: "Le dirigeant peut être tenu seul responsable en cas de faute de gestion.", tags: ["dirigeant", "faute"] },
-  { id: "COM-16", categorie: "commerce", titre: "Fixation des prix", contenu: "Les prix sont librement fixés, sauf certains fixés par l'inspection du travail.", tags: ["prix"] },
-  { id: "COM-17", categorie: "commerce", titre: "Publicité loyale", contenu: "La publicité doit être loyale et non trompeuse.", tags: ["publicité"] },
-  { id: "COM-19", categorie: "commerce", titre: "Contrats commerciaux", contenu: "Toute relation commerciale doit faire l'objet d'un contrat.", tags: ["contrat"] },
-  { id: "COM-21", categorie: "commerce", titre: "Concurrence déloyale", contenu: "Sont interdits : la tromperie, le dénigrement, le sabotage, le vol de clientèle, et la vente à un prix inférieur à celui du vendeur concurrent.", tags: ["concurrence", "déloyale"] },
-  { id: "COM-22", categorie: "commerce", titre: "Monopole abusif", contenu: "Toute situation de monopole abusif est interdite.", tags: ["monopole"] },
-  { id: "COM-23", categorie: "commerce", titre: "Ententes illicites", contenu: "Les accords visant à fausser le marché sont interdits.", tags: ["entente", "marché"] },
-  { id: "COM-24", categorie: "commerce", titre: "Déclaration hebdomadaire au DOT", contenu: "Les entreprises doivent déclarer de manière hebdomadaire leurs revenus et dépenses au DOT, du lundi 00h00 jusqu'au mardi 20h maximum.", tags: ["déclaration", "DOT", "délai"] },
-  { id: "COM-26", categorie: "commerce", titre: "Fraude commerciale", contenu: "Toute fraude est interdite et préjudiciable.", tags: ["fraude"] },
-  { id: "COM-27", categorie: "commerce", titre: "Blanchiment", contenu: "Le blanchiment d'argent et toute manœuvre visant à dissimuler l'origine d'un fond obtenu sont interdits.", tags: ["blanchiment"] },
-  { id: "COM-30", categorie: "commerce", titre: "Rupture abusive de contrat", contenu: "La rupture abusive d'un contrat engage la responsabilité de son auteur et peut être préjudiciable.", tags: ["rupture", "contrat"] },
-  { id: "COM-31", categorie: "commerce", titre: "Difficultés économiques", contenu: "Une entreprise en difficulté peut demander une assistance, notamment des subventions auprès de la Mairie.", tags: ["difficulté", "subvention"] },
-  { id: "COM-33", categorie: "commerce", titre: "Faillite", contenu: "Une entreprise peut être déclarée en faillite par l'inspection du travail.", tags: ["faillite"] },
-  { id: "COM-34", categorie: "commerce", titre: "Liquidation", contenu: "En cas de cessation d'activité, les biens peuvent être liquidés par l'inspection du travail.", tags: ["liquidation"] },
-  { id: "COM-35", categorie: "commerce", titre: "Pouvoir de contrôle", contenu: "Le Département des taxes et l'Inspection du travail peuvent contrôler les entreprises.", tags: ["contrôle"] },
-  { id: "COM-36", categorie: "commerce", titre: "Audit", contenu: "Un audit peut être ordonné par la Mairie, le Département des taxes ou l'inspection du travail.", tags: ["audit"] },
-  { id: "COM-38", categorie: "commerce", titre: "Sanctions civiles", contenu: "Toute infraction commerciale peut entraîner des amendes ou une obligation d'indemnisation.", tags: ["sanction", "civil"] },
-  { id: "COM-39", categorie: "commerce", titre: "Sanctions administratives", contenu: "Les autorités peuvent imposer une suspension ou une fermeture administrative de l'entreprise.", tags: ["sanction", "fermeture"] },
-  { id: "COM-40", categorie: "commerce", titre: "Responsabilité pénale", contenu: "Les infractions commerciales graves peuvent relever du Code pénal.", tags: ["pénal"] },
-  { id: "COM-41", categorie: "commerce", titre: "Hiérarchie des normes", contenu: "Le Code du commerce est subordonné à la Constitution et aux autres codes.", tags: ["hiérarchie"] },
-
-  // ═══ CODE FÉDÉRAL DE CONFORMITÉ ÉCONOMIQUE ═══════════════════════════════════
-  { id: "FED-1", categorie: "federal", titre: "Champ d'application", contenu: "Le Code fédéral s'applique à toute entreprise, société, franchise ou activité économique générant des revenus sur le territoire de l'État, sans distinction de forme juridique, de taille ou de statut.", tags: ["champ", "application"] },
-  { id: "FED-2", categorie: "federal", titre: "Dirigeant et responsabilité", contenu: "Le dirigeant et le co-dirigeant sont personnellement et solidairement responsables de la conformité fiscale de leur entité. En cas de non-conformité, ils peuvent être poursuivis individuellement.", tags: ["dirigeant", "responsabilité"] },
-  { id: "FED-3", categorie: "federal", titre: "Statut du Runner", contenu: "Le Runner est un employé limité à des tâches opérationnelles ponctuelles, sans rôle de gestion. Il ne peut être rémunéré par salaire fixe : sa rémunération est exclusivement composée de primes proportionnelles aux tâches accomplies.", tags: ["runner", "rémunération"] },
-  { id: "FED-4", categorie: "federal", titre: "Période fiscale", contenu: "La période fiscale standard est fixée à 7 jours calendaires (du lundi au dimanche), sauf mention contraire.", tags: ["période", "fiscale"] },
-  { id: "FED-5", categorie: "federal", titre: "Plafond de la masse salariale", contenu: "La masse salariale totale d'une entreprise ne peut excéder 90% de son chiffre d'affaires sur la période concernée, sauf dérogation émise par la Direction du DOT.", tags: ["masse salariale", "plafond"] },
-  { id: "FED-6", categorie: "federal", titre: "Niveaux d'infraction", contenu: "Le code distingue 4 niveaux : N.1 Manquements administratifs (majoration 10%, min. 5 000$, pas de transmission DOJ) · N.2 Irrégularités comptables (majoration 10-15%, min. 15 000$) · N.3 Fraudes caractérisées (15 000$ à 100 000$+, transmission à discrétion) · N.4 Fraudes aggravées (majoration 20%, min. 50 000$, transmission automatique au DOJ).", tags: ["niveau", "infraction", "barème"] },
-  { id: "FED-1.1", categorie: "federal", titre: "Déclaration administrative obligatoire", contenu: "Toute entreprise doit déclarer son identité juridique, son activité, ses responsables et ses lieux d'exploitation. Tout responsable doit fournir ses justificatifs de compétences dans les 14 jours suivant sa prise de poste.", amende: "Majoration 10% — min. 5 000$", tags: ["déclaration", "niveau 1"] },
-  { id: "FED-1.2", categorie: "federal", titre: "Rémunération illégale des Runners", contenu: "Tout versement de salaire fixe à un Runner, quel qu'en soit le montant, constitue une infraction.", amende: "Majoration 10% par salaire non conforme — min. 10 000$", tags: ["runner", "salaire", "niveau 1"] },
-  { id: "FED-1.3", categorie: "federal", titre: "Déclaration tardive ou incomplète", contenu: "Les documents fiscaux doivent être transmis dans les 48 heures suivant la clôture de chaque période fiscale.", amende: "Majoration 10% par jour de retard — min. 10 000$", tags: ["délai", "déclaration", "niveau 1"] },
-  { id: "FED-1.4", categorie: "federal", titre: "Défaut de justificatifs comptables", contenu: "Les justificatifs doivent être fournis dans les 48 heures suivant toute demande officielle, et conservés au minimum 30 jours.", amende: "Majoration 10% — min. 5 000$", tags: ["justificatif", "niveau 1"] },
-  { id: "FED-1.6", categorie: "federal", titre: "Non-déclaration d'un changement de dirigeant", contenu: "Tout changement affectant l'identité du dirigeant doit être déclaré dans les 48 heures.", amende: "Majoration 10% — min. 5 000$", tags: ["dirigeant", "changement", "niveau 1"] },
-  { id: "FED-1.8", categorie: "federal", titre: "Libellés inappropriés lors de paiements officiels", contenu: "Les libellés de virement vers le DOT doivent rester clairs et neutres. Propos insultants, formulations ambiguës ou fantaisistes sont interdits.", amende: "5 000$ par virement non conforme", tags: ["libellé", "paiement", "niveau 1"] },
-  { id: "FED-2.1", categorie: "federal", titre: "Conformité comptable obligatoire", contenu: "Toute entreprise doit maintenir une comptabilité conforme à son activité réelle, sous peine de requalification en fraude.", amende: "Majoration 10% — min. 10 000$", tags: ["comptabilité", "niveau 2"] },
-  { id: "FED-2.2", categorie: "federal", titre: "Activité économique non déclarée", contenu: "Exercer une activité commerciale sans entreprise déclarée constitue une infraction caractérisée. S'applique aussi aux structures dissoutes poursuivant leur activité.", amende: "Majoration 15% — min. 15 000$", tags: ["activité", "non déclarée", "niveau 2"] },
-  { id: "FED-2.3", categorie: "federal", titre: "Dépenses déductibles non conformes", contenu: "Toute dépense personnelle du dirigeant imputée à l'entreprise est automatiquement requalifiée en retrait dissimulé.", amende: "10 000$ par retrait non conforme — min. 10 000$", tags: ["dépense", "retrait", "niveau 2"] },
-  { id: "FED-2.4", categorie: "federal", titre: "Incohérences financières répétées", contenu: "Présenter de manière répétée des résultats incompatibles avec l'activité réelle (2 périodes consécutives ou 3 non consécutives dans l'année) constitue une infraction grave.", amende: "Majoration 15% — min. 15 000$", tags: ["incohérence", "niveau 2"] },
-  { id: "FED-2.6", categorie: "federal", titre: "Sous-déclaration du chiffre d'affaires", contenu: "Déclarer intentionnellement un chiffre d'affaires inférieur au réel est caractérisé lorsque l'écart dépasse 15% sur une même période.", amende: "Majoration 15% — min. 15 000$ + redressement intégral", tags: ["sous-déclaration", "CA", "niveau 2"] },
-  { id: "FED-2.7", categorie: "federal", titre: "Non-conformité dans la gestion des retraits", contenu: "Tout retrait de fonds doit être déclaré, justifié et conforme à l'objet social. Tout retrait non déclaré est requalifié en détournement de fonds.", amende: "Majoration 10% — min. 10 000$", tags: ["retrait", "détournement", "niveau 2"] },
-  { id: "FED-2.8", categorie: "federal", titre: "Fraude fiscale", contenu: "Toute manœuvre volontaire visant à se soustraire partiellement ou totalement aux obligations fiscales (dissimulation, minoration délibérée) constitue une fraude fiscale.", amende: "Amende fixe de 100 000$", tags: ["fraude", "fiscale", "niveau 2"] },
-  { id: "FED-2.9", categorie: "federal", titre: "Détournement du statut associatif", contenu: "Une association doit fonctionner par dons volontaires. Toute compensation financière obligatoire en échange d'un service constitue une activité commerciale incompatible avec le statut associatif.", amende: "Majoration 15% — min. 25 000$", tags: ["association", "détournement", "niveau 2"] },
-  { id: "FED-3.1", categorie: "federal", titre: "Non-déclaration d'établissement ou de franchise", contenu: "Ouvrir, exploiter ou contrôler un établissement secondaire sans le déclarer dans les 48 heures constitue une fraude caractérisée.", amende: "100 000$ par période de dissimulation — min. 100 000$", tags: ["établissement", "franchise", "niveau 3"] },
-  { id: "FED-3.2", categorie: "federal", titre: "Employés fictifs ou non déclarés", contenu: "Déclarer des employés inexistants ou employer sans déclaration officielle constitue une infraction grave. Tout employé doit être déclaré dans les 48 heures suivant le début de son activité.", amende: "15 000$ par employé fictif — min. 15 000$", tags: ["employé", "fictif", "niveau 3"] },
-  { id: "FED-3.3", categorie: "federal", titre: "Manipulation de la masse salariale", contenu: "Modifier artificiellement les salaires, primes ou effectifs déclarés pour masquer des flux financiers constitue une manipulation caractérisée.", amende: "Majoration 10% — min. 10 000$", tags: ["masse salariale", "manipulation", "niveau 3"] },
-  { id: "FED-3.4", categorie: "federal", titre: "Détournement de fonds", contenu: "Utiliser les ressources de l'entreprise à des fins personnelles non déclarées constitue un détournement, caractérisé dès lors que l'intention de dissimulation est établie.", amende: "65% du montant détourné — min. 50 000$ — sans préjudice de poursuites judiciaires", tags: ["détournement", "fonds", "niveau 3"] },
-  { id: "FED-3.5", categorie: "federal", titre: "Facturation fictive", contenu: "Émettre, utiliser ou comptabiliser des factures portant sur des prestations ou biens inexistants constitue une fraude caractérisée.", amende: "100 000$ par semaine de fraude constatée — min. 100 000$", tags: ["facturation", "fictive", "niveau 3"] },
-  { id: "FED-3.6", categorie: "federal", titre: "Mensonge fiscal et intention frauduleuse", contenu: "Fournir des informations fausses, dissimuler une activité, induire en erreur un agent lors d'un contrôle, ou présenter des documents falsifiés constitue un mensonge fiscal.", amende: "Majoration 20% — min. 50 000$ + ouverture d'un contrôle approfondi", tags: ["mensonge", "fiscal", "niveau 3"] },
-  { id: "FED-3.7", categorie: "federal", titre: "Structuration artificielle pour contournement fiscal", contenu: "Créer ou multiplier artificiellement des structures juridiques dans le seul but de contourner les seuils d'imposition constitue une fraude caractérisée.", amende: "Consolidation fiscale + majoration 20% — min. 50 000$", tags: ["structuration", "contournement", "niveau 3"] },
-  { id: "FED-4.1", categorie: "federal", titre: "Organisation d'insolvabilité artificielle", contenu: "Organiser volontairement l'appauvrissement apparent de l'entreprise (transferts d'actifs, cessions fictives) pour échapper aux obligations fiscales constitue une infraction aggravée.", amende: "Majoration 20% — min. 150 000$ — transmission au DOJ", tags: ["insolvabilité", "niveau 4"] },
-  { id: "FED-4.2", categorie: "federal", titre: "Activité économique étrangère non déclarée", contenu: "Ouvrir ou contrôler une activité hors du territoire sans en informer le DOT, dans le but de soustraire des revenus à l'imposition locale, constitue une fraude aggravée.", amende: "Majoration 20% — min. 150 000$ — transmission au DOJ", tags: ["étranger", "non déclarée", "niveau 4"] },
-  { id: "FED-4.3", categorie: "federal", titre: "Blanchiment de capitaux", contenu: "Toute manœuvre visant à dissimuler l'origine illicite de revenus par leur intégration dans l'économie légale constitue une infraction majeure, même via une structure formellement en règle.", amende: "Majoration 20% — min. 150 000$ — transmission automatique et immédiate au DOJ", tags: ["blanchiment", "capitaux", "niveau 4"] },
-  { id: "FED-4.4", categorie: "federal", titre: "Obstruction au contrôle fiscal", contenu: "Entraver volontairement un contrôle fiscal en refusant des documents, en intimidant des agents ou en organisant la disparition de preuves constitue une infraction grave dès le premier acte délibéré.", amende: "Majoration 20% — min. 150 000$ — transmission au DOJ", tags: ["obstruction", "contrôle", "niveau 4"] },
-  { id: "FED-4.5", categorie: "federal", titre: "Falsification de documents fiscaux", contenu: "La fabrication, modification ou altération de tout document fiscal, comptable ou bancaire dans le but de tromper le DOT constitue un crime économique grave.", amende: "Majoration 20% — min. 150 000$ — transmission au DOJ — poursuites pénales", tags: ["falsification", "document", "niveau 4"] },
-  { id: "FED-4.6", categorie: "federal", titre: "Récidive fiscale", contenu: "La répétition d'une infraction dans les 6 mois suivant une sanction définitive entraîne le doublement automatique des sanctions, la transmission prioritaire au DOJ, et l'inscription au registre de surveillance renforcée.", amende: "Doublement de toutes les sanctions — transmission prioritaire au DOJ", tags: ["récidive", "niveau 4"] },
-  { id: "FED-4.7", categorie: "federal", titre: "Corruption d'un agent fiscal", contenu: "Proposer ou accorder un avantage à un agent du DOT afin d'obtenir une faveur ou de faire obstacle à un contrôle constitue un crime grave, même via un intermédiaire.", amende: "Majoration 20% — min. 200 000$ — transmission immédiate au DOJ — interdiction d'exercer", tags: ["corruption", "agent", "niveau 4"] },
-  { id: "FED-4.8", categorie: "federal", titre: "Activité commerciale clandestine d'un particulier", contenu: "Constitue une activité clandestine le fait, pour un particulier non enregistré, d'exercer une activité présentant les caractéristiques d'une démarche commerciale organisée (annonce, tarification, sollicitation de clientèle, moyen d'encaissement).", amende: "25 000$ minimum, modulable + saisie des sommes liées", tags: ["clandestine", "particulier", "niveau 4"] },
-  { id: "FED-4.9", categorie: "federal", titre: "Valeur probante des éléments collectés (opération IRS)", contenu: "Lors d'une opération IRS, sont recevables : témoignage d'au moins 2 agents DOT assermentés, transaction attestée par relevé/capture/remise en main propre, annonce publiée capturée, aveux recueillis en présence de 2 agents, éléments matériels collectés sur place.", tags: ["IRS", "preuve", "opération"] },
-  { id: "FED-5.1", categorie: "federal", titre: "Récidive en activité commerciale clandestine", contenu: "Tout particulier déjà condamné pour activité clandestine et de nouveau pris en infraction dans un délai de 8 semaines est considéré comme récidiviste.", amende: "Doublement de l'amende + 2h de détention administrative + interdiction d'enregistrement d'entreprise pendant 4 semaines", tags: ["récidive", "clandestine"] },
-  { id: "FED-5.2", categorie: "federal", titre: "Complicité et mise à disposition de moyens", contenu: "Constitue une complicité le fait de mettre à disposition d'un particulier clandestin des locaux, du matériel, des moyens de communication ou de paiement.", amende: "Amende équivalente à celle du complice principal", tags: ["complicité", "clandestine"] },
-  { id: "FED-5.3", categorie: "federal", titre: "Protection des agents IRS", contenu: "Les agents DOT assermentés en opération IRS bénéficient des mêmes protections juridiques que les agents SAMP en intervention. Toute menace ou agression à leur encontre est passible des sanctions du Code Pénal pour infractions équivalentes sur représentant de l'État.", tags: ["protection", "agent", "IRS"] },
-  { id: "FED-5.4", categorie: "federal", titre: "Droit d'interpellation administrative (IRS)", contenu: "Dans le cadre d'une opération IRS, les agents DOT peuvent identifier le suspect, consulter ses documents sur mandat, saisir les sommes liées, et le maintenir sur place jusqu'à 15 minutes en attendant le SAMP.", tags: ["interpellation", "IRS", "mandat"] },
-  { id: "FED-DISP-1", categorie: "federal", titre: "Pouvoir général de contrôle", contenu: "Le DOT peut exiger des documents, procéder à des vérifications, convoquer les dirigeants. Fréquence : contrôle minimum 1 fois tous les 2 mois, maximum 3 contrôles/audit par mois, sauf suspicion caractérisée.", tags: ["contrôle", "pouvoir", "fréquence"] },
-  { id: "FED-DISP-2", categorie: "federal", titre: "Contrôle fiscal inopiné", contenu: "Un contrôle sans notification préalable peut être mené en cas de suspicion grave de destruction de preuves, récidive, signalement crédible, ou incohérences majeures constatées précédemment. Aucune entreprise ne peut s'y opposer.", tags: ["contrôle", "inopiné"] },
-  { id: "FED-DISP-3", categorie: "federal", titre: "Saisie administrative fiscale", contenu: "En cas de fraude, blanchiment ou détournement établi, le DOT peut saisir les biens professionnels, actifs financiers et biens personnels acquis durant la période frauduleuse, strictement limitée au montant de l'amende.", tags: ["saisie", "fraude"] },
-  { id: "FED-DISP-4", categorie: "federal", titre: "Procédure de contestation", contenu: "Toute entreprise peut contester une décision en déposant un recours écrit auprès du Directeur dans les 48 heures. En cas de rejet, elle peut saisir le DOJ dans les 24 heures.", tags: ["contestation", "recours"] },
-  { id: "FED-DISP-5", categorie: "federal", titre: "Délais de paiement", contenu: "Les montants dus doivent être acquittés dans les 72 heures suivant la notification définitive. Un échéancier peut être accordé sous réserve d'un premier versement d'au moins 30%. Pénalité de 5% par tranche de 24h de retard en cas de non-respect.", tags: ["paiement", "délai", "échéancier"] },
+export const CATEGORIES_INFRACTIONS: CategorieInfraction[] = [
+  { id: 1, nom: 'Contravention' },
+  { id: 2, nom: 'Délit mineur' },
+  { id: 3, nom: 'Délit majeur' },
+  { id: 4, nom: 'Crime' },
+  { id: 5, nom: 'Délit routier' },
 ];
 
-// ─── FORMAT CHEF D'INCULPATION (pour Simulateur, Casier, Dossiers) ───────────
-export interface ChefPenal {
-  code: string;        // ID article ex: "C-5", "DM-47"
-  infraction: string;  // titre court
-  categorie: "Contravention" | "Délit mineur" | "Délit majeur" | "Crime";
-  amende: string;      // ex: "2 700$" — affichage
-  amendeNum: number;   // ex: 2700 — calculs simulateur
-  detention: string;   // ex: "10 minutes" — affichage
-  detentionMin: number; // ex: 10 — calculs simulateur
-  cible: boolean;      // chef ciblé par Defcon (braquages, PO, crimes)
-  tags: string[];      // ["armes"], ["drogues"], ["poisson"], ["animaux"]
+export const CODE_PENAL: Infraction[] = [
+  // ==========================================
+  // CONTRAVENTIONS (LIVRE II - CODE PÉNAL)
+  // ==========================================
+  {
+    id: 'CP-C-01',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Stationnement d\'un bateau sur la côte hors d\'un port',
+    amendeDeBase: 450,
+    peineDeBaseMin: 0,
+    description: 'Stationner un bateau sur une côte dépourvue de port. Entraîne la mise en fourrière du bateau.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-02',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Atterrissage d\'un avion ou hélicoptère sur un site inapproprié',
+    amendeDeBase: 450,
+    peineDeBaseMin: 0,
+    description: 'Atterrir avec un appareil aérien sur un site non autorisé. Entraîne la mise en fourrière de l\'appareil.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-03',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Survol d\'un avion ou hélicoptère sur un site inapproprié',
+    amendeDeBase: 135,
+    peineDeBaseMin: 0,
+    description: 'Survoler un site non autorisé en avion ou en hélicoptère.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-04',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Atteinte à la pudeur',
+    amendeDeBase: 450,
+    peineDeBaseMin: 0,
+    description: 'Se déplacer nu ou en sous-vêtements dans un lieu public ou accessible au public.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-05',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Conduite dangerous en véhicule (aérien, maritime, terrestre)',
+    amendeDeBase: 2700,
+    peineDeBaseMin: 0,
+    description: 'Comportement imprudent ou irresponsable risquant de compromettre la sécurité ou de causer des dommages.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-06',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Dissimulation du visage',
+    amendeDeBase: 540,
+    peineDeBaseMin: 0,
+    description: 'Port de tout objet ou masque rendant difficile l\'identification dans un lieu public.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-07',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Excès de vitesse (contrôle radar)',
+    amendeDeBase: 1800,
+    peineDeBaseMin: 0,
+    description: 'Excès de vitesse détecté par un contrôle radar.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-08',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Grand excès de vitesse (>50km/h)',
+    amendeDeBase: 3000,
+    peineDeBaseMin: 0,
+    description: 'Dépassement de plus de 50 km/h de la limite autorisée. Entraîne un retrait de permis.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-09',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Holster interdit',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 0,
+    description: 'Possession d\'un holster interdit. L\'accessoire peut être saisi par la police.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-10',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Insulte envers un civil',
+    amendeDeBase: 270,
+    peineDeBaseMin: 0,
+    description: 'Expression outrageante adressée à un civil, utilisant des termes de mépris ou d\'invectives.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-11',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Ivresse ou consommation de stupéfiants sur la voie publique',
+    amendeDeBase: 270,
+    peineDeBaseMin: 0,
+    description: 'État d\'ivresse manifeste ou consommation de stupéfiants sur la voie publique.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-12',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Mendicité en lieu public',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 0,
+    description: 'Demander de l\'argent aux passants dans un lieu public.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-13',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Non présentation des papiers d\'identité',
+    amendeDeBase: 450,
+    peineDeBaseMin: 0,
+    description: 'Refus ou incapacité de présenter ses pièces d\'identité sur demande d\'un dépositaire de l\'autorité.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-14',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Participation à une manifestation illégale',
+    amendeDeBase: 135,
+    peineDeBaseMin: 0,
+    description: 'Participation à un rassemblement non autorisé par les autorités publiques.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-15',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Stationnement gênant',
+    amendeDeBase: 270,
+    peineDeBaseMin: 0,
+    description: 'Stationnement sur un emplacement gênant ou interdit. Véhicule mis en fourrière si propriétaire absent.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-16',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Tapage nocturne',
+    amendeDeBase: 360,
+    peineDeBaseMin: 0,
+    description: 'Emission de nuisances sonores excessives durant la nuit.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-17',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Usage abusif du Klaxon',
+    amendeDeBase: 450,
+    peineDeBaseMin: 0,
+    description: 'Utilisation abusive du klaxon hors d\'un cadre de danger immédiat.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-18',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Consommation de drogue',
+    amendeDeBase: 450,
+    peineDeBaseMin: 0,
+    description: 'Consommation de substances classifiées comme stupéfiants. Saisie immédiate des produits.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-19',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Faux appels (canulars)',
+    amendeDeBase: 405,
+    peineDeBaseMin: 0,
+    description: 'Appels malveillants ou canulars téléphoniques intentionnels.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-20',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Possession ou flagrant délit de crochetage',
+    amendeDeBase: 225,
+    peineDeBaseMin: 0,
+    description: 'Possession d\'outils de crochetage ou tentative d\'utilisation sur un verrou/véhicule. Saisie du matériel.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-21',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Conduite en contresens',
+    amendeDeBase: 2700,
+    peineDeBaseMin: 0,
+    description: 'Circuler à contresens ou de manière prolongée sur la voie opposée.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-22',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Dégradations de biens publics/privés/matériels',
+    amendeDeBase: 1100,
+    peineDeBaseMin: 0,
+    description: 'Atteinte volontaire ou involontaire à l\'état d\'un bien public ou privé.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-C-23',
+    categorieId: 1,
+    categorieNom: 'Contravention',
+    titre: 'Véhicule non-homologué pour Cayo',
+    amendeDeBase: 1200,
+    peineDeBaseMin: 0,
+    description: 'Circulation sur Cayo Perico avec un véhicule non répertorié. Entraîne l\'immobilisation du véhicule.',
+    coefficientType: 'Global'
+  },
+
+  // ==========================================
+  // DÉLITS MINEURS (LIVRE III - CODE PÉNAL)
+  // ==========================================
+  {
+    id: 'CP-DM-01',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Agression sur citoyen / Maltraitance animale',
+    amendeDeBase: 4500,
+    peineDeBaseMin: 30,
+    description: 'Agression physique sans risque de mort ou actes de cruauté / mauvais traitements envers un animal.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-02',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de poissons illégaux',
+    amendeDeBase: 900,
+    peineDeBaseMin: 10,
+    description: 'Possession de requins, tortues, dauphins, piranhas ou espadons (amende multipliée par le nombre d\'unités). Saisie des animaux. Non applicable sur Cayo.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-03',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Outrage envers un représentant de l\'état / magistrat',
+    amendeDeBase: 2500,
+    peineDeBaseMin: 0,
+    description: 'Injures ou irrespect caractérisé envers un agent ou un magistrat dans l\'exercice de ses fonctions. Amendes cumulables.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-04',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Appel abusif des services publics',
+    amendeDeBase: 1800,
+    peineDeBaseMin: 15,
+    description: 'Sollicitation injustifiée ou répétée des services d\'urgence (police, EMS, pompiers).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-05',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Braconnage - Chasse',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 10,
+    description: 'Chasse illégale d\'espèces protégées ou non-respect de la réglementation. Retrait du permis de chasse.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-06',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Braquage de supérette / LTD',
+    amendeDeBase: 2250,
+    peineDeBaseMin: 20,
+    description: 'Vol sous la menace d\'une arme dans un commerce de proximité. Saisie de l\'argent liquide.',
+    coefficientType: 'Cible'
+  },
+  {
+    id: 'CP-DM-07',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Braquage d\'ATM / Piratage d\'ATM',
+    amendeDeBase: 2250,
+    peineDeBaseMin: 15,
+    description: 'Piratage ou attaque physique d\'un distributeur de billets. Saisie de l\'argent liquide.',
+    coefficientType: 'Cible'
+  },
+  {
+    id: 'CP-DM-08',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Cambriolage',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 15,
+    description: 'Introduction par effraction dans une résidence privée pour y dérober des biens. Saisie des objets volés.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-09',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Conduite sans permis',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 15,
+    description: 'Conduite d\'un véhicule motorisé sans détenir le permis requis. Mise en fourrière du véhicule.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-10',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Conduite d\'un véhicule volé',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 15,
+    description: 'Utilisation d\'un véhicule déclaré volé. Peut être cumulé avec le recel de véhicule.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-11',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Course de rue illégale',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 10,
+    description: 'Organisation ou participation à des courses automobiles clandestines. Véhicules envoyés en fourrière.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-12',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Délit de fuite',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 15,
+    description: 'Fuite après avoir causé ou été impliqué dans un accident provoquant des dommages matériels ou physiques.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-13',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Entrave à une opération / enquête',
+    amendeDeBase: 3500,
+    peineDeBaseMin: 30,
+    description: 'Gêner l\'action des forces de l\'ordre en intervention ou fournir des fausses déclarations pour faire échouer une enquête.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-14',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Entrave aux espaces aériens',
+    amendeDeBase: 900,
+    peineDeBaseMin: 10,
+    description: 'Stationnement aérien gênant la circulation. Confiscation de l\'engin et retrait du permis aérien.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-15',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Exhibition d\'armes de poing',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 15,
+    description: 'Brandir ou porter de manière ostensible un pistolet. Implique la charge de possession d\'arme.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-16',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Exhibition d\'armes lourdes / automatiques',
+    amendeDeBase: 4500,
+    peineDeBaseMin: 30,
+    description: 'Brandir une arme automatique ou lourde. Implique automatiquement la charge de possession d\'arme.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-17',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Go Fast',
+    amendeDeBase: 2250,
+    peineDeBaseMin: 20,
+    description: 'Transport rapide de marchandises illégales visant à échapper aux contrôles de police. Fourrière automatique.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-18',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Utilisation illégale de drone en zone réglementée',
+    amendeDeBase: 12000,
+    peineDeBaseMin: 20,
+    description: 'Survol en drone de sites protégés (police, hôpitaux, bases militaires, gouvernement). Confiscation du matériel.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-19',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Organisateur d\'une manifestation illégale',
+    amendeDeBase: 4100,
+    peineDeBaseMin: 15,
+    description: 'Planification d\'un rassemblement public sans autorisation préalable.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-20',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Utilisation d\'une arme à feu',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 15,
+    description: 'Test de résidus de poudre positif sans victime directe ni blessé identifié.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-21',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Intrusion dans une zone à accès restreint',
+    amendeDeBase: 3200,
+    peineDeBaseMin: 30,
+    description: 'Pénétration non autorisée dans un périmètre sécurisé ou protégé.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-22',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Menace et/ou intimidation envers un civil',
+    amendeDeBase: 3500,
+    peineDeBaseMin: 15,
+    description: 'Intention manifeste de nuire ou pression psychologique/physique exercée sur un citoyen.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-23',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Mise en danger de la vie d\'autrui',
+    amendeDeBase: 5800,
+    peineDeBaseMin: 15,
+    description: 'Violation délibérée d\'une règle de sécurité créant un risque immédiat de mort ou de blessure grave.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-24',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Non assistance à personne en danger',
+    amendeDeBase: 4050,
+    peineDeBaseMin: 20,
+    description: 'Refus ou omission délibérée d\'aider une personne en détresse physique évidente.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-25',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Non dénonciation d\'un acte illégal',
+    amendeDeBase: 2700,
+    peineDeBaseMin: 15,
+    description: 'Omettre sciemment de signaler la préparation ou la commission d\'un crime aux autorités.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-26',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Non présentation à une convocation de police',
+    amendeDeBase: 6750,
+    peineDeBaseMin: 20,
+    description: 'Absence injustifiée suite à une convocation officielle orale ou écrite délivrée par un agent.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-27',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Non respect de l\'assignation géographique',
+    amendeDeBase: 18000,
+    peineDeBaseMin: 10,
+    description: 'Franchir les limites d\'un périmètre imposé par une décision de justice.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-28',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Non respect du code du travail',
+    amendeDeBase: 7200,
+    peineDeBaseMin: 10,
+    description: 'Non-conformité de la direction aux règles encadrant le droit du travail. Sanction pénale d\'entreprise.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-29',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Non respect du contrôle judiciaire',
+    amendeDeBase: 2700,
+    peineDeBaseMin: 10,
+    description: 'Violation des obligations de sûreté ordonnées par un magistrat dans l\'attente d\'un jugement.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-30',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Pêche illégale (Espèce protégée)',
+    amendeDeBase: 3600,
+    peineDeBaseMin: 10,
+    description: 'Pêche en zone protégée ou avec des appâts prohibés. Saisie du matériel et des captures.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-31',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession d\'espèce protégée (viande/poisson)',
+    amendeDeBase: 18,
+    peineDeBaseMin: 10,
+    description: 'Détention de faune protégée (18$ par unité détenue). Saisie de la marchandise.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-32',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession d\'appât illégal',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention d\'appâts destinés à la capture d\'espèces protégées (45$ par unité). Saisie. Non applicable sur Cayo.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-33',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession boîtier de piratage / Darknet',
+    amendeDeBase: 1000,
+    peineDeBaseMin: 10,
+    description: 'Détention d\'outils informatiques de piratage. Saisie du matériel.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-34',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de canon d\'arme',
+    amendeDeBase: 1500,
+    peineDeBaseMin: 10,
+    description: 'Détention de pièces détachées d\'armes à feu (pompe, assaut, glock, etc.). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-35',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de carte Fleeca / Banque',
+    amendeDeBase: 2700,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'outils d\'accès aux cartes bancaires sécurisées. Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-36',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Port d\'arme de chasse non réglementaire',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 10,
+    description: 'Port d\'arme de chasse sans permis valide ou en dehors d\'une zone de chasse officielle. Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-37',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Utilisation illégale d\'une arme légale',
+    amendeDeBase: 1500,
+    peineDeBaseMin: 10,
+    description: 'Usage d\'une arme autorisée dans le cadre d\'une activité criminelle.',
+    coefficientType: 'Global'
+  },
+
+  // POSSESSIONS D'ARMES BLANCHES & PISTOLETS (DÉLITS MINEURS)
+  {
+    id: 'CP-DM-38',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Machette',
+    amendeDeBase: 2000,
+    peineDeBaseMin: 15,
+    description: 'Détention illégale d\'une machette. Confiscation automatique.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-39',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Fourchette tordue',
+    amendeDeBase: 2000,
+    peineDeBaseMin: 15,
+    description: 'Détention d\'arme blanche artisanale improvisée. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-40',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Couteau artisanal',
+    amendeDeBase: 2000,
+    peineDeBaseMin: 15,
+    description: 'Détention d\'un couteau de fabrication artisanale. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-41',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Tesson de bouteille',
+    amendeDeBase: 2000,
+    peineDeBaseMin: 15,
+    description: 'Port d\'un débris de verre tranchant comme arme. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-42',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Hache',
+    amendeDeBase: 2000,
+    peineDeBaseMin: 15,
+    description: 'Détention d\'une hache sans cadre professionnel. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-43',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Hache de guerre',
+    amendeDeBase: 2000,
+    peineDeBaseMin: 15,
+    description: 'Détention d\'une arme tranchante de combat. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-44',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Dague antique',
+    amendeDeBase: 2000,
+    peineDeBaseMin: 15,
+    description: 'Détention illégale d\'une dague. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-45',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pistolet 17',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 10,
+    description: 'Détention illégale d\'un pistolet 17. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-46',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pistolet compact',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 10,
+    description: 'Détention illégale d\'un pistolet compact. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-47',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pistolet',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Détention illégale d\'un pistolet standard. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-48',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pistolet MXP 45',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Détention illégale d\'un MXP 45. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-49',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pistolet calibre 50',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Détention d\'un arme de poing lourd calibre .50. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-50',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pistolet MKII',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Détention illégale d\'un Pistolet MK2. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-51',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pistolet Combat (Glock)',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Détention illégale d\'un pistolet de combat. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-52',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pistolet céramique',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Détention d\'un pistolet indétectable en céramique. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-53',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pistolet lourd',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Détention d\'un pistolet lourd. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-54',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Taser / Pistolet paralysant',
+    amendeDeBase: 13500,
+    peineDeBaseMin: 20,
+    description: 'Possession non autorisée d\'un dispositif d\'impulsion électrique. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-55',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pistolet perforant',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Détention d\'un pistolet à munitions perforantes. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-56',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pistolet SNS',
+    amendeDeBase: 11700,
+    peineDeBaseMin: 20,
+    description: 'Détention illégale d\'un pistolet ultra-compact SNS. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-57',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de SNS Pico',
+    amendeDeBase: 11700,
+    peineDeBaseMin: 20,
+    description: 'Détention illégale d\'un pétoire compact. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-58',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pétoire Event',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Détention illégale de pétoire d\'événement. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-59',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Revolver lourd',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Détention illégale d\'un revolver de gros calibre. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-60',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Revolver lourd MKII',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Détention d\'un revolver lourd modernisé MK2. Confiscation.',
+    coefficientType: 'Global'
+  },
+
+  // MUNITIONS & BOÎTES DE MUNITIONS (DÉLITS MINEURS)
+  {
+    id: 'CP-DM-61',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de munitions de pistolet',
+    amendeDeBase: 18,
+    peineDeBaseMin: 10,
+    description: 'Détention de balles de 9mm / pistolet (18$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-62',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de munitions de SMG',
+    amendeDeBase: 23,
+    peineDeBaseMin: 10,
+    description: 'Détention de munitions pour mitraillette (23$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-63',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de munitions de fusil à pompe',
+    amendeDeBase: 27,
+    peineDeBaseMin: 10,
+    description: 'Détention de cartouches de fusil à pompe (27$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-64',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de munitions de fusil d\'assaut',
+    amendeDeBase: 32,
+    peineDeBaseMin: 10,
+    description: 'Détention de balles d\'assaut 5.56 / 7.62 (32$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-65',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de munitions de machine gun',
+    amendeDeBase: 36,
+    peineDeBaseMin: 10,
+    description: 'Détention de munitions pour mitrailleuse lourde (36$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-66',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession boîte de munitions de pistolet',
+    amendeDeBase: 180,
+    peineDeBaseMin: 10,
+    description: 'Détention de boîtes scellées de 9mm (180$ par boîte). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-67',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession boîte de munitions de SMG',
+    amendeDeBase: 230,
+    peineDeBaseMin: 10,
+    description: 'Détention de boîtes de munitions SMG (230$ par boîte). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-68',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession boîte de munitions de fusil à pompe',
+    amendeDeBase: 270,
+    peineDeBaseMin: 10,
+    description: 'Détention de boîtes de cartouches (270$ par boîte). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-69',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession boîte de munitions de fusil d\'assaut',
+    amendeDeBase: 320,
+    peineDeBaseMin: 10,
+    description: 'Détention de boîtes de munitions d\'assaut (320$ par boîte). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-70',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession boîte de munitions de machine gun',
+    amendeDeBase: 360,
+    peineDeBaseMin: 10,
+    description: 'Détention de boîtes de munitions lourdes (360$ par boîte). Saisie.',
+    coefficientType: 'Global'
+  },
+
+  // DROGUES, COMPOSANTS & MATÉRIEL ILLÉGAL (DÉLITS MINEURS)
+  {
+    id: 'CP-DM-71',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de graine de strawberry',
+    amendeDeBase: 30,
+    peineDeBaseMin: 10,
+    description: 'Détention de graines illégales de culture (30$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-72',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de fertilisant',
+    amendeDeBase: 1,
+    peineDeBaseMin: 10,
+    description: 'Détention d\'engrais destine aux cultures illégales (1$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-73',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de kit de fabrication de meth',
+    amendeDeBase: 5000,
+    peineDeBaseMin: 10,
+    description: 'Détention de matériel chimique de synthèse (5000$ par kit). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-74',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de gaz BZ',
+    amendeDeBase: 250,
+    peineDeBaseMin: 10,
+    description: 'Détention de composés chimiques incapacitants (250$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-75',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de poudre à canon',
+    amendeDeBase: 2,
+    peineDeBaseMin: 10,
+    description: 'Détention de composants explosifs de base (2$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-76',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de B-Magic',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de substances hallucinogènes de synthèse (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-77',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de H-47',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de produits de synthèse contrôlés (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-78',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de cannabis',
+    amendeDeBase: 32,
+    peineDeBaseMin: 10,
+    description: 'Détention de pochons de cannabis (32$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-79',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de cocaïne',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de pochons de cocaïne (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-80',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de crack',
+    amendeDeBase: 90,
+    peineDeBaseMin: 10,
+    description: 'Détention de pochons de crack (90$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-81',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession d\'ecstasy',
+    amendeDeBase: 90,
+    peineDeBaseMin: 10,
+    description: 'Détention de comprimés ou pochons d\'ecstasy (90$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-82',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession d\'opium',
+    amendeDeBase: 90,
+    peineDeBaseMin: 10,
+    description: 'Détention d\'opium brut ou raffiné (90$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-83',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de tranq',
+    amendeDeBase: 90,
+    peineDeBaseMin: 10,
+    description: 'Détention de seringues ou doses de tranquillisant puissant (90$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-84',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession d\'héroïne',
+    amendeDeBase: 72,
+    peineDeBaseMin: 10,
+    description: 'Détention d\'héroïne (72$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-85',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de purple haze',
+    amendeDeBase: 90,
+    peineDeBaseMin: 10,
+    description: 'Détention de pochons de cannabis haut de gamme (90$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-86',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession d\'acide sulfurique',
+    amendeDeBase: 41,
+    peineDeBaseMin: 10,
+    description: 'Détention de précurseurs chimiques acides (41$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-87',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de feuilles de salvia',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention de matière végétale psychotrope (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-88',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de branche de cannabis',
+    amendeDeBase: 15,
+    peineDeBaseMin: 10,
+    description: 'Détention de parties végétales brutes de cannabis (15$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-89',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession d\'encodeur',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention de matériel électronique de clonage (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-90',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de méthamphétamine',
+    amendeDeBase: 72,
+    peineDeBaseMin: 10,
+    description: 'Détention de pochons de méthamphétamine (72$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-91',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de pavot',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de graines ou têtes de pavot (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-92',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de feuilles de coca',
+    amendeDeBase: 41,
+    peineDeBaseMin: 10,
+    description: 'Détention de feuilles végétales brutes de coca (41$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-93',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de phosphore rouge',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de réactifs chimiques réglementés (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-94',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de pseudoéphédrine',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de précurseurs pharmaceutiques contrôlés (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-95',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession d\'ammoniaque anhydre',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de produits chimiques dangereux (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-96',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession d\'éther',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de solvants réactifs (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-97',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de lithium',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de composants de synthèse (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-98',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de meth bleue',
+    amendeDeBase: 72,
+    peineDeBaseMin: 10,
+    description: 'Détention de méthamphétamine haute pureté (72$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-99',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de prométhazine',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de sirop ou comprimés de prométhazine (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-100',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de fentanyl',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention d\'opioïdes de synthèse surpuissants (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-101',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de xylazine',
+    amendeDeBase: 41,
+    peineDeBaseMin: 10,
+    description: 'Détention d\'adjuvants sédatifs (41$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-102',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de belladone',
+    amendeDeBase: 41,
+    peineDeBaseMin: 10,
+    description: 'Détention de plantes toxiques ou alcaloïdes (41$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-103',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de morphine',
+    amendeDeBase: 41,
+    peineDeBaseMin: 10,
+    description: 'Détention d\'opiaces d\'usage médical sans ordonnance (41$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-104',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de datura',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de végétaux hallucinogènes dangereux (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-105',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de salvia',
+    amendeDeBase: 25,
+    peineDeBaseMin: 10,
+    description: 'Détention de plants de salvia divinorum (25$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-106',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de mexicana',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de champignons hallucinogènes mexicana (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-107',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de blacktrip',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de pochons hallucinogènes (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-108',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de spore X',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de matériel fongique hallucinogène (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-109',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de oyster rouge',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention de champignons psychotropes (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-110',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de oyster bleu',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention de champignons psychotropes (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-111',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de amanita rouge',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention d\'amanites tue-mouches / psychotropes (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-112',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de amanita vert',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention d\'amanites toxiques/psychotropes (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-113',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de psilocybe vert',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention de champignons hallucinogènes (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-114',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de moisissures spectrales',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention de cultures hallucinogènes brutes (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-115',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de spores de veloceps',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention de précurseurs fongiques (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-116',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de carte prépayée',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détention de cartes de crédit prépayées anonymes (45$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-117',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de psilocybe rouge',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention de psilocybes hallucinogènes (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-118',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de psilocybe violet',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention de psilocybes hallucinogènes (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-119',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de red fang',
+    amendeDeBase: 90,
+    peineDeBaseMin: 10,
+    description: 'Détention de pochons de stupéfiants synthétiques (90$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-120',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de lean',
+    amendeDeBase: 90,
+    peineDeBaseMin: 10,
+    description: 'Détention de mélanges codéinés / lean (90$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-121',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession d\'acide acétylsalicylique',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention non déclarée de composés chimiques (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-122',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de ma-huang',
+    amendeDeBase: 20,
+    peineDeBaseMin: 10,
+    description: 'Détention de branches de plantes à éphédrine (20$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-123',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de ladanum',
+    amendeDeBase: 90,
+    peineDeBaseMin: 10,
+    description: 'Détention d\'échantillons de résine d\'opium (90$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+
+  // PROCÉDURES, FRAUDES & INFRACTIONS DIVERSES (DÉLITS MINEURS)
+  {
+    id: 'CP-DM-124',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Vente de drogue ou assimilé',
+    amendeDeBase: 3750,
+    peineDeBaseMin: 10,
+    description: 'Echange de drogue de la main à la main (<75 unités). Saisie intégrale du cash et des stupéfiants.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-125',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Recel de véhicule volé',
+    amendeDeBase: 2025,
+    peineDeBaseMin: 10,
+    description: 'Dissimulation ou détention d\'un véhicule d\'origine frauduleuse.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-126',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Recel de vol (objets + armes légales)',
+    amendeDeBase: 50,
+    peineDeBaseMin: 10,
+    description: 'Conservation ou transfert d\'objets ou d\'armes légitimes volés (50$ par objet). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-127',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Refus d\'obtempérer',
+    amendeDeBase: 900,
+    peineDeBaseMin: 15,
+    description: 'Refus explicite de se soumettre aux sommations d\'arrêt d\'un agent public.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-128',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Refus de comparaître',
+    amendeDeBase: 1800,
+    peineDeBaseMin: 30,
+    description: 'Absence non justifiée lors d\'une convocation judiciaire ou citation à comparaître.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-129',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Refus de se soumettre à une injonction',
+    amendeDeBase: 1080,
+    peineDeBaseMin: 60,
+    description: 'Inexécution délibérée d\'une ordonnance écrite rendue par un magistrat.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-130',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Trafic de stupéfiant ou assimilé',
+    amendeDeBase: 0,
+    peineDeBaseMin: 30,
+    description: 'Production, distribution ou transport de drogues (caractérisé dès 75 unités). Non cumulable avec la vente.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-131',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Troubles à l\'ordre public',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 15,
+    description: 'Atteinte délibérée à la tranquillité publique ou refus de se disperser lors d\'un attroupement.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-132',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Violation de propriété privée',
+    amendeDeBase: 1800,
+    peineDeBaseMin: 15,
+    description: 'Pénétration non autorisée sur un domaine privé, résidence ou entreprise.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-133',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Vol',
+    amendeDeBase: 1350,
+    peineDeBaseMin: 15,
+    description: 'Soustraction frauduleuse du bien d\'autrui. Restitution des biens.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-134',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Vol d\'équipements d\'entreprise',
+    amendeDeBase: 450,
+    peineDeBaseMin: 10,
+    description: 'Vol de matériel d\'exploitation d\'une société (450$ par objet). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-135',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession d\'un disjoncteur modifié',
+    amendeDeBase: 2500,
+    peineDeBaseMin: 10,
+    description: 'Détention d\'outils de sabotage électrique (2500$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-136',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Vol de produits d\'entreprise',
+    amendeDeBase: 45,
+    peineDeBaseMin: 10,
+    description: 'Détournement ou vol des marchandises produites par une société (45$ par unité).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-137',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Vol de véhicule',
+    amendeDeBase: 2000,
+    peineDeBaseMin: 10,
+    description: 'Soustraction frauduleuse d\'un véhicule automobile.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-138',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Vente d\'objets illégaux',
+    amendeDeBase: 5500,
+    peineDeBaseMin: 20,
+    description: 'Transaction portant sur du matériel destiné à des activités criminelles.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-139',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Non respect des licences et des papiers officiels',
+    amendeDeBase: 10000,
+    peineDeBaseMin: 30,
+    description: 'Non-conformité des autorisations réglementaires ou licences professionnelles.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-140',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Utilisation illégale de menottes / serflex',
+    amendeDeBase: 120,
+    peineDeBaseMin: 5,
+    description: 'Entrave de la liberté de mouvement d\'un individu sans habilitation légale. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-141',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession ou utilisation de fausse plaque d\'immatriculation',
+    amendeDeBase: 120,
+    peineDeBaseMin: 5,
+    description: 'Usage ou détention de plaques falsifiées ou modifiées (120$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-142',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Non respect du code de commerce',
+    amendeDeBase: 7200,
+    peineDeBaseMin: 10,
+    description: 'Manquements aux obligations commerciales fixées par la réglementation de l\'État.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-143',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Revente à perte',
+    amendeDeBase: 5000,
+    peineDeBaseMin: 10,
+    description: 'Vente délibérée de produits ou services sous leur coût de production.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-144',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Évasion du poste de police',
+    amendeDeBase: 7500,
+    peineDeBaseMin: 20,
+    description: 'Fuite du commissariat après la lecture des droits Miranda.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-145',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Non respect des consignes de l\'État d\'Urgence',
+    amendeDeBase: 4500,
+    peineDeBaseMin: 30,
+    description: 'Non-respect des décrets sanitaires, sécuritaires ou de couvre-feu en DEFCON/État d\'urgence.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DM-146',
+    categorieId: 2,
+    categorieNom: 'Délit mineur',
+    titre: 'Possession de Pistolet Artisanal',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Détention illégale d\'une arme de poing de fabrication artisanale. Confiscation.',
+    coefficientType: 'Global'
+  },
+
+  // ==========================================
+  // DÉLITS MAJEURS (LIVRE IV - CODE PÉNAL)
+  // ==========================================
+  {
+    id: 'CP-DMAJ-01',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Abus de confiance',
+    amendeDeBase: 12500,
+    peineDeBaseMin: 20,
+    description: 'Détournement de fonds ou de biens remis volontairement sous contrat ou accord préalable.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-02',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Braquage de société',
+    amendeDeBase: 44000,
+    peineDeBaseMin: 20,
+    description: 'Vol qualifié avec armes ciblant une entreprise. Saisie des armes et du cash. Présence d\'un juge requise.',
+    coefficientType: 'Cible'
+  },
+  {
+    id: 'CP-DMAJ-03',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Plagiat',
+    amendeDeBase: 17500,
+    peineDeBaseMin: 30,
+    description: 'Copie ou appropriation du travail intellectuel d\'autrui sans accord.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-04',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Contrefaçon',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 25,
+    description: 'Reproduction ou vente illégale de produits sous marque ou brevet protégé.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-05',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Attaque convoi de fonds (Brinks / Convoi SAMP)',
+    amendeDeBase: 8500,
+    peineDeBaseMin: 45,
+    description: 'Interception violente d\'un convoi sécurisé officiel. Saisie des armes, de l\'argent et des biens volés.',
+    coefficientType: 'Cible'
+  },
+  {
+    id: 'CP-DMAJ-06',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Sollicitation ou incitation à la prostitution',
+    amendeDeBase: 9000,
+    peineDeBaseMin: 60,
+    description: 'Proxénétisme ou incitation au commerce sexuel hors du cadre de la loi.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-07',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Discrimination',
+    amendeDeBase: 7200,
+    peineDeBaseMin: 20,
+    description: 'Traitement défavorable fondé sur l\'origine, le genre, la religion ou l\'orientation dans un cadre légal/emploi.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-08',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Chantage',
+    amendeDeBase: 3150,
+    peineDeBaseMin: 15,
+    description: 'Extorsion d\'un consentement, d\'un bien ou d\'un service sous la menace de révélations ou de préjudice.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-09',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Agression sur agent (employé d\'état ou police)',
+    amendeDeBase: 8500,
+    peineDeBaseMin: 60,
+    description: 'Violence physique exercée sur un agent en service sans mise en danger directe de sa vie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-10',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession d\'accessoires d\'armes',
+    amendeDeBase: 2000,
+    peineDeBaseMin: 10,
+    description: 'Détention de viseurs, silencieux, poignées ou chargeurs modifiés (2000$ par unité). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-11',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Menaces de Mort et ou Menaces graves',
+    amendeDeBase: 8500,
+    peineDeBaseMin: 45,
+    description: 'Menaces explicites d\'atteinte à la vie ou d\'actes de violence grave.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-12',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Harcèlement',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 20,
+    description: 'Propos ou agissements répétés ayant pour objet ou effet une dégradation des conditions de vie d\'une personne.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-13',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Homicide involontaire',
+    amendeDeBase: 12500,
+    peineDeBaseMin: 25,
+    description: 'Inattention, imprudence ou négligence grave ayant entraîné la mort d\'autrui sans intention de la donner.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-14',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Bande Organisée',
+    amendeDeBase: 2500,
+    peineDeBaseMin: 30,
+    description: 'Groupement d\'au moins 3 personnes agissant de manière coordonnée (radio, rôles distribués).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-15',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Port de kevlar / Gilet par balle',
+    amendeDeBase: 5000,
+    peineDeBaseMin: 15,
+    description: 'Port non autorisé d\'une protection balistique sur soi. Implique la possession.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-16',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Braquage d\'armurerie',
+    amendeDeBase: 7200,
+    peineDeBaseMin: 25,
+    description: 'Vol armé dans un commerce d\'armes. Saisie de l\'argent liquide et des complices armés.',
+    coefficientType: 'Cible'
+  },
+  {
+    id: 'CP-DMAJ-17',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Braquage à main armée bijouterie / supermarché',
+    amendeDeBase: 9000,
+    peineDeBaseMin: 30,
+    description: 'Vol à main armée de la bijouterie Vangelico ou du supermarché de Roxwood. Saisie du cash.',
+    coefficientType: 'Cible'
+  },
+  {
+    id: 'CP-DMAJ-18',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Braquage de banque centrale (Pacifique)',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 60,
+    description: 'Attaque qualifiée de la Banque Centrale. Saisie intégrale des fonds volés.',
+    coefficientType: 'Cible'
+  },
+  {
+    id: 'CP-DMAJ-19',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Participation à une transaction illégale (DOA)',
+    amendeDeBase: 8000,
+    peineDeBaseMin: 15,
+    description: 'Chef spécifique aux agents de la DOA pour échange direct d\'armes, de drogue ou de matériel militaire.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-20',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Braquage du Humane Labs',
+    amendeDeBase: 18000,
+    peineDeBaseMin: 60,
+    description: 'Attaque armée des laboratoires Humane Labs. Saisie intégrale des objets/fonds.',
+    coefficientType: 'Cible'
+  },
+  {
+    id: 'CP-DMAJ-21',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Braquage de banque (Fleeca / Pine Bank)',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 25,
+    description: 'Vol qualifié dans une agence bancaire locale. Saisie des fonds.',
+    coefficientType: 'Cible'
+  },
+  {
+    id: 'CP-DMAJ-22',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Achat d\'armes illégales',
+    amendeDeBase: 12500,
+    peineDeBaseMin: 30,
+    description: 'Acquisition d\'armes non autorisées (amende de 12 500$ multipliée par le nombre d\'armes). Saisie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-23',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Divulgation d\'informations confidentielles',
+    amendeDeBase: 2000,
+    peineDeBaseMin: 30,
+    description: 'Violation du secret professionnel ou fuite de données gouvernementales.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-24',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Diffamation',
+    amendeDeBase: 3500,
+    peineDeBaseMin: 15,
+    description: 'Allégation ou imputation d\'un fait qui porte atteinte à l\'honneur d\'une personne.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-25',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Entreposage d\'armes illégales (≥3)',
+    amendeDeBase: 9000,
+    peineDeBaseMin: 30,
+    description: 'Stockage d\'au moins 3 armes illégales dans une propriété/coffre (9000$ multiplié par le nombre d\'armes).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-26',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Escroquerie à l\'entreprise',
+    amendeDeBase: 9000,
+    peineDeBaseMin: 30,
+    description: 'Tromperie orchestrée au nom ou au préjudice d\'une entreprise commercialement enregistrée.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-27',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Extorsion / Escroquerie',
+    amendeDeBase: 8500,
+    peineDeBaseMin: 30,
+    description: 'Obtention par la contrainte physique/morale de fonds ou avantages. Saisie des biens.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-28',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Faux témoignage',
+    amendeDeBase: 9000,
+    peineDeBaseMin: 30,
+    description: 'Déclaration mensongère délibérée orientant de façon erronée une enquête policière.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-29',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Intimidation / Chantage envers magistrat',
+    amendeDeBase: 7500,
+    peineDeBaseMin: 30,
+    description: 'Pressions ou menaces visant un procureur ou un juge.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-30',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Menace et/ou intimidation envers un représentant de l\'état',
+    amendeDeBase: 3500,
+    peineDeBaseMin: 20,
+    description: 'Intimidation verbale, écrite ou avec arme d\'un fonctionnaire ou membre du gouvernement.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-31',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Non respect d\'une décision de justice d\'un citoyen',
+    amendeDeBase: 9000,
+    peineDeBaseMin: 30,
+    description: 'Refus par un citoyen d\'exécuter un jugement rendu par un tribunal.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-32',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Non respect d\'une décision de justice d\'une entreprise',
+    amendeDeBase: 18000,
+    peineDeBaseMin: 30,
+    description: 'Inexécution d\'un jugement par le dirigeant représentant une personne morale.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-33',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Non respect des normes incendie (entreprise)',
+    amendeDeBase: 18000,
+    peineDeBaseMin: 0,
+    description: 'Absence d\'équipements de sécurité ou de conformité aux normes anti-incendie d\'une entreprise.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-34',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Organisation d\'insolvabilité',
+    amendeDeBase: 13500,
+    peineDeBaseMin: 0,
+    description: 'Dissimulation délibérée de ses actifs pour éviter l\'exécution d\'une condamnation financière.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-35',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Parjure',
+    amendeDeBase: 5500,
+    peineDeBaseMin: 30,
+    description: 'Faux témoignage prêté sous serment devant un tribunal ou une autorité compétente.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-36',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Participation à une fusillade',
+    amendeDeBase: 3500,
+    peineDeBaseMin: 30,
+    description: 'Implication active dans un échange de coups de feu avec des civils ou les forces de l\'ordre.',
+    coefficientType: 'Global'
+  },
+
+  // POSSESSION D'ARMES AUTOMATIQUES & LOURDES (DÉLITS MAJEURS)
+  {
+    id: 'CP-DMAJ-37',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de ADP de combat',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un arme de défense personnelle automatique. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-38',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de SMG',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention illégale d\'une mitraillette SMG. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-39',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de SMG MKII',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'une mitraillette SMG MK2. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-40',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de SMG d\'assaut',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un pistolet mitrailleur d\'assaut. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-41',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de mini-SMG',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'une mitraillette ultra-compacte. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-42',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Phantom 10',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'une mitraillette Phantom 10. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-43',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Pistolet mitrailleur',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un pistolet automatique rafaleur. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-44',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de MX Tactic',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un arme automatique tactique. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-45',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Sulfateuse Gusenberg',
+    amendeDeBase: 30000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'une mitrailleuse vintage Gusenberg. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-46',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Carabine',
+    amendeDeBase: 35000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'une carabine d\'assaut. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-47',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Carabine MKII',
+    amendeDeBase: 30000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'une carabine modernisée MK2. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-48',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil tactique',
+    amendeDeBase: 30000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil tactique. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-49',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Carabine spéciale',
+    amendeDeBase: 30000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'une carabine spéciale. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-50',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Carabine spéciale MKII',
+    amendeDeBase: 30000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'une carabine spéciale MK2. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-51',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil amélioré (TAR-21)',
+    amendeDeBase: 35000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil d\'assaut TAR-21. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-52',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil compact',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil d\'assaut compact. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-53',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de SMG-45',
+    amendeDeBase: 30000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un pistolet mitrailleur SMG-45. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-54',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil d\'assaut',
+    amendeDeBase: 35000,
+    peineDeBaseMin: 25,
+    description: 'Détention illégale d\'un fusil d\'assaut AK. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-55',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de AR7',
+    amendeDeBase: 35000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil d\'assaut AR7. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-56',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de MK Priss',
+    amendeDeBase: 35000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil MK Priss. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-57',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Battle Rifle',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil de combat puissant. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-58',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil lourd',
+    amendeDeBase: 35000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil d\'assaut lourd. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-59',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil SBR-52',
+    amendeDeBase: 35000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil tactique SBR-52. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-60',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil à pompe Bullpup',
+    amendeDeBase: 35000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un pompe compact Bullpup. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-61',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil d\'assaut Bullpup',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil d\'assaut Bullpup. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-62',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil d\'assaut Bullpup MKII',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un Bullpup MK2. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-63',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil d\'assaut MKII',
+    amendeDeBase: 35000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil d\'assaut modernisé MK2. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-64',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil militaire',
+    amendeDeBase: 30000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil d\'assaut de qualité militaire. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-65',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Mousquet',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 25,
+    description: 'Détention illégale d\'un mousquet d\'époque. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-66',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil à canon scié (Sawed Off)',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil à pompe altéré à canon scié. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-67',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Striker 12',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil à pompe semi-auto Striker 12. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-68',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil à double canon',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil de chasse à double canon. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-69',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil à pompe',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil à pompe standard. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-70',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de SPAS 12',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil à pompe tactique SPAS-12. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-71',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil à pompe MKII',
+    amendeDeBase: 30000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil à pompe MK2. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-72',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil à pompe d\'assaut',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil à pompe automatique. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-73',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Pistolet automatique',
+    amendeDeBase: 20000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un pistolet mitrailleur. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-74',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Vesper 9',
+    amendeDeBase: 20000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un pistolet mitrailleur Vesper 9. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-75',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Vortex',
+    amendeDeBase: 20000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un pistolet automatique Vortex. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-76',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil à pompe de combat',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil à pompe de combat. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-77',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil à pompe lourd',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil à pompe lourd. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-78',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Tactical SMG',
+    amendeDeBase: 22500,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un pistolet mitrailleur tactique. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-79',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil de combat',
+    amendeDeBase: 35000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil d\'assaut de combat. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-80',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Fusil d\'élite',
+    amendeDeBase: 40000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un fusil de précision / d\'élite. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-81',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Gilet pare-balles',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 25,
+    description: 'Détention d\'un gilet pare-balles sans autorisation. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-82',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession d\'argent liquide illégal ou >5000$ sans justificatif',
+    amendeDeBase: 1,
+    peineDeBaseMin: 10,
+    description: 'Port de plus de 5000$ en liquide sans preuve écrite irréfutable (1$ d\'amende par dollar possédé). Saisie.',
+    coefficientType: 'Global'
+  },
+
+  // INFRACTIONS GRAVES & TRAVAIL DISSIMULÉ (DÉLITS MAJEURS)
+  {
+    id: 'CP-DMAJ-83',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Prise d\'otage sur un civil',
+    amendeDeBase: 4500,
+    peineDeBaseMin: 15,
+    description: 'Séquestration armée ou non d\'un citoyen en vue d\'obtenir des avantages.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-84',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Rapport de vol non enregistré',
+    amendeDeBase: 9000,
+    peineDeBaseMin: 10,
+    description: 'Omission d\'enregistrement officiel d\'un procès-verbal de vol.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-85',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Recel de malfaiteurs',
+    amendeDeBase: 1800,
+    peineDeBaseMin: 30,
+    description: 'Héberger ou fournir des moyens de fuite à des membres d\'un réseau criminel.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-86',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Témoignage ou fausse déclaration dans le but de réaliser un profit',
+    amendeDeBase: 8500,
+    peineDeBaseMin: 30,
+    description: 'Falsification de faits à des fins d\'enrichissement personnel.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-87',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Acte / Trafic illégal sur Bleeter',
+    amendeDeBase: 18000,
+    peineDeBaseMin: 30,
+    description: 'Utilisation d\'un réseau social public pour la promotion d\'activités ou trafics illicites.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-88',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Usage de faux',
+    amendeDeBase: 2700,
+    peineDeBaseMin: 30,
+    description: 'Utilisation de documents officiels ou d\'identité falsifiés. Saisie des faux.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-89',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Abus de fonction',
+    amendeDeBase: 7200,
+    peineDeBaseMin: 30,
+    description: 'Utiliser son statut professionnel pour servir des intérêts exclusivement personnels.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-90',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Usurpation (identité et/ou fonction)',
+    amendeDeBase: 4600,
+    peineDeBaseMin: 30,
+    description: 'Se faire passer pour un tiers ou un agent dépositaire de l\'autorité.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-91',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Vol à main armée',
+    amendeDeBase: 5000,
+    peineDeBaseMin: 30,
+    description: 'Vol commis sous la menace d\'une arme à feu sur un citoyen. Restitution.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-92',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de Cocktail Molotov',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 30,
+    description: 'Détention d\'engins incendiaires artisanaux. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-93',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de charge thermite / explosive',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 30,
+    description: 'Détention de matériel de découpe thermique ou d\'explosifs de perçage. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-94',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Possession de grenade lacrymogène',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 30,
+    description: 'Détention de grenades neutralisantes non autorisées. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-95',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Destruction / Dissimulation de preuve',
+    amendeDeBase: 5500,
+    peineDeBaseMin: 30,
+    description: 'Altérer, cacher ou détruire du matériel d\'enquête ou l\'arme d\'un crime.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-96',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Travail dissimulé par dissimulation d\'activité',
+    amendeDeBase: 58500,
+    peineDeBaseMin: 60,
+    description: 'Générer du chiffre d\'affaires non déclaré ou hors des statuts officiels. Saisie de la société.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-97',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Travail dissimulé par dissimulation d\'emploi salarié',
+    amendeDeBase: 45000,
+    peineDeBaseMin: 60,
+    description: 'Emploi illégal d\'employés sans contrat ni déclarations fiscales. Saisie de la société.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-98',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Travail dissimulé',
+    amendeDeBase: 45000,
+    peineDeBaseMin: 60,
+    description: 'Exercice général d\'une activité professionnelle rémunérée non déclarée.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-99',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Absence de documents légaux d\'une entreprise',
+    amendeDeBase: 63000,
+    peineDeBaseMin: 60,
+    description: 'Défaut d\'autorisation d\'exploitation administrative ou de registres officiels.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-100',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Corruption',
+    amendeDeBase: 22500,
+    peineDeBaseMin: 30,
+    description: "Offre ou acceptation d\'avantages illégitimes en échange d'un acte officiel.",
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-101',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Fraude fiscale',
+    amendeDeBase: 90000,
+    peineDeBaseMin: 30,
+    description: 'Soustraction délibérée et illégale à l\'imposition sur le chiffre d\'affaires ou les revenus.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-102',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Incendie criminel',
+    amendeDeBase: 20500,
+    peineDeBaseMin: 30,
+    description: 'Provoquer délibérément un incendie détruisant des biens immobiliers ou matériels.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-103',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Abus de pouvoir',
+    amendeDeBase: 7500,
+    peineDeBaseMin: 15,
+    description: 'Usage abusif de son autorité hiérarchique ou position pour contraindre autrui.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-104',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Vente de biens immobilier abusive',
+    amendeDeBase: 0,
+    peineDeBaseMin: 0,
+    description: 'Vente immobilière dépassant les barèmes légaux fixés. Amende égale au montant du dépassement.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-105',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Braquage organisé de grande envergure',
+    amendeDeBase: 22500,
+    peineDeBaseMin: 30,
+    description: 'Vol de grande ampleur planifié par un groupe armé. Non cumulable avec les autres braquages.',
+    coefficientType: 'Cible'
+  },
+  {
+    id: 'CP-DMAJ-106',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Exploitation d\'une entreprise sans autorisation (2 semaines)',
+    amendeDeBase: 100000,
+    peineDeBaseMin: 0,
+    description: 'Exploitation continue confirmée par la mairie pendant 2 semaines sans agrément.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-107',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Absence d\'autorisation d\'exploitation (1 mois)',
+    amendeDeBase: 250000,
+    peineDeBaseMin: 0,
+    description: 'Défaut d\'autorisation d\'un mois. Convocation obligatoire de la gérance en justice.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-DMAJ-108',
+    categorieId: 3,
+    categorieNom: 'Délit majeur',
+    titre: 'Attaque à l\'explosif',
+    amendeDeBase: 7500,
+    peineDeBaseMin: 30,
+    description: 'Sabotage des réseaux ou infrastructures par engins explosifs.',
+    coefficientType: 'Global'
+  },
+
+  // ==========================================
+  // CRIMES (LIVRE V - CODE PÉNAL)
+  // ==========================================
+  {
+    id: 'CP-CR-01',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Acte lié au terrorisme',
+    amendeDeBase: 15000,
+    peineDeBaseMin: 60,
+    description: 'Financement, logistique ou soutien direct apporté à une entreprise terroriste.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-02',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Blanchiment',
+    amendeDeBase: 5,
+    peineDeBaseMin: 15,
+    description: 'Dissimulation de l\'origine illégale d\'actifs financiers (amende de 5$ par dollar blanchi).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-03',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Possession / Utilisation de drone explosif',
+    amendeDeBase: 150000,
+    peineDeBaseMin: 60,
+    description: 'Détention ou vol d\'engins aériens piégés. Confiscation et destruction immédiate.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-04',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Assassinat (MORT RP UNIQUEMENT)',
+    amendeDeBase: 225000,
+    peineDeBaseMin: 60,
+    description: 'Homicide prémédité sur citoyen. Applicable uniquement si mort définitive du personnage (Wipe).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-05',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Assassinat sur représentant de l\'état (MORT RP UNIQUEMENT)',
+    amendeDeBase: 225000,
+    peineDeBaseMin: 60,
+    description: 'Homicide prémédité d\'un agent public. Applicable uniquement en cas de mort définitive (Wipe).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-06',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Pratique illégale de la médecine',
+    amendeDeBase: 9000,
+    peineDeBaseMin: 30,
+    description: 'Exercice d\'actes chirurgicaux ou médicaux sans diplôme ou hors protocole légal.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-07',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Vente illégale d\'armes',
+    amendeDeBase: 12500,
+    peineDeBaseMin: 30,
+    description: 'Commerce clandestin d\'armes illégales ou fourniture en connaissance d\'un projet criminel. Saisie des fonds.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-08',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Meurtre (MORT RP UNIQUEMENT)',
+    amendeDeBase: 100800,
+    peineDeBaseMin: 60,
+    description: 'Homicide volontaire non prémédité sur un civil. Requis uniquement si décès réel (Wipe).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-09',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Procurer frauduleusement un document d\'administration publique',
+    amendeDeBase: 13500,
+    peineDeBaseMin: 30,
+    description: 'Création ou fourniture de faux passeports, fausses cartes d\'identité ou vrais-faux permis.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-10',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Atteinte à la sécurité intérieure',
+    amendeDeBase: 12500,
+    peineDeBaseMin: 30,
+    description: 'Attaques d\'envergure déstabilisant les institutions sécuritaires et la population.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-11',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Cavale',
+    amendeDeBase: 9000,
+    peineDeBaseMin: 60,
+    description: 'Fuite organisée et maintien hors d\'atteinte de la justice suite à une condamnation ferme.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-12',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Détournement de fonds',
+    amendeDeBase: 18000,
+    peineDeBaseMin: 30,
+    description: 'Appropriation frauduleuse de capitaux publics ou privés gérés dans le cadre de ses fonctions.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-13',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Espionnage',
+    amendeDeBase: 7000,
+    peineDeBaseMin: 30,
+    description: 'Collecte de renseignements stratégiques au profit d\'une puissance ou entité ennemie.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-14',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Évasion / Organisation d\'évasion (Prison ou convoi)',
+    amendeDeBase: 13500,
+    peineDeBaseMin: 30,
+    description: 'S\'échapper d\'un centre pénitencier ou attaquer un convoi d\'extraction de détenus.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-15',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Meurtre sur représentant de l\'état (MORT RP UNIQUEMENT)',
+    amendeDeBase: 300000,
+    peineDeBaseMin: 30,
+    description: 'Homicide d\'un agent public sans préméditation. Requis uniquement en cas de mort RP réelle.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-16',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Meurtre sur représentant de l\'état (COMA)',
+    amendeDeBase: 30000,
+    peineDeBaseMin: 30,
+    description: 'Tir ou force létale plongeant un représentant de l\'État dans un état d\'inconscience (Coma réversible).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-17',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Meurtre (COMA)',
+    amendeDeBase: 18000,
+    peineDeBaseMin: 30,
+    description: 'Agression entraînant le coma d\'un citoyen (avec réanimation possible par le personnel médical).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-18',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Participation à un acte visant à commettre un crime contre l\'état',
+    amendeDeBase: 35500,
+    peineDeBaseMin: 30,
+    description: 'Aide active à une conspiration ciblant directement les intérêts suprêmes de l\'État.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-19',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Possession de Grenade',
+    amendeDeBase: 135000,
+    peineDeBaseMin: 30,
+    description: 'Détention d\'engins explosifs à fragmentation. Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-20',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Possession de Bombe',
+    amendeDeBase: 135000,
+    peineDeBaseMin: 30,
+    description: 'Détention de bombes collantes (C4/Sticky). Confiscation.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-21',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Prise d\'otage sur représentant de l\'état',
+    amendeDeBase: 18000,
+    peineDeBaseMin: 30,
+    description: 'Séquestration d\'un agent public ou fonctionnaire. Peut bloquer le nettoyage de casier.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-22',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Séquestration',
+    amendeDeBase: 15500,
+    peineDeBaseMin: 30,
+    description: 'Privation illégale de la liberté d\'aller et venir d\'une personne.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-23',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Terrorisme',
+    amendeDeBase: 45000,
+    peineDeBaseMin: 60,
+    description: 'Actes de violence visant à répandre la terreur et troubler gravement l\'ordre. Saisie totale des biens.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-24',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Trafic d\'organe',
+    amendeDeBase: 18000,
+    peineDeBaseMin: 45,
+    description: 'Commerce ou prélèvement illicite de membres, sang ou organes humains.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-25',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Trahison',
+    amendeDeBase: 225000,
+    peineDeBaseMin: 60,
+    description: 'Désertion ou atteinte grave aux intérêts fondamentaux du pays par un dépositaire de l\'autorité.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-26',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Trafic d\'armes à grande échelle',
+    amendeDeBase: 27000,
+    peineDeBaseMin: 60,
+    description: 'Organisation d\'un réseau de distribution d\'armes de guerre. Saisie complète de l\'arsenal.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-27',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Torture',
+    amendeDeBase: 25000,
+    peineDeBaseMin: 30,
+    description: 'Traitements cruels et inhumains infligés délibérément (25 000$ d\'amende par personne affectée).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-28',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Violation d\'un ordre / décret gouvernemental',
+    amendeDeBase: 40500,
+    peineDeBaseMin: 60,
+    description: 'Inobservation d\'un décret exécutif d\'exception spécifiant une qualification criminelle.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-29',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Atteintes aux intérêts fondamentaux de la nation',
+    amendeDeBase: 30600,
+    peineDeBaseMin: 60,
+    description: 'Actes mettant en péril l\'intégrité territoriale, la souveraineté ou la population.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-30',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Atteintes aux institutions de la nation',
+    amendeDeBase: 18000,
+    peineDeBaseMin: 60,
+    description: 'Actions visant à détruire ou paralyser le fonctionnement des organes publics.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-31',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Violation du secret professionnel',
+    amendeDeBase: 22500,
+    peineDeBaseMin: 30,
+    description: 'Révélation d\'informations confidentielles confiées sous le sceau de sa profession (avocat, médecin, etc.).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CP-CR-32',
+    categorieId: 4,
+    categorieNom: 'Crime',
+    titre: 'Association de malfaiteurs',
+    amendeDeBase: 4500,
+    peineDeBaseMin: 30,
+    description: 'Groupement criminels préparatoire à la commission de crimes (min. 8 personnes). Applicable uniquement par magistrats.',
+    coefficientType: 'Global'
+  },
+
+  // ==========================================
+  // DÉLITS ROUTIERS (CODE DE LA ROUTE)
+  // ==========================================
+  {
+    id: 'CR-Art-63',
+    categorieId: 5,
+    categorieNom: 'Délit routier',
+    titre: 'Conduite malgré suspension de permis',
+    amendeDeBase: 3500,
+    peineDeBaseMin: 15,
+    description: 'Conduire un véhicule alors que le permis de conduire fait l\'objet d\'une mesure de suspension administrative ou judiciaire.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CR-Art-64',
+    categorieId: 5,
+    categorieNom: 'Délit routier',
+    titre: 'Conduite malgré annulation du permis',
+    amendeDeBase: 5000,
+    peineDeBaseMin: 20,
+    description: 'Conduire un véhicule alors que le titre a été annulé de façon définitive.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CR-Art-65',
+    categorieId: 5,
+    categorieNom: 'Délit routier',
+    titre: 'Usage de faux permis',
+    amendeDeBase: 4500,
+    peineDeBaseMin: 20,
+    description: 'Présentation d\'un permis falsifié ou imité lors d\'un contrôle routier.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CR-Art-79',
+    categorieId: 5,
+    categorieNom: 'Délit routier',
+    titre: 'Refus d\'obtempérer au contrôle routier',
+    amendeDeBase: 2500,
+    peineDeBaseMin: 15,
+    description: 'Refus délibéré de s\'arrêter suite à l\'injonction lumineuse ou sonore des forces de l\'ordre.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CR-Art-95',
+    categorieId: 5,
+    categorieNom: 'Délit routier',
+    titre: 'Installation ou usage illégal de gyrophare',
+    amendeDeBase: 1500,
+    peineDeBaseMin: 0,
+    description: 'Installer ou faire fonctionner un dispositif lumineux réservé aux services d\'urgence.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CR-Art-130',
+    categorieId: 5,
+    categorieNom: 'Délit routier',
+    titre: 'Rodéo urbain',
+    amendeDeBase: 500,
+    peineDeBaseMin: 10,
+    description: 'Manœuvres spectaculaires et dangereuses exécutées en groupe (minimum 5 personnes).',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CR-Art-131',
+    categorieId: 5,
+    categorieNom: 'Délit routier',
+    titre: 'Drift non autorisé sur la voie publique',
+    amendeDeBase: 250,
+    peineDeBaseMin: 0,
+    description: 'Dérapages contrôlés exécutés volontairement sur les voies publiques.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CR-Art-132',
+    categorieId: 5,
+    categorieNom: 'Délit routier',
+    titre: 'Zigzag / Conduite dangereuse',
+    amendeDeBase: 250,
+    peineDeBaseMin: 0,
+    description: 'Changements répétitifs et intempestifs de voie mettant en danger les usagers.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CR-Art-134',
+    categorieId: 5,
+    categorieNom: 'Délit routier',
+    titre: 'Obstruction volontaire de la circulation',
+    amendeDeBase: 500,
+    peineDeBaseMin: 0,
+    description: 'Bloquer ou ralentir intentionnellement le trafic routier sans motif légitime.',
+    coefficientType: 'Global'
+  },
+  {
+    id: 'CR-Art-152',
+    categorieId: 5,
+    categorieNom: 'Délit routier',
+    titre: 'Obstruction volontaire d\'intersection',
+    amendeDeBase: 350,
+    peineDeBaseMin: 0,
+    description: 'S\'immobiliser au milieu d\'un carrefour et bloquer le passage des autres voies.',
+    coefficientType: 'Global'
+  }
+];
+
+/**
+ * Fonction d'aide pour calculer l'amende et la détention selon le coefficient appliqué (ex: récidive, gang)
+ */
+export function calculerPeine(
+  infraction: Infraction,
+  coefficientMultiplier: number = 1.0
+) {
+  const amendeCalculee = Math.round(infraction.amendeDeBase * coefficientMultiplier);
+  const peineTempsCalculee = Math.round(infraction.peineDeBaseMin * coefficientMultiplier);
+
+  return {
+    amende: amendeCalculee,
+    tempsPrisonMin: peineTempsCalculee,
+  };
 }
-
-const PENAL_CAT_MAP: Partial<Record<Categorie, ChefPenal["categorie"]>> = {
-  penal_contravention: "Contravention",
-  penal_delit_mineur:  "Délit mineur",
-  penal_delit_majeur:  "Délit majeur",
-  penal_crime:         "Crime",
-};
-
-const CIBLE_KW = ["braquage", "prise d'otage", "vol à main armée", "attaque convoi", "human labs"];
-
-function _parseAmende(s?: string): number {
-  if (!s) return 0;
-  const d = s.replace(/[^0-9]/g, "");
-  return parseInt(d) || 0;
-}
-
-function _parseDet(s?: string): number {
-  if (!s || s === "—") return 0;
-  const h = s.match(/(\d+)\s*h/i);
-  const m = s.match(/(\d+)\s*min/i);
-  return (h ? parseInt(h[1]) * 60 : 0) + (m ? parseInt(m[1]) : 0);
-}
-
-export const CHEFS_PENAL: ChefPenal[] = ARTICLES
-  .filter(a => PENAL_CAT_MAP[a.categorie] !== undefined)
-  .map(a => ({
-    code: a.id,
-    infraction: a.titre,
-    categorie: PENAL_CAT_MAP[a.categorie]!,
-    amende: a.amende || "—",
-    amendeNum: _parseAmende(a.amende),
-    detention: a.detention || "—",
-    detentionMin: _parseDet(a.detention),
-    cible: a.categorie === "penal_crime" || CIBLE_KW.some(kw => a.titre.toLowerCase().includes(kw)),
-    tags: a.tags || [],
-  }));
-
-// ─── Plafonds par catégorie ───────────────────────────────────────────────────
-export const PLAFONDS_PENAL: Record<string, number> = {
-  "Contravention": 10000,
-  "Délit mineur":  10000,
-  "Délit majeur":  15000,
-  "Crime":         35000,
-};
-
-// ─── Tarifs honoraires par catégorie ─────────────────────────────────────────
-export const HONORAIRES_PAR_CAT: Record<string, number> = {
-  "Contravention": 1500,
-  "Délit mineur":  3000,
-  "Délit majeur":  8000,
-  "Crime":         15000,
-};

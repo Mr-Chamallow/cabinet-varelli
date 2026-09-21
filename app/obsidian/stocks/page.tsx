@@ -26,7 +26,17 @@ export default function StocksPage(){
     const[{data:s},{data:m}]=await Promise.all([supabase.from("obsidian_stocks").select("*").order("categorie").order("nom"),supabase.from("obsidian_mouvements").select("*").order("created_at",{ascending:false}).limit(100)]);
     setStocks(s||[]);setMouvements(m||[]);setLoading(false);}
   function showT(m:string){setToast(m);setTimeout(()=>setToast(null),3000);}
-  async function addStock(){if(!supabase||!form.nom)return;setSaving(true);const{data,error}=await supabase.from("obsidian_stocks").insert([{...form}]).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setStocks(s=>[...s,data]);setForm({nom:"",categorie:"drogue",emoji:"📦",quantite:0,seuil_alerte:0,unite:"unité",prix_unitaire:0,notes:""});showT("Stock créé");setSaving(false);setTab("stocks");}
+  async function addStock(){
+  if(!form.nom)return;setSaving(true);
+  const res = await fetch("/api/obsidian/stocks", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
+  });
+  const data = await res.json();
+  if (!res.ok) { alert("❌ "+data.error); setSaving(false); return; }
+  setStocks(s=>[...s,data]);
+  setForm({nom:"",categorie:"drogue",emoji:"📦",quantite:0,seuil_alerte:0,unite:"unité",prix_unitaire:0,notes:""});
+  showT("Stock créé");setSaving(false);setTab("stocks");
+}
   async function addMouvement(stock:Stock){
     if(!supabase||mvtForm.quantite<=0)return;setSaving(true);
     const newQty=mvtForm.type==="entrée"?stock.quantite+mvtForm.quantite:Math.max(0,stock.quantite-mvtForm.quantite);

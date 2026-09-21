@@ -158,64 +158,53 @@ export default function AdminPage() {
   }, [activeTab]);
 
   async function createOverride() {
-    if (!supabase||!overrideForm.discord_id.trim()||!overrideForm.role) return;
-    setCreatingOverride(true); 
-    setCreateError("");
-    const { error } = await supabase.from("role_overrides").upsert([{
-      discord_id: overrideForm.discord_id.trim(),
-      nom: overrideForm.nom.trim(),
-      role: overrideForm.role,
-      updated_by: user?.nom,
-      updated_at: new Date().toISOString(),
-    }]);
-    if (error) { 
-      setCreateError(error.message); 
-    } else { 
-      setShowCreateOverride(false); 
-      setOverrideForm({ nom:"", discord_id:"", role:"" }); 
-      await fetchAll(); 
-    }
-    setCreatingOverride(false);
-  }
+  if(!overrideForm.discord_id.trim()||!overrideForm.role) return;
+  setCreatingOverride(true); setCreateError("");
+  const res = await fetch("/api/admin/overrides", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ discord_id: overrideForm.discord_id.trim(), nom: overrideForm.nom.trim(), role: overrideForm.role, updated_by: user?.nom, updated_at: new Date().toISOString() }),
+  });
+  const data = await res.json();
+  if (!res.ok) { setCreateError(data.error); } else { setShowCreateOverride(false); setOverrideForm({ nom:"", discord_id:"", role:"" }); await fetchAll(); }
+  setCreatingOverride(false);
+}
 
-  async function deleteOverride(discordId: string) {
-    if (!supabase) return;
-    await supabase.from("role_overrides").delete().eq("discord_id", discordId);
-    setDeleteOverrideId(null); 
-    await fetchAll();
-  }
+async function deleteOverride(discordId: string) {
+  await fetch("/api/admin/overrides", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
+  setDeleteOverrideId(null); await fetchAll();
+}
 
-  async function createRole() {
-    if (!supabase||!roleForm.nom.trim()) return;
-    setCreatingRole(true);
-    const { error } = await supabase.from("roles").insert([{ nom:roleForm.nom.trim(), permissions:roleForm.permissions, couleur:roleForm.couleur }]);
-    if (error) {
-      setFetchError(`Impossible de créer le rôle : ${error.message}`);
-    } else { 
-      await fetchAll();
-      setShowCreateRole(false); 
-      setRoleForm({ nom:"", permissions:[], couleur:"#6366f1" }); 
-    }
-    setCreatingRole(false);
-  }
+async function createRole() {
+  if(!roleForm.nom.trim()) return;
+  setCreatingRole(true);
+  const res = await fetch("/api/admin/roles", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nom:roleForm.nom.trim(), permissions:roleForm.permissions, couleur:roleForm.couleur }),
+  });
+  const data = await res.json();
+  if (!res.ok) { setFetchError(`Impossible de créer le rôle : ${data.error}`); }
+  else { await fetchAll(); setShowCreateRole(false); setRoleForm({ nom:"", permissions:[], couleur:"#6366f1" }); }
+  setCreatingRole(false);
+}
 
-  async function saveRole(id: string) {
-    if (!supabase) return;
-    setSavingRole(true);
-    const { error } = await supabase.from("roles").update({ permissions:editRolePerms, couleur:editRoleCouleur }).eq("id", id);
-    if (error) setFetchError(`Impossible de sauvegarder le rôle : ${error.message}`);
-    else setEditRoleId(null);
-    await fetchAll(); 
-    setSavingRole(false);
-  }
+async function saveRole(id: string) {
+  setSavingRole(true);
+  const res = await fetch("/api/admin/roles", {
+    method: "PATCH", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, permissions:editRolePerms, couleur:editRoleCouleur }),
+  });
+  const data = await res.json();
+  if (!res.ok) setFetchError(`Impossible de sauvegarder le rôle : ${data.error}`);
+  else setEditRoleId(null);
+  await fetchAll(); setSavingRole(false);
+}
 
-  async function deleteRole(id: string) {
-    if (!supabase) return;
-    const { error } = await supabase.from("roles").delete().eq("id", id);
-    if (error) setFetchError(`Impossible de supprimer le rôle : ${error.message}`);
-    setDeleteRoleId(null); 
-    await fetchAll();
-  }
+async function deleteRole(id: string) {
+  const res = await fetch("/api/admin/roles", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+  const data = await res.json();
+  if (!res.ok) setFetchError(`Impossible de supprimer le rôle : ${data.error}`);
+  setDeleteRoleId(null); await fetchAll();
+}
 
   function togglePerm(perms: string[], perm: string): string[] {
     return perms.includes(perm) ? perms.filter(p => p !== perm) : [...perms, perm];
