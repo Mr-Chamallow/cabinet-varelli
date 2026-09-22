@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useState, useMemo } from "react";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
-import { ARTICLES } from "@/lib/code-penal";
+import { CODE_PENAL as ARTICLES, CODE_PENAL } from "@/lib/code-penal";
 
 const ONGLETS: { key: string; label: string; icon: string; color: string }[] = [
   { key: "constitution",          label: "Constitution",        icon: "🏛️", color: "#D4AF37" },
@@ -55,19 +55,17 @@ export default function JuridiqueePage() {
     const q = search.toLowerCase().trim();
     if (isSearching) {
       // Mode recherche globale : on cherche dans TOUTES les catégories
-      return ARTICLES.filter(a =>
+      return CODE_PENAL.filter(a =>
         a.titre.toLowerCase().includes(q) ||
-        a.contenu.toLowerCase().includes(q) ||
-        (a.tags || []).some(t => t.includes(q)) ||
+        String((a as any).contenu || "").toLowerCase().includes(q) ||
         a.id.toLowerCase().includes(q)
       );
     }
-    return ARTICLES.filter(a => {
-      if (a.categorie !== activeTab) return false;
-      if (subFilter && !(a.tags || []).includes(subFilter)) return false;
+    return CODE_PENAL.filter(a => {
+      if (String(a.categorieId) !== activeTab) return false;
       return true;
     });
-  }, [activeTab, subFilter, search, isSearching]);
+  }, [activeTab, search, isSearching]);
 
 const catColors: Record<string, string> = {
   constitution: "#D4AF37",
@@ -180,7 +178,7 @@ const catColors: Record<string, string> = {
         )}
         {filtered.map(article => {
           const isOpen = expanded === article.id;
-          const color = catColors[article.categorie];
+          const color = catColors[article.categorieId];
           return (
             <div
               key={article.id}
@@ -223,12 +221,12 @@ const catColors: Record<string, string> = {
                       color, background: color + "12", border: `1px solid ${color}28`,
                       padding: "0.15rem 0.5rem", borderRadius: 999,
                     }}>
-                      {ONGLETS.find(o => o.key === article.categorie)?.icon} {ONGLETS.find(o => o.key === article.categorie)?.label || article.categorie}
+                      {ONGLETS.find(o => o.key === String(article.categorieId))?.icon} {ONGLETS.find(o => o.key === String(article.categorieId))?.label || article.categorieId}
                     </span>
                   )}
-                  {article.amende && (
+                  {(article as any).amende && (
                     <span style={{ flexShrink: 0, fontSize: "0.78rem", color: "var(--gold)", fontWeight: 600 }}>
-                      {article.amende}
+                      {(article as any).amende}
                     </span>
                   )}
                 </div>
@@ -240,37 +238,37 @@ const catColors: Record<string, string> = {
                   <div style={{ height: 1, background: "var(--border)", marginBottom: "1rem" }} />
 
                   <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", lineHeight: 1.65, marginBottom: "1rem" }}>
-                    {article.contenu}
+                    {String((article as any).contenu || (article as any).texte || "")}
                   </p>
 
-                  {(article.amende || article.detention) && (
+                  {((article as any).amende || (article as any).detention) && (
                     <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-                      {article.amende && (
+                      {(article as any).amende && (
                         <div style={{
                           background: "rgba(212,175,55,0.08)",
                           border: "1px solid rgba(212,175,55,0.25)",
                           borderRadius: 8, padding: "0.5rem 0.875rem",
                         }}>
                           <div style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-dim)", marginBottom: "0.15rem" }}>Amende</div>
-                          <div style={{ fontWeight: 700, color: "var(--gold)", fontSize: "0.9rem" }}>{article.amende}</div>
+                          <div style={{ fontWeight: 700, color: "var(--gold)", fontSize: "0.9rem" }}>{(article as any).amende}</div>
                         </div>
                       )}
-                      {article.detention && (
+                      {(article as any).detention && (
                         <div style={{
                           background: "rgba(239,68,68,0.07)",
                           border: "1px solid rgba(239,68,68,0.2)",
                           borderRadius: 8, padding: "0.5rem 0.875rem",
                         }}>
                           <div style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-dim)", marginBottom: "0.15rem" }}>Détention</div>
-                          <div style={{ fontWeight: 700, color: "#ef4444", fontSize: "0.9rem" }}>{article.detention}</div>
+                          <div style={{ fontWeight: 700, color: "#ef4444", fontSize: "0.9rem" }}>{(article as any).detention}</div>
                         </div>
                       )}
                     </div>
                   )}
 
-                  {article.tags && article.tags.length > 0 && (
+                  {(article as any).tags && (article as any).tags.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginTop: "0.875rem" }}>
-                      {article.tags.map(t => (
+                      {(article as any).tags.map((t: string) => (
                         <button
                           key={t}
                           onClick={() => setSearch(t)}
