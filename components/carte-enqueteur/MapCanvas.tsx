@@ -86,22 +86,24 @@ const S: Record<string, CSSProperties> = {
     position: 'absolute',
     top: 16,
     left: 16,
-    right: 16,
     zIndex: 500,
-    display: 'flex',
+    display: 'inline-flex',
     flexDirection: 'column',
     gap: 10,
-    padding: '10px 14px',
-    borderRadius: 12,
-    background: 'rgba(15,20,32,0.85)',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
-    border: `1px solid ${colors.border}`,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+    padding: '12px 16px',
+    borderRadius: 16,
+    width: 'auto',
+    maxWidth: 'min(880px, calc(100vw - 340px))',
+    background: 'linear-gradient(180deg, rgba(17,24,38,0.92), rgba(11,15,24,0.92))',
+    backdropFilter: 'blur(14px)',
+    WebkitBackdropFilter: 'blur(14px)',
+    border: `1px solid ${colors.borderLight}`,
+    boxShadow: '0 10px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
   },
   toolbarRow: {
     display: 'flex',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 10,
     width: '100%',
   },
@@ -110,10 +112,11 @@ const S: Record<string, CSSProperties> = {
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+    justifyContent: 'flex-start',
+    gap: 6,
     width: '100%',
-    paddingTop: 4,
+    paddingTop: 8,
+    marginTop: 2,
     borderTop: `1px solid ${colors.border}`,
   },
   divider: {
@@ -124,26 +127,35 @@ const S: Record<string, CSSProperties> = {
   },
   btn: {
     pointerEvents: 'auto',
-    borderRadius: 8,
-    padding: '8px 14px',
+    borderRadius: 9,
+    padding: '8px 16px',
     fontSize: 13,
-    fontWeight: 600,
-    background: colors.amber,
+    fontWeight: 700,
+    background: `linear-gradient(180deg, ${colors.amberDark}, ${colors.amber})`,
     color: '#1a1206',
     border: 'none',
     cursor: 'pointer',
     letterSpacing: '0.01em',
-    transition: 'filter 0.15s',
+    boxShadow: '0 2px 8px rgba(245,158,11,0.25)',
+    transition: 'filter 0.15s, transform 0.1s',
+    whiteSpace: 'nowrap',
   },
   btnActive: {
     background: colors.amberDark,
+    boxShadow: '0 0 0 2px rgba(245,158,11,0.3)',
+  },
+  btnDisabled: {
+    pointerEvents: 'none',
+    opacity: 0.4,
+    filter: 'grayscale(0.4)',
+    boxShadow: 'none',
   },
   toggleGroup: {
     pointerEvents: 'auto',
     display: 'flex',
     overflow: 'hidden',
-    borderRadius: 8,
-    background: 'rgba(15,23,42,0.8)',
+    borderRadius: 9,
+    background: 'rgba(15,23,42,0.75)',
     border: `1px solid ${colors.border}`,
   },
   toggleBtn: {
@@ -162,12 +174,12 @@ const S: Record<string, CSSProperties> = {
   },
   search: {
     pointerEvents: 'auto',
-    flex: '1 1 200px',
-    minWidth: 160,
-    maxWidth: '100%',
-    borderRadius: 8,
+    flex: '1 1 180px',
+    minWidth: 140,
+    maxWidth: 260,
+    borderRadius: 9,
     border: `1px solid ${colors.border}`,
-    background: 'rgba(15,23,42,0.8)',
+    background: 'rgba(15,23,42,0.75)',
     color: colors.text,
     padding: '7px 12px',
     fontSize: 13,
@@ -180,12 +192,13 @@ const S: Record<string, CSSProperties> = {
     gap: 6,
     borderRadius: 999,
     border: `1px solid ${colors.border}`,
-    background: 'rgba(15,23,42,0.8)',
-    padding: '5px 10px',
+    background: 'rgba(15,23,42,0.75)',
+    padding: '5px 11px',
     fontSize: 12,
+    fontWeight: 500,
     color: colors.textDim,
     cursor: 'pointer',
-    transition: 'opacity 0.15s',
+    transition: 'opacity 0.15s, border-color 0.15s',
   },
   manageTagsBtn: {
     pointerEvents: 'auto',
@@ -199,6 +212,7 @@ const S: Record<string, CSSProperties> = {
     fontSize: 12,
     color: colors.textDimmer,
     cursor: 'pointer',
+    transition: 'color 0.15s, border-color 0.15s',
   },
   coordsLabel: {
     pointerEvents: 'none',
@@ -232,36 +246,59 @@ const S: Record<string, CSSProperties> = {
   },
   mapDiv: { height: '100%', width: '100%', background: colors.bgDarker, zIndex: 0 },
   sidebar: {
-    width: 288,
+    width: 312,
     flexShrink: 0,
     overflowY: 'auto',
     borderLeft: `1px solid ${colors.border}`,
-    background: colors.bgDarker,
-    padding: 12,
+    background: `linear-gradient(180deg, ${colors.bgDarker}, ${colors.bg})`,
+    padding: '14px 12px',
+  },
+  sidebarHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+    paddingBottom: 10,
+    borderBottom: `1px solid ${colors.border}`,
   },
   sidebarTitle: {
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: 700,
+    letterSpacing: '0.02em',
+    color: colors.text,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+  },
+  sidebarCount: {
     fontFamily: 'monospace',
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    color: colors.textDimmer,
+    fontSize: 11,
+    fontWeight: 700,
+    color: colors.amberDark,
+    background: 'rgba(245,158,11,0.12)',
+    border: '1px solid rgba(245,158,11,0.3)',
+    borderRadius: 999,
+    padding: '2px 9px',
   },
   dossierItem: {
     display: 'flex',
     width: '100%',
     alignItems: 'flex-start',
-    gap: 8,
-    borderRadius: 6,
-    padding: '6px 8px',
+    gap: 10,
+    borderRadius: 10,
+    padding: '10px 10px',
     textAlign: 'left',
     fontSize: 14,
-    background: 'transparent',
-    border: 'none',
+    background: 'rgba(255,255,255,0.02)',
+    border: `1px solid rgba(255,255,255,0.03)`,
     color: colors.text,
     cursor: 'pointer',
+    transition: 'background 0.12s, border-color 0.12s, transform 0.08s',
   },
-  dossierItemActive: { background: colors.border },
+  dossierItemActive: {
+    background: 'rgba(245,158,11,0.08)',
+    borderColor: 'rgba(245,158,11,0.35)',
+  },
   emptyState: {
     padding: '16px 8px',
     textAlign: 'center',
@@ -395,6 +432,7 @@ interface Props {
   atlasTilesUrl?: string;
   scale?: number;
   origin?: { px: number; py: number };
+  readOnly?: boolean;
 }
 
 export default function MapCanvas({
@@ -403,6 +441,7 @@ export default function MapCanvas({
   atlasTilesUrl = '/map/tiles/atlas/{z}/{x}/{y}.jpg',
   scale = DEFAULT_SCALE,
   origin = DEFAULT_ORIGIN,
+  readOnly = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -695,14 +734,17 @@ export default function MapCanvas({
       <div style={S.mapCol}>
         <div style={S.toolbar}>
           <div style={S.toolbarRow}>
-            <button
-              onClick={() => setAddMode((v) => !v)}
-              style={{ ...S.btn, ...(addMode ? S.btnActive : {}) }}
-            >
-              {addMode ? 'Clique sur la carte…' : '+ Nouveau point'}
-            </button>
-
-            <div style={S.divider} />
+            {!readOnly && (
+              <>
+                <button
+                  onClick={() => setAddMode((v) => !v)}
+                  style={{ ...S.btn, ...(addMode ? S.btnActive : {}) }}
+                >
+                  {addMode ? 'Clique sur la carte…' : '+ Nouveau point'}
+                </button>
+                <div style={S.divider} />
+              </>
+            )}
 
             <div style={S.toggleGroup}>
               <button
@@ -749,13 +791,18 @@ export default function MapCanvas({
                 {c.label}
               </button>
             ))}
+            {!readOnly && (
+              <>
+                <div style={S.divider} />
+                <button onClick={() => setTagsModalOpen(true)} style={S.manageTagsBtn}>
+                  ⚙ Catégories
+                </button>
+                <button onClick={() => setGangsModalOpen(true)} style={S.manageTagsBtn}>
+                  ⚙ Groupes
+                </button>
+              </>
+            )}
             <div style={S.divider} />
-            <button onClick={() => setTagsModalOpen(true)} style={S.manageTagsBtn}>
-              ⚙ Catégories
-            </button>
-            <button onClick={() => setGangsModalOpen(true)} style={S.manageTagsBtn}>
-              ⚙ Groupes
-            </button>
             <button onClick={() => setRegistreOpen(true)} style={S.manageTagsBtn}>
               📇 Registre
             </button>
@@ -772,44 +819,70 @@ export default function MapCanvas({
       </div>
 
       <aside style={S.sidebar}>
-        <h3 style={S.sidebarTitle}>Points chauds ({visiblePoints.length})</h3>
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {visiblePoints.map((p) => (
-            <li key={p.id}>
-              <button
-                onClick={() => {
-                  setSelectedId(p.id);
-                  flyToPoint(p);
-                  setEditing({
-                    point: p,
-                    dossier: dossiers[p.id] ?? { id: '', point_id: p.id, description: '', tags: [], pieces: [] },
-                  });
-                }}
-                style={{ ...S.dossierItem, ...(p.id === selectedId ? S.dossierItemActive : {}) }}
-              >
-                <span style={{ ...dotStyle(categoryColor(categories, p.category)), marginTop: 4, flexShrink: 0 }} />
-                <span>
-                  <div style={{ color: colors.text }}>{p.title}</div>
-                  <div style={{ fontFamily: 'monospace', fontSize: 11, color: colors.textDimmer }}>
-                    X {p.x.toFixed(0)} / Y {p.y.toFixed(0)}
-                  </div>
-                  <div
+        <div style={S.sidebarHeader}>
+          <span style={S.sidebarTitle}>🔥 Points chauds</span>
+          <span style={S.sidebarCount}>{visiblePoints.length}</span>
+        </div>
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {visiblePoints.map((p) => {
+            const catColor = categoryColor(categories, p.category);
+            const isActive = p.id === selectedId;
+            return (
+              <li key={p.id}>
+                <button
+                  onClick={() => {
+                    setSelectedId(p.id);
+                    flyToPoint(p);
+                    setEditing({
+                      point: p,
+                      dossier: dossiers[p.id] ?? { id: '', point_id: p.id, description: '', tags: [], pieces: [] },
+                    });
+                  }}
+                  style={{
+                    ...S.dossierItem,
+                    ...(isActive ? S.dossierItemActive : {}),
+                    borderLeft: `3px solid ${catColor}`,
+                  }}
+                >
+                  <span
                     style={{
-                      fontSize: 12,
-                      color: colors.textDim,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
+                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0, marginTop: 5,
+                      background: catColor, boxShadow: `0 0 6px ${catColor}80`,
                     }}
-                  >
-                    {dossiers[p.id]?.description || 'Aucune note pour le moment.'}
-                  </div>
-                </span>
-              </button>
-            </li>
-          ))}
+                  />
+                  <span style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ color: colors.text, fontWeight: 600, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.title}
+                    </div>
+                    <div
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        fontFamily: 'monospace', fontSize: 10.5, color: colors.textDimmer,
+                        background: 'rgba(255,255,255,0.03)', border: `1px solid ${colors.border}`,
+                        borderRadius: 999, padding: '1px 7px', marginBottom: 5,
+                      }}
+                    >
+                      X {p.x.toFixed(0)} · Y {p.y.toFixed(0)}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: colors.textDim,
+                        lineHeight: 1.4,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
+                      {dossiers[p.id]?.description || 'Aucune note pour le moment.'}
+                    </div>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
           {visiblePoints.length === 0 && <li style={S.emptyState}>Aucun point ne correspond.</li>}
         </ul>
       </aside>
@@ -830,6 +903,7 @@ export default function MapCanvas({
           gangs={gangs}
           personnesAll={personnesAll}
           plaquesAll={plaquesAll}
+          readOnly={readOnly}
           onChange={(point, dossier) => setEditing({ point, dossier })}
           onClose={() => setEditing(null)}
           onSave={saveEditing}
@@ -837,7 +911,7 @@ export default function MapCanvas({
         />
       )}
 
-      {registreOpen && <RegistreModal onClose={() => setRegistreOpen(false)} />}
+      {registreOpen && <RegistreModal onClose={() => setRegistreOpen(false)} readOnly={readOnly} />}
 
       {gangsModalOpen && (
         <GangsModal
@@ -934,6 +1008,7 @@ function DossierModal({
   gangs,
   personnesAll,
   plaquesAll,
+  readOnly = false,
   onChange,
   onClose,
   onSave,
@@ -945,6 +1020,7 @@ function DossierModal({
   gangs: Gang[];
   personnesAll: Personne[];
   plaquesAll: Plaque[];
+  readOnly?: boolean;
   onChange: (point: CartePoint, dossier: Dossier) => void;
   onClose: () => void;
   onSave: () => void;
@@ -962,6 +1038,7 @@ function DossierModal({
   };
 
   const handleFiles = async (files: FileList | File[]) => {
+    if (readOnly) return;
     const list = Array.from(files).filter((f) => f.type.startsWith('image/'));
     if (list.length === 0) return;
     setUploading(true);
@@ -983,6 +1060,7 @@ function DossierModal({
   };
 
   const handlePaste = (e: ReactClipboardEvent<HTMLDivElement>) => {
+    if (readOnly) return;
     const files = Array.from(e.clipboardData.items)
       .filter((item) => item.type.startsWith('image/'))
       .map((item) => item.getAsFile())
@@ -996,16 +1074,30 @@ function DossierModal({
   return (
     <div style={S.modalOverlay}>
       <div style={S.modal}>
-        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 10 }}>
           <input
             value={point.title}
+            disabled={readOnly}
             onChange={(e) => commit({ title: e.target.value }, {})}
-            style={S.modalTitleInput}
+            style={{ ...S.modalTitleInput, opacity: readOnly ? 0.75 : 1, cursor: readOnly ? 'default' : 'text' }}
           />
+          {readOnly && (
+            <span style={{
+              flexShrink: 0, fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
+              padding: '3px 9px', borderRadius: 999,
+              background: 'rgba(148,163,184,0.15)', border: '1px solid rgba(148,163,184,0.35)', color: '#94a3b8',
+            }}>
+              🔒 Lecture seule
+            </span>
+          )}
           <button onClick={onClose} style={S.closeBtn}>✕</button>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', paddingRight: 6 }} onPaste={handlePaste}>
+        <fieldset
+          disabled={readOnly}
+          style={{ border: 0, padding: 0, margin: 0, flex: 1, overflowY: 'auto', paddingRight: 6 }}
+          onPaste={handlePaste}
+        >
           <label style={S.label}>Catégorie</label>
           <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {categories.map((c) => (
@@ -1182,19 +1274,25 @@ function DossierModal({
               onChange={(e) => e.target.files && handleFiles(e.target.files)}
             />
           </div>
-        </div>
+        </fieldset>
 
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button type="button" onClick={onDelete} style={S.dangerLink}>
-            Supprimer
-          </button>
+          {!readOnly ? (
+            <button type="button" onClick={onDelete} style={S.dangerLink}>
+              Supprimer
+            </button>
+          ) : (
+            <span style={{ fontSize: 12, color: colors.textDimmer }}>Consultation uniquement</span>
+          )}
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="button" onClick={onClose} style={S.ghostBtn}>
-              Annuler
+              {readOnly ? 'Fermer' : 'Annuler'}
             </button>
-            <button type="button" onClick={onSave} style={S.primaryBtn}>
-              Enregistrer
-            </button>
+            {!readOnly && (
+              <button type="button" onClick={onSave} style={S.primaryBtn}>
+                Enregistrer
+              </button>
+            )}
           </div>
         </div>
       </div>

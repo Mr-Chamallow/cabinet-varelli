@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import dynamic from 'next/dynamic';
 
@@ -8,6 +8,7 @@ interface Props {
   satelliteTilesUrl?: string;
   gridTilesUrl?: string;
   atlasTilesUrl?: string;
+  readOnly?: boolean;
 }
 
 export default function CarteEnqueteur(props: Props) {

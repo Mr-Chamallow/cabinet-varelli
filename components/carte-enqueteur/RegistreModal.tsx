@@ -39,9 +39,10 @@ const inputStyle = {
 
 interface Props {
   onClose: () => void;
+  readOnly?: boolean;
 }
 
-export default function RegistreModal({ onClose }: Props) {
+export default function RegistreModal({ onClose, readOnly = false }: Props) {
   const [tab, setTab] = useState<'personnes' | 'plaques'>('personnes');
   const [personnes, setPersonnes] = useState<Personne[]>([]);
   const [plaques, setPlaques] = useState<Plaque[]>([]);
@@ -146,7 +147,18 @@ export default function RegistreModal({ onClose }: Props) {
         }}
       >
         <div style={{ padding: 16, borderBottom: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Registre</h3>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+            Registre
+            {readOnly && (
+              <span style={{
+                fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
+                padding: '2px 8px', borderRadius: 999,
+                background: 'rgba(148,163,184,0.15)', border: '1px solid rgba(148,163,184,0.35)', color: colors.textDim,
+              }}>
+                🔒 Lecture seule
+              </span>
+            )}
+          </h3>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer', fontSize: 16 }}>✕</button>
         </div>
 
@@ -187,7 +199,7 @@ export default function RegistreModal({ onClose }: Props) {
           </div>
         )}
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+        <fieldset disabled={readOnly} style={{ border: 0, padding: 16, margin: 0, flex: 1, overflowY: 'auto' }}>
           {tab === 'personnes' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {filteredPersonnes.map((p) => (
@@ -265,7 +277,7 @@ export default function RegistreModal({ onClose }: Props) {
               </button>
             </div>
           )}
-        </div>
+        </fieldset>
       </div>
     </div>
   );

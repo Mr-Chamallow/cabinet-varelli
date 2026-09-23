@@ -12,6 +12,9 @@ export const DISCORD_ROLE_MAP: Record<string, string> = {
   "1523907091453186059": "Agent de sécurité",
   "1523907437013237761": "Opérateur",
   "1523907553925267617": "Opérateur stagiaire",
+  // Rôle externe — accès lecture seule à la carte enquêteur uniquement.
+  // Toujours en dernier : priorité la plus basse, ne doit jamais écraser un rôle interne.
+  "1552341216786518026": "Légal Service",
 };
 
 const ROLE_PRIORITY = Object.values(DISCORD_ROLE_MAP);

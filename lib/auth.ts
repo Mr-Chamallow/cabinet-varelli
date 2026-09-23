@@ -45,7 +45,18 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   "Agent de sécurité":              ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","carte-enqueteur"],
   "Opérateur":                      ["obsidian_dashboard","obsidian_rdv","carte-enqueteur"],
   "Opérateur stagiaire":            ["obsidian_dashboard"],
+  // Rôle externe (site "Légal Service") — accès à la carte enquêteur uniquement, en lecture seule.
+  "Légal Service":                  ["carte-enqueteur"],
 };
+
+// Rôles dont l'accès à la carte enquêteur est strictement en lecture seule
+// (pas de création/édition/suppression de point, dossier, registre, catégories, groupes).
+export const READONLY_ROLES = ["Légal Service"];
+
+export function isReadOnlyRole(userOrRole: AppUser | string | null): boolean {
+  const role = typeof userOrRole === "string" ? userOrRole : userOrRole?.role;
+  return !!role && READONLY_ROLES.includes(role);
+}
 
 export function hasPermission(userOrRole: AppUser | string | null, permission: string): boolean {
   if (!userOrRole) return false;
