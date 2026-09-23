@@ -5,6 +5,8 @@ import { ALL_PERMISSIONS, PERMISSION_LABELS, DEFAULT_PERMISSIONS, loadRolesFromS
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { fetchRecentActivity, ACTIVITY_CONFIG, timeAgo, ActivityItem } from "@/lib/activity";
+import { deriveGoldPalette, applyThemeToDocument, DEFAULT_GOLD, isValidHex } from "@/lib/theme";
 
 // Force le rendu dynamique côté serveur/client et désactive le pré-rendu statique au build Vercel
 export const dynamic = "force-dynamic";
@@ -23,38 +25,17 @@ interface Role {
   couleur: string;
 }
 
-interface ActivityItem {
-  type: "casier" | "dossier" | "facture" | "audience" | "client";
-  icon: string;
-  color: string;
-  label: string;
-  detail: string;
-  by: string;
-  at: string;
-}
-
 const COULEURS_PRESET = [
-  "#c9a84c","#6366f1","#22c55e","#ef4444","#f97316",
+  "#a78bfa","#c9a84c","#6366f1","#22c55e","#ef4444","#f97316",
   "#06b6d4","#ec4899","#a855f7","#14b8a6","#f59e0b",
   "#3b82f6","#84cc16","#e11d48","#0ea5e9","#d97706",
 ];
 
-const ACT_CFG: Record<string, { icon: string; color: string; label: string }> = {
-  casier:   { icon: "⚖️", color: "#7c3aed", label: "Casier"   },
-  dossier:  { icon: "📁", color: "#c9a84c", label: "Dossier"  },
-  facture:  { icon: "🧾", color: "#22c55e", label: "Facture"  },
-  audience: { icon: "🏛️", color: "#3b82f6", label: "Audience" },
-  client:   { icon: "👤", color: "#f97316", label: "Client"   },
-};
-
-function timeAgo(iso: string): string {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (diff < 60) return "À l'instant";
-  if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`;
-  if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)} h`;
-  const d = Math.floor(diff / 86400);
-  return d < 7 ? `Il y a ${d} j` : new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
-}
+const SITE_SETTINGS_KEYS = [
+  { key: "app_nom", label: "Nom du site", placeholder: "Obsidian Logistique" },
+  { key: "app_sous_nom", label: "Sous-titre", placeholder: "Consortium · Opérations · Logistique" },
+  { key: "logo_url", label: "URL du logo", placeholder: "https://..." },
+];
 
 export default function AdminPage() {
   const router = useRouter();
@@ -63,7 +44,7 @@ export default function AdminPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"membres"|"roles"|"journaux">("membres");
+  const [activeTab, setActiveTab] = useState<"membres"|"roles"|"journaux"|"site">("membres");
 
   const [showCreateOverride, setShowCreateOverride] = useState(false);
   const [overrideForm, setOverrideForm] = useState({ nom:"", discord_id:"", role:"" });
@@ -86,11 +67,18 @@ export default function AdminPage() {
   const [filterActMember, setFilterActMember] = useState("");
   const [filterActType, setFilterActType] = useState("");
 
-  // ✅ FIX SÉCURITÉ : vérifie maintenant la permission "admin", pas juste la connexion
+  // Site (Personnalisation centralisée)
+  const [siteSettings, setSiteSettings] = useState<Record<string,string>>({});
+  const [siteGold, setSiteGold] = useState(DEFAULT_GOLD);
+  const [siteGoldInput, setSiteGoldInput] = useState(DEFAULT_GOLD);
+  const [siteLoading, setSiteLoading] = useState(false);
+  const [siteSaving, setSiteSaving] = useState(false);
+
+  // ✅ FIX SÉCURITÉ : vérifie la permission "admin" via l'objet user complet (rôle + overrides Supabase)
   useEffect(() => {
     if (!userLoading && !user) { router.push("/"); return; }
-    if (!userLoading && user && !canAccess(user.role, "admin")) { router.push("/"); return; }
-    if (user && !userLoading && canAccess(user.role, "admin")) fetchAll();
+    if (!userLoading && user && !canAccess(user, "admin")) { router.push("/"); return; }
+    if (user && !userLoading && canAccess(user, "admin")) fetchAll();
   }, [user, userLoading]);
 
   async function fetchAll() {
@@ -122,29 +110,9 @@ export default function AdminPage() {
   }
 
   async function loadActivity() {
-    if (!supabase) return;
     setActLoading(true);
     try {
-      const [
-        { data: casiers },
-        { data: dossiers },
-        { data: factures },
-        { data: audiences },
-        { data: clients },
-      ] = await Promise.all([
-        supabase.from("casier").select("client_nom,infraction,categorie,created_by,created_at").order("created_at",{ascending:false}).limit(40),
-        supabase.from("dossiers").select("reference,client,type_affaire,statut,created_by,created_at").order("created_at",{ascending:false}).limit(40),
-        supabase.from("factures").select("numero,client,montant,statut,created_by,created_at").order("created_at",{ascending:false}).limit(40),
-        supabase.from("audiences").select("titre,client,type,created_by,created_at").order("created_at",{ascending:false}).limit(40),
-        supabase.from("clients").select("nom_rp,type_client,created_by,created_at").order("created_at",{ascending:false}).limit(40),
-      ]);
-      const items: ActivityItem[] = [
-        ...(casiers||[]).map((r:any) => ({ type:"casier" as const, icon:"⚖️", color:"#7c3aed", label:r.client_nom, detail:`${r.infraction} · ${r.categorie}`, by:r.created_by, at:r.created_at })),
-        ...(dossiers||[]).map((r:any) => ({ type:"dossier" as const, icon:"📁", color:"#c9a84c", label:r.reference, detail:`${r.client} — ${r.type_affaire} · ${r.statut}`, by:r.created_by, at:r.created_at })),
-        ...(factures||[]).map((r:any) => ({ type:"facture" as const, icon:"🧾", color:"#22c55e", label:r.numero||"Facture", detail:`${r.client} — ${(r.montant||0).toLocaleString("fr-FR")} $ · ${r.statut}`, by:r.created_by, at:r.created_at })),
-        ...(audiences||[]).map((r:any) => ({ type:"audience" as const, icon:"🏛️", color:"#3b82f6", label:r.titre, detail:`${r.type}${r.client?` · ${r.client}`:""}`, by:r.created_by, at:r.created_at })),
-        ...(clients||[]).map((r:any) => ({ type:"client" as const, icon:"👤", color:"#f97316", label:r.nom_rp, detail:`Nouveau client · ${r.type_client||"—"}`, by:r.created_by, at:r.created_at })),
-      ].sort((a,b) => (b.at || "").localeCompare(a.at || ""));
+      const items = await fetchRecentActivity(40);
       setActivity(items);
     } catch (e) {
       console.error(e);
@@ -153,58 +121,87 @@ export default function AdminPage() {
     }
   }
 
-  useEffect(() => { 
-    if (activeTab === "journaux" && activity.length === 0) loadActivity(); 
+  useEffect(() => {
+    if (activeTab === "journaux" && activity.length === 0) loadActivity();
+    if (activeTab === "site" && Object.keys(siteSettings).length === 0) loadSite();
   }, [activeTab]);
 
+  async function loadSite() {
+    if (!supabase) return;
+    setSiteLoading(true);
+    const { data } = await supabase.from("app_settings").select("cle,valeur");
+    const m: Record<string,string> = {};
+    (data || []).forEach((r: any) => { m[r.cle] = r.valeur; });
+    setSiteSettings(m);
+    const g = m["couleur_gold"] && isValidHex(m["couleur_gold"]) ? m["couleur_gold"] : DEFAULT_GOLD;
+    setSiteGold(g);
+    setSiteGoldInput(g);
+    setSiteLoading(false);
+  }
+
+  async function saveSiteKey(key: string, val: string) {
+    if (!supabase) return;
+    setSiteSaving(true);
+    await supabase.from("app_settings").upsert({ cle: key, valeur: val }, { onConflict: "cle" });
+    setSiteSettings(s => ({ ...s, [key]: val }));
+    setSiteSaving(false);
+  }
+
+  async function applySiteGold(hex: string) {
+    if (!isValidHex(hex)) return;
+    setSiteGold(hex); setSiteGoldInput(hex);
+    applyThemeToDocument(hex);
+    await saveSiteKey("couleur_gold", hex);
+  }
+
   async function createOverride() {
-  if(!overrideForm.discord_id.trim()||!overrideForm.role) return;
-  setCreatingOverride(true); setCreateError("");
-  const res = await fetch("/api/admin/overrides", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ discord_id: overrideForm.discord_id.trim(), nom: overrideForm.nom.trim(), role: overrideForm.role, updated_by: user?.nom, updated_at: new Date().toISOString() }),
-  });
-  const data = await res.json();
-  if (!res.ok) { setCreateError(data.error); } else { setShowCreateOverride(false); setOverrideForm({ nom:"", discord_id:"", role:"" }); await fetchAll(); }
-  setCreatingOverride(false);
-}
+    if(!overrideForm.discord_id.trim()||!overrideForm.role) return;
+    setCreatingOverride(true); setCreateError("");
+    const res = await fetch("/api/admin/overrides", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ discord_id: overrideForm.discord_id.trim(), nom: overrideForm.nom.trim(), role: overrideForm.role, updated_by: user?.nom, updated_at: new Date().toISOString() }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setCreateError(data.error); } else { setShowCreateOverride(false); setOverrideForm({ nom:"", discord_id:"", role:"" }); await fetchAll(); }
+    setCreatingOverride(false);
+  }
 
-async function deleteOverride(discordId: string) {
-  await fetch("/api/admin/overrides", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
-  setDeleteOverrideId(null); await fetchAll();
-}
+  async function deleteOverride(discordId: string) {
+    await fetch("/api/admin/overrides", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
+    setDeleteOverrideId(null); await fetchAll();
+  }
 
-async function createRole() {
-  if(!roleForm.nom.trim()) return;
-  setCreatingRole(true);
-  const res = await fetch("/api/admin/roles", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nom:roleForm.nom.trim(), permissions:roleForm.permissions, couleur:roleForm.couleur }),
-  });
-  const data = await res.json();
-  if (!res.ok) { setFetchError(`Impossible de créer le rôle : ${data.error}`); }
-  else { await fetchAll(); setShowCreateRole(false); setRoleForm({ nom:"", permissions:[], couleur:"#6366f1" }); }
-  setCreatingRole(false);
-}
+  async function createRole() {
+    if(!roleForm.nom.trim()) return;
+    setCreatingRole(true);
+    const res = await fetch("/api/admin/roles", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nom:roleForm.nom.trim(), permissions:roleForm.permissions, couleur:roleForm.couleur }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setFetchError(`Impossible de créer le rôle : ${data.error}`); }
+    else { await fetchAll(); setShowCreateRole(false); setRoleForm({ nom:"", permissions:[], couleur:"#6366f1" }); }
+    setCreatingRole(false);
+  }
 
-async function saveRole(id: string) {
-  setSavingRole(true);
-  const res = await fetch("/api/admin/roles", {
-    method: "PATCH", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, permissions:editRolePerms, couleur:editRoleCouleur }),
-  });
-  const data = await res.json();
-  if (!res.ok) setFetchError(`Impossible de sauvegarder le rôle : ${data.error}`);
-  else setEditRoleId(null);
-  await fetchAll(); setSavingRole(false);
-}
+  async function saveRole(id: string) {
+    setSavingRole(true);
+    const res = await fetch("/api/admin/roles", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, permissions:editRolePerms, couleur:editRoleCouleur }),
+    });
+    const data = await res.json();
+    if (!res.ok) setFetchError(`Impossible de sauvegarder le rôle : ${data.error}`);
+    else setEditRoleId(null);
+    await fetchAll(); setSavingRole(false);
+  }
 
-async function deleteRole(id: string) {
-  const res = await fetch("/api/admin/roles", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-  const data = await res.json();
-  if (!res.ok) setFetchError(`Impossible de supprimer le rôle : ${data.error}`);
-  setDeleteRoleId(null); await fetchAll();
-}
+  async function deleteRole(id: string) {
+    const res = await fetch("/api/admin/roles", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    const data = await res.json();
+    if (!res.ok) setFetchError(`Impossible de supprimer le rôle : ${data.error}`);
+    setDeleteRoleId(null); await fetchAll();
+  }
 
   function togglePerm(perms: string[], perm: string): string[] {
     return perms.includes(perm) ? perms.filter(p => p !== perm) : [...perms, perm];
@@ -215,9 +212,10 @@ async function deleteRole(id: string) {
     (!filterActMember || a.by === filterActMember) &&
     (!filterActType || a.type === filterActType)
   );
+  const sitePalette = deriveGoldPalette(siteGold);
 
   // ✅ FIX SÉCURITÉ : bloque le rendu si pas admin (empêche le flash de contenu avant redirect)
-  if (userLoading || !user || !canAccess(user.role, "admin")) return null;
+  if (userLoading || !user || !canAccess(user, "admin")) return null;
 
   return (
     <div className="page-container">
@@ -227,7 +225,7 @@ async function deleteRole(id: string) {
       <div className="page-header">
         <div>
           <h1 className="page-title">Administration</h1>
-          <p className="page-subtitle">Membres · Rôles · Permissions · Journaux</p>
+          <p className="page-subtitle">Membres · Rôles · Permissions · Journaux · Site</p>
           <div className="gold-line" />
         </div>
         <span className="badge badge-danger" style={{ padding:"0.4rem 1rem" }}>🛡️ Patron uniquement</span>
@@ -240,8 +238,8 @@ async function deleteRole(id: string) {
       )}
 
       {/* Tabs */}
-      <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1.5rem" }}>
-        {([["membres","👥 Membres"],["roles","🎭 Rôles & Permissions"],["journaux","📋 Journaux"]] as [string,string][]).map(([k,l]) => (
+      <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1.5rem", flexWrap:"wrap" }}>
+        {([["membres","👥 Membres"],["roles","🎭 Rôles & Permissions"],["journaux","📋 Journaux"],["site","⚙️ Site"]] as [string,string][]).map(([k,l]) => (
           <button key={k} onClick={() => setActiveTab(k as any)} style={{
             padding:"0.55rem 1.25rem", borderRadius:"var(--radius)", cursor:"pointer",
             fontFamily:"'Inter',sans-serif", fontSize:"0.85rem", fontWeight:activeTab===k?700:400,
@@ -353,9 +351,20 @@ async function deleteRole(id: string) {
                     {ALL_PERMISSIONS.map(p => {
                       const has = currentPerms.includes(p);
                       return (
-                        <button key={p} onClick={() => isEditing && setEditRolePerms(prev => togglePerm(prev, p))} disabled={!isEditing} style={{ display:"flex",alignItems:"center",gap:"0.4rem", padding:"0.35rem 0.625rem",borderRadius:8, background:has?currentCouleur+"15":"var(--surface)", border:`1px solid ${has?currentCouleur+"35":"var(--border)"}`, cursor:isEditing?"pointer":"default", fontFamily:"'Inter',sans-serif",fontSize:"0.72rem", color:has?currentCouleur:"var(--text-dim)", fontWeight:has?600:400, transition:"all 0.12s", opacity:!isEditing&&!has?0.4:1 }}>
-                          <span style={{ fontSize:"0.6rem" }}>{has?"✓":"○"}</span>
-                          {PERMISSION_LABELS[p]||p}
+                        <button
+                          key={p}
+                          disabled={!isEditing}
+                          onClick={() => isEditing && setEditRolePerms(perms => togglePerm(perms, p))}
+                          style={{
+                            display:"flex",alignItems:"center",gap:"0.4rem",padding:"0.3rem 0.55rem",borderRadius:6,
+                            background:has?currentCouleur+"15":"transparent",
+                            border:`1px solid ${has?currentCouleur+"30":"var(--border)"}`,
+                            cursor:isEditing?"pointer":"default",fontFamily:"'Inter',sans-serif",fontSize:"0.7rem",
+                            color:has?currentCouleur:"var(--text-dim)",fontWeight:has?600:400,
+                            opacity:isEditing?1:0.85, transition:"all 0.12s",
+                          }}
+                        >
+                          <span style={{fontSize:"0.58rem"}}>{has?"✓":"○"}</span>{PERMISSION_LABELS[p]||p}
                         </button>
                       );
                     })}
@@ -365,23 +374,21 @@ async function deleteRole(id: string) {
             })}
           </div>
         </div>
-      ) : (
+      ) : activeTab === "journaux" ? (
         <div>
-          {/* Filtres */}
-          <div style={{ display:"flex", gap:"0.75rem", marginBottom:"1.25rem", flexWrap:"wrap", alignItems:"center" }}>
-            <div style={{ display:"flex", gap:"0.4rem", flexWrap:"wrap", alignItems:"center" }}>
-              <span style={{ fontSize:"0.68rem", color:"var(--text-dim)", textTransform:"uppercase", letterSpacing:"0.08em" }}>Membre</span>
-              {["", ...uniqueActMembers].map(m => (
-                <button key={m||"_all"} onClick={() => setFilterActMember(m)} style={{ padding:"0.25rem 0.65rem", borderRadius:999, cursor:"pointer", fontFamily:"'Inter',sans-serif", fontSize:"0.75rem", fontWeight:filterActMember===m?700:400, background:filterActMember===m?"var(--gold-muted)":"var(--surface)", border:`1px solid ${filterActMember===m?"rgba(201,168,76,0.4)":"var(--border)"}`, color:filterActMember===m?"var(--gold)":"var(--text-muted)" }}>
-                  {m||"Tous"}
-                </button>
-              ))}
-            </div>
-            <div style={{ display:"flex", gap:"0.4rem", flexWrap:"wrap", alignItems:"center" }}>
-              <span style={{ fontSize:"0.68rem", color:"var(--text-dim)", textTransform:"uppercase", letterSpacing:"0.08em" }}>Type</span>
-              {["", ...Object.keys(ACT_CFG)].map(t => (
-                <button key={t||"_all"} onClick={() => setFilterActType(t)} style={{ padding:"0.25rem 0.65rem", borderRadius:999, cursor:"pointer", fontFamily:"'Inter',sans-serif", fontSize:"0.75rem", fontWeight:filterActType===t?700:400, background:filterActType===t?(t?ACT_CFG[t].color+"18":"var(--gold-muted)"):"var(--surface)", border:`1px solid ${filterActType===t?(t?ACT_CFG[t].color+"40":"rgba(201,168,76,0.4)"):"var(--border)"}`, color:filterActType===t?(t?ACT_CFG[t].color:"var(--gold)"):"var(--text-muted)" }}>
-                  {t ? `${ACT_CFG[t].icon} ${ACT_CFG[t].label}` : "Tous"}
+          <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1rem", flexWrap:"wrap", alignItems:"center" }}>
+            <select value={filterActMember} onChange={e=>setFilterActMember(e.target.value)} style={{ maxWidth:200 }}>
+              <option value="">Tous les membres</option>
+              {uniqueActMembers.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <div style={{ display:"flex", gap:"0.3rem", flexWrap:"wrap" }}>
+              <button className="btn btn-ghost btn-sm" onClick={()=>setFilterActType("")} style={{ fontWeight:filterActType===""?700:400 }}>Tous</button>
+              {(Object.keys(ACTIVITY_CONFIG) as (keyof typeof ACTIVITY_CONFIG)[]).map(t => (
+                <button key={t} className="btn btn-ghost btn-sm" onClick={()=>setFilterActType(t)} style={{
+                  fontWeight:filterActType===t?700:400,
+                  color:filterActType===t?ACTIVITY_CONFIG[t].color:"var(--text-muted)",
+                }}>
+                  {ACTIVITY_CONFIG[t].icon} {ACTIVITY_CONFIG[t].label}
                 </button>
               ))}
             </div>
@@ -395,7 +402,7 @@ async function deleteRole(id: string) {
           ) : (
             <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
               {filteredActivity.map((item, i) => {
-                const cfg = ACT_CFG[item.type];
+                const cfg = ACTIVITY_CONFIG[item.type];
                 return (
                   <div key={i} style={{ display:"flex", gap:"0.875rem", position:"relative", padding:"0.625rem 0", borderBottom:"1px solid var(--border)" }}>
                     <div style={{ width:30, height:30, borderRadius:"50%", flexShrink:0, background:cfg.color+"18", border:`2px solid ${cfg.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"0.78rem" }}>
@@ -413,6 +420,63 @@ async function deleteRole(id: string) {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      ) : (
+        // ── Onglet Site (Personnalisation centralisée) ──
+        <div>
+          {siteLoading ? (
+            <div style={{ color:"var(--text-dim)" }}>Chargement…</div>
+          ) : (
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:"1.5rem", alignItems:"start" }}>
+              <div style={{ display:"flex", flexDirection:"column", gap:"1.25rem" }}>
+                <div className="card">
+                  <div className="section-title" style={{ marginBottom:"1rem" }}>🎨 Couleur du site</div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:"0.5rem", marginBottom:"1rem" }}>
+                    {COULEURS_PRESET.map(c => (
+                      <button key={c} onClick={()=>applySiteGold(c)} title={c} style={{
+                        width:32,height:32,borderRadius:"50%",background:c,cursor:"pointer",
+                        border:`3px solid ${siteGold.toLowerCase()===c.toLowerCase()?"#fff":"transparent"}`,
+                        boxShadow:siteGold.toLowerCase()===c.toLowerCase()?`0 0 0 2px ${c}`:"none", transition:"all 0.15s",
+                      }}/>
+                    ))}
+                  </div>
+                  <div style={{ display:"flex", gap:"0.6rem", alignItems:"center" }}>
+                    <input type="color" value={siteGold} onChange={e=>applySiteGold(e.target.value)} style={{ width:40,height:36,padding:0,border:"1px solid var(--border)",borderRadius:8,cursor:"pointer",background:"none" }}/>
+                    <input value={siteGoldInput} onChange={e=>setSiteGoldInput(e.target.value)} onBlur={()=>isValidHex(siteGoldInput)&&applySiteGold(siteGoldInput)} placeholder="#a78bfa" style={{ flex:1, fontFamily:"monospace" }}/>
+                    {siteSaving && <span style={{ fontSize:"0.72rem", color:"var(--text-dim)" }}>…</span>}
+                  </div>
+                </div>
+
+                <div className="card">
+                  <div className="section-title" style={{ marginBottom:"1rem" }}>Identité</div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:"0.875rem" }}>
+                    {SITE_SETTINGS_KEYS.map(({key,label,placeholder}) => (
+                      <div key={key} style={{ display:"flex", flexDirection:"column", gap:"0.35rem" }}>
+                        <label style={{ fontSize:"0.7rem", fontWeight:600, color:"var(--text-dim)", textTransform:"uppercase", letterSpacing:"0.06em" }}>{label}</label>
+                        <div style={{ display:"flex", gap:"0.5rem" }}>
+                          <input value={siteSettings[key]||""} onChange={e=>setSiteSettings(s=>({...s,[key]:e.target.value}))} placeholder={placeholder} style={{ flex:1 }}/>
+                          <button className="btn btn-gold btn-sm" onClick={()=>saveSiteKey(key, siteSettings[key]||"")} disabled={siteSaving}>{siteSaving?"…":"✓"}</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <p style={{ fontSize:"0.75rem", color:"var(--text-dim)" }}>
+                  Réglages détaillés (police, sous-titre complet…) → <a href="/settings" style={{ color:"var(--gold)" }}>page Personnalisation</a>.
+                </p>
+              </div>
+
+              <div className="card" style={{ border:`2px solid ${sitePalette.goldMuted}` }}>
+                <div style={{ fontSize:"0.68rem", textTransform:"uppercase", letterSpacing:"0.1em", color:"var(--text-dim)", marginBottom:"0.875rem" }}>Aperçu</div>
+                <div style={{ fontFamily:"'Cinzel',serif", fontSize:"1.05rem", fontWeight:900, color:sitePalette.gold, letterSpacing:"0.08em", marginBottom:"0.2rem" }}>
+                  {siteSettings["app_nom"] || "Obsidian Logistique"}
+                </div>
+                <div style={{ fontSize:"0.7rem", color:"var(--text-dim)", marginBottom:"0.875rem" }}>{siteSettings["app_sous_nom"] || "Consortium · Opérations · Logistique"}</div>
+                <span style={{ fontSize:"0.75rem", fontWeight:700, color:"#0b0b12", background:sitePalette.gold, padding:"0.3rem 0.75rem", borderRadius:"var(--radius)", display:"inline-block" }}>Bouton</span>
+              </div>
             </div>
           )}
         </div>

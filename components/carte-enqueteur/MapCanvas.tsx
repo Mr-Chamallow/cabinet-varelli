@@ -1059,7 +1059,7 @@ function DossierModal({
     }
   };
 
-  const handlePaste = (e: ReactClipboardEvent<HTMLDivElement>) => {
+  const handlePaste = (e: ReactClipboardEvent<HTMLFieldSetElement>) => {
     if (readOnly) return;
     const files = Array.from(e.clipboardData.items)
       .filter((item) => item.type.startsWith('image/'))
