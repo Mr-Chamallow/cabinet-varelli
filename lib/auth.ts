@@ -1,5 +1,10 @@
-"use client";
-
+// Pas de "use client" ici : ce module est utilisé aussi bien par des Client Components
+// (Sidebar, pages) que par du code serveur (lib/serverAuth.ts, dans les routes API).
+// Marquer ce fichier "use client" transforme ses exports en "Client References" côté
+// serveur : appeler hasPermission() depuis une route API plante avec
+// "Attempted to call hasPermission() from the server but hasPermission is on the client."
+// Ce module ne contient que des fonctions pures / constantes — aucune API navigateur,
+// aucun hook React — donc il n'a jamais eu besoin de cette directive.
 import { supabase } from "@/lib/supabase";
 
 export interface AppUser {
