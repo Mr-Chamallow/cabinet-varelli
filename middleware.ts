@@ -1,8 +1,22 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import { hasPermission } from "@/lib/auth";
 
 const ADMIN_ONLY_PATHS = ["/admin", "/settings", "/supervision"];
+
+// ⚠️ Le middleware tourne dans l'Edge Runtime de Vercel : il ne doit JAMAIS importer
+// lib/auth.ts (qui importe lib/supabase.ts → @supabase/supabase-js). Ce module n'est
+// pas compatible Edge Runtime et provoque un crash immédiat (500
+// MIDDLEWARE_INVOCATION_FAILED) sur TOUT le site, même si `next build` passe en local
+// (le build ne détecte pas ce type d'incompatibilité runtime).
+// On duplique donc volontairement ici, en pur JS sans dépendance, la liste des rôles
+// qui donnent l'accès admin par défaut (doit rester alignée avec DEFAULT_PERMISSIONS
+// dans lib/auth.ts). Un rôle personnalisé avec la permission "admin" dans la table
+// Supabase `roles` passe lui via token.permissions, sans avoir besoin d'être ici.
+const ADMIN_DEFAULT_ROLES = [
+  "Associé / Patron",
+  "CEO - Directeur général",
+  "COO - Directrice opérationnel",
+];
 
 export default withAuth(
   function middleware(req) {
@@ -10,12 +24,10 @@ export default withAuth(
     const pathname = req.nextUrl.pathname;
 
     if (ADMIN_ONLY_PATHS.some(p => pathname.startsWith(p))) {
-      // Même logique que côté client (lib/auth.ts) : union permissions Supabase + rôle par
-      // défaut. Avant, ce check était dupliqué ici avec une liste de rôles codée en dur
-      // ("CEO..." / "Associé / Patron" uniquement) qui pouvait désynchroniser le middleware
-      // du reste de l'appli et bloquer un admin légitime silencieusement.
-      const user = { id: token?.discord_id, nom: token?.discord_name, role: token?.site_role, permissions: token?.permissions } as any;
-      if (!hasPermission(user, "admin")) {
+      const perms: string[] = token?.permissions || [];
+      const role = token?.site_role as string | undefined;
+      const isAdmin = perms.includes("admin") || (!!role && ADMIN_DEFAULT_ROLES.includes(role));
+      if (!isAdmin) {
         return NextResponse.redirect(new URL("/", req.url));
       }
     }
