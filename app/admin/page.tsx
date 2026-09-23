@@ -37,6 +37,24 @@ const SITE_SETTINGS_KEYS = [
   { key: "logo_url", label: "URL du logo", placeholder: "https://..." },
 ];
 
+// Fetch défensif : ne jamais planter sur une réponse non-JSON (page d'erreur HTML, 500, etc.)
+// — avant, res.json() plantait silencieusement dans ce cas et le bouton restait bloqué sur
+// "..." indéfiniment, sans jamais montrer l'erreur réelle.
+async function apiRequest(url: string, options: RequestInit): Promise<{ ok: boolean; status: number; data: any; error?: string }> {
+  try {
+    const res = await fetch(url, options);
+    const text = await res.text();
+    let data: any = null;
+    try { data = text ? JSON.parse(text) : null; } catch { /* réponse non-JSON */ }
+    if (!res.ok) {
+      return { ok: false, status: res.status, data, error: data?.error || text?.slice(0, 300) || `Erreur HTTP ${res.status}` };
+    }
+    return { ok: true, status: res.status, data };
+  } catch (e: any) {
+    return { ok: false, status: 0, data: null, error: `Réseau/connexion : ${e?.message || e}` };
+  }
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const { user, loading: userLoading } = useCurrentUser();
@@ -74,10 +92,10 @@ export default function AdminPage() {
   const [siteLoading, setSiteLoading] = useState(false);
   const [siteSaving, setSiteSaving] = useState(false);
 
-  // ✅ FIX SÉCURITÉ : vérifie la permission "admin" via l'objet user complet (rôle + overrides Supabase)
+  // Plus de redirection automatique ici : le middleware protège déjà la route côté serveur.
+  // Rediriger EN PLUS depuis le client pouvait créer un aller-retour visible ("ça charge en
+  // boucle") si le rôle détecté différait entre le token serveur et l'état client.
   useEffect(() => {
-    if (!userLoading && !user) { router.push("/"); return; }
-    if (!userLoading && user && !canAccess(user, "admin")) { router.push("/"); return; }
     if (user && !userLoading && canAccess(user, "admin")) fetchAll();
   }, [user, userLoading]);
 
@@ -163,49 +181,48 @@ export default function AdminPage() {
   async function createOverride() {
     if(!overrideForm.discord_id.trim()||!overrideForm.role) return;
     setCreatingOverride(true); setCreateError("");
-    const res = await fetch("/api/admin/overrides", {
+    const r = await apiRequest("/api/admin/overrides", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ discord_id: overrideForm.discord_id.trim(), nom: overrideForm.nom.trim(), role: overrideForm.role, updated_by: user?.nom, updated_at: new Date().toISOString() }),
     });
-    const data = await res.json();
-    if (!res.ok) { setCreateError(data.error); } else { setShowCreateOverride(false); setOverrideForm({ nom:"", discord_id:"", role:"" }); await fetchAll(); }
+    if (!r.ok) { setCreateError(r.error || "Erreur inconnue"); }
+    else { setShowCreateOverride(false); setOverrideForm({ nom:"", discord_id:"", role:"" }); await fetchAll(); }
     setCreatingOverride(false);
   }
 
   async function deleteOverride(discordId: string) {
-    await fetch("/api/admin/overrides", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
+    const r = await apiRequest("/api/admin/overrides", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
+    if (!r.ok) setFetchError(`Impossible de retirer l'override : ${r.error}`);
     setDeleteOverrideId(null); await fetchAll();
   }
 
   async function createRole() {
     if(!roleForm.nom.trim()) return;
-    setCreatingRole(true);
-    const res = await fetch("/api/admin/roles", {
+    setCreatingRole(true); setFetchError("");
+    const r = await apiRequest("/api/admin/roles", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nom:roleForm.nom.trim(), permissions:roleForm.permissions, couleur:roleForm.couleur }),
     });
-    const data = await res.json();
-    if (!res.ok) { setFetchError(`Impossible de créer le rôle : ${data.error}`); }
+    if (!r.ok) { setFetchError(`Impossible de créer le rôle : ${r.error}`); }
     else { await fetchAll(); setShowCreateRole(false); setRoleForm({ nom:"", permissions:[], couleur:"#6366f1" }); }
     setCreatingRole(false);
   }
 
   async function saveRole(id: string) {
-    setSavingRole(true);
-    const res = await fetch("/api/admin/roles", {
+    setSavingRole(true); setFetchError("");
+    const r = await apiRequest("/api/admin/roles", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, permissions:editRolePerms, couleur:editRoleCouleur }),
     });
-    const data = await res.json();
-    if (!res.ok) setFetchError(`Impossible de sauvegarder le rôle : ${data.error}`);
+    if (!r.ok) setFetchError(`Impossible de sauvegarder le rôle : ${r.error}`);
     else setEditRoleId(null);
     await fetchAll(); setSavingRole(false);
   }
 
   async function deleteRole(id: string) {
-    const res = await fetch("/api/admin/roles", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-    const data = await res.json();
-    if (!res.ok) setFetchError(`Impossible de supprimer le rôle : ${data.error}`);
+    setFetchError("");
+    const r = await apiRequest("/api/admin/roles", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    if (!r.ok) setFetchError(`Impossible de supprimer le rôle : ${r.error}`);
     setDeleteRoleId(null); await fetchAll();
   }
 
@@ -221,7 +238,44 @@ export default function AdminPage() {
   const sitePalette = deriveGoldPalette(siteGold);
 
   // ✅ FIX SÉCURITÉ : bloque le rendu si pas admin (empêche le flash de contenu avant redirect)
-  if (userLoading || !user || !canAccess(user, "admin")) return null;
+  // ✅ FIX SÉCURITÉ : bloque le rendu si pas admin — mais montre POURQUOI au lieu d'un écran
+  // vide indéfini, pour pouvoir diagnostiquer sans deviner (rôle détecté, permissions, etc.)
+  if (userLoading) {
+    return <div className="page-container" style={{ color: "var(--text-dim)" }}>Chargement de la session…</div>;
+  }
+  if (!user) {
+    return (
+      <div className="page-container">
+        <div className="empty-state">
+          <div className="empty-icon">🔒</div>
+          <div className="empty-title">Session non détectée</div>
+          <p style={{ fontSize: "0.82rem", color: "var(--text-dim)", marginTop: "0.5rem" }}>
+            Essaie de te <a href="/login" style={{ color: "var(--gold)" }}>reconnecter</a>. Si ça persiste après reconnexion,
+            le problème vient de la config NextAuth côté serveur (NEXTAUTH_URL / NEXTAUTH_SECRET sur Vercel).
+          </p>
+        </div>
+      </div>
+    );
+  }
+  if (!canAccess(user, "admin")) {
+    return (
+      <div className="page-container">
+        <div className="empty-state">
+          <div className="empty-icon">🚫</div>
+          <div className="empty-title">Accès refusé</div>
+          <p style={{ fontSize: "0.82rem", color: "var(--text-dim)", marginTop: "0.5rem" }}>
+            Rôle détecté : <strong style={{ color: "var(--text)" }}>{user.role || "(aucun)"}</strong>
+            {" — "}permissions Supabase : <code style={{ fontSize: "0.75rem" }}>{JSON.stringify(user.permissions || [])}</code>
+          </p>
+          <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginTop: "0.5rem" }}>
+            Si ce rôle devrait avoir accès, ajoute la permission "admin" à ce rôle dans l'onglet Rôles,
+            ou force le rôle "Associé / Patron" pour ce membre via un override.
+          </p>
+          <a href="/" className="btn btn-outline btn-sm" style={{ marginTop: "1rem", display: "inline-block" }}>← Retour au tableau de bord</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
