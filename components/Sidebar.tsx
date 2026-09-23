@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { useEffect, useState } from "react";
 import { hasPermission } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { supabase } from "@/lib/supabase";
+import { getCachedIdentity, cacheIdentity, DEFAULT_LOGO_URL, DEFAULT_APP_NOM, Identity } from "@/lib/theme";
 
 const NAV_SECTIONS = [
   { label: "Obsidian Logistique", items: [
@@ -34,6 +37,24 @@ const NAV_SECTIONS = [
 export function Sidebar() {
   const pathname = usePathname();
   const { user, loading } = useCurrentUser();
+  const [identity, setIdentity] = useState<Identity>({ logoUrl: DEFAULT_LOGO_URL, appNom: DEFAULT_APP_NOM });
+
+  useEffect(() => {
+    setIdentity(getCachedIdentity()); // évite le flash le temps que Supabase réponde
+    (async () => {
+      if (!supabase) return;
+      const { data } = await supabase.from("app_settings").select("cle,valeur").in("cle", ["logo_url", "app_nom"]);
+      if (!data) return;
+      const m: Record<string, string> = {};
+      data.forEach((r: any) => { m[r.cle] = r.valeur; });
+      const next: Identity = {
+        logoUrl: m["logo_url"] || DEFAULT_LOGO_URL,
+        appNom: m["app_nom"] || DEFAULT_APP_NOM,
+      };
+      setIdentity(next);
+      cacheIdentity(next);
+    })();
+  }, []);
 
   if (pathname === "/login") return null;
   if (loading || !user) return null;
@@ -41,7 +62,15 @@ export function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <div className="sidebar-logo-title">🖤 OBSIDIAN LOGISTIQUE</div>
+        <div className="sidebar-logo-title" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <img
+            src={identity.logoUrl}
+            alt=""
+            style={{ width: 26, height: 26, objectFit: "contain", borderRadius: 5, flexShrink: 0 }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+          <span>{identity.appNom}</span>
+        </div>
         <div className="sidebar-logo-sub">Consortium · Opérations</div>
       </div>
 

@@ -28,7 +28,12 @@ export default function SettingsPage() {
 
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from("app_settings").select("cle,valeur");
+    const { data, error } = await supabase.from("app_settings").select("cle,valeur");
+    if (error) {
+      showToast(`⚠️ Table app_settings introuvable (${error.message}) — voir le script SQL fourni.`);
+      setLoading(false);
+      return;
+    }
     const m: Record<string, string> = {};
     (data || []).forEach((r: any) => { m[r.cle] = r.valeur; });
     setSettings(m);
@@ -40,15 +45,19 @@ export default function SettingsPage() {
 
   function showToast(m: string) {
     setToast(m);
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 4000);
   }
 
   async function save(key: string, val: string) {
     if (!supabase) return;
     setSaving(true);
-    await supabase.from("app_settings").upsert({ cle: key, valeur: val }, { onConflict: "cle" });
-    setSettings((s) => ({ ...s, [key]: val }));
-    showToast("Sauvegardé");
+    const { error } = await supabase.from("app_settings").upsert({ cle: key, valeur: val }, { onConflict: "cle" });
+    if (error) {
+      showToast(`❌ Échec de l'enregistrement : ${error.message}`);
+    } else {
+      setSettings((s) => ({ ...s, [key]: val }));
+      showToast("✅ Sauvegardé");
+    }
     setSaving(false);
   }
 
@@ -191,7 +200,11 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {toast && <div className="toast-container"><div className="toast toast-success">✅ {toast}</div></div>}
+      {toast && (
+        <div className="toast-container">
+          <div className={`toast ${toast.startsWith("❌") || toast.startsWith("⚠️") ? "toast-error" : "toast-success"}`}>{toast}</div>
+        </div>
+      )}
     </div>
   );
 }

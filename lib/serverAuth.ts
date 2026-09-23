@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { createClient } from "@supabase/supabase-js";
+import { authOptions } from "@/lib/authOptions";
 import { hasPermission } from "@/lib/auth";
 
 const supabaseAdmin = createClient(
@@ -8,7 +9,9 @@ const supabaseAdmin = createClient(
 );
 
 export async function requirePermission(permission: string) {
-  const session = await getServerSession();
+  // ⚠️ authOptions DOIT être passé ici, sinon getServerSession() ne peut pas
+  // décoder le cookie de session dans un Route Handler App Router → toujours null.
+  const session = await getServerSession(authOptions);
   const user = session?.user as any;
   if (!user) return { authorized: false, user: null, supabaseAdmin };
 

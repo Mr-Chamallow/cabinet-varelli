@@ -129,7 +129,12 @@ export default function AdminPage() {
   async function loadSite() {
     if (!supabase) return;
     setSiteLoading(true);
-    const { data } = await supabase.from("app_settings").select("cle,valeur");
+    const { data, error } = await supabase.from("app_settings").select("cle,valeur");
+    if (error) {
+      setFetchError(`Table app_settings introuvable ou inaccessible : ${error.message}`);
+      setSiteLoading(false);
+      return;
+    }
     const m: Record<string,string> = {};
     (data || []).forEach((r: any) => { m[r.cle] = r.valeur; });
     setSiteSettings(m);
@@ -142,8 +147,9 @@ export default function AdminPage() {
   async function saveSiteKey(key: string, val: string) {
     if (!supabase) return;
     setSiteSaving(true);
-    await supabase.from("app_settings").upsert({ cle: key, valeur: val }, { onConflict: "cle" });
-    setSiteSettings(s => ({ ...s, [key]: val }));
+    const { error } = await supabase.from("app_settings").upsert({ cle: key, valeur: val }, { onConflict: "cle" });
+    if (error) setFetchError(`Échec de l'enregistrement : ${error.message}`);
+    else setSiteSettings(s => ({ ...s, [key]: val }));
     setSiteSaving(false);
   }
 

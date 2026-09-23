@@ -3,7 +3,10 @@
 // Utilisé par /settings (Personnalisation), /admin (onglet Site) et ThemeProvider (application au chargement).
 
 export const DEFAULT_GOLD = "#a78bfa";
+export const DEFAULT_LOGO_URL = "https://i.imgur.com/Shh0rIn.png";
+export const DEFAULT_APP_NOM = "Obsidian Logistique";
 export const THEME_STORAGE_KEY = "obsidian_theme_gold";
+export const IDENTITY_STORAGE_KEY = "obsidian_identity";
 
 export interface GoldPalette {
   gold: string;
@@ -74,6 +77,31 @@ export function applyCachedThemeIfAny() {
   try {
     const cached = localStorage.getItem(THEME_STORAGE_KEY);
     if (cached && isValidHex(cached)) applyThemeToDocument(cached);
+  } catch {
+    // ignore
+  }
+}
+
+export interface Identity {
+  logoUrl: string;
+  appNom: string;
+}
+
+export function getCachedIdentity(): Identity {
+  if (typeof window === "undefined") return { logoUrl: DEFAULT_LOGO_URL, appNom: DEFAULT_APP_NOM };
+  try {
+    const raw = localStorage.getItem(IDENTITY_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // ignore
+  }
+  return { logoUrl: DEFAULT_LOGO_URL, appNom: DEFAULT_APP_NOM };
+}
+
+export function cacheIdentity(identity: Identity) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(IDENTITY_STORAGE_KEY, JSON.stringify(identity));
   } catch {
     // ignore
   }

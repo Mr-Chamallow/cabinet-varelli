@@ -1,0 +1,866 @@
+diff --git a/app/admin/page.tsx b/app/admin/page.tsx
+index faa2ce8..bc3e637 100644
+--- a/app/admin/page.tsx
++++ b/app/admin/page.tsx
+@@ -129,7 +129,12 @@ export default function AdminPage() {
+   async function loadSite() {
+     if (!supabase) return;
+     setSiteLoading(true);
+-    const { data } = await supabase.from("app_settings").select("cle,valeur");
++    const { data, error } = await supabase.from("app_settings").select("cle,valeur");
++    if (error) {
++      setFetchError(`Table app_settings introuvable ou inaccessible : ${error.message}`);
++      setSiteLoading(false);
++      return;
++    }
+     const m: Record<string,string> = {};
+     (data || []).forEach((r: any) => { m[r.cle] = r.valeur; });
+     setSiteSettings(m);
+@@ -142,8 +147,9 @@ export default function AdminPage() {
+   async function saveSiteKey(key: string, val: string) {
+     if (!supabase) return;
+     setSiteSaving(true);
+-    await supabase.from("app_settings").upsert({ cle: key, valeur: val }, { onConflict: "cle" });
+-    setSiteSettings(s => ({ ...s, [key]: val }));
++    const { error } = await supabase.from("app_settings").upsert({ cle: key, valeur: val }, { onConflict: "cle" });
++    if (error) setFetchError(`Échec de l'enregistrement : ${error.message}`);
++    else setSiteSettings(s => ({ ...s, [key]: val }));
+     setSiteSaving(false);
+   }
+ 
+diff --git a/app/api/auth/[...nextauth]/route.ts b/app/api/auth/[...nextauth]/route.ts
+index e9029d7..9b3a8f7 100644
+--- a/app/api/auth/[...nextauth]/route.ts
++++ b/app/api/auth/[...nextauth]/route.ts
+@@ -1,84 +1,6 @@
+ import NextAuth from "next-auth";
+-import DiscordProvider from "next-auth/providers/discord";
+-import { DISCORD_SERVER_ID, getHighestRole } from "@/lib/discord-config";
+-import { supabase } from "@/lib/supabase";
++import { authOptions } from "@/lib/authOptions";
+ 
+-const ADMIN_DISCORD_ID = process.env.ADMIN_DISCORD_ID || "";
+-
+-async function fetchGuildRoles(accessToken: string): Promise<string[]> {
+-  const res = await fetch(
+-    `https://discord.com/api/users/@me/guilds/${DISCORD_SERVER_ID}/member`,
+-    { headers: { Authorization: `Bearer ${accessToken}` } }
+-  );
+-  if (!res.ok) return [];
+-  const data = await res.json();
+-  return data.roles || [];
+-}
+-
+-async function getRoleOverride(discordId: string): Promise<string | null> {
+-  if (!supabase) return null;
+-  const { data } = await supabase
+-    .from("role_overrides")
+-    .select("role")
+-    .eq("discord_id", discordId)
+-    .maybeSingle();
+-  return data?.role || null;
+-}
+-
+-async function getRolePermissions(roleName: string): Promise<string[] | null> {
+-  if (!supabase) return null;
+-  const { data } = await supabase
+-    .from("roles")
+-    .select("permissions")
+-    .eq("nom", roleName)
+-    .maybeSingle();
+-  return data?.permissions ?? null;
+-}
+-
+-const handler = NextAuth({
+-  providers: [
+-    DiscordProvider({
+-      clientId: process.env.DISCORD_CLIENT_ID!,
+-      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+-      authorization: { params: { scope: "identify guilds guilds.members.read" } },
+-    }),
+-  ],
+-  callbacks: {
+-    async jwt({ token, account, profile }) {
+-      if (account?.access_token) {
+-        const roles = await fetchGuildRoles(account.access_token);
+-        token.discord_id = account.providerAccountId;
+-        token.discord_name = (profile as any)?.username || "Membre";
+-        token.site_role =
+-          account.providerAccountId === ADMIN_DISCORD_ID
+-            ? "Associé / Patron"
+-            : getHighestRole(roles);
+-      }
+-      // Un override manuel (via /admin) prime toujours sur le rôle Discord calculé
+-      if (token.discord_id) {
+-        const override = await getRoleOverride(token.discord_id as string);
+-        if (override) token.site_role = override;
+-      }
+-      // Les permissions du rôle viennent de la table `roles` (configurable dans /admin).
+-      // Si le rôle n'a pas d'entrée dans la table, on retombe sur les valeurs par défaut du code.
+-      if (token.site_role) {
+-        const perms = await getRolePermissions(token.site_role as string);
+-        token.permissions = perms;
+-      }
+-      return token;
+-    },
+-    async session({ session, token }) {
+-      if (session.user) {
+-        (session.user as any).site_role = token.site_role;
+-        (session.user as any).discord_name = token.discord_name;
+-        (session.user as any).discord_id = token.discord_id;
+-        (session.user as any).permissions = token.permissions || null;
+-      }
+-      return session;
+-    },
+-  },
+-  pages: { signIn: "/login", error: "/login" },
+-  secret: process.env.NEXTAUTH_SECRET,
+-});
++const handler = NextAuth(authOptions);
+ 
+ export { handler as GET, handler as POST };
+diff --git a/app/settings/page.tsx b/app/settings/page.tsx
+index 414ff96..3c5f332 100644
+--- a/app/settings/page.tsx
++++ b/app/settings/page.tsx
+@@ -28,7 +28,12 @@ export default function SettingsPage() {
+ 
+   async function load() {
+     if (!supabase) { setLoading(false); return; }
+-    const { data } = await supabase.from("app_settings").select("cle,valeur");
++    const { data, error } = await supabase.from("app_settings").select("cle,valeur");
++    if (error) {
++      showToast(`⚠️ Table app_settings introuvable (${error.message}) — voir le script SQL fourni.`);
++      setLoading(false);
++      return;
++    }
+     const m: Record<string, string> = {};
+     (data || []).forEach((r: any) => { m[r.cle] = r.valeur; });
+     setSettings(m);
+@@ -40,15 +45,19 @@ export default function SettingsPage() {
+ 
+   function showToast(m: string) {
+     setToast(m);
+-    setTimeout(() => setToast(null), 3000);
++    setTimeout(() => setToast(null), 4000);
+   }
+ 
+   async function save(key: string, val: string) {
+     if (!supabase) return;
+     setSaving(true);
+-    await supabase.from("app_settings").upsert({ cle: key, valeur: val }, { onConflict: "cle" });
+-    setSettings((s) => ({ ...s, [key]: val }));
+-    showToast("Sauvegardé");
++    const { error } = await supabase.from("app_settings").upsert({ cle: key, valeur: val }, { onConflict: "cle" });
++    if (error) {
++      showToast(`❌ Échec de l'enregistrement : ${error.message}`);
++    } else {
++      setSettings((s) => ({ ...s, [key]: val }));
++      showToast("✅ Sauvegardé");
++    }
+     setSaving(false);
+   }
+ 
+@@ -191,7 +200,11 @@ export default function SettingsPage() {
+         </div>
+       )}
+ 
+-      {toast && <div className="toast-container"><div className="toast toast-success">✅ {toast}</div></div>}
++      {toast && (
++        <div className="toast-container">
++          <div className={`toast ${toast.startsWith("❌") || toast.startsWith("⚠️") ? "toast-error" : "toast-success"}`}>{toast}</div>
++        </div>
++      )}
+     </div>
+   );
+ }
+diff --git a/components/Sidebar.tsx b/components/Sidebar.tsx
+index bf55797..ba8aa4b 100644
+--- a/components/Sidebar.tsx
++++ b/components/Sidebar.tsx
+@@ -3,8 +3,11 @@
+ import Link from "next/link";
+ import { usePathname } from "next/navigation";
+ import { signOut } from "next-auth/react";
++import { useEffect, useState } from "react";
+ import { hasPermission } from "@/lib/auth";
+ import { useCurrentUser } from "@/lib/useCurrentUser";
++import { supabase } from "@/lib/supabase";
++import { getCachedIdentity, cacheIdentity, DEFAULT_LOGO_URL, DEFAULT_APP_NOM, Identity } from "@/lib/theme";
+ 
+ const NAV_SECTIONS = [
+   { label: "Obsidian Logistique", items: [
+@@ -34,6 +37,24 @@ const NAV_SECTIONS = [
+ export function Sidebar() {
+   const pathname = usePathname();
+   const { user, loading } = useCurrentUser();
++  const [identity, setIdentity] = useState<Identity>({ logoUrl: DEFAULT_LOGO_URL, appNom: DEFAULT_APP_NOM });
++
++  useEffect(() => {
++    setIdentity(getCachedIdentity()); // évite le flash le temps que Supabase réponde
++    (async () => {
++      if (!supabase) return;
++      const { data } = await supabase.from("app_settings").select("cle,valeur").in("cle", ["logo_url", "app_nom"]);
++      if (!data) return;
++      const m: Record<string, string> = {};
++      data.forEach((r: any) => { m[r.cle] = r.valeur; });
++      const next: Identity = {
++        logoUrl: m["logo_url"] || DEFAULT_LOGO_URL,
++        appNom: m["app_nom"] || DEFAULT_APP_NOM,
++      };
++      setIdentity(next);
++      cacheIdentity(next);
++    })();
++  }, []);
+ 
+   if (pathname === "/login") return null;
+   if (loading || !user) return null;
+@@ -41,7 +62,15 @@ export function Sidebar() {
+   return (
+     <aside className="sidebar">
+       <div className="sidebar-logo">
+-        <div className="sidebar-logo-title">🖤 OBSIDIAN LOGISTIQUE</div>
++        <div className="sidebar-logo-title" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
++          <img
++            src={identity.logoUrl}
++            alt=""
++            style={{ width: 26, height: 26, objectFit: "contain", borderRadius: 5, flexShrink: 0 }}
++            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
++          />
++          <span>{identity.appNom}</span>
++        </div>
+         <div className="sidebar-logo-sub">Consortium · Opérations</div>
+       </div>
+ 
+diff --git a/components/carte-enqueteur/MapCanvas.tsx b/components/carte-enqueteur/MapCanvas.tsx
+index 8c638e7..dc47449 100644
+--- a/components/carte-enqueteur/MapCanvas.tsx
++++ b/components/carte-enqueteur/MapCanvas.tsx
+@@ -468,6 +468,7 @@ export default function MapCanvas({
+   const [search, setSearch] = useState('');
+   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
+   const [selectedId, setSelectedId] = useState<string | null>(null);
++  const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
+   const [editing, setEditing] = useState<{ point: CartePoint; dossier: Dossier } | null>(null);
+   const [loadError, setLoadError] = useState<string | null>(null);
+   const [mapStyle, setMapStyle] = useState<'satellite' | 'grid' | 'atlas'>('satellite');
+@@ -826,68 +827,109 @@ export default function MapCanvas({
+           <span style={S.sidebarTitle}>🔥 Points chauds</span>
+           <span style={S.sidebarCount}>{visiblePoints.length}</span>
+         </div>
+-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
+-          {visiblePoints.map((p) => {
+-            const catColor = categoryColor(categories, p.category);
+-            const isActive = p.id === selectedId;
+-            return (
+-              <li key={p.id}>
+-                <button
+-                  onClick={() => {
+-                    setSelectedId(p.id);
+-                    flyToPoint(p);
+-                    setEditing({
+-                      point: p,
+-                      dossier: dossiers[p.id] ?? { id: '', point_id: p.id, description: '', tags: [], pieces: [] },
+-                    });
+-                  }}
+-                  style={{
+-                    ...S.dossierItem,
+-                    ...(isActive ? S.dossierItemActive : {}),
+-                    borderLeft: `3px solid ${catColor}`,
+-                  }}
+-                >
+-                  <span
+-                    style={{
+-                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0, marginTop: 5,
+-                      background: catColor, boxShadow: `0 0 6px ${catColor}80`,
+-                    }}
+-                  />
+-                  <span style={{ minWidth: 0, flex: 1 }}>
+-                    <div style={{ color: colors.text, fontWeight: 600, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+-                      {p.title}
+-                    </div>
+-                    <div
+-                      style={{
+-                        display: 'inline-flex', alignItems: 'center', gap: 4,
+-                        fontFamily: 'monospace', fontSize: 10.5, color: colors.textDimmer,
+-                        background: 'rgba(255,255,255,0.03)', border: `1px solid ${colors.border}`,
+-                        borderRadius: 999, padding: '1px 7px', marginBottom: 5,
+-                      }}
+-                    >
+-                      X {p.x.toFixed(0)} · Y {p.y.toFixed(0)}
+-                    </div>
+-                    <div
++
++        {(() => {
++          // Groupe les points par catégorie (ordre = celui défini dans "⚙ Catégories")
++          const orderedCats = [...categories].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
++          const bySlug: Record<string, CartePoint[]> = {};
++          for (const p of visiblePoints) (bySlug[p.category] ??= []).push(p);
++          const groups = orderedCats
++            .map((c) => ({ cat: c, pts: bySlug[c.slug] || [] }))
++            .filter((g) => g.pts.length > 0);
++          // Points dont la catégorie n'existe plus / n'est pas reconnue
++          const knownSlugs = new Set(orderedCats.map((c) => c.slug));
++          const orphans = visiblePoints.filter((p) => !knownSlugs.has(p.category));
++          if (orphans.length > 0) groups.push({ cat: { id: '__orphan', slug: '__orphan', label: 'Autre', color: '#8A93A6' } as Category, pts: orphans });
++
++          if (groups.length === 0) return <div style={S.emptyState}>Aucun point ne correspond.</div>;
++
++          return (
++            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
++              {groups.map(({ cat, pts }) => {
++                const isCollapsed = collapsedCats.has(cat.slug);
++                return (
++                  <div key={cat.slug}>
++                    <button
++                      onClick={() => setCollapsedCats((s) => {
++                        const next = new Set(s);
++                        next.has(cat.slug) ? next.delete(cat.slug) : next.add(cat.slug);
++                        return next;
++                      })}
+                       style={{
+-                        fontSize: 12,
+-                        color: colors.textDim,
+-                        lineHeight: 1.4,
+-                        overflow: 'hidden',
+-                        textOverflow: 'ellipsis',
+-                        display: '-webkit-box',
+-                        WebkitLineClamp: 2,
+-                        WebkitBoxOrient: 'vertical',
++                        display: 'flex', alignItems: 'center', gap: 8, width: '100%',
++                        padding: '6px 8px', marginBottom: 6, borderRadius: 8, cursor: 'pointer',
++                        background: cat.color + '10', border: `1px solid ${cat.color}30`,
++                        fontFamily: "'Inter',sans-serif",
+                       }}
+                     >
+-                      {dossiers[p.id]?.description || 'Aucune note pour le moment.'}
+-                    </div>
+-                  </span>
+-                </button>
+-              </li>
+-            );
+-          })}
+-          {visiblePoints.length === 0 && <li style={S.emptyState}>Aucun point ne correspond.</li>}
+-        </ul>
++                      <span style={{ width: 9, height: 9, borderRadius: '50%', background: cat.color, flexShrink: 0, boxShadow: `0 0 6px ${cat.color}80` }} />
++                      <span style={{ fontSize: 12.5, fontWeight: 700, color: cat.color, flex: 1, textAlign: 'left' }}>{cat.label}</span>
++                      <span style={{ fontSize: 10.5, fontFamily: 'monospace', color: colors.textDimmer, background: 'rgba(255,255,255,0.05)', borderRadius: 999, padding: '1px 7px' }}>{pts.length}</span>
++                      <span style={{ fontSize: 10, color: colors.textDimmer, transform: isCollapsed ? 'rotate(-90deg)' : 'none', transition: '0.15s' }}>▾</span>
++                    </button>
++
++                    {!isCollapsed && (
++                      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 4 }}>
++                        {pts.map((p) => {
++                          const isActive = p.id === selectedId;
++                          return (
++                            <li key={p.id}>
++                              <button
++                                onClick={() => {
++                                  setSelectedId(p.id);
++                                  flyToPoint(p);
++                                  setEditing({
++                                    point: p,
++                                    dossier: dossiers[p.id] ?? { id: '', point_id: p.id, description: '', tags: [], pieces: [] },
++                                  });
++                                }}
++                                style={{
++                                  ...S.dossierItem,
++                                  ...(isActive ? S.dossierItemActive : {}),
++                                  borderLeft: `3px solid ${cat.color}`,
++                                }}
++                              >
++                                <span style={{ minWidth: 0, flex: 1 }}>
++                                  <div style={{ color: colors.text, fontWeight: 600, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
++                                    {p.title}
++                                  </div>
++                                  <div
++                                    style={{
++                                      display: 'inline-flex', alignItems: 'center', gap: 4,
++                                      fontFamily: 'monospace', fontSize: 10.5, color: colors.textDimmer,
++                                      background: 'rgba(255,255,255,0.03)', border: `1px solid ${colors.border}`,
++                                      borderRadius: 999, padding: '1px 7px', marginBottom: 5,
++                                    }}
++                                  >
++                                    X {p.x.toFixed(0)} · Y {p.y.toFixed(0)}
++                                  </div>
++                                  <div
++                                    style={{
++                                      fontSize: 12,
++                                      color: colors.textDim,
++                                      lineHeight: 1.4,
++                                      overflow: 'hidden',
++                                      textOverflow: 'ellipsis',
++                                      display: '-webkit-box',
++                                      WebkitLineClamp: 2,
++                                      WebkitBoxOrient: 'vertical',
++                                    }}
++                                  >
++                                    {dossiers[p.id]?.description || 'Aucune note pour le moment.'}
++                                  </div>
++                                </span>
++                              </button>
++                            </li>
++                          );
++                        })}
++                      </ul>
++                    )}
++                  </div>
++                );
++              })}
++            </div>
++          );
++        })()}
+       </aside>
+ 
+       {pendingCoords && (
+diff --git a/lib/authOptions.ts b/lib/authOptions.ts
+new file mode 100644
+index 0000000..407ef4b
+--- /dev/null
++++ b/lib/authOptions.ts
+@@ -0,0 +1,81 @@
++import type { NextAuthOptions } from "next-auth";
++import DiscordProvider from "next-auth/providers/discord";
++import { DISCORD_SERVER_ID, getHighestRole } from "@/lib/discord-config";
++import { supabase } from "@/lib/supabase";
++
++const ADMIN_DISCORD_ID = process.env.ADMIN_DISCORD_ID || "";
++
++async function fetchGuildRoles(accessToken: string): Promise<string[]> {
++  const res = await fetch(
++    `https://discord.com/api/users/@me/guilds/${DISCORD_SERVER_ID}/member`,
++    { headers: { Authorization: `Bearer ${accessToken}` } }
++  );
++  if (!res.ok) return [];
++  const data = await res.json();
++  return data.roles || [];
++}
++
++async function getRoleOverride(discordId: string): Promise<string | null> {
++  if (!supabase) return null;
++  const { data } = await supabase
++    .from("role_overrides")
++    .select("role")
++    .eq("discord_id", discordId)
++    .maybeSingle();
++  return data?.role || null;
++}
++
++async function getRolePermissions(roleName: string): Promise<string[] | null> {
++  if (!supabase) return null;
++  const { data } = await supabase
++    .from("roles")
++    .select("permissions")
++    .eq("nom", roleName)
++    .maybeSingle();
++  return data?.permissions ?? null;
++}
++
++// Config NextAuth centralisée, exportée pour être réutilisable côté serveur
++// (route handler ET lib/serverAuth.ts pour les routes API protégées).
++export const authOptions: NextAuthOptions = {
++  providers: [
++    DiscordProvider({
++      clientId: process.env.DISCORD_CLIENT_ID!,
++      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
++      authorization: { params: { scope: "identify guilds guilds.members.read" } },
++    }),
++  ],
++  callbacks: {
++    async jwt({ token, account, profile }) {
++      if (account?.access_token) {
++        const roles = await fetchGuildRoles(account.access_token);
++        token.discord_id = account.providerAccountId;
++        token.discord_name = (profile as any)?.username || "Membre";
++        token.site_role =
++          account.providerAccountId === ADMIN_DISCORD_ID
++            ? "Associé / Patron"
++            : getHighestRole(roles);
++      }
++      if (token.discord_id) {
++        const override = await getRoleOverride(token.discord_id as string);
++        if (override) token.site_role = override;
++      }
++      if (token.site_role) {
++        const perms = await getRolePermissions(token.site_role as string);
++        token.permissions = perms;
++      }
++      return token;
++    },
++    async session({ session, token }) {
++      if (session.user) {
++        (session.user as any).site_role = token.site_role;
++        (session.user as any).discord_name = token.discord_name;
++        (session.user as any).discord_id = token.discord_id;
++        (session.user as any).permissions = token.permissions || null;
++      }
++      return session;
++    },
++  },
++  pages: { signIn: "/login", error: "/login" },
++  secret: process.env.NEXTAUTH_SECRET,
++};
+diff --git a/lib/code-penal.ts b/lib/code-penal.ts
+index a46c979..5aa902c 100644
+--- a/lib/code-penal.ts
++++ b/lib/code-penal.ts
+@@ -366,146 +366,146 @@ export const CODE_ROUTE = [
+   { id: "ROUTE-33", categorieId: "route_general", titre: "Responsabilite des entreprises", contenu: "Les entreprises de transport répondent à des obligations qui leur incombent." },
+   { id: "ROUTE-34", categorieId: "route_general", titre: "Force majeure", contenu: "La responsabilité peut être écartée en cas de force majeure dûment établie." },
+   { id: "ROUTE-35", categorieId: "route_general", titre: "Etat de necessité", contenu: "Les dispositions du présent Code ne font pas obstacle à l'état de nécessité reconnu par la loi." },
+-  { id: "ROUTE-36", categorieId: "route_general", titre: "Obligation de detenir un permis", contenu: "Nul ne peut conduire un véhicule motorisé sur une voie publique sans être titulaire d'un permis de conduire valide correspondant à la catégorie du véhicule utilisé." },
+-  { id: "ROUTE-37", categorieId: "route_general", titre: "Validite du permis", contenu: "Le permis de conduire doit être valide, être délivré par une autorité compétente, ne faire l'objet d'aucune suspension ou annulation." },
+-  { id: "ROUTE-38", categorieId: "route_general", titre: "Presentation du permis", contenu: "Tout conducteur doit être en mesure de presenter son permis lors d'un contrôle routier. L'absence de présentation peut entraîner une vérification d'identité ainsi que les sanctions prévues par la loi." },
+-  { id: "ROUTE-39", categorieId: "route_general", titre: "Devoir de sincerite", contenu: "Le conducteur ne peut présenter un faux permis, un permis falsifié, un permis appartenant à une autre personne." },
+-  { id: "ROUTE-40", categorieId: "route_general", titre: "Interdiction de pret", contenu: "Le prêt volontaire d'un permis de conduire constitue une infraction." },
+-  { id: "ROUTE-41", categorieId: "route_general", titre: "Classification", contenu: "Les permis sont répartis selon la catégorie des véhicules pouvant être conduits." },
+-  { id: "ROUTE-42", categorieId: "route_general", titre: "Vehicules legers", contenu: "Le permis de catégorie B autorise la conduite des véhicules légers." },
+-  { id: "ROUTE-43", categorieId: "route_general", titre: "Motocyclettes", contenu: "Le permis de categorie A autorise la conduite des motocyclettes." },
+-  { id: "ROUTE-44", categorieId: "route_general", titre: "Poids lourds", contenu: "Le permis de catégorie C autorise la conduite des poids lourds." },
+-  { id: "ROUTE-45", categorieId: "route_general", titre: "Véhicules specialisés", contenu: "Des catégories particulières peuvent être créées par voie réglementaire pour les transports publics, les véhicules d'urgence, les convois exceptionnels, les véhicules spéciaux." },
+-  { id: "ROUTE-46", categorieId: "route_general", titre: "Aptitude physique", contenu: "Tout conducteur doit être physiquement apte à conduire." },
+-  { id: "ROUTE-47", categorieId: "route_general", titre: "Aptitude mentale", contenu: "Le conducteur doit être en pleine possession de ses facultés." },
+-  { id: "ROUTE-48", categorieId: "route_general", titre: "Fatigue", contenu: "Il est interdit de conduire lorsqu'un état de fatigue compromet la sécurité." },
+-  { id: "ROUTE-49", categorieId: "route_general", titre: "Alcool", contenu: "Il est interdit de conduire sous l'influence de l'alcool au-delà du seuil legal fixé par la réglementation." },
+-  { id: "ROUTE-50", categorieId: "route_general", titre: "Stupéfiants", contenu: "Toute conduite sous l'influence de stupéfiants est interdite." },
+-  { id: "ROUTE-51", categorieId: "route_general", titre: "Medicaments", contenu: "Le conducteur ne peut conduire lorsqu'un traitement medical reduit significativement ses capacités." },
+-  { id: "ROUTE-52", categorieId: "route_general", titre: "Telephone", contenu: "Le conducteur ne peut utiliser un telephone tenu en main pendant la conduite." },
+-  { id: "ROUTE-53", categorieId: "route_general", titre: "Distraction", contenu: "Toute activite empechant le conducteur de conserver la maîtrise permanente de son véhicule est interdite." },
+-  { id: "ROUTE-54", categorieId: "route_general", titre: "Ceinture de securite", contenu: "Le conducteur doit porter sa ceinture lorsque le véhicule en est équipé." },
+-  { id: "ROUTE-55", categorieId: "route_general", titre: "Responsabilite envers les passagers", contenu: "Le conducteur est tenu d'assurer la sécurité des passagers transportés." },
+-  { id: "ROUTE-56", categorieId: "route_general", titre: "Suspension administrative", contenu: "Le permis peut être suspendu par l'autorité compétente dans les cas prévus par la loi." },
+-  { id: "ROUTE-57", categorieId: "route_general", titre: "Suspension judiciaire", contenu: "Le Juge peut prononcer une suspension du permis comme peine complementaire." },
+-  { id: "ROUTE-58", categorieId: "route_general", titre: "Duree", contenu: "La durée de suspension est fixée en fonction de la gravité des faits, des antécédents, de la récidive." },
+-  { id: "ROUTE-59", categorieId: "route_general", titre: "Effets", contenu: "Pendant la suspension, le titulaire ne peut conduire aucun véhicule nécessitant un permis." },
+-  { id: "ROUTE-60", categorieId: "route_general", titre: "Annulation", contenu: "Le permis peut être annulé lorsqu'une infraction particulièrement grave le justifie." },
+-  { id: "ROUTE-61", categorieId: "route_general", titre: "Restitution", contenu: "La restitution du permis intervient conformément à la décision de l'autorité compétente." },
+-  { id: "ROUTE-62", categorieId: "route_general", titre: "Conduite sans permis", contenu: "Le fait de conduire sans être titulaire du permis requis constitue une infraction." },
+-  { id: "ROUTE-63", categorieId: "route_general", titre: "Conduite malgre suspension", contenu: "Le fait de conduire malgré une suspension constitue un délit routier." },
+-  { id: "ROUTE-64", categorieId: "route_general", titre: "Conduite malgre annulation", contenu: "Le fait de conduire malgré une annulation du permis constitue un délit routier aggravé." },
+-  { id: "ROUTE-65", categorieId: "route_general", titre: "Faux permis", contenu: "L'usage d'un faux permis constitue un délit et peut donner lieu à des poursuites pénales." },
+-  { id: "ROUTE-66", categorieId: "route_general", titre: "Obtention frauduleuse", contenu: "Toute obtention frauduleuse d'un permis est interdite." },
+-  { id: "ROUTE-67", categorieId: "route_general", titre: "Usurpation", contenu: "L'utilisation du permis appartenant à un tiers constitue une usurpation d'identité." },
+-  { id: "ROUTE-68", categorieId: "route_general", titre: "Conducteurs commerciaux", contenu: "Les conducteurs exercant une activite professionnelle sont soumis aux obligations du present Code." },
+-  { id: "ROUTE-69", categorieId: "route_general", titre: "Transport de passagers", contenu: "Les conducteurs transportant des passagers à titre professionnel sont tenus à une obligation renforcée de prudence." },
+-  { id: "ROUTE-70", categorieId: "route_general", titre: "Transport de marchandises", contenu: "Le conducteur est responsable de l'arrimage et de la sécurité du chargement." },
+-  { id: "ROUTE-71", categorieId: "route_general", titre: "Matieres dangereuses", contenu: "Le transport de matières dangereuses est soumis à des réglementations particulières." },
+-  { id: "ROUTE-72", categorieId: "route_general", titre: "Vehicules prioritaires", contenu: "Les conducteurs des véhicules prioritaires bénéficient des dérogations prévues par la loi lorsqu'ils sont en intervention." },
+-  { id: "ROUTE-73", categorieId: "route_general", titre: "Conditions d'utilisation", contenu: "Les avertisseurs sonores et lumineux ne peuvent être utilisés qu'en cas de nécessité." },
+-  { id: "ROUTE-74", categorieId: "route_general", titre: "Limites", contenu: "Les conducteurs de véhicules prioritaires demeurent tenus d'assurer la sécurité des autres usagers." },
+-  { id: "ROUTE-75", categorieId: "route_general", titre: "Responsabilite", contenu: "L'usage abusif des privileges accordes aux véhicules prioritaires engage la responsabilité de leur conducteur." },
+-  { id: "ROUTE-76", categorieId: "route_general", titre: "Respect des contrôles", contenu: "Tout conducteur doit se soumettre aux contrôles légalement ordonnés." },
+-  { id: "ROUTE-77", categorieId: "route_general", titre: "Cooperation", contenu: "Le conducteur doit répondre aux injonctions des agents habilités." },
+-  { id: "ROUTE-78", categorieId: "route_general", titre: "Identification", contenu: "Le conducteur doit décliner son identité lorsqu'il en est légalement requis." },
+-  { id: "ROUTE-79", categorieId: "route_general", titre: "Refus d'obtempérer", contenu: "Le refus volontaire d'obéir à un ordre d'arrêt constitue un délit routier." },
+-  { id: "ROUTE-80", categorieId: "route_general", titre: "Principe general", contenu: "Tout conducteur est tenu d'exercer la conduite avec prudence, diligence et respect de l'État de San Andreas." },
+-  { id: "ROUTE-81", categorieId: "route_general", titre: "Principe general", contenu: "Tout véhicule circulant sur une voie publique doit être conforme aux dispositions du présent Code et être maintenu dans un état garantissant la sécurité de ses occupants ainsi que des autres usagers." },
+-  { id: "ROUTE-82", categorieId: "route_general", titre: "Obligation de conformité", contenu: "Le propriétaire d'un véhicule est responsable de sa conformité aux exigences légales. Le conducteur demeure responsable des infractions constatées pendant la circulation." },
+-  { id: "ROUTE-83", categorieId: "route_general", titre: "Vehicules autorises", contenu: "Seuls les véhicules répondant aux normes de sécurité fixees par la loi peuvent circuler sur les voies publiques." },
+-  { id: "ROUTE-84", categorieId: "route_general", titre: "Vehicules interdits", contenu: "Il est interdit de mettre en circulation un véhicule gravement endommagé, déclaré dangereux, interdit par décision administrative ou judiciaire." },
+-  { id: "ROUTE-85", categorieId: "route_general", titre: "Entretien", contenu: "Tout propriétaire est tenu d'assurer un entretien régulier de son véhicule. L'absence manifeste d'entretien engage sa responsabilité." },
+-  { id: "ROUTE-86", categorieId: "route_general", titre: "Obligation d'immatriculation", contenu: "Tout véhicule motorisé circulant sur la voie publique doit être immatriculé." },
+-  { id: "ROUTE-87", categorieId: "route_general", titre: "Plaques d'immatriculation", contenu: "Les plaques d'immatriculation doivent être visibles, lisibles, solidement fixées, conformes au modèle officiel." },
+-  { id: "ROUTE-88", categorieId: "route_general", titre: "Absence de plaque", contenu: "La circulation sans plaque d'immatriculation constitue une infraction." },
+-  { id: "ROUTE-89", categorieId: "route_general", titre: "Plaque illisible", contenu: "Il est interdit de circuler avec une plaque volontairement ou involontairement rendue illisible." },
+-  { id: "ROUTE-90", categorieId: "route_general", titre: "Plaque falsifiee", contenu: "Toute modification volontaire d'une plaque d'immatriculation est interdite." },
+-  { id: "ROUTE-91", categorieId: "route_general", titre: "Modifications autorisees", contenu: "Les modifications demeurent autorisees des lors qu'elles ne compromettent pas la sécurité ou l'identification du véhicule." },
+-  { id: "ROUTE-92", categorieId: "route_general", titre: "Modifications interdites", contenu: "Sont interdites les modifications ayant pour effet d'augmenter dangereusement les performances, de supprimer un équipement de sécurité, d'empêcher l'identification du véhicule." },
+-  { id: "ROUTE-93", categorieId: "route_general", titre: "Suspensions", contenu: "Les suspensions modifiees ne doivent pas rendre le vehicule dangereux." },
+-  { id: "ROUTE-94", categorieId: "route_general", titre: "Sirenes", contenu: "L'utilisation d'une sirène réservée aux véhicules d'urgence est interdite." },
+-  { id: "ROUTE-95", categorieId: "route_general", titre: "Gyrophare", contenu: "Nul ne peut installer ou utiliser un gyrophare réservé aux autorités sans autorisation. Cette infraction sera punie d'une amende de 1 500$.", amende: "1 500$" },
+-  { id: "ROUTE-96", categorieId: "route_general", titre: "Vehicules de competition", contenu: "Les véhicules destines exclusivement à la compétition ne peuvent circuler sur la voie publique sans autorisation." },
+-  { id: "ROUTE-97", categorieId: "route_general", titre: "Controle technique", contenu: "L'autorité compétente peut soumettre tout véhicule à un contrôle destiné à vérifier sa conformité." },
+-  { id: "ROUTE-98", categorieId: "route_general", titre: "Verification", contenu: "Les forces de l'ordre peuvent proceder a une inspection visuelle du vehicule lorsqu'il existe un motif légitime." },
+-  { id: "ROUTE-99", categorieId: "route_general", titre: "Immobilisation", contenu: "Un véhicule peut être immobilisé lorsqu'il présente un danger immédiat." },
+-  { id: "ROUTE-100", categorieId: "route_general", titre: "Mise en fourriere", contenu: "Le véhicule peut être placé en fourrière lorsque la loi l'autorise." },
+-  { id: "ROUTE-101", categorieId: "route_general", titre: "Vehicule vole", contenu: "Tout véhicule déclaré volé peut être saisi et restitué à son propriétaire légitime." },
+-  { id: "ROUTE-102", categorieId: "route_general", titre: "Vehicule recherche", contenu: "Les autorités peuvent immobiliser tout véhicule faisant l'objet d'un signalement judiciaire." },
+-  { id: "ROUTE-103", categorieId: "route_general", titre: "Refus de controle", contenu: "Le refus de permettre un contrôle légal du véhicule constitue une infraction." },
+-  { id: "ROUTE-104", categorieId: "route_general", titre: "Responsabilite du proprietaire", contenu: "Le propriétaire est tenu de veiller à ce que son véhicule demeure conforme aux dispositions du présent Code pendant toute sa durée d'utilisation." },
+-  { id: "ROUTE-105", categorieId: "route_general", titre: "Principe general", contenu: "Tout conducteur doit circuler avec prudence, vigilance et courtoisie afin d'assurer la sécurité de l'ensemble des usagers de la route." },
+-  { id: "ROUTE-106", categorieId: "route_general", titre: "Maitrise permanente", contenu: "Le conducteur doit conserver en permanence la maîtrise de son véhicule. Il doit être en mesure d'effectuer toute manœuvre nécessaire afin d'éviter un accident." },
+-  { id: "ROUTE-107", categorieId: "route_general", titre: "Conduite prudente", contenu: "Le conducteur adapte sa conduite aux conditions météorologiques, à la visibilité, à la circulation, à l'état de la chaussée, aux risques prévisibles." },
+-  { id: "ROUTE-108", categorieId: "route_general", titre: "Mise en danger", contenu: "Il est interdit d'adopter un comportement susceptible de mettre en danger une personne ou un bien." },
+-  { id: "ROUTE-109", categorieId: "route_general", titre: "Courtoisie", contenu: "Les usagers doivent adopter un comportement respectueux envers les autres usagers. Toute conduite agressive est interdite." },
+-  { id: "ROUTE-110", categorieId: "route_general", titre: "Circulation a droite", contenu: "Sauf disposition contraire, les véhicules circulent sur la partie droite de la chaussée." },
+-  { id: "ROUTE-111", categorieId: "route_general", titre: "Voies de circulation", contenu: "Le conducteur doit utiliser la voie correspondant à sa direction." },
+-  { id: "ROUTE-112", categorieId: "route_general", titre: "Changement de voie", contenu: "Tout changement de voie doit être effectué après vérification de la circulation, sans créer de danger, après utilisation du clignotant." },
+-  { id: "ROUTE-113", categorieId: "route_general", titre: "Circulation en sens inverse", contenu: "Il est interdit de circuler à contresens, sauf autorisation des autorites ou circonstances exceptionnelles." },
+-  { id: "ROUTE-114", categorieId: "route_general", titre: "Utilisation des accotements", contenu: "Les accotements ne peuvent être utilises pour circuler sauf nécessité absolue ou autorisation." },
+-  { id: "ROUTE-115", categorieId: "route_general", titre: "Circulation sur trottoir", contenu: "La circulation des vehicules sur les trottoirs est interdite sauf lorsqu'elle est rendue necessaire par les circonstances et qu'elle ne met personne en danger." },
+-  { id: "ROUTE-116", categorieId: "route_general", titre: "Bande d'arret d'urgence", contenu: "La bande d'arrêt d'urgence ne peut être utilisée qu'en cas d'urgence, de panne, d'accident, d'injonction des autorités." },
+-  { id: "ROUTE-117", categorieId: "route_general", titre: "Demi-tour", contenu: "Le demi-tour est autorise lorsque la signalisation le permet." },
+-  { id: "ROUTE-118", categorieId: "route_general", titre: "Marche arriere", contenu: "La marche arriere ne peut etre effectuee que si elle peut etre realisee sans danger." },
+-  { id: "ROUTE-119", categorieId: "route_general", titre: "Priorite", contenu: "Les conducteurs doivent céder le passage aux piétons engagés sur un passage protégé." },
+-  { id: "ROUTE-120", categorieId: "route_general", titre: "Protection", contenu: "Le conducteur doit redoubler de vigilance à proximité des piétons." },
+-  { id: "ROUTE-121", categorieId: "route_general", titre: "Personnes vulnerables", contenu: "Une vigilance particulière est exigée envers les enfants, les personnes âgées, les personnes en situation de handicap." },
+-  { id: "ROUTE-122", categorieId: "route_general", titre: "Trottoirs", contenu: "Les véhicules doivent laisser libres les trottoirs destinés aux piétons." },
+-  { id: "ROUTE-123", categorieId: "route_general", titre: "Traversee", contenu: "Le conducteur doit permettre aux piétons de traverser lorsqu'ils bénéficient de la priorité." },
+-  { id: "ROUTE-124", categorieId: "route_general", titre: "Respect des cyclistes", contenu: "Les conducteurs doivent respecter une distance de sécurité suffisante lors du dépassement d'un cycliste." },
+-  { id: "ROUTE-125", categorieId: "route_general", titre: "Motocyclettes", contenu: "Les motocyclistes sont soumis aux memes regles de circulation que les autres conducteurs, sous réserve de dispositions particulières." },
+-  { id: "ROUTE-126", categorieId: "route_general", titre: "Interfile", contenu: "La circulation entre les files de vehicules est autorisee uniquement lorsqu'elle est expressément prévue par la réglementation." },
+-  { id: "ROUTE-127", categorieId: "route_general", titre: "Protection", contenu: "Les conducteurs doivent veiller à ne pas compromettre la sécurité des usagers circulant sur deux roues." },
+-  { id: "ROUTE-128", categorieId: "route_general", titre: "Conduite agressive", contenu: "Toute conduite agressive est interdite." },
+-  { id: "ROUTE-129", categorieId: "route_general", titre: "Courses illegales", contenu: "L'organisation ou la participation à une course non autorisée sur la voie publique est interdite." },
+-  { id: "ROUTE-130", categorieId: "route_general", titre: "Rodeo urbain", contenu: "Le fait d'effectuer volontairement des mancuvres dangereuses ou spectaculaires constitue un rodéo urbain dès lors que les participants sont au minimum 5. Cette infraction est punie d'une amende de 500$.", amende: "500$" },
+-  { id: "ROUTE-131", categorieId: "route_general", titre: "Drift", contenu: "La réalisation volontaire de dérapages contrôlés sur la voie publique est interdite. Cette infraction est punie d'une amende de 250$.", amende: "250$" },
+-  { id: "ROUTE-132", categorieId: "route_general", titre: "Zigzag", contenu: "Le fait de changer de voie de maniere repetee et dangereuse constitue une conduite dangereuse. Cette infraction est punie d'une amende de 250$.", amende: "250$" },
+-  { id: "ROUTE-133", categorieId: "route_general", titre: "Intimidation", contenu: "Il est interdit d'utiliser son véhicule pour intimider un autre usager." },
+-  { id: "ROUTE-134", categorieId: "route_general", titre: "Obstruction volontaire", contenu: "Nul ne peut volontairement bloquer ou ralentir la circulation sans motif légitime. Cette infraction est punie d'une amende de 500$.", amende: "500$" },
+-  { id: "ROUTE-135", categorieId: "route_general", titre: "Utilisation du vehicule comme arme", contenu: "L'utilisation intentionnelle d'un véhicule pour heurter une personne ou un autre véhicule est régie par les dispositions du Code pénal." },
+-  { id: "ROUTE-136", categorieId: "route_general", titre: "Principe general", contenu: "Tout comportement non expressément prévu par le présent Livre mais créant un danger manifeste pour la sécurité routière peut être sanctionné conformément au présent Code et, le cas échéant, au Code pénal." },
+-  { id: "ROUTE-137", categorieId: "route_general", titre: "Principe de prudence", contenu: "Tout conducteur abordant une intersection doit reduire sa vitesse et demeurer en mesure de ceder le passage conformément aux règles du présent Code." },
+-  { id: "ROUTE-138", categorieId: "route_general", titre: "Priorite de securite", contenu: "Aucune priorité ne dispense un conducteur de son obligation d'éviter un accident lorsqu'il peut raisonnablement le faire." },
+-  { id: "ROUTE-139", categorieId: "route_general", titre: "Respect de la signalisation", contenu: "Les règles de priorité résultant de la signalisation routière prévalent sur les règles générales." },
+-  { id: "ROUTE-140", categorieId: "route_general", titre: "Ordres des agents", contenu: "Les injonctions donnees par un agent habilite priment sur les panneaux, les feux de signalisation et toute autre règle de circulation." },
+-  { id: "ROUTE-141", categorieId: "route_general", titre: "Responsabilite", contenu: "Le conducteur qui beneficie d'une priorite demeure responsable de toute manœuvre imprudente ou dangereuse." },
+-  { id: "ROUTE-142", categorieId: "route_general", titre: "Priorite", contenu: "Le conducteur doit ceder le passage aux pietons engages ou manifestant clairement leur intention de traverser." },
+-  { id: "ROUTE-143", categorieId: "route_general", titre: "Vigilance", contenu: "Une vigilance renforcée est exigée à proximité des passages piétons." },
+-  { id: "ROUTE-144", categorieId: "route_general", titre: "Depassement", contenu: "Il est interdit de dépasser un véhicule arrêté afin de laisser traverser un piéton." },
+-  { id: "ROUTE-145", categorieId: "route_general", titre: "Obstruction", contenu: "Il est interdit d'immobiliser un véhicule sur un passage piéton." },
+-  { id: "ROUTE-146", categorieId: "route_general", titre: "Personnes vulnerables", contenu: "Les enfants, personnes agées ou personnes en situation de handicap bénéficient d'une protection particulière." },
+-  { id: "ROUTE-147", categorieId: "route_general", titre: "Vehicules concernes", contenu: "Sont prioritaires les vehicules de police, des services d'incendie, des services medicaux d'urgence ainsi que tout véhicule bénéficiant légalement d'une priorité." },
+-  { id: "ROUTE-148", categorieId: "route_general", titre: "Obligation des usagers", contenu: "Tout conducteur doit immediatement faciliter le passage d'un véhicule prioritaire utilisant ses avertisseurs sonores et lumineux." },
+-  { id: "ROUTE-149", categorieId: "route_general", titre: "Move Over Law", contenu: "Lorsqu'un véhicule prioritaire ou d'assistance est immobilise sur le bord de la chaussée avec ses dispositifs lumineux activés, tout conducteur doit changer de voie lorsqu'il est possible de le faire en sécurité, ou à défaut ralentir significativement afin de protéger les intervenants." },
+-  { id: "ROUTE-150", categorieId: "route_general", titre: "Corteges officiels", contenu: "Les cortèges officiels bénéficiant d'une escorte policière ou gouvernementale sont prioritaires." },
+-  { id: "ROUTE-151", categorieId: "route_general", titre: "Usage abusif", contenu: "Le bénéfice de la priorité ne dispense pas les conducteurs des véhicules prioritaires d'agir avec prudence." },
+-  { id: "ROUTE-152", categorieId: "route_general", titre: "Obstruction volontaire", contenu: "Il est interdit de bloquer volontairement une intersection. Cette infraction est punie d'une amende de 350$.", amende: "350$" },
+-  { id: "ROUTE-153", categorieId: "route_general", titre: "Respect mutuel", contenu: "Les usagers doivent adopter un comportement permettant une circulation fluide et sécurisée." },
+-  { id: "ROUTE-154", categorieId: "route_general", titre: "Pouvoir des autorites", contenu: "Les forces de l'ordre peuvent reglementer temporairement les priorites lors d'accidents, de manifestations, de travaux ou de toute situation exceptionnelle." },
+-  { id: "ROUTE-155", categorieId: "route_general", titre: "Principe general", contenu: "Toute règle de priorité prévue par le présent Livre doit être interprétée à la lumière du principe fondamental de sécurité routière. Aucun usager ne peut invoquer sa priorité pour justifier un comportement dangereux." },
+-  { id: "ROUTE-156", categorieId: "route_general", titre: "Principe du controle routier", contenu: "Les forces de l'ordre peuvent proceder au controle d'un vehicule circulant sur la voie publique dans les conditions prévues par le présent Code. Tout contrôle doit être effectué dans le respect de la loi, des droits du conducteur et du principe de proportionnalité." },
+-  { id: "ROUTE-157", categorieId: "route_general", titre: "Controle sans infraction prealable", contenu: "Un véhicule peut faire l'objet d'un controle routier sans que le conducteur ait prealablement commis une infraction lorsqu'un controle legalement autorise est mis en place. Un contrôle ne peut toutefois être fondé sur un motif discriminatoire, arbitraire ou étranger à l'application de la loi." },
+-  { id: "ROUTE-158", categorieId: "route_general", titre: "Controle consecutif a une infraction", contenu: "Lorsqu'un agent constate une infraction au Code de la route, il peut proceder a l'interception du véhicule afin de vérifier l'identité du conducteur, son permis de conduire et les circonstances de l'infraction." },
+-  { id: "ROUTE-159", categorieId: "route_general", titre: "Controle du permis", contenu: "Le conducteur doit être en mesure de presenter son permis de conduire lorsqu'un agent légalement habilité le lui demande." },
+-  { id: "ROUTE-160", categorieId: "route_general", titre: "Controle des documents", contenu: "L'agent peut demander la présentation des documents nécessaires à la conduite et à la circulation du véhicule, notamment permis de conduire, carte d'identité, contrôle des clés." },
+-  { id: "ROUTE-161", categorieId: "route_general", titre: "Contrôle du véhicule", contenu: "Un contrôle visuel du véhicule peut être effectué afin de vérifier son état général, sa conformité aux règles de circulation et la présence éventuelle d'éléments présentant un danger manifeste. Toute fouille approfondie du véhicule doit répondre aux conditions prévues par le Code de procédure pénale." },
+-  { id: "ROUTE-162", categorieId: "route_general", titre: "Controle d'alcoolemie", contenu: "Lorsqu'un controle d'alcoolemie est legalement autorise, le conducteur est tenu de se soumettre aux vérifications prévues par la loi." },
+-  { id: "ROUTE-163", categorieId: "route_general", titre: "Dépistage de stupéfiants", contenu: "Les forces de l'ordre peuvent proceder a un depistage de stupefiants lorsque les conditions prévues par la loi sont réunies." },
+-  { id: "ROUTE-164", categorieId: "route_general", titre: "Fin du controle", contenu: "Une fois les vérifications terminées, l'agent doit permettre au conducteur de reprendre sa route lorsque rien ne justifie légalement son maintien ou l'immobilisation du véhicule." },
+-  { id: "ROUTE-165", categorieId: "route_general", titre: "Conditions d'immobilisation", contenu: "Un véhicule peut être immobilisé lorsque son état présente un danger pour la circulation, le conducteur n'est pas légalement autorisé à conduire, le véhicule est utilisé pour commettre une infraction, une disposition légale impose son immobilisation." },
+-  { id: "ROUTE-166", categorieId: "route_general", titre: "Mise en fourriere", contenu: "Un véhicule peut être placé en fourrière dans les conditions prévues par la loi. La décision doit être justifiée par un motif légal." },
+-  { id: "ROUTE-167", categorieId: "route_general", titre: "Principe", contenu: "Le permis de conduire ne peut etre retire, suspendu ou annule que dans les conditions prevue par la loi. Une simple infraction routière n'entraîne pas automatiquement le retrait du permis lorsque le présent Code ne le prévoit pas." },
+-  { id: "ROUTE-168", categorieId: "route_general", titre: "Suspension administrative", contenu: "La suspension du permis peut être prononcée lorsque le conducteur présente un danger suffisamment caractérisé pour la sécurité publique ou lorsqu'une infraction prévue par le présent Code justifie cette mesure. La durée de la suspension doit être proportionnée à la gravité des faits." },
+-  { id: "ROUTE-169", categorieId: "route_general", titre: "Suspension judiciaire", contenu: "Le Juge peut prononcer la suspension du permis lorsqu'une infraction commise par le conducteur le justifie. La décision judiciaire précise la durée de la suspension, les motifs, les éventuelles conditions de restitution." },
+-  { id: "ROUTE-170", categorieId: "route_general", titre: "Retrait du permis", contenu: "Le retrait definitif ou l'annulation du permis constitue une mesure exceptionnelle reservee aux situations prévues par la loi ou à une décision judiciaire." },
+-  { id: "ROUTE-171", categorieId: "route_general", titre: "Motifs pouvant justifier un retrait", contenu: "Peuvent notamment justifier un retrait: conduite répétée sous influence, conduite dangereuse grave, récidive importante, accumulation d'infractions entraînant la perte du droit de conduire (3 au minimum), utilisation du véhicule pour commettre une infraction grave, conduite malgré une suspension, obtention frauduleuse du permis." },
+-  { id: "ROUTE-172", categorieId: "route_general", titre: "Interdiction de conduire", contenu: "Lorsqu'un permis est suspendu, annule ou retire, la personne concernee ne peut conduire aucun véhicule nécessitant un permis pendant la durée de la mesure." },
+-  { id: "ROUTE-173", categorieId: "route_general", titre: "Notification", contenu: "Toute suspension, rétention ou annulation doit être portée à la connaissance du conducteur. La notification indique le motif, la durée, l'autorité ayant pris la décision, les conséquences, les voies de recours applicables." },
+-  { id: "ROUTE-174", categorieId: "route_general", titre: "Droit au recours", contenu: "Toute personne faisant l'objet d'une suspension ou d'un retrait dispose d'un droit de contestation devant l'autorité compétente dans les conditions prévues par la loi." },
+-  { id: "ROUTE-175", categorieId: "route_general", titre: "Interdiction de retrait arbitraire", contenu: "Aucun agent ne peut retirer ou suspendre définitivement un permis de sa propre initiative lorsqu'une decision du Procureur ou du Juge est legalement requise." },
++  { id: "ROUTE-36", categorieId: "route_permis", titre: "Obligation de detenir un permis", contenu: "Nul ne peut conduire un véhicule motorisé sur une voie publique sans être titulaire d'un permis de conduire valide correspondant à la catégorie du véhicule utilisé." },
++  { id: "ROUTE-37", categorieId: "route_permis", titre: "Validite du permis", contenu: "Le permis de conduire doit être valide, être délivré par une autorité compétente, ne faire l'objet d'aucune suspension ou annulation." },
++  { id: "ROUTE-38", categorieId: "route_permis", titre: "Presentation du permis", contenu: "Tout conducteur doit être en mesure de presenter son permis lors d'un contrôle routier. L'absence de présentation peut entraîner une vérification d'identité ainsi que les sanctions prévues par la loi." },
++  { id: "ROUTE-39", categorieId: "route_permis", titre: "Devoir de sincerite", contenu: "Le conducteur ne peut présenter un faux permis, un permis falsifié, un permis appartenant à une autre personne." },
++  { id: "ROUTE-40", categorieId: "route_permis", titre: "Interdiction de pret", contenu: "Le prêt volontaire d'un permis de conduire constitue une infraction." },
++  { id: "ROUTE-41", categorieId: "route_permis", titre: "Classification", contenu: "Les permis sont répartis selon la catégorie des véhicules pouvant être conduits." },
++  { id: "ROUTE-42", categorieId: "route_permis", titre: "Vehicules legers", contenu: "Le permis de catégorie B autorise la conduite des véhicules légers." },
++  { id: "ROUTE-43", categorieId: "route_permis", titre: "Motocyclettes", contenu: "Le permis de categorie A autorise la conduite des motocyclettes." },
++  { id: "ROUTE-44", categorieId: "route_permis", titre: "Poids lourds", contenu: "Le permis de catégorie C autorise la conduite des poids lourds." },
++  { id: "ROUTE-45", categorieId: "route_permis", titre: "Véhicules specialisés", contenu: "Des catégories particulières peuvent être créées par voie réglementaire pour les transports publics, les véhicules d'urgence, les convois exceptionnels, les véhicules spéciaux." },
++  { id: "ROUTE-46", categorieId: "route_permis", titre: "Aptitude physique", contenu: "Tout conducteur doit être physiquement apte à conduire." },
++  { id: "ROUTE-47", categorieId: "route_permis", titre: "Aptitude mentale", contenu: "Le conducteur doit être en pleine possession de ses facultés." },
++  { id: "ROUTE-48", categorieId: "route_permis", titre: "Fatigue", contenu: "Il est interdit de conduire lorsqu'un état de fatigue compromet la sécurité." },
++  { id: "ROUTE-49", categorieId: "route_permis", titre: "Alcool", contenu: "Il est interdit de conduire sous l'influence de l'alcool au-delà du seuil legal fixé par la réglementation." },
++  { id: "ROUTE-50", categorieId: "route_permis", titre: "Stupéfiants", contenu: "Toute conduite sous l'influence de stupéfiants est interdite." },
++  { id: "ROUTE-51", categorieId: "route_permis", titre: "Medicaments", contenu: "Le conducteur ne peut conduire lorsqu'un traitement medical reduit significativement ses capacités." },
++  { id: "ROUTE-52", categorieId: "route_permis", titre: "Telephone", contenu: "Le conducteur ne peut utiliser un telephone tenu en main pendant la conduite." },
++  { id: "ROUTE-53", categorieId: "route_permis", titre: "Distraction", contenu: "Toute activite empechant le conducteur de conserver la maîtrise permanente de son véhicule est interdite." },
++  { id: "ROUTE-54", categorieId: "route_permis", titre: "Ceinture de securite", contenu: "Le conducteur doit porter sa ceinture lorsque le véhicule en est équipé." },
++  { id: "ROUTE-55", categorieId: "route_permis", titre: "Responsabilite envers les passagers", contenu: "Le conducteur est tenu d'assurer la sécurité des passagers transportés." },
++  { id: "ROUTE-56", categorieId: "route_permis", titre: "Suspension administrative", contenu: "Le permis peut être suspendu par l'autorité compétente dans les cas prévus par la loi." },
++  { id: "ROUTE-57", categorieId: "route_permis", titre: "Suspension judiciaire", contenu: "Le Juge peut prononcer une suspension du permis comme peine complementaire." },
++  { id: "ROUTE-58", categorieId: "route_permis", titre: "Duree", contenu: "La durée de suspension est fixée en fonction de la gravité des faits, des antécédents, de la récidive." },
++  { id: "ROUTE-59", categorieId: "route_permis", titre: "Effets", contenu: "Pendant la suspension, le titulaire ne peut conduire aucun véhicule nécessitant un permis." },
++  { id: "ROUTE-60", categorieId: "route_permis", titre: "Annulation", contenu: "Le permis peut être annulé lorsqu'une infraction particulièrement grave le justifie." },
++  { id: "ROUTE-61", categorieId: "route_permis", titre: "Restitution", contenu: "La restitution du permis intervient conformément à la décision de l'autorité compétente." },
++  { id: "ROUTE-62", categorieId: "route_permis", titre: "Conduite sans permis", contenu: "Le fait de conduire sans être titulaire du permis requis constitue une infraction." },
++  { id: "ROUTE-63", categorieId: "route_permis", titre: "Conduite malgre suspension", contenu: "Le fait de conduire malgré une suspension constitue un délit routier." },
++  { id: "ROUTE-64", categorieId: "route_permis", titre: "Conduite malgre annulation", contenu: "Le fait de conduire malgré une annulation du permis constitue un délit routier aggravé." },
++  { id: "ROUTE-65", categorieId: "route_permis", titre: "Faux permis", contenu: "L'usage d'un faux permis constitue un délit et peut donner lieu à des poursuites pénales." },
++  { id: "ROUTE-66", categorieId: "route_permis", titre: "Obtention frauduleuse", contenu: "Toute obtention frauduleuse d'un permis est interdite." },
++  { id: "ROUTE-67", categorieId: "route_permis", titre: "Usurpation", contenu: "L'utilisation du permis appartenant à un tiers constitue une usurpation d'identité." },
++  { id: "ROUTE-68", categorieId: "route_permis", titre: "Conducteurs commerciaux", contenu: "Les conducteurs exercant une activite professionnelle sont soumis aux obligations du present Code." },
++  { id: "ROUTE-69", categorieId: "route_permis", titre: "Transport de passagers", contenu: "Les conducteurs transportant des passagers à titre professionnel sont tenus à une obligation renforcée de prudence." },
++  { id: "ROUTE-70", categorieId: "route_permis", titre: "Transport de marchandises", contenu: "Le conducteur est responsable de l'arrimage et de la sécurité du chargement." },
++  { id: "ROUTE-71", categorieId: "route_permis", titre: "Matieres dangereuses", contenu: "Le transport de matières dangereuses est soumis à des réglementations particulières." },
++  { id: "ROUTE-72", categorieId: "route_permis", titre: "Vehicules prioritaires", contenu: "Les conducteurs des véhicules prioritaires bénéficient des dérogations prévues par la loi lorsqu'ils sont en intervention." },
++  { id: "ROUTE-73", categorieId: "route_permis", titre: "Conditions d'utilisation", contenu: "Les avertisseurs sonores et lumineux ne peuvent être utilisés qu'en cas de nécessité." },
++  { id: "ROUTE-74", categorieId: "route_permis", titre: "Limites", contenu: "Les conducteurs de véhicules prioritaires demeurent tenus d'assurer la sécurité des autres usagers." },
++  { id: "ROUTE-75", categorieId: "route_permis", titre: "Responsabilite", contenu: "L'usage abusif des privileges accordes aux véhicules prioritaires engage la responsabilité de leur conducteur." },
++  { id: "ROUTE-76", categorieId: "route_permis", titre: "Respect des contrôles", contenu: "Tout conducteur doit se soumettre aux contrôles légalement ordonnés." },
++  { id: "ROUTE-77", categorieId: "route_permis", titre: "Cooperation", contenu: "Le conducteur doit répondre aux injonctions des agents habilités." },
++  { id: "ROUTE-78", categorieId: "route_permis", titre: "Identification", contenu: "Le conducteur doit décliner son identité lorsqu'il en est légalement requis." },
++  { id: "ROUTE-79", categorieId: "route_permis", titre: "Refus d'obtempérer", contenu: "Le refus volontaire d'obéir à un ordre d'arrêt constitue un délit routier." },
++  { id: "ROUTE-80", categorieId: "route_permis", titre: "Principe general", contenu: "Tout conducteur est tenu d'exercer la conduite avec prudence, diligence et respect de l'État de San Andreas." },
++  { id: "ROUTE-81", categorieId: "route_vehicules", titre: "Principe general", contenu: "Tout véhicule circulant sur une voie publique doit être conforme aux dispositions du présent Code et être maintenu dans un état garantissant la sécurité de ses occupants ainsi que des autres usagers." },
++  { id: "ROUTE-82", categorieId: "route_vehicules", titre: "Obligation de conformité", contenu: "Le propriétaire d'un véhicule est responsable de sa conformité aux exigences légales. Le conducteur demeure responsable des infractions constatées pendant la circulation." },
++  { id: "ROUTE-83", categorieId: "route_vehicules", titre: "Vehicules autorises", contenu: "Seuls les véhicules répondant aux normes de sécurité fixees par la loi peuvent circuler sur les voies publiques." },
++  { id: "ROUTE-84", categorieId: "route_vehicules", titre: "Vehicules interdits", contenu: "Il est interdit de mettre en circulation un véhicule gravement endommagé, déclaré dangereux, interdit par décision administrative ou judiciaire." },
++  { id: "ROUTE-85", categorieId: "route_vehicules", titre: "Entretien", contenu: "Tout propriétaire est tenu d'assurer un entretien régulier de son véhicule. L'absence manifeste d'entretien engage sa responsabilité." },
++  { id: "ROUTE-86", categorieId: "route_vehicules", titre: "Obligation d'immatriculation", contenu: "Tout véhicule motorisé circulant sur la voie publique doit être immatriculé." },
++  { id: "ROUTE-87", categorieId: "route_vehicules", titre: "Plaques d'immatriculation", contenu: "Les plaques d'immatriculation doivent être visibles, lisibles, solidement fixées, conformes au modèle officiel." },
++  { id: "ROUTE-88", categorieId: "route_vehicules", titre: "Absence de plaque", contenu: "La circulation sans plaque d'immatriculation constitue une infraction." },
++  { id: "ROUTE-89", categorieId: "route_vehicules", titre: "Plaque illisible", contenu: "Il est interdit de circuler avec une plaque volontairement ou involontairement rendue illisible." },
++  { id: "ROUTE-90", categorieId: "route_vehicules", titre: "Plaque falsifiee", contenu: "Toute modification volontaire d'une plaque d'immatriculation est interdite." },
++  { id: "ROUTE-91", categorieId: "route_vehicules", titre: "Modifications autorisees", contenu: "Les modifications demeurent autorisees des lors qu'elles ne compromettent pas la sécurité ou l'identification du véhicule." },
++  { id: "ROUTE-92", categorieId: "route_vehicules", titre: "Modifications interdites", contenu: "Sont interdites les modifications ayant pour effet d'augmenter dangereusement les performances, de supprimer un équipement de sécurité, d'empêcher l'identification du véhicule." },
++  { id: "ROUTE-93", categorieId: "route_vehicules", titre: "Suspensions", contenu: "Les suspensions modifiees ne doivent pas rendre le vehicule dangereux." },
++  { id: "ROUTE-94", categorieId: "route_vehicules", titre: "Sirenes", contenu: "L'utilisation d'une sirène réservée aux véhicules d'urgence est interdite." },
++  { id: "ROUTE-95", categorieId: "route_vehicules", titre: "Gyrophare", contenu: "Nul ne peut installer ou utiliser un gyrophare réservé aux autorités sans autorisation. Cette infraction sera punie d'une amende de 1 500$.", amende: "1 500$" },
++  { id: "ROUTE-96", categorieId: "route_vehicules", titre: "Vehicules de competition", contenu: "Les véhicules destines exclusivement à la compétition ne peuvent circuler sur la voie publique sans autorisation." },
++  { id: "ROUTE-97", categorieId: "route_vehicules", titre: "Controle technique", contenu: "L'autorité compétente peut soumettre tout véhicule à un contrôle destiné à vérifier sa conformité." },
++  { id: "ROUTE-98", categorieId: "route_vehicules", titre: "Verification", contenu: "Les forces de l'ordre peuvent proceder a une inspection visuelle du vehicule lorsqu'il existe un motif légitime." },
++  { id: "ROUTE-99", categorieId: "route_vehicules", titre: "Immobilisation", contenu: "Un véhicule peut être immobilisé lorsqu'il présente un danger immédiat." },
++  { id: "ROUTE-100", categorieId: "route_vehicules", titre: "Mise en fourriere", contenu: "Le véhicule peut être placé en fourrière lorsque la loi l'autorise." },
++  { id: "ROUTE-101", categorieId: "route_vehicules", titre: "Vehicule vole", contenu: "Tout véhicule déclaré volé peut être saisi et restitué à son propriétaire légitime." },
++  { id: "ROUTE-102", categorieId: "route_vehicules", titre: "Vehicule recherche", contenu: "Les autorités peuvent immobiliser tout véhicule faisant l'objet d'un signalement judiciaire." },
++  { id: "ROUTE-103", categorieId: "route_vehicules", titre: "Refus de controle", contenu: "Le refus de permettre un contrôle légal du véhicule constitue une infraction." },
++  { id: "ROUTE-104", categorieId: "route_vehicules", titre: "Responsabilite du proprietaire", contenu: "Le propriétaire est tenu de veiller à ce que son véhicule demeure conforme aux dispositions du présent Code pendant toute sa durée d'utilisation." },
++  { id: "ROUTE-105", categorieId: "route_circulation", titre: "Principe general", contenu: "Tout conducteur doit circuler avec prudence, vigilance et courtoisie afin d'assurer la sécurité de l'ensemble des usagers de la route." },
++  { id: "ROUTE-106", categorieId: "route_circulation", titre: "Maitrise permanente", contenu: "Le conducteur doit conserver en permanence la maîtrise de son véhicule. Il doit être en mesure d'effectuer toute manœuvre nécessaire afin d'éviter un accident." },
++  { id: "ROUTE-107", categorieId: "route_circulation", titre: "Conduite prudente", contenu: "Le conducteur adapte sa conduite aux conditions météorologiques, à la visibilité, à la circulation, à l'état de la chaussée, aux risques prévisibles." },
++  { id: "ROUTE-108", categorieId: "route_circulation", titre: "Mise en danger", contenu: "Il est interdit d'adopter un comportement susceptible de mettre en danger une personne ou un bien." },
++  { id: "ROUTE-109", categorieId: "route_circulation", titre: "Courtoisie", contenu: "Les usagers doivent adopter un comportement respectueux envers les autres usagers. Toute conduite agressive est interdite." },
++  { id: "ROUTE-110", categorieId: "route_circulation", titre: "Circulation a droite", contenu: "Sauf disposition contraire, les véhicules circulent sur la partie droite de la chaussée." },
++  { id: "ROUTE-111", categorieId: "route_circulation", titre: "Voies de circulation", contenu: "Le conducteur doit utiliser la voie correspondant à sa direction." },
++  { id: "ROUTE-112", categorieId: "route_circulation", titre: "Changement de voie", contenu: "Tout changement de voie doit être effectué après vérification de la circulation, sans créer de danger, après utilisation du clignotant." },
++  { id: "ROUTE-113", categorieId: "route_circulation", titre: "Circulation en sens inverse", contenu: "Il est interdit de circuler à contresens, sauf autorisation des autorites ou circonstances exceptionnelles." },
++  { id: "ROUTE-114", categorieId: "route_circulation", titre: "Utilisation des accotements", contenu: "Les accotements ne peuvent être utilises pour circuler sauf nécessité absolue ou autorisation." },
++  { id: "ROUTE-115", categorieId: "route_circulation", titre: "Circulation sur trottoir", contenu: "La circulation des vehicules sur les trottoirs est interdite sauf lorsqu'elle est rendue necessaire par les circonstances et qu'elle ne met personne en danger." },
++  { id: "ROUTE-116", categorieId: "route_circulation", titre: "Bande d'arret d'urgence", contenu: "La bande d'arrêt d'urgence ne peut être utilisée qu'en cas d'urgence, de panne, d'accident, d'injonction des autorités." },
++  { id: "ROUTE-117", categorieId: "route_circulation", titre: "Demi-tour", contenu: "Le demi-tour est autorise lorsque la signalisation le permet." },
++  { id: "ROUTE-118", categorieId: "route_circulation", titre: "Marche arriere", contenu: "La marche arriere ne peut etre effectuee que si elle peut etre realisee sans danger." },
++  { id: "ROUTE-119", categorieId: "route_circulation", titre: "Priorite", contenu: "Les conducteurs doivent céder le passage aux piétons engagés sur un passage protégé." },
++  { id: "ROUTE-120", categorieId: "route_circulation", titre: "Protection", contenu: "Le conducteur doit redoubler de vigilance à proximité des piétons." },
++  { id: "ROUTE-121", categorieId: "route_circulation", titre: "Personnes vulnerables", contenu: "Une vigilance particulière est exigée envers les enfants, les personnes âgées, les personnes en situation de handicap." },
++  { id: "ROUTE-122", categorieId: "route_circulation", titre: "Trottoirs", contenu: "Les véhicules doivent laisser libres les trottoirs destinés aux piétons." },
++  { id: "ROUTE-123", categorieId: "route_circulation", titre: "Traversee", contenu: "Le conducteur doit permettre aux piétons de traverser lorsqu'ils bénéficient de la priorité." },
++  { id: "ROUTE-124", categorieId: "route_circulation", titre: "Respect des cyclistes", contenu: "Les conducteurs doivent respecter une distance de sécurité suffisante lors du dépassement d'un cycliste." },
++  { id: "ROUTE-125", categorieId: "route_circulation", titre: "Motocyclettes", contenu: "Les motocyclistes sont soumis aux memes regles de circulation que les autres conducteurs, sous réserve de dispositions particulières." },
++  { id: "ROUTE-126", categorieId: "route_circulation", titre: "Interfile", contenu: "La circulation entre les files de vehicules est autorisee uniquement lorsqu'elle est expressément prévue par la réglementation." },
++  { id: "ROUTE-127", categorieId: "route_circulation", titre: "Protection", contenu: "Les conducteurs doivent veiller à ne pas compromettre la sécurité des usagers circulant sur deux roues." },
++  { id: "ROUTE-128", categorieId: "route_circulation", titre: "Conduite agressive", contenu: "Toute conduite agressive est interdite." },
++  { id: "ROUTE-129", categorieId: "route_circulation", titre: "Courses illegales", contenu: "L'organisation ou la participation à une course non autorisée sur la voie publique est interdite." },
++  { id: "ROUTE-130", categorieId: "route_circulation", titre: "Rodeo urbain", contenu: "Le fait d'effectuer volontairement des mancuvres dangereuses ou spectaculaires constitue un rodéo urbain dès lors que les participants sont au minimum 5. Cette infraction est punie d'une amende de 500$.", amende: "500$" },
++  { id: "ROUTE-131", categorieId: "route_circulation", titre: "Drift", contenu: "La réalisation volontaire de dérapages contrôlés sur la voie publique est interdite. Cette infraction est punie d'une amende de 250$.", amende: "250$" },
++  { id: "ROUTE-132", categorieId: "route_circulation", titre: "Zigzag", contenu: "Le fait de changer de voie de maniere repetee et dangereuse constitue une conduite dangereuse. Cette infraction est punie d'une amende de 250$.", amende: "250$" },
++  { id: "ROUTE-133", categorieId: "route_circulation", titre: "Intimidation", contenu: "Il est interdit d'utiliser son véhicule pour intimider un autre usager." },
++  { id: "ROUTE-134", categorieId: "route_circulation", titre: "Obstruction volontaire", contenu: "Nul ne peut volontairement bloquer ou ralentir la circulation sans motif légitime. Cette infraction est punie d'une amende de 500$.", amende: "500$" },
++  { id: "ROUTE-135", categorieId: "route_circulation", titre: "Utilisation du vehicule comme arme", contenu: "L'utilisation intentionnelle d'un véhicule pour heurter une personne ou un autre véhicule est régie par les dispositions du Code pénal." },
++  { id: "ROUTE-136", categorieId: "route_circulation", titre: "Principe general", contenu: "Tout comportement non expressément prévu par le présent Livre mais créant un danger manifeste pour la sécurité routière peut être sanctionné conformément au présent Code et, le cas échéant, au Code pénal." },
++  { id: "ROUTE-137", categorieId: "route_priorites", titre: "Principe de prudence", contenu: "Tout conducteur abordant une intersection doit reduire sa vitesse et demeurer en mesure de ceder le passage conformément aux règles du présent Code." },
++  { id: "ROUTE-138", categorieId: "route_priorites", titre: "Priorite de securite", contenu: "Aucune priorité ne dispense un conducteur de son obligation d'éviter un accident lorsqu'il peut raisonnablement le faire." },
++  { id: "ROUTE-139", categorieId: "route_priorites", titre: "Respect de la signalisation", contenu: "Les règles de priorité résultant de la signalisation routière prévalent sur les règles générales." },
++  { id: "ROUTE-140", categorieId: "route_priorites", titre: "Ordres des agents", contenu: "Les injonctions donnees par un agent habilite priment sur les panneaux, les feux de signalisation et toute autre règle de circulation." },
++  { id: "ROUTE-141", categorieId: "route_priorites", titre: "Responsabilite", contenu: "Le conducteur qui beneficie d'une priorite demeure responsable de toute manœuvre imprudente ou dangereuse." },
++  { id: "ROUTE-142", categorieId: "route_priorites", titre: "Priorite", contenu: "Le conducteur doit ceder le passage aux pietons engages ou manifestant clairement leur intention de traverser." },
++  { id: "ROUTE-143", categorieId: "route_priorites", titre: "Vigilance", contenu: "Une vigilance renforcée est exigée à proximité des passages piétons." },
++  { id: "ROUTE-144", categorieId: "route_priorites", titre: "Depassement", contenu: "Il est interdit de dépasser un véhicule arrêté afin de laisser traverser un piéton." },
++  { id: "ROUTE-145", categorieId: "route_priorites", titre: "Obstruction", contenu: "Il est interdit d'immobiliser un véhicule sur un passage piéton." },
++  { id: "ROUTE-146", categorieId: "route_priorites", titre: "Personnes vulnerables", contenu: "Les enfants, personnes agées ou personnes en situation de handicap bénéficient d'une protection particulière." },
++  { id: "ROUTE-147", categorieId: "route_priorites", titre: "Vehicules concernes", contenu: "Sont prioritaires les vehicules de police, des services d'incendie, des services medicaux d'urgence ainsi que tout véhicule bénéficiant légalement d'une priorité." },
++  { id: "ROUTE-148", categorieId: "route_priorites", titre: "Obligation des usagers", contenu: "Tout conducteur doit immediatement faciliter le passage d'un véhicule prioritaire utilisant ses avertisseurs sonores et lumineux." },
++  { id: "ROUTE-149", categorieId: "route_priorites", titre: "Move Over Law", contenu: "Lorsqu'un véhicule prioritaire ou d'assistance est immobilise sur le bord de la chaussée avec ses dispositifs lumineux activés, tout conducteur doit changer de voie lorsqu'il est possible de le faire en sécurité, ou à défaut ralentir significativement afin de protéger les intervenants." },
++  { id: "ROUTE-150", categorieId: "route_priorites", titre: "Corteges officiels", contenu: "Les cortèges officiels bénéficiant d'une escorte policière ou gouvernementale sont prioritaires." },
++  { id: "ROUTE-151", categorieId: "route_priorites", titre: "Usage abusif", contenu: "Le bénéfice de la priorité ne dispense pas les conducteurs des véhicules prioritaires d'agir avec prudence." },
++  { id: "ROUTE-152", categorieId: "route_priorites", titre: "Obstruction volontaire", contenu: "Il est interdit de bloquer volontairement une intersection. Cette infraction est punie d'une amende de 350$.", amende: "350$" },
++  { id: "ROUTE-153", categorieId: "route_priorites", titre: "Respect mutuel", contenu: "Les usagers doivent adopter un comportement permettant une circulation fluide et sécurisée." },
++  { id: "ROUTE-154", categorieId: "route_priorites", titre: "Pouvoir des autorites", contenu: "Les forces de l'ordre peuvent reglementer temporairement les priorites lors d'accidents, de manifestations, de travaux ou de toute situation exceptionnelle." },
++  { id: "ROUTE-155", categorieId: "route_priorites", titre: "Principe general", contenu: "Toute règle de priorité prévue par le présent Livre doit être interprétée à la lumière du principe fondamental de sécurité routière. Aucun usager ne peut invoquer sa priorité pour justifier un comportement dangereux." },
++  { id: "ROUTE-156", categorieId: "route_controles", titre: "Principe du controle routier", contenu: "Les forces de l'ordre peuvent proceder au controle d'un vehicule circulant sur la voie publique dans les conditions prévues par le présent Code. Tout contrôle doit être effectué dans le respect de la loi, des droits du conducteur et du principe de proportionnalité." },
++  { id: "ROUTE-157", categorieId: "route_controles", titre: "Controle sans infraction prealable", contenu: "Un véhicule peut faire l'objet d'un controle routier sans que le conducteur ait prealablement commis une infraction lorsqu'un controle legalement autorise est mis en place. Un contrôle ne peut toutefois être fondé sur un motif discriminatoire, arbitraire ou étranger à l'application de la loi." },
++  { id: "ROUTE-158", categorieId: "route_controles", titre: "Controle consecutif a une infraction", contenu: "Lorsqu'un agent constate une infraction au Code de la route, il peut proceder a l'interception du véhicule afin de vérifier l'identité du conducteur, son permis de conduire et les circonstances de l'infraction." },
++  { id: "ROUTE-159", categorieId: "route_controles", titre: "Controle du permis", contenu: "Le conducteur doit être en mesure de presenter son permis de conduire lorsqu'un agent légalement habilité le lui demande." },
++  { id: "ROUTE-160", categorieId: "route_controles", titre: "Controle des documents", contenu: "L'agent peut demander la présentation des documents nécessaires à la conduite et à la circulation du véhicule, notamment permis de conduire, carte d'identité, contrôle des clés." },
++  { id: "ROUTE-161", categorieId: "route_controles", titre: "Contrôle du véhicule", contenu: "Un contrôle visuel du véhicule peut être effectué afin de vérifier son état général, sa conformité aux règles de circulation et la présence éventuelle d'éléments présentant un danger manifeste. Toute fouille approfondie du véhicule doit répondre aux conditions prévues par le Code de procédure pénale." },
++  { id: "ROUTE-162", categorieId: "route_controles", titre: "Controle d'alcoolemie", contenu: "Lorsqu'un controle d'alcoolemie est legalement autorise, le conducteur est tenu de se soumettre aux vérifications prévues par la loi." },
++  { id: "ROUTE-163", categorieId: "route_controles", titre: "Dépistage de stupéfiants", contenu: "Les forces de l'ordre peuvent proceder a un depistage de stupefiants lorsque les conditions prévues par la loi sont réunies." },
++  { id: "ROUTE-164", categorieId: "route_controles", titre: "Fin du controle", contenu: "Une fois les vérifications terminées, l'agent doit permettre au conducteur de reprendre sa route lorsque rien ne justifie légalement son maintien ou l'immobilisation du véhicule." },
++  { id: "ROUTE-165", categorieId: "route_controles", titre: "Conditions d'immobilisation", contenu: "Un véhicule peut être immobilisé lorsque son état présente un danger pour la circulation, le conducteur n'est pas légalement autorisé à conduire, le véhicule est utilisé pour commettre une infraction, une disposition légale impose son immobilisation." },
++  { id: "ROUTE-166", categorieId: "route_controles", titre: "Mise en fourriere", contenu: "Un véhicule peut être placé en fourrière dans les conditions prévues par la loi. La décision doit être justifiée par un motif légal." },
++  { id: "ROUTE-167", categorieId: "route_controles", titre: "Principe", contenu: "Le permis de conduire ne peut etre retire, suspendu ou annule que dans les conditions prevue par la loi. Une simple infraction routière n'entraîne pas automatiquement le retrait du permis lorsque le présent Code ne le prévoit pas." },
++  { id: "ROUTE-168", categorieId: "route_controles", titre: "Suspension administrative", contenu: "La suspension du permis peut être prononcée lorsque le conducteur présente un danger suffisamment caractérisé pour la sécurité publique ou lorsqu'une infraction prévue par le présent Code justifie cette mesure. La durée de la suspension doit être proportionnée à la gravité des faits." },
++  { id: "ROUTE-169", categorieId: "route_controles", titre: "Suspension judiciaire", contenu: "Le Juge peut prononcer la suspension du permis lorsqu'une infraction commise par le conducteur le justifie. La décision judiciaire précise la durée de la suspension, les motifs, les éventuelles conditions de restitution." },
++  { id: "ROUTE-170", categorieId: "route_controles", titre: "Retrait du permis", contenu: "Le retrait definitif ou l'annulation du permis constitue une mesure exceptionnelle reservee aux situations prévues par la loi ou à une décision judiciaire." },
++  { id: "ROUTE-171", categorieId: "route_controles", titre: "Motifs pouvant justifier un retrait", contenu: "Peuvent notamment justifier un retrait: conduite répétée sous influence, conduite dangereuse grave, récidive importante, accumulation d'infractions entraînant la perte du droit de conduire (3 au minimum), utilisation du véhicule pour commettre une infraction grave, conduite malgré une suspension, obtention frauduleuse du permis." },
++  { id: "ROUTE-172", categorieId: "route_controles", titre: "Interdiction de conduire", contenu: "Lorsqu'un permis est suspendu, annule ou retire, la personne concernee ne peut conduire aucun véhicule nécessitant un permis pendant la durée de la mesure." },
++  { id: "ROUTE-173", categorieId: "route_controles", titre: "Notification", contenu: "Toute suspension, rétention ou annulation doit être portée à la connaissance du conducteur. La notification indique le motif, la durée, l'autorité ayant pris la décision, les conséquences, les voies de recours applicables." },
++  { id: "ROUTE-174", categorieId: "route_controles", titre: "Droit au recours", contenu: "Toute personne faisant l'objet d'une suspension ou d'un retrait dispose d'un droit de contestation devant l'autorité compétente dans les conditions prévues par la loi." },
++  { id: "ROUTE-175", categorieId: "route_controles", titre: "Interdiction de retrait arbitraire", contenu: "Aucun agent ne peut retirer ou suspendre définitivement un permis de sa propre initiative lorsqu'une decision du Procureur ou du Juge est legalement requise." },
+ ];
+ 
+ export const CODE_FEDERAL = [
+diff --git a/lib/serverAuth.ts b/lib/serverAuth.ts
+index a87fe85..057caea 100644
+--- a/lib/serverAuth.ts
++++ b/lib/serverAuth.ts
+@@ -1,5 +1,6 @@
+ import { getServerSession } from "next-auth";
+ import { createClient } from "@supabase/supabase-js";
++import { authOptions } from "@/lib/authOptions";
+ import { hasPermission } from "@/lib/auth";
+ 
+ const supabaseAdmin = createClient(
+@@ -8,7 +9,9 @@ const supabaseAdmin = createClient(
+ );
+ 
+ export async function requirePermission(permission: string) {
+-  const session = await getServerSession();
++  // ⚠️ authOptions DOIT être passé ici, sinon getServerSession() ne peut pas
++  // décoder le cookie de session dans un Route Handler App Router → toujours null.
++  const session = await getServerSession(authOptions);
+   const user = session?.user as any;
+   if (!user) return { authorized: false, user: null, supabaseAdmin };
+ 
+@@ -18,4 +21,4 @@ export async function requirePermission(permission: string) {
+   return { authorized, user, supabaseAdmin };
+ }
+ 
+-export { supabaseAdmin };
+\ No newline at end of file
++export { supabaseAdmin };
+diff --git a/lib/theme.ts b/lib/theme.ts
+index a7a075f..cad243d 100644
+--- a/lib/theme.ts
++++ b/lib/theme.ts
+@@ -3,7 +3,10 @@
+ // Utilisé par /settings (Personnalisation), /admin (onglet Site) et ThemeProvider (application au chargement).
+ 
+ export const DEFAULT_GOLD = "#a78bfa";
++export const DEFAULT_LOGO_URL = "https://i.imgur.com/Shh0rIn.png";
++export const DEFAULT_APP_NOM = "Obsidian Logistique";
+ export const THEME_STORAGE_KEY = "obsidian_theme_gold";
++export const IDENTITY_STORAGE_KEY = "obsidian_identity";
+ 
+ export interface GoldPalette {
+   gold: string;
+@@ -78,3 +81,28 @@ export function applyCachedThemeIfAny() {
+     // ignore
+   }
+ }
++
++export interface Identity {
++  logoUrl: string;
++  appNom: string;
++}
++
++export function getCachedIdentity(): Identity {
++  if (typeof window === "undefined") return { logoUrl: DEFAULT_LOGO_URL, appNom: DEFAULT_APP_NOM };
++  try {
++    const raw = localStorage.getItem(IDENTITY_STORAGE_KEY);
++    if (raw) return JSON.parse(raw);
++  } catch {
++    // ignore
++  }
++  return { logoUrl: DEFAULT_LOGO_URL, appNom: DEFAULT_APP_NOM };
++}
++
++export function cacheIdentity(identity: Identity) {
++  if (typeof window === "undefined") return;
++  try {
++    localStorage.setItem(IDENTITY_STORAGE_KEY, JSON.stringify(identity));
++  } catch {
++    // ignore
++  }
++}

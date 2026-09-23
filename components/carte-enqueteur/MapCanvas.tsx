@@ -468,6 +468,7 @@ export default function MapCanvas({
   const [search, setSearch] = useState('');
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<{ point: CartePoint; dossier: Dossier } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [mapStyle, setMapStyle] = useState<'satellite' | 'grid' | 'atlas'>('satellite');
@@ -826,68 +827,109 @@ export default function MapCanvas({
           <span style={S.sidebarTitle}>🔥 Points chauds</span>
           <span style={S.sidebarCount}>{visiblePoints.length}</span>
         </div>
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
-          {visiblePoints.map((p) => {
-            const catColor = categoryColor(categories, p.category);
-            const isActive = p.id === selectedId;
-            return (
-              <li key={p.id}>
-                <button
-                  onClick={() => {
-                    setSelectedId(p.id);
-                    flyToPoint(p);
-                    setEditing({
-                      point: p,
-                      dossier: dossiers[p.id] ?? { id: '', point_id: p.id, description: '', tags: [], pieces: [] },
-                    });
-                  }}
-                  style={{
-                    ...S.dossierItem,
-                    ...(isActive ? S.dossierItemActive : {}),
-                    borderLeft: `3px solid ${catColor}`,
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0, marginTop: 5,
-                      background: catColor, boxShadow: `0 0 6px ${catColor}80`,
-                    }}
-                  />
-                  <span style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ color: colors.text, fontWeight: 600, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {p.title}
-                    </div>
-                    <div
+
+        {(() => {
+          // Groupe les points par catégorie (ordre = celui défini dans "⚙ Catégories")
+          const orderedCats = [...categories].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+          const bySlug: Record<string, CartePoint[]> = {};
+          for (const p of visiblePoints) (bySlug[p.category] ??= []).push(p);
+          const groups = orderedCats
+            .map((c) => ({ cat: c, pts: bySlug[c.slug] || [] }))
+            .filter((g) => g.pts.length > 0);
+          // Points dont la catégorie n'existe plus / n'est pas reconnue
+          const knownSlugs = new Set(orderedCats.map((c) => c.slug));
+          const orphans = visiblePoints.filter((p) => !knownSlugs.has(p.category));
+          if (orphans.length > 0) groups.push({ cat: { id: '__orphan', slug: '__orphan', label: 'Autre', color: '#8A93A6' } as Category, pts: orphans });
+
+          if (groups.length === 0) return <div style={S.emptyState}>Aucun point ne correspond.</div>;
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {groups.map(({ cat, pts }) => {
+                const isCollapsed = collapsedCats.has(cat.slug);
+                return (
+                  <div key={cat.slug}>
+                    <button
+                      onClick={() => setCollapsedCats((s) => {
+                        const next = new Set(s);
+                        next.has(cat.slug) ? next.delete(cat.slug) : next.add(cat.slug);
+                        return next;
+                      })}
                       style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 4,
-                        fontFamily: 'monospace', fontSize: 10.5, color: colors.textDimmer,
-                        background: 'rgba(255,255,255,0.03)', border: `1px solid ${colors.border}`,
-                        borderRadius: 999, padding: '1px 7px', marginBottom: 5,
+                        display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                        padding: '6px 8px', marginBottom: 6, borderRadius: 8, cursor: 'pointer',
+                        background: cat.color + '10', border: `1px solid ${cat.color}30`,
+                        fontFamily: "'Inter',sans-serif",
                       }}
                     >
-                      X {p.x.toFixed(0)} · Y {p.y.toFixed(0)}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: colors.textDim,
-                        lineHeight: 1.4,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                      }}
-                    >
-                      {dossiers[p.id]?.description || 'Aucune note pour le moment.'}
-                    </div>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-          {visiblePoints.length === 0 && <li style={S.emptyState}>Aucun point ne correspond.</li>}
-        </ul>
+                      <span style={{ width: 9, height: 9, borderRadius: '50%', background: cat.color, flexShrink: 0, boxShadow: `0 0 6px ${cat.color}80` }} />
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: cat.color, flex: 1, textAlign: 'left' }}>{cat.label}</span>
+                      <span style={{ fontSize: 10.5, fontFamily: 'monospace', color: colors.textDimmer, background: 'rgba(255,255,255,0.05)', borderRadius: 999, padding: '1px 7px' }}>{pts.length}</span>
+                      <span style={{ fontSize: 10, color: colors.textDimmer, transform: isCollapsed ? 'rotate(-90deg)' : 'none', transition: '0.15s' }}>▾</span>
+                    </button>
+
+                    {!isCollapsed && (
+                      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 4 }}>
+                        {pts.map((p) => {
+                          const isActive = p.id === selectedId;
+                          return (
+                            <li key={p.id}>
+                              <button
+                                onClick={() => {
+                                  setSelectedId(p.id);
+                                  flyToPoint(p);
+                                  setEditing({
+                                    point: p,
+                                    dossier: dossiers[p.id] ?? { id: '', point_id: p.id, description: '', tags: [], pieces: [] },
+                                  });
+                                }}
+                                style={{
+                                  ...S.dossierItem,
+                                  ...(isActive ? S.dossierItemActive : {}),
+                                  borderLeft: `3px solid ${cat.color}`,
+                                }}
+                              >
+                                <span style={{ minWidth: 0, flex: 1 }}>
+                                  <div style={{ color: colors.text, fontWeight: 600, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {p.title}
+                                  </div>
+                                  <div
+                                    style={{
+                                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                                      fontFamily: 'monospace', fontSize: 10.5, color: colors.textDimmer,
+                                      background: 'rgba(255,255,255,0.03)', border: `1px solid ${colors.border}`,
+                                      borderRadius: 999, padding: '1px 7px', marginBottom: 5,
+                                    }}
+                                  >
+                                    X {p.x.toFixed(0)} · Y {p.y.toFixed(0)}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: 12,
+                                      color: colors.textDim,
+                                      lineHeight: 1.4,
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 2,
+                                      WebkitBoxOrient: 'vertical',
+                                    }}
+                                  >
+                                    {dossiers[p.id]?.description || 'Aucune note pour le moment.'}
+                                  </div>
+                                </span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </aside>
 
       {pendingCoords && (
