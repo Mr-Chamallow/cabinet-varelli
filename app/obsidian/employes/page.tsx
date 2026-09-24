@@ -47,23 +47,21 @@ export default function EmployesObsidianPage() {
   }
 
   async function save() {
-    if (!supabase || !user || !form.nom.trim()) return;
+    if (!user || !form.nom.trim()) return;
     setSaving(true);
-    if (editId) {
-      await supabase.from("obsidian_employes").update(form).eq("id", editId);
-      showT("Fiche mise à jour");
-    } else {
-      await supabase.from("obsidian_employes").insert([{ ...form, created_by: user.nom, created_by_id: user.id }]);
-      showT("Employé ajouté");
-    }
+    const res = editId
+      ? await fetch("/api/obsidian/employes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editId, ...form }) })
+      : await fetch("/api/obsidian/employes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, created_by: user.nom, created_by_id: user.id }) });
+    if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); setSaving(false); return; }
+    showT(editId ? "Fiche mise à jour" : "Employé ajouté");
     setShowForm(false);
     setSaving(false);
     load();
   }
 
   async function remove(id: string) {
-    if (!supabase) return;
-    await supabase.from("obsidian_employes").delete().eq("id", id);
+    const res = await fetch("/api/obsidian/employes", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); return; }
     setConfirm(null);
     showT("Fiche supprimée");
     load();

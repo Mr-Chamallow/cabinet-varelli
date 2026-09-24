@@ -38,14 +38,20 @@ export default function StocksPage(){
   showT("Stock créé");setSaving(false);setTab("stocks");
 }
   async function addMouvement(stock:Stock){
-    if(!supabase||mvtForm.quantite<=0)return;setSaving(true);
-    const newQty=mvtForm.type==="entrée"?stock.quantite+mvtForm.quantite:Math.max(0,stock.quantite-mvtForm.quantite);
-    await supabase.from("obsidian_mouvements").insert([{stock_id:stock.id,stock_nom:stock.nom,type:mvtForm.type,quantite:mvtForm.quantite,motif:mvtForm.motif,membre:mvtForm.membre||user?.nom||"",prix_unitaire:stock.prix_unitaire,total:mvtForm.quantite*stock.prix_unitaire,created_by:user?.nom||""}]);
-    await supabase.from("obsidian_stocks").update({quantite:newQty,updated_at:new Date().toISOString()}).eq("id",stock.id);
-    setStocks(s=>s.map(x=>x.id===stock.id?{...x,quantite:newQty}:x));
+    if(mvtForm.quantite<=0)return;setSaving(true);
+    const res = await fetch("/api/obsidian/mouvements", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stock_id: stock.id, type: mvtForm.type, quantite: mvtForm.quantite, motif: mvtForm.motif, membre: mvtForm.membre || user?.nom || "", created_by: user?.nom || "" }),
+    });
+    const data = await res.json();
+    if (!res.ok) { alert("❌ "+data.error); setSaving(false); return; }
+    setStocks(s=>s.map(x=>x.id===stock.id?data.stock:x));
     setMouvements(m=>[{id:Date.now().toString(),stock_nom:stock.nom,type:mvtForm.type,quantite:mvtForm.quantite,motif:mvtForm.motif,membre:mvtForm.membre||user?.nom||"",created_at:new Date().toISOString()},...m]);
     setShowMvt(null);setMvtForm({stock_id:"",type:"sortie",quantite:1,motif:"",membre:""});showT(`${mvtForm.type==="entrée"?"Entrée":"Sortie"} enregistrée`);setSaving(false);}
-  async function deleteStock(id:string){if(!supabase)return;await supabase.from("obsidian_stocks").delete().eq("id",id);setStocks(s=>s.filter(x=>x.id!==id));}
+  async function deleteStock(id:string){
+    const res = await fetch("/api/obsidian/stocks", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); return; }
+    setStocks(s=>s.filter(x=>x.id!==id));}
   const filtered=stocks.filter(s=>!filterCat||s.categorie===filterCat);
   const alerts=stocks.filter(s=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte);
   const CAT_COL:Record<string,string>={drogue:"#7c3aed",arme:"var(--danger)",accessoire:"var(--warning)",composant:"var(--info)",objet_rare:"var(--gold)",autre:"var(--text-muted)"};

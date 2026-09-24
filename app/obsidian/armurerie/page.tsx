@@ -29,24 +29,32 @@ export default function ArmureriePage(){
   }
   function showT(m:string){setToast(m);setTimeout(()=>setToast(null),3000);}
   async function addStock(){
-    if(!supabase||!form.nom)return;setSaving(true);
-    const{data,error}=await supabase.from("obsidian_stocks").insert([{...form}]).select().single();
-    if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}
+    if(!form.nom)return;setSaving(true);
+    const res = await fetch("/api/obsidian/stocks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    const data = await res.json();
+    if (!res.ok) { alert("❌ Erreur: "+data.error); setSaving(false); return; }
     setStocks(s=>[...s,data]);
     setForm({nom:"",categorie:"arme",emoji:"🔫",quantite:0,seuil_alerte:0,unite:"unité",prix_unitaire:0,notes:""});
     showT("Ajouté");setSaving(false);setTab("inventaire");
   }
   async function enregistrerPrise(stock:any){
-    if(!supabase||priseForm.quantite<=0)return;setSaving(true);
-    const newQty=Math.max(0,stock.quantite-priseForm.quantite);
+    if(priseForm.quantite<=0)return;setSaving(true);
     const retourTxt=priseForm.retour?"Retour prévu":"Retour: NON";
-    const{error}=await supabase.from("obsidian_mouvements").insert([{stock_id:stock.id,stock_nom:stock.nom,type:"sortie",quantite:priseForm.quantite,motif:priseForm.motif+" | "+retourTxt,membre:user?.nom||"",created_by:user?.nom||""}]);
-    if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}
-    const{error:err2}=await supabase.from("obsidian_stocks").update({quantite:newQty}).eq("id",stock.id);
-    if(err2){alert("❌ Erreur: "+err2.message);setSaving(false);return;}
-    setStocks(s=>s.map(x=>x.id===stock.id?{...x,quantite:newQty}:x));
+    const res = await fetch("/api/obsidian/mouvements", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stock_id: stock.id, type: "sortie", quantite: priseForm.quantite, motif: priseForm.motif+" | "+retourTxt, membre: user?.nom||"", created_by: user?.nom||"" }),
+    });
+    const data = await res.json();
+    if (!res.ok) { alert("❌ Erreur: "+data.error); setSaving(false); return; }
+    setStocks(s=>s.map(x=>x.id===stock.id?data.stock:x));
     setLogs(l=>[{id:Date.now().toString(),stock_nom:stock.nom,type:"sortie",quantite:priseForm.quantite,motif:priseForm.motif+" | "+retourTxt,membre:user?.nom||"",created_at:new Date().toISOString()},...l]);
     setShowPrise(null);setPriseForm({quantite:1,motif:"",retour:false});showT("Prise enregistrée");setSaving(false);
+  }
+  async function ajusterQuantite(s:any, newQ:number){
+    const res = await fetch("/api/obsidian/stocks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: s.id, quantite: newQ }) });
+    const data = await res.json();
+    if (!res.ok) { alert("❌ Erreur: "+data.error); return; }
+    setStocks(st=>st.map(x=>x.id===s.id?data:x));
   }
   const filtered=stocks.filter(s=>!filterCat||s.categorie===filterCat);
   const alerts=stocks.filter(s=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte);
@@ -70,7 +78,7 @@ export default function ArmureriePage(){
             <div style={{textAlign:"center",minWidth:70}}><div style={{fontFamily:"'Playfair Display',serif",fontWeight:900,fontSize:"1.5rem",color:s.seuil_alerte>0&&s.quantite<=s.seuil_alerte?"var(--danger)":"var(--text)"}}>{s.quantite}</div><div style={{fontSize:"0.62rem",color:"var(--text-dim)"}}>{s.unite}</div></div>
             <div style={{display:"flex",gap:"0.35rem",flexShrink:0}}>
               <button className="btn btn-sm" onClick={()=>{setShowPrise(s);setPriseForm({quantite:1,motif:"",retour:false});}} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",color:"var(--danger)",fontSize:"0.72rem"}}>↓ Prise</button>
-              <button className="btn btn-ghost btn-sm" onClick={async()=>{if(!supabase)return;const newQ=s.quantite+1;const{error}=await supabase.from("obsidian_stocks").update({quantite:newQ}).eq("id",s.id);if(error){alert("❌ Erreur: "+error.message);return;}setStocks(st=>st.map(x=>x.id===s.id?{...x,quantite:newQ}:x));}} style={{background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",color:"var(--success)",fontSize:"0.72rem"}}>+1</button>
+              <button className="btn btn-ghost btn-sm" onClick={()=>ajusterQuantite(s, s.quantite+1)} style={{background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",color:"var(--success)",fontSize:"0.72rem"}}>+1</button>
             </div>
           </div>)}
           {filtered.length===0&&<div className="empty-state"><div className="empty-icon">🔫</div><div className="empty-title">Aucun article</div></div>}

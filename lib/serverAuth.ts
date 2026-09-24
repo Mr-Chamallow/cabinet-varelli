@@ -51,3 +51,16 @@ export const supabaseAdmin = new Proxy({} as SupabaseClient, {
     return (client as any)[prop];
   },
 });
+
+// Autorise si l'utilisateur a AU MOINS UNE des permissions données — utile quand
+// plusieurs pages/rôles distincts (ex: Stocks et Armurerie) écrivent dans la même
+// table et doivent donc pouvoir passer par la même route API.
+export async function requireAnyPermission(permissions: string[]) {
+  let last: Awaited<ReturnType<typeof requirePermission>> | null = null;
+  for (const p of permissions) {
+    const res = await requirePermission(p);
+    if (res.authorized) return res;
+    last = res;
+  }
+  return last!;
+}

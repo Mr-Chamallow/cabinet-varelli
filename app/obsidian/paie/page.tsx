@@ -117,12 +117,14 @@ export default function PaieObsidianPage() {
   }), [rows]);
 
   async function marquerPaye(nom: string) {
-    if (!supabase || !user) return;
+    if (!user) return;
     const montant = payAmount[nom] ?? rows.find(r => r.nom === nom)?.restant ?? 0;
     if (montant <= 0) return;
-    await supabase.from("obsidian_paiements").insert([{
-      employe: nom, semaine: weekStartISO, montant, paid_by: user.nom, paid_by_id: user.id,
-    }]);
+    const res = await fetch("/api/obsidian/paie", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ employe: nom, semaine: weekStartISO, montant, paid_by: user.nom, paid_by_id: user.id }),
+    });
+    if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); return; }
     showT(`${nom} marqué payé (${fmt(montant)})`);
     load();
   }
