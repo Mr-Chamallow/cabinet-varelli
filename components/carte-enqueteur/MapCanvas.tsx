@@ -16,6 +16,7 @@ import {
   ChecklistItem,
   isChecklistItemDone,
   defaultChecklistForCategory,
+  categoryLabel,
   Gang,
   Personne,
   Plaque,
@@ -641,6 +642,15 @@ export default function MapCanvas({
     })();
   }, []);
 
+  // Dossier "vide" utilisé quand on ouvre un point qui n'a encore jamais été sauvegardé
+  // (créé avant l'existence des checklists, ou jamais ouvert) — applique quand même la
+  // checklist par défaut si la catégorie du point est Labo/Table de purification, pour
+  // que les points déjà existants en profitent aussi, pas seulement les nouveaux.
+  const emptyDossierFor = (p: CartePoint): Dossier => ({
+    id: '', point_id: p.id, description: '', tags: [], pieces: [], statut: 'actif',
+    checklist: defaultChecklistForCategory(categoryLabel(categories, p.category)),
+  });
+
   const confirmNewPoint = async (title: string, iconUrl?: string, drogueLiee?: string, pointType?: 'laboratoire' | 'table_purification' | 'autre') => {
     if (!pendingCoords) return;
     const { x, y } = pendingCoords;
@@ -728,7 +738,7 @@ export default function MapCanvas({
         setSelectedId(p.id);
         setEditing({
           point: p,
-          dossier: dossiers[p.id] ?? { id: '', point_id: p.id, description: '', tags: [], pieces: [], statut: 'actif', checklist: [] },
+          dossier: dossiers[p.id] ?? emptyDossierFor(p),
         });
       });
       marker.bindTooltip(`${p.title}${statut !== 'actif' ? ` — ${STATUT_CONFIG[statut].label}` : ''}`, { direction: 'top', offset: [0, -10] });
@@ -760,7 +770,7 @@ export default function MapCanvas({
     flyToPoint(target);
     setEditing({
       point: target,
-      dossier: dossiers[target.id] ?? { id: '', point_id: target.id, description: '', tags: [], pieces: [], statut: 'actif', checklist: [] },
+      dossier: dossiers[target.id] ?? emptyDossierFor(target),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points]);
@@ -1015,7 +1025,7 @@ export default function MapCanvas({
                                   flyToPoint(p);
                                   setEditing({
                                     point: p,
-                                    dossier: dossiers[p.id] ?? { id: '', point_id: p.id, description: '', tags: [], pieces: [] },
+                                    dossier: dossiers[p.id] ?? emptyDossierFor(p),
                                   });
                                 }}
                                 style={{
