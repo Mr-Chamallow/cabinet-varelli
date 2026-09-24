@@ -14,6 +14,8 @@ import {
   DossierStatut,
   STATUT_CONFIG,
   ChecklistItem,
+  isChecklistItemDone,
+  defaultChecklistForCategory,
   Gang,
   Personne,
   Plaque,
@@ -639,11 +641,19 @@ export default function MapCanvas({
     })();
   }, []);
 
-  const confirmNewPoint = async (title: string, iconUrl?: string, drogueLiee?: string) => {
+  const confirmNewPoint = async (title: string, iconUrl?: string, drogueLiee?: string, pointType?: 'laboratoire' | 'table_purification' | 'autre') => {
     if (!pendingCoords) return;
     const { x, y } = pendingCoords;
     setPendingCoords(null);
-    const defaultCategory = categories[0]?.slug ?? 'autre';
+
+    // Fait correspondre le type choisi (étape 1 du modal de création) à une vraie
+    // catégorie existante par son libellé — les catégories sont gérées dynamiquement
+    // (⚙ Catégories) donc on matche par nom plutôt que par slug figé.
+    const typeLabel = pointType === 'laboratoire' ? 'laboratoire' : pointType === 'table_purification' ? 'table de purification' : null;
+    const matchedCategory = typeLabel ? categories.find((c) => c.label.trim().toLowerCase() === typeLabel) : null;
+    const defaultCategory = matchedCategory?.slug ?? categories[0]?.slug ?? 'autre';
+    const defaultChecklist = typeLabel ? defaultChecklistForCategory(typeLabel) : [];
+
     const localId = `local-${Date.now()}`;
     const localPoint: CartePoint = { id: localId, x, y, category: defaultCategory, title, icon_url: iconUrl ?? null, drogue_liee: drogueLiee ?? null } as any;
     setPoints((p) => [...p, localPoint]);
@@ -652,13 +662,13 @@ export default function MapCanvas({
       setPoints((p) => p.map((pt) => (pt.id === localId ? saved : pt)));
       setEditing({
         point: saved,
-        dossier: { id: '', point_id: saved.id, description: '', tags: [], pieces: [] },
+        dossier: { id: '', point_id: saved.id, description: '', tags: [], pieces: [], checklist: defaultChecklist },
       });
     } catch (err) {
       console.error(err);
       setEditing({
         point: localPoint,
-        dossier: { id: '', point_id: localPoint.id, description: '', tags: [], pieces: [] },
+        dossier: { id: '', point_id: localPoint.id, description: '', tags: [], pieces: [], checklist: defaultChecklist },
       });
     }
   };
@@ -996,7 +1006,7 @@ export default function MapCanvas({
                           const dossier = dossiers[p.id];
                           const statut: DossierStatut = dossier?.statut || 'actif';
                           const checklist = dossier?.checklist || [];
-                          const checklistDone = checklist.filter((c) => c.done).length;
+                          const checklistDone = checklist.filter(isChecklistItemDone).length;
                           return (
                             <li key={p.id}>
                               <button
@@ -1242,6 +1252,17 @@ function DossierModal({
     commit({}, { checklist: next });
   };
 
+  const setChecklistCounter = (idx: number, value: number) => {
+    const next = checklist.map((c, i) => {
+      if (i !== idx) return c;
+      const max = c.max ?? 0;
+      const clamped = Math.max(0, Math.min(value, max));
+      return { ...c, count: clamped };
+    });
+    setChecklist(next);
+    commit({}, { checklist: next });
+  };
+
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -1455,22 +1476,50 @@ function DossierModal({
             style={{ ...S.input, marginBottom: 16 }}
           />
 
-          <label style={S.label}>Checklist ({checklist.filter((c) => c.done).length}/{checklist.length})</label>
+          <label style={S.label}>Checklist ({checklist.filter(isChecklistItemDone).length}/{checklist.length})</label>
           <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            {checklist.map((item, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)', border: `1px solid ${colors.border}` }}>
-                <input
-                  type="checkbox"
-                  checked={item.done}
-                  onChange={() => toggleChecklistItem(idx)}
-                  style={{ width: 15, height: 15, cursor: 'pointer', flexShrink: 0, accentColor: colors.amber }}
-                />
-                <span style={{ flex: 1, fontSize: 13, color: item.done ? colors.textDim : colors.text, textDecoration: item.done ? 'line-through' : 'none' }}>
-                  {item.label}
-                </span>
-                <button onClick={() => removeChecklistItem(idx)} style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>✕</button>
-              </div>
-            ))}
+            {checklist.map((item, idx) => {
+              const done = isChecklistItemDone(item);
+              if (item.kind === 'counter') {
+                const count = item.count ?? 0;
+                const max = item.max ?? 0;
+                return (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 6, background: done ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${done ? 'rgba(34,197,94,0.25)' : colors.border}` }}>
+                    <span style={{ flex: 1, fontSize: 13, color: done ? '#22c55e' : colors.text, fontWeight: done ? 600 : 400 }}>
+                      {done && '✓ '}{item.label}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setChecklistCounter(idx, count - 1)}
+                      disabled={count <= 0}
+                      style={{ width: 22, height: 22, borderRadius: 5, border: `1px solid ${colors.border}`, background: 'transparent', color: colors.textDim, cursor: count > 0 ? 'pointer' : 'default', opacity: count > 0 ? 1 : 0.4, fontSize: 13, lineHeight: 1 }}
+                    >−</button>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12.5, minWidth: 42, textAlign: 'center', color: done ? '#22c55e' : colors.textDim }}>{count}/{max}</span>
+                    <button
+                      type="button"
+                      onClick={() => setChecklistCounter(idx, count + 1)}
+                      disabled={count >= max}
+                      style={{ width: 22, height: 22, borderRadius: 5, border: `1px solid ${colors.border}`, background: 'transparent', color: colors.textDim, cursor: count < max ? 'pointer' : 'default', opacity: count < max ? 1 : 0.4, fontSize: 13, lineHeight: 1 }}
+                    >+</button>
+                    <button onClick={() => removeChecklistItem(idx)} style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>✕</button>
+                  </div>
+                );
+              }
+              return (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)', border: `1px solid ${colors.border}` }}>
+                  <input
+                    type="checkbox"
+                    checked={item.done}
+                    onChange={() => toggleChecklistItem(idx)}
+                    style={{ width: 15, height: 15, cursor: 'pointer', flexShrink: 0, accentColor: colors.amber }}
+                  />
+                  <span style={{ flex: 1, fontSize: 13, color: item.done ? colors.textDim : colors.text, textDecoration: item.done ? 'line-through' : 'none' }}>
+                    {item.label}
+                  </span>
+                  <button onClick={() => removeChecklistItem(idx)} style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>✕</button>
+                </div>
+              );
+            })}
             <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
               <input
                 value={newChecklistLabel}

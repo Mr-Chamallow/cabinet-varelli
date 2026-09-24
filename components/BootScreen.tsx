@@ -34,10 +34,10 @@ const LOG: LogLine[] = [
 ];
 
 const BARS: { label: string; durationMs: number }[] = [
-  { label: "Réseau", durationMs: 900 },
-  { label: "Chiffrement", durationMs: 1300 },
-  { label: "Base de données", durationMs: 1650 },
-  { label: "Proxy", durationMs: 1100 },
+  { label: "Réseau", durationMs: 1600 },
+  { label: "Chiffrement", durationMs: 2300 },
+  { label: "Base de données", durationMs: 2900 },
+  { label: "Proxy", durationMs: 1950 },
 ];
 
 // Se relance à chaque VRAI chargement de page (refresh, connexion) car monté au
@@ -56,7 +56,7 @@ export function BootScreen() {
   // Logs qui s'affichent ligne par ligne, façon terminal
   useEffect(() => {
     if (!visible || step >= LOG.length) return;
-    const t = setTimeout(() => setStep((s) => s + 1), 95);
+    const t = setTimeout(() => setStep((s) => s + 1), 170);
     return () => clearTimeout(t);
   }, [visible, step]);
 
@@ -79,7 +79,7 @@ export function BootScreen() {
 
   useEffect(() => {
     if (!visible) return;
-    const end = setTimeout(() => close(), 2500);
+    const end = setTimeout(() => close(), 4200);
     return () => clearTimeout(end);
   }, [visible]);
 

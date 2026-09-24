@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { fetchRecentActivity, ACTIVITY_CONFIG, timeAgo, ActivityItem } from "@/lib/activity";
 import { deriveGoldPalette, applyThemeToDocument, DEFAULT_GOLD, isValidHex } from "@/lib/theme";
+import { setPreviewRole } from "@/lib/previewRole";
 
 // Force le rendu dynamique côté serveur/client et désactive le pré-rendu statique au build Vercel
 export const dynamic = "force-dynamic";
@@ -69,6 +70,7 @@ export default function AdminPage() {
   const [overrides, setOverrides] = useState<RoleOverride[]>([]);
   const [logins, setLogins] = useState<SiteLogin[]>([]);
   const [loginSearch, setLoginSearch] = useState("");
+  const [groupByRole, setGroupByRole] = useState(true);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string>("");
@@ -365,14 +367,23 @@ export default function AdminPage() {
             </div>
           )}
 
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", margin:"2rem 0 1rem" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", margin:"2rem 0 1rem", flexWrap:"wrap", gap:"0.5rem" }}>
             <div className="section-title">Membres connectés ({logins.length})</div>
-            <input
-              value={loginSearch}
-              onChange={(e) => setLoginSearch(e.target.value)}
-              placeholder="Rechercher un nom, un ID, un rôle..."
-              style={{ maxWidth: 260 }}
-            />
+            <div style={{ display:"flex", gap:"0.5rem" }}>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setGroupByRole(v => !v)}
+                style={groupByRole ? { color:"var(--gold)", borderColor:"rgba(var(--gold-rgb),0.4)" } : {}}
+              >
+                {groupByRole ? "📋 Grouper par rôle" : "📄 Liste à plat"}
+              </button>
+              <input
+                value={loginSearch}
+                onChange={(e) => setLoginSearch(e.target.value)}
+                placeholder="Rechercher un nom, un ID, un rôle..."
+                style={{ maxWidth: 260 }}
+              />
+            </div>
           </div>
           <p style={{ fontSize:"0.8rem", color:"var(--text-dim)", marginBottom:"1rem" }}>
             Chaque personne qui s'est déjà connectée au site, avec le rôle détecté et sa dernière connexion —
@@ -380,45 +391,76 @@ export default function AdminPage() {
           </p>
           {logins.length === 0 ? (
             <div className="empty-state"><div className="empty-icon">👥</div><div className="empty-title">Personne ne s'est encore connecté</div></div>
-          ) : (
-            <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
-              {logins
-                .filter(l => {
-                  const q = loginSearch.toLowerCase().trim();
-                  if (!q) return true;
-                  return (l.discord_name||"").toLowerCase().includes(q) || l.discord_id.includes(q) || (l.site_role||"").toLowerCase().includes(q);
-                })
-                .map(l => {
-                  const roleData = roles.find(r => r.nom === l.site_role);
+          ) : (() => {
+            const filtered = logins.filter(l => {
+              const q = loginSearch.toLowerCase().trim();
+              if (!q) return true;
+              return (l.discord_name||"").toLowerCase().includes(q) || l.discord_id.includes(q) || (l.site_role||"").toLowerCase().includes(q);
+            });
+
+            const memberCard = (l: SiteLogin) => {
+              const roleData = roles.find(r => r.nom === l.site_role);
+              const couleur = roleData?.couleur || "#8A93A6";
+              return (
+                <div key={l.discord_id} className="card" style={{ padding: "0.75rem 1rem" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:"0.875rem", flexWrap:"wrap" }}>
+                    <div style={{ width:36,height:36,borderRadius:"50%",flexShrink:0, background:couleur+"20",border:`2px solid ${couleur}40`, display:"flex",alignItems:"center",justifyContent:"center", fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"0.9rem",color:couleur }}>
+                      {(l.discord_name || l.discord_id).charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ flex:1, minWidth:140 }}>
+                      <div style={{ fontWeight:600, fontSize:"0.88rem", marginBottom:"0.15rem" }}>{l.discord_name || "(sans nom)"}</div>
+                      <div style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily: "var(--font-mono)" }}>{l.discord_id}</div>
+                    </div>
+                    {!groupByRole && (
+                      <span style={{ fontSize:"0.72rem", padding:"0.15rem 0.55rem", borderRadius:999, background:couleur+"18", color:couleur, border:`1px solid ${couleur}30`, fontWeight:600, flexShrink:0 }}>
+                        {l.site_role || "(aucun rôle)"}
+                      </span>
+                    )}
+                    <span style={{ fontSize:"0.72rem", color:"var(--text-dim)", flexShrink:0, minWidth: 90, textAlign: "right" }}>
+                      {l.last_login ? timeAgo(l.last_login) : "—"}
+                    </span>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => { setOverrideForm({ nom: l.discord_name || "", discord_id: l.discord_id, role: l.site_role || "" }); setCreateError(""); setShowCreateOverride(true); }}
+                    >
+                      🎭 Forcer un rôle
+                    </button>
+                  </div>
+                </div>
+              );
+            };
+
+            if (!groupByRole) {
+              return <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>{filtered.map(memberCard)}</div>;
+            }
+
+            const groups: Record<string, SiteLogin[]> = {};
+            filtered.forEach(l => { const key = l.site_role || "(aucun rôle)"; (groups[key] ??= []).push(l); });
+            // Ordonné selon l'ordre des rôles déclarés dans Admin > Rôles, groupe "aucun rôle" en dernier
+            const orderedKeys = [...roles.map(r => r.nom).filter(n => groups[n]), ...Object.keys(groups).filter(k => !roles.some(r => r.nom === k))];
+
+            return (
+              <div style={{ display:"flex", flexDirection:"column", gap:"1.25rem" }}>
+                {orderedKeys.map(roleName => {
+                  const roleData = roles.find(r => r.nom === roleName);
                   const couleur = roleData?.couleur || "#8A93A6";
+                  const members = groups[roleName];
                   return (
-                    <div key={l.discord_id} className="card" style={{ padding: "0.75rem 1rem" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:"0.875rem", flexWrap:"wrap" }}>
-                        <div style={{ width:36,height:36,borderRadius:"50%",flexShrink:0, background:couleur+"20",border:`2px solid ${couleur}40`, display:"flex",alignItems:"center",justifyContent:"center", fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"0.9rem",color:couleur }}>
-                          {(l.discord_name || l.discord_id).charAt(0).toUpperCase()}
-                        </div>
-                        <div style={{ flex:1, minWidth:140 }}>
-                          <div style={{ fontWeight:600, fontSize:"0.88rem", marginBottom:"0.15rem" }}>{l.discord_name || "(sans nom)"}</div>
-                          <div style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily: "var(--font-mono)" }}>{l.discord_id}</div>
-                        </div>
-                        <span style={{ fontSize:"0.72rem", padding:"0.15rem 0.55rem", borderRadius:999, background:couleur+"18", color:couleur, border:`1px solid ${couleur}30`, fontWeight:600, flexShrink:0 }}>
-                          {l.site_role || "(aucun rôle)"}
-                        </span>
-                        <span style={{ fontSize:"0.72rem", color:"var(--text-dim)", flexShrink:0, minWidth: 90, textAlign: "right" }}>
-                          {l.last_login ? timeAgo(l.last_login) : "—"}
-                        </span>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => { setOverrideForm({ nom: l.discord_name || "", discord_id: l.discord_id, role: l.site_role || "" }); setCreateError(""); setShowCreateOverride(true); }}
-                        >
-                          🎭 Forcer un rôle
-                        </button>
+                    <div key={roleName}>
+                      <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.5rem" }}>
+                        <span style={{ width:8,height:8,borderRadius:"50%",background:couleur,flexShrink:0 }} />
+                        <span style={{ fontSize:"0.8rem", fontWeight:700, color:couleur }}>{roleName}</span>
+                        <span style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily:"var(--font-mono)", background:"var(--surface)", borderRadius:999, padding:"0.05rem 0.5rem" }}>{members.length}</span>
+                      </div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
+                        {members.map(memberCard)}
                       </div>
                     </div>
                   );
                 })}
-            </div>
-          )}
+              </div>
+            );
+          })()}
         </div>
       ) : activeTab === "roles" ? (
         <div>
@@ -450,6 +492,13 @@ export default function AdminPage() {
                     <div style={{ display:"flex", gap:"0.4rem", flexShrink:0 }}>
                       {!isEditing ? (
                         <>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            title={`Voir le site en tant que "${r.nom}"`}
+                            onClick={() => { setPreviewRole(r.nom); router.push("/"); }}
+                          >
+                            👁️ Aperçu
+                          </button>
                           <button className="btn btn-outline btn-sm" onClick={() => { setEditRoleId(r.id); setEditRolePerms([...(r.permissions || [])]); setEditRoleCouleur(r.couleur || "#c9a84c"); }}>✏️ Modifier</button>
                           <button className="btn btn-ghost btn-sm" style={{color:"var(--danger)"}} onClick={()=>setDeleteRoleId(r.id)}>🗑️</button>
                         </>

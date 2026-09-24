@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from '@/components/Providers';
 import { Sidebar } from '@/components/Sidebar';
+import { PreviewBanner } from '@/components/PreviewBanner';
 
 export const metadata: Metadata = {
   title: 'Obsidian Logistique',
@@ -25,8 +26,11 @@ export default function RootLayout({
           <div className="w-64 flex-shrink-0 h-full z-20">
             <Sidebar />
           </div>
-          <main className="flex-1 h-full relative overflow-hidden z-10">
-            {children}
+          <main className="flex-1 h-full relative z-10 flex flex-col overflow-hidden">
+            <PreviewBanner />
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {children}
+            </div>
           </main>
         </Providers>
       </body>

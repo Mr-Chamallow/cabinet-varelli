@@ -54,6 +54,38 @@ export interface DossierPiece {
 export interface ChecklistItem {
   label: string;
   done: boolean;
+  kind?: 'check' | 'counter'; // absent = 'check' (case à cocher classique)
+  count?: number;             // valeur actuelle si kind === 'counter'
+  max?: number;                // valeur max si kind === 'counter'
+}
+
+// Un item "counter" est considéré terminé quand count atteint max — un item
+// "check" classique utilise simplement son booléen `done`.
+export function isChecklistItemDone(item: ChecklistItem): boolean {
+  if (item.kind === 'counter') return (item.count ?? 0) >= (item.max ?? 0);
+  return item.done;
+}
+
+// Checklists imposées d'office selon la catégorie du point (labo / table de
+// purification) — demandé pour un suivi cohérent des recensements/arrestations
+// sans avoir à les retaper à chaque nouveau point.
+export const DEFAULT_CHECKLISTS: Record<string, ChecklistItem[]> = {
+  laboratoire: [
+    { label: 'Recensement', done: false, kind: 'counter', count: 0, max: 15 },
+    { label: 'Arrestations avec délit mineur', done: false, kind: 'counter', count: 0, max: 4 },
+  ],
+  'table de purification': [
+    { label: 'Recensement', done: false, kind: 'counter', count: 0, max: 15 },
+    { label: 'Arrestations avec délit mineur', done: false, kind: 'counter', count: 0, max: 4 },
+  ],
+};
+
+// Retourne la checklist par défaut pour un libellé de catégorie donné (comparaison
+// insensible à la casse/accents), ou un tableau vide si aucune n'est définie.
+export function defaultChecklistForCategory(categoryLabel: string): ChecklistItem[] {
+  const key = categoryLabel.trim().toLowerCase();
+  const found = DEFAULT_CHECKLISTS[key];
+  return found ? found.map((i) => ({ ...i })) : [];
 }
 
 export type DossierStatut = 'actif' | 'resolu' | 'archive';

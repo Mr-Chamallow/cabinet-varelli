@@ -22,7 +22,7 @@ export const ALL_PERMISSIONS = [
   "obsidian_dashboard", "obsidian_prix", "obsidian_stocks", "obsidian_armurerie",
   "obsidian_garage", "obsidian_comptabilite", "obsidian_rdv", "obsidian_contrats", "obsidian_stats", "cahier_vente", "obsidian_paie",
   "obsidian_employes", "h47", "admin", "supervision", "delete_all", "edit_all",
-  "juridique", "calculatrice", "carte-enqueteur",
+  "juridique", "calculatrice", "carte-enqueteur", "utile_samp",
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
@@ -36,17 +36,18 @@ export const PERMISSION_LABELS: Record<string, string> = {
   h47: "H-47", admin: "Administration", supervision: "Supervision",
   delete_all: "Suppression globale", edit_all: "Édition globale",
   juridique: "Code pénal", calculatrice: "Calculatrice", "carte-enqueteur": "Carte enquêteur",
+  utile_samp: "Utile SAMP",
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   "Associé / Patron":               [...ALL_PERMISSIONS], // ← LA CLÉ QUI MANQUAIT
   "CEO - Directeur général":        [...ALL_PERMISSIONS],
   "COO - Directrice opérationnel":  ALL_PERMISSIONS.filter(p => p !== "delete_all"),
-  "Responsable juridique":          ["obsidian_dashboard","obsidian_rdv","obsidian_contrats","obsidian_stats","juridique","carte-enqueteur"],
-  "Agent juridique":                ["obsidian_dashboard","obsidian_rdv","juridique","carte-enqueteur"],
+  "Responsable juridique":          ["obsidian_dashboard","obsidian_rdv","obsidian_contrats","obsidian_stats","juridique","utile_samp","carte-enqueteur"],
+  "Agent juridique":                ["obsidian_dashboard","obsidian_rdv","juridique","utile_samp","carte-enqueteur"],
   "Responsable logistique":         ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_planification","obsidian_stats","cahier_vente","h47","obsidian_paie","obsidian_employes","calculatrice","carte-enqueteur"],
   "Agent logistique":               ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_rdv","cahier_vente","h47","carte-enqueteur"],
-  "Responsable sécurité":           ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","obsidian_planification","carte-enqueteur","juridique"],
+  "Responsable sécurité":           ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","obsidian_planification","carte-enqueteur","juridique","utile_samp"],
   "Agent de sécurité":              ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","carte-enqueteur"],
   "Opérateur":                      ["obsidian_dashboard","obsidian_rdv","carte-enqueteur"],
   "Opérateur stagiaire":            ["obsidian_dashboard"],
@@ -85,6 +86,7 @@ const LANDING_PRIORITY: { path: string; permission: string }[] = [
   { path: "/", permission: "obsidian_dashboard" },
   { path: "/carte-enqueteur", permission: "carte-enqueteur" },
   { path: "/juridique", permission: "juridique" },
+  { path: "/utile-samp", permission: "utile_samp" },
   { path: "/obsidian/prix", permission: "obsidian_prix" },
   { path: "/cahier-vente", permission: "cahier_vente" },
   { path: "/admin", permission: "admin" },

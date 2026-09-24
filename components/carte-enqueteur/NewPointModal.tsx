@@ -36,7 +36,7 @@ const TYPE_OPTIONS: { key: PointType; label: string; icon: string }[] = [
 interface Props {
   presets: Preset[];
   onCancel: () => void;
-  onConfirm: (title: string, iconUrl?: string, drogueLiee?: string) => void;
+  onConfirm: (title: string, iconUrl?: string, drogueLiee?: string, pointType?: PointType) => void;
 }
 
 export default function NewPointModal({ presets, onCancel, onConfirm }: Props) {
@@ -74,7 +74,7 @@ export default function NewPointModal({ presets, onCancel, onConfirm }: Props) {
 
   function confirm() {
     if (!title.trim()) return;
-    onConfirm(title.trim(), selectedDrogue?.icon_url, selectedDrogue?.nom);
+    onConfirm(title.trim(), selectedDrogue?.icon_url, selectedDrogue?.nom, pointType ?? undefined);
   }
 
   const renderGroup = (label: string, items: Preset[]) =>
