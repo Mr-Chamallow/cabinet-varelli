@@ -150,7 +150,7 @@ export default function PaieObsidianPage() {
 
       <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1.25rem" }}>
         {(["apercu", "historique", "reglages"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{ padding: "0.4rem 0.875rem", borderRadius: "var(--radius)", cursor: "pointer", fontFamily: "'Inter',sans-serif", fontSize: "0.8rem", fontWeight: tab === t ? 700 : 400, background: tab === t ? "var(--gold-muted)" : "var(--surface)", border: `1px solid ${tab === t ? "rgba(196,179,137,0.4)" : "var(--border)"}`, color: tab === t ? "var(--gold)" : "var(--text-muted)" }}>
+          <button key={t} onClick={() => setTab(t)} style={{ padding: "0.4rem 0.875rem", borderRadius: "var(--radius)", cursor: "pointer", fontFamily: "'Inter',sans-serif", fontSize: "0.8rem", fontWeight: tab === t ? 700 : 400, background: tab === t ? "var(--gold-muted)" : "var(--surface)", border: `1px solid ${tab === t ? "rgba(var(--gold-rgb), 0.4)" : "var(--border)"}`, color: tab === t ? "var(--gold)" : "var(--text-muted)" }}>
             {t === "apercu" ? "📊 Aperçu" : t === "historique" ? "📜 Historique des paiements" : "⚙️ Réglages"}
           </button>
         ))}

@@ -124,7 +124,7 @@ export default function CalculatricePage() {
       {/* Tabs */}
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.5rem"}}>
         {([["convert","💰 Convertisseur"],["equiv","💊 Équivalents"],["config","⚙️ Config prix"]] as [string,string][]).map(([k,l])=>(
-          <button key={k} onClick={()=>setTab(k as any)} style={{padding:"0.55rem 1.25rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.85rem",fontWeight:tab===k?700:400,background:tab===k?"var(--gold-muted)":"var(--surface)",border:`1px solid ${tab===k?"rgba(196,179,137,0.4)":"var(--border)"}`,color:tab===k?"var(--gold)":"var(--text-muted)",transition:"all 0.15s"}}>{l}</button>
+          <button key={k} onClick={()=>setTab(k as any)} style={{padding:"0.55rem 1.25rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.85rem",fontWeight:tab===k?700:400,background:tab===k?"var(--gold-muted)":"var(--surface)",border:`1px solid ${tab===k?"rgba(var(--gold-rgb), 0.4)":"var(--border)"}`,color:tab===k?"var(--gold)":"var(--text-muted)",transition:"all 0.15s"}}>{l}</button>
         ))}
       </div>
 
@@ -135,7 +135,7 @@ export default function CalculatricePage() {
             <div className="card">
               <div className="section-title" style={{marginBottom:"1rem"}}>Type de client</div>
               {TYPES_CLIENT.map(t=>(
-                <button key={t.key} onClick={()=>setTypeClient(t.key)} style={{display:"flex",alignItems:"center",gap:"0.75rem",width:"100%",padding:"0.625rem 0.875rem",borderRadius:"var(--radius)",background:typeClient===t.key?"var(--gold-muted)":"var(--surface)",border:`1px solid ${typeClient===t.key?"rgba(196,179,137,0.4)":"var(--border)"}`,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginBottom:"0.35rem",textAlign:"left"}}>
+                <button key={t.key} onClick={()=>setTypeClient(t.key)} style={{display:"flex",alignItems:"center",gap:"0.75rem",width:"100%",padding:"0.625rem 0.875rem",borderRadius:"var(--radius)",background:typeClient===t.key?"var(--gold-muted)":"var(--surface)",border:`1px solid ${typeClient===t.key?"rgba(var(--gold-rgb), 0.4)":"var(--border)"}`,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginBottom:"0.35rem",textAlign:"left"}}>
                   <div style={{width:14,height:14,borderRadius:"50%",flexShrink:0,border:`2px solid ${typeClient===t.key?"var(--gold)":"var(--border-light)"}`,background:typeClient===t.key?"var(--gold)":"transparent",transition:"all 0.15s"}}/>
                   <div>
                     <div style={{fontSize:"0.82rem",fontWeight:typeClient===t.key?600:400,color:typeClient===t.key?"var(--gold)":"var(--text-muted)"}}>{t.key}</div>
@@ -149,7 +149,7 @@ export default function CalculatricePage() {
               <div className="section-title" style={{marginBottom:"0.875rem"}}>Sens du calcul</div>
               <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem"}}>
                 {[["sale_to_propre","💰 Sale → Propre"],["propre_to_sale","💎 Propre → Sale"]].map(([k,l])=>(
-                  <button key={k} onClick={()=>setSens(k as any)} style={{flex:1,padding:"0.5rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.78rem",fontWeight:sens===k?700:400,background:sens===k?"var(--gold-muted)":"var(--surface)",border:`1px solid ${sens===k?"rgba(196,179,137,0.4)":"var(--border)"}`,color:sens===k?"var(--gold)":"var(--text-muted)"}}>
+                  <button key={k} onClick={()=>setSens(k as any)} style={{flex:1,padding:"0.5rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.78rem",fontWeight:sens===k?700:400,background:sens===k?"var(--gold-muted)":"var(--surface)",border:`1px solid ${sens===k?"rgba(var(--gold-rgb), 0.4)":"var(--border)"}`,color:sens===k?"var(--gold)":"var(--text-muted)"}}>
                     {l}
                   </button>
                 ))}
@@ -164,7 +164,7 @@ export default function CalculatricePage() {
           </div>
 
           <div style={{display:"flex",flexDirection:"column",gap:"1rem"}}>
-            <div className="card" style={{background:"linear-gradient(135deg,var(--card),rgba(196,179,137,0.04))",border:"1px solid rgba(196,179,137,0.25)"}}>
+            <div className="card" style={{background:"linear-gradient(135deg,var(--card),rgba(var(--gold-rgb), 0.04))",border:"1px solid rgba(var(--gold-rgb), 0.25)"}}>
               <div style={{textAlign:"center",padding:"1rem 0 1.5rem"}}>
                 <div style={{fontSize:"0.62rem",textTransform:"uppercase",letterSpacing:"0.2em",color:"var(--text-dim)",marginBottom:"0.625rem"}}>
                   {sens==="sale_to_propre"?"ARGENT PROPRE RÉCUPÉRÉ":"ARGENT SALE À FOURNIR"}

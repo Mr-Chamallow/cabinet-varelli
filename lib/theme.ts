@@ -14,6 +14,7 @@ export interface GoldPalette {
   goldDark: string;
   goldMuted: string;
   goldGlow: string;
+  goldRgb: string; // "r,g,b" — pour composer des rgba(var(--gold-rgb), X) dynamiques
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -51,6 +52,7 @@ export function deriveGoldPalette(hex: string): GoldPalette {
     goldDark: mix(base, [0, 0, 0], 0.22),
     goldMuted: `rgba(${r},${g},${b},0.08)`,
     goldGlow: `rgba(${r},${g},${b},0.14)`,
+    goldRgb: `${r},${g},${b}`,
   };
 }
 
@@ -63,6 +65,7 @@ export function applyThemeToDocument(hex: string) {
   root.setProperty("--gold-dark", p.goldDark);
   root.setProperty("--gold-muted", p.goldMuted);
   root.setProperty("--gold-glow", p.goldGlow);
+  root.setProperty("--gold-rgb", p.goldRgb);
   try {
     localStorage.setItem(THEME_STORAGE_KEY, p.gold);
   } catch {

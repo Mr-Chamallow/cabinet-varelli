@@ -174,7 +174,7 @@ export default function SupervisionPage() {
               padding: "0.55rem 1.25rem", borderRadius: "var(--radius)", cursor: "pointer",
               fontFamily: "'Inter',sans-serif", fontSize: "0.85rem", fontWeight: activeTab === k ? 700 : 400,
               background: activeTab === k ? "var(--gold-muted)" : "var(--surface)",
-              border: `1px solid ${activeTab === k ? "rgba(201,168,76,0.4)" : "var(--border)"}`,
+              border: `1px solid ${activeTab === k ? "rgba(var(--gold-rgb), 0.4)" : "var(--border)"}`,
               color: activeTab === k ? "var(--gold)" : "var(--text-muted)", transition: "all 0.15s",
             }}
           >

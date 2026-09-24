@@ -273,7 +273,7 @@ export default function JuridiqueePage() {
               fontFamily: "'Inter',sans-serif", fontSize: "0.75rem",
               fontWeight: subFilter === sf.key ? 700 : 400,
               background: subFilter === sf.key ? "var(--gold-muted)" : "var(--surface)",
-              border: `1px solid ${subFilter === sf.key ? "rgba(201,168,76,0.4)" : "var(--border)"}`,
+              border: `1px solid ${subFilter === sf.key ? "rgba(var(--gold-rgb), 0.4)" : "var(--border)"}`,
               color: subFilter === sf.key ? "var(--gold)" : "var(--text-muted)",
               display: "flex", alignItems: "center", gap: "0.3rem",
             }}>
@@ -385,8 +385,8 @@ export default function JuridiqueePage() {
                       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
                         {article.amende && (
                           <div style={{
-                            background: "rgba(212,175,55,0.08)",
-                            border: "1px solid rgba(212,175,55,0.25)",
+                            background: "rgba(var(--gold-rgb), 0.08)",
+                            border: "1px solid rgba(var(--gold-rgb), 0.25)",
                             borderRadius: 8, padding: "0.5rem 0.875rem",
                           }}>
                             <div style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-dim)", marginBottom: "0.15rem" }}>Amende</div>

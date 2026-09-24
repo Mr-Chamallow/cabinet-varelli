@@ -239,7 +239,7 @@ export default function CahierVentePage() {
             padding: "0.55rem 1.25rem", borderRadius: "var(--radius)", cursor: "pointer",
             fontFamily: "'Inter',sans-serif", fontSize: "0.85rem", fontWeight: tab === k ? 700 : 400,
             background: tab === k ? "var(--gold-muted)" : "var(--surface)",
-            border: `1px solid ${tab === k ? "rgba(196,179,137,0.4)" : "var(--border)"}`,
+            border: `1px solid ${tab === k ? "rgba(var(--gold-rgb), 0.4)" : "var(--border)"}`,
             color: tab === k ? "var(--gold)" : "var(--text-muted)", transition: "all 0.15s",
           }}>{l}</button>
         ))}
@@ -325,7 +325,7 @@ export default function CahierVentePage() {
                     background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)",
                     display: "flex", alignItems: "center", gap: "0.4rem", transition: "all 0.15s",
                   }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(196,179,137,0.4)"}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(var(--gold-rgb), 0.4)"}
                   onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
                     <span>{p.emoji}</span> {p.nom}
                     <span style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>{fmt(p.prix_propre)}</span>
@@ -470,7 +470,7 @@ export default function CahierVentePage() {
                     padding: "0.35rem 0.75rem", borderRadius: "var(--radius)", cursor: "pointer",
                     fontFamily: "'Inter',sans-serif", fontSize: "0.78rem", fontWeight: form.type_argent === t ? 700 : 400,
                     background: form.type_argent === t ? "var(--gold-muted)" : "var(--surface)",
-                    border: `1px solid ${form.type_argent === t ? "rgba(196,179,137,0.4)" : "var(--border)"}`,
+                    border: `1px solid ${form.type_argent === t ? "rgba(var(--gold-rgb), 0.4)" : "var(--border)"}`,
                     color: form.type_argent === t ? "var(--gold)" : "var(--text-muted)",
                   }}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
                 ))}
