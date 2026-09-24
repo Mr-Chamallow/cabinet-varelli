@@ -1268,7 +1268,7 @@ function DossierModal({
     }
   };
 
-  const handlePaste = (e: ReactClipboardEvent<HTMLFieldSetElement>) => {
+  const handlePaste = (e: ReactClipboardEvent<HTMLDivElement>) => {
     if (readOnly) return;
     const files = Array.from(e.clipboardData.items)
       .filter((item) => item.type.startsWith('image/'))
@@ -1319,10 +1319,10 @@ function DossierModal({
           </button>
         </div>
 
+        <div style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', paddingRight: 6 }} onPaste={handlePaste}>
         <fieldset
           disabled={readOnly}
-          style={{ border: 0, padding: 0, margin: 0, flex: '1 1 0', minHeight: 0, overflowY: 'auto', paddingRight: 6 }}
-          onPaste={handlePaste}
+          style={{ border: 0, padding: 0, margin: 0 }}
         >
           <label style={S.label}>Statut du dossier</label>
           <div style={{ marginBottom: 14, display: 'flex', gap: 6 }}>
@@ -1549,6 +1549,7 @@ function DossierModal({
             />
           </div>
         </fieldset>
+        </div>
 
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {!readOnly ? (
