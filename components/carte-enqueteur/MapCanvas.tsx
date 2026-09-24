@@ -235,7 +235,7 @@ const S: Record<string, CSSProperties> = {
     WebkitBackdropFilter: 'blur(10px)',
     border: `1px solid ${colors.border}`,
     padding: '6px 10px',
-    fontFamily: 'monospace',
+    fontFamily: "var(--font-mono)",
     fontSize: 12,
     color: colors.textDim,
   },
@@ -280,7 +280,7 @@ const S: Record<string, CSSProperties> = {
     gap: 6,
   },
   sidebarCount: {
-    fontFamily: 'monospace',
+    fontFamily: "var(--font-mono)",
     fontSize: 11,
     fontWeight: 700,
     color: colors.amberDark,
@@ -981,7 +981,7 @@ export default function MapCanvas({
                     >
                       <span style={{ width: 9, height: 9, borderRadius: '50%', background: cat.color, flexShrink: 0, boxShadow: `0 0 6px ${cat.color}80` }} />
                       <span style={{ fontSize: 12.5, fontWeight: 700, color: cat.color, flex: 1, textAlign: 'left' }}>{cat.label}</span>
-                      <span style={{ fontSize: 10.5, fontFamily: 'monospace', color: colors.textDimmer, background: 'rgba(255,255,255,0.05)', borderRadius: 999, padding: '1px 7px' }}>{pts.length}</span>
+                      <span style={{ fontSize: 10.5, fontFamily: "var(--font-mono)", color: colors.textDimmer, background: 'rgba(255,255,255,0.05)', borderRadius: 999, padding: '1px 7px' }}>{pts.length}</span>
                       <span style={{ fontSize: 10, color: colors.textDimmer, transform: isCollapsed ? 'rotate(-90deg)' : 'none', transition: '0.15s' }}>▾</span>
                     </button>
 
@@ -1024,7 +1024,7 @@ export default function MapCanvas({
                                   <div
                                     style={{
                                       display: 'inline-flex', alignItems: 'center', gap: 4,
-                                      fontFamily: 'monospace', fontSize: 10.5, color: colors.textDimmer,
+                                      fontFamily: "var(--font-mono)", fontSize: 10.5, color: colors.textDimmer,
                                       background: 'rgba(255,255,255,0.03)', border: `1px solid ${colors.border}`,
                                       borderRadius: 999, padding: '1px 7px', marginBottom: 5,
                                     }}
@@ -1387,7 +1387,7 @@ function DossierModal({
               }
             }}
             placeholder="{ pos: new Vector3(-116.460, -1137.269, 24.280), heading: 90.261}"
-            style={{ ...S.input, marginBottom: 12, fontFamily: 'monospace', fontSize: 12 }}
+            style={{ ...S.input, marginBottom: 12, fontFamily: "var(--font-mono)", fontSize: 12 }}
           />
 
           <div style={{ marginBottom: 12, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>

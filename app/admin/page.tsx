@@ -34,7 +34,7 @@ interface Role {
 }
 
 const COULEURS_PRESET = [
-  "#a78bfa","#c9a84c","#6366f1","#22c55e","#ef4444","#f97316",
+  "#a48fff","#c9a84c","#6366f1","#22c55e","#ef4444","#f97316",
   "#06b6d4","#ec4899","#a855f7","#14b8a6","#f59e0b",
   "#3b82f6","#84cc16","#e11d48","#0ea5e9","#d97706",
 ];
@@ -354,7 +354,7 @@ export default function AdminPage() {
                         <div style={{ fontWeight:600, marginBottom:"0.2rem" }}>{o.nom || "(sans nom)"}</div>
                         <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
                           <span style={{ fontSize:"0.75rem",padding:"0.15rem 0.55rem",borderRadius:999, background:couleur+"18",color:couleur,border:`1px solid ${couleur}30`,fontWeight:600 }}>{o.role}</span>
-                          <span style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily:"monospace" }}>{o.discord_id}</span>
+                          <span style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily: "var(--font-mono)" }}>{o.discord_id}</span>
                         </div>
                       </div>
                       <button className="btn btn-ghost btn-sm" style={{color:"var(--danger)"}} onClick={()=>setDeleteOverrideId(o.discord_id)}>🗑️ Retirer</button>
@@ -399,7 +399,7 @@ export default function AdminPage() {
                         </div>
                         <div style={{ flex:1, minWidth:140 }}>
                           <div style={{ fontWeight:600, fontSize:"0.88rem", marginBottom:"0.15rem" }}>{l.discord_name || "(sans nom)"}</div>
-                          <div style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily:"monospace" }}>{l.discord_id}</div>
+                          <div style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily: "var(--font-mono)" }}>{l.discord_id}</div>
                         </div>
                         <span style={{ fontSize:"0.72rem", padding:"0.15rem 0.55rem", borderRadius:999, background:couleur+"18", color:couleur, border:`1px solid ${couleur}30`, fontWeight:600, flexShrink:0 }}>
                           {l.site_role || "(aucun rôle)"}
@@ -571,7 +571,7 @@ export default function AdminPage() {
                   </div>
                   <div style={{ display:"flex", gap:"0.6rem", alignItems:"center" }}>
                     <input type="color" value={siteGold} onChange={e=>applySiteGold(e.target.value)} style={{ width:40,height:36,padding:0,border:"1px solid var(--border)",borderRadius:8,cursor:"pointer",background:"none" }}/>
-                    <input value={siteGoldInput} onChange={e=>setSiteGoldInput(e.target.value)} onBlur={()=>isValidHex(siteGoldInput)&&applySiteGold(siteGoldInput)} placeholder="#a78bfa" style={{ flex:1, fontFamily:"monospace" }}/>
+                    <input value={siteGoldInput} onChange={e=>setSiteGoldInput(e.target.value)} onBlur={()=>isValidHex(siteGoldInput)&&applySiteGold(siteGoldInput)} placeholder="#a48fff" style={{ flex:1, fontFamily: "var(--font-mono)" }}/>
                     {siteSaving && <span style={{ fontSize:"0.72rem", color:"var(--text-dim)" }}>…</span>}
                   </div>
                 </div>
@@ -621,7 +621,7 @@ export default function AdminPage() {
               <div className="form-group"><label>Nom (repère visuel)</label><input placeholder="Ex : Marco Varelli" value={overrideForm.nom} onChange={e=>setOverrideForm(f=>({...f,nom:e.target.value}))} autoFocus/></div>
               <div className="form-group">
                 <label>ID Discord *</label>
-                <input placeholder="Ex : 460865920278069248" value={overrideForm.discord_id} onChange={e=>setOverrideForm(f=>({...f,discord_id:e.target.value}))} style={{ fontFamily:"monospace" }}/>
+                <input placeholder="Ex : 460865920278069248" value={overrideForm.discord_id} onChange={e=>setOverrideForm(f=>({...f,discord_id:e.target.value}))} style={{ fontFamily: "var(--font-mono)" }}/>
                 <div style={{ fontSize:"0.7rem", color:"var(--text-dim)", marginTop:"0.3rem" }}>Mode développeur Discord activé → clic droit sur le pseudo → Copier l'ID</div>
               </div>
               <div className="form-group"><label>Rôle à forcer *</label>

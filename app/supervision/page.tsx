@@ -209,7 +209,7 @@ export default function SupervisionPage() {
                       <div style={{ flex: 1, height: 8, borderRadius: 999, background: "var(--surface)", overflow: "hidden" }}>
                         <div style={{ width: `${(count / max) * 100}%`, height: "100%", background: couleur, borderRadius: 999 }} />
                       </div>
-                      <span style={{ width: 28, textAlign: "right", fontSize: "0.75rem", color: "var(--text-dim)", fontFamily: "monospace" }}>{count}</span>
+                      <span style={{ width: 28, textAlign: "right", fontSize: "0.75rem", color: "var(--text-dim)", fontFamily: "var(--font-mono)" }}>{count}</span>
                     </div>
                   );
                 })}
@@ -238,8 +238,8 @@ export default function SupervisionPage() {
                     </div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontFamily: "monospace", fontSize: "0.85rem", fontWeight: 700, color: "var(--gold)" }}>{op.date}</div>
-                    <div style={{ fontFamily: "monospace", fontSize: "0.72rem", color: "var(--text-dim)" }}>{op.heure}</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem", fontWeight: 700, color: "var(--gold)" }}>{op.date}</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--text-dim)" }}>{op.heure}</div>
                   </div>
                 </div>
               ))}

@@ -358,7 +358,7 @@ export default function JuridiqueePage() {
                       </span>
                     )}
                     {article.amende && (
-                      <span style={{ flexShrink: 0, fontSize: "0.78rem", color: "var(--gold)", fontWeight: 600, fontFamily: "monospace" }}>
+                      <span style={{ flexShrink: 0, fontSize: "0.78rem", color: "var(--gold)", fontWeight: 600, fontFamily: "var(--font-mono)" }}>
                         {article.amende}
                       </span>
                     )}

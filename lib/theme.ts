@@ -2,7 +2,7 @@
 // et l'applique aux variables CSS globales (--gold, --gold-light, --gold-dark, --gold-muted, --gold-glow).
 // Utilisé par /settings (Personnalisation), /admin (onglet Site) et ThemeProvider (application au chargement).
 
-export const DEFAULT_GOLD = "#a78bfa";
+export const DEFAULT_GOLD = "#a48fff";
 export const DEFAULT_LOGO_URL = "https://i.imgur.com/Shh0rIn.png";
 export const DEFAULT_APP_NOM = "Obsidian Logistique";
 export const THEME_STORAGE_KEY = "obsidian_theme_gold";

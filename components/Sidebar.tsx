@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { hasPermission } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { supabase } from "@/lib/supabase";
@@ -38,6 +38,9 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user, loading } = useCurrentUser();
   const [identity, setIdentity] = useState<Identity>({ logoUrl: DEFAULT_LOGO_URL, appNom: DEFAULT_APP_NOM });
+  const navRef = useRef<HTMLElement>(null);
+  const linkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
+  const [pill, setPill] = useState<{ top: number; height: number; visible: boolean }>({ top: 0, height: 0, visible: false });
 
   useEffect(() => {
     setIdentity(getCachedIdentity()); // évite le flash le temps que Supabase réponde
@@ -74,7 +77,8 @@ export function Sidebar() {
         <div className="sidebar-logo-sub">Consortium · Opérations</div>
       </div>
 
-      <nav className="sidebar-nav">
+      <nav className="sidebar-nav" ref={navRef}>
+        <SidebarActivePill pill={pill} />
         {NAV_SECTIONS.map(section => {
           const visibleItems = section.items.filter(i => hasPermission(user, i.permission));
           if (visibleItems.length === 0) return null;
@@ -84,7 +88,12 @@ export function Sidebar() {
               {visibleItems.map(item => {
                 const isActive = item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href);
                 return (
-                  <Link key={item.href} href={item.href} className={`sidebar-link${isActive ? " active" : ""}`}>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    ref={(el) => { linkRefs.current[item.href] = el; }}
+                    className={`sidebar-link${isActive ? " active" : ""}`}
+                  >
                     <span className="sidebar-link-icon">{item.icon}</span>
                     <span>{item.label}</span>
                   </Link>
@@ -94,6 +103,8 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      <SidebarPillTracker navRef={navRef} linkRefs={linkRefs} pathname={pathname} setPill={setPill} />
 
       <div className="sidebar-footer">
         <button className="sidebar-user" onClick={() => signOut({ callbackUrl: "/login" })} title="Se déconnecter">
@@ -106,4 +117,57 @@ export function Sidebar() {
       </div>
     </aside>
   );
+}
+
+// Petit pavé animé qui glisse derrière le lien actif au fil de la navigation, au lieu
+// d'un simple changement instantané de fond — vérifié visuellement (mockup isolé).
+function SidebarActivePill({ pill }: { pill: { top: number; height: number; visible: boolean } }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: 0,
+        width: "100%",
+        top: pill.top,
+        height: pill.height,
+        opacity: pill.visible ? 1 : 0,
+        background: "var(--gold-muted)",
+        border: "1px solid rgba(var(--gold-rgb), 0.18)",
+        boxShadow: "inset 0 0 0 1px rgba(var(--gold-rgb), 0.1)",
+        borderRadius: "var(--radius)",
+        transition: "top 0.35s var(--ease), height 0.35s var(--ease), opacity 0.2s var(--ease)",
+        zIndex: 0,
+        pointerEvents: "none",
+      }}
+    >
+      <div style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: 3, height: "60%", background: "var(--gold)", borderRadius: "0 2px 2px 0" }} />
+    </div>
+  );
+}
+
+function SidebarPillTracker({
+  navRef, linkRefs, pathname, setPill,
+}: {
+  navRef: React.RefObject<HTMLElement | null>;
+  linkRefs: React.RefObject<Record<string, HTMLAnchorElement | null>>;
+  pathname: string | null;
+  setPill: React.Dispatch<React.SetStateAction<{ top: number; height: number; visible: boolean }>>;
+}) {
+  useEffect(() => {
+    const measure = () => {
+      const nav = navRef.current;
+      if (!nav) return;
+      const activeHref = Object.keys(linkRefs.current).find((href) =>
+        href === "/" ? pathname === "/" : pathname?.startsWith(href)
+      );
+      const el = activeHref ? linkRefs.current[activeHref] : null;
+      if (!el) { setPill((p) => ({ ...p, visible: false })); return; }
+      setPill({ top: el.offsetTop, height: el.offsetHeight, visible: true });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [pathname, navRef, linkRefs, setPill]);
+
+  return null;
 }

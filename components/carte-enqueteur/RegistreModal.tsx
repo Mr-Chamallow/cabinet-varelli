@@ -245,7 +245,7 @@ export default function RegistreModal({ onClose, readOnly = false }: Props) {
                     value={p.plaque}
                     onChange={(e) => patchPlaque(p.id, { plaque: e.target.value.toUpperCase() })}
                     placeholder="Plaque"
-                    style={{ ...inputStyle, width: '22%', fontFamily: 'monospace', textTransform: 'uppercase' }}
+                    style={{ ...inputStyle, width: '22%', fontFamily: "var(--font-mono)", textTransform: 'uppercase' }}
                   />
                   <select
                     value={p.personne_id ?? ''}
