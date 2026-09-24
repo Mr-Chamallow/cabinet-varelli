@@ -136,7 +136,7 @@ export default function RegistreModal({ onClose, readOnly = false }: Props) {
         style={{
           width: '100%',
           maxWidth: 720,
-          maxHeight: '85vh',
+          height: 'min(85vh, 620px)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',

@@ -327,7 +327,11 @@ const S: Record<string, CSSProperties> = {
   modal: {
     width: '100%',
     maxWidth: 512,
-    maxHeight: '90vh',
+    // ⚠️ Une modale flex-column avec SEULEMENT max-height (pas de height définie) empêche
+    // son enfant `flex:1;min-height:0;overflow:auto` de calculer un espace réel à occuper :
+    // le navigateur n'a rien de concret vers quoi grandir, donc cet enfant s'effondre à ~0px
+    // au lieu de scroller. Il faut une hauteur DÉFINIE (via min()), pas juste un plafond.
+    height: 'min(88vh, 720px)',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden', // empêche tout contenu de déborder visuellement hors du cadre arrondi
