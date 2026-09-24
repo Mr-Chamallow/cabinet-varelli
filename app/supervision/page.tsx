@@ -159,7 +159,7 @@ export default function SupervisionPage() {
       <a className="back-link" href="/">← Tableau de bord</a>
       <div className="page-header">
         <div>
-          <h1 className="page-title">◬ Supervision</h1>
+          <h1 className="page-title">📡 Supervision</h1>
           <p className="page-subtitle">Stats globales · Opérations en cours · Activité de l'équipe</p>
           <div className="gold-line" />
         </div>

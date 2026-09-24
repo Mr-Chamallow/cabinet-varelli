@@ -139,6 +139,7 @@ export default function RegistreModal({ onClose, readOnly = false }: Props) {
           maxHeight: '85vh',
           display: 'flex',
           flexDirection: 'column',
+          overflow: 'hidden',
           borderRadius: 8,
           border: `1px solid ${colors.borderLight}`,
           background: colors.panel,
@@ -199,7 +200,7 @@ export default function RegistreModal({ onClose, readOnly = false }: Props) {
           </div>
         )}
 
-        <fieldset disabled={readOnly} style={{ border: 0, padding: 16, margin: 0, flex: 1, overflowY: 'auto' }}>
+        <fieldset disabled={readOnly} style={{ border: 0, padding: 16, margin: 0, flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}>
           {tab === 'personnes' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {filteredPersonnes.map((p) => (

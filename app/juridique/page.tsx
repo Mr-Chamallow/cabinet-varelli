@@ -3,7 +3,19 @@
 import { useState, useMemo } from "react";
 import { CODE_COMPLET as ARTICLES, CATEGORIES_INFRACTIONS } from "@/lib/code-penal";
 
-// ─── ONGLETS DYNAMIQUES (générés depuis CATEGORIES_INFRACTIONS) ───────────────
+// ─── ONGLETS DYNAMIQUES, regroupés par section (Pénal / Route / Fédéral) ──────
+const SECTION_LABELS: Record<string, string> = {
+  penal: "⚖️ Code pénal",
+  route: "🚦 Code de la route",
+  federal: "🦅 Code fédéral",
+};
+
+function sectionOf(key: string): string {
+  if (key.startsWith("route")) return "route";
+  if (key === "federal") return "federal";
+  return "penal";
+}
+
 const ONGLETS: { key: string; label: string; icon: string; color: string }[] =
   Object.entries(CATEGORIES_INFRACTIONS).map(([key, v]) => ({
     key,
@@ -11,6 +23,12 @@ const ONGLETS: { key: string; label: string; icon: string; color: string }[] =
     icon: v.icon,
     color: v.color,
   }));
+
+const ONGLETS_PAR_SECTION: Record<string, typeof ONGLETS> = {};
+for (const o of ONGLETS) {
+  const s = sectionOf(o.key);
+  (ONGLETS_PAR_SECTION[s] ??= []).push(o);
+}
 
 // ─── ONGLETS DE RÉFÉRENCE (données statiques, hors ARTICLES) ─────────────────
 const REF_ONGLETS = [
@@ -20,7 +38,6 @@ const REF_ONGLETS = [
   { key: "ref_animaux", label: "🐾 Animaux", icon: "🐾", color: "#22c55e" },
 ];
 
-const ALL_ONGLETS = [...ONGLETS, ...REF_ONGLETS];
 
 const REF_ARMES = {
   legales: ["Batte de baseball", "Club de golf", "Clé anglaise", "Couteau", "Matraque", "Haltère"],
@@ -154,8 +171,10 @@ export default function JuridiqueePage() {
 
       <div className="page-header">
         <div>
-          <h1 className="page-title">Base juridique</h1>
-          <p className="page-subtitle">Codes de l'État de San Andreas · FlashBackFA</p>
+          <h1 className="page-title">⚖️ Base juridique</h1>
+          <p className="page-subtitle">
+            Codes de l'État de San Andreas · FlashBackFA · {ARTICLES.length} articles au total
+          </p>
           <div className="gold-line" />
         </div>
       </div>
@@ -176,29 +195,74 @@ export default function JuridiqueePage() {
         </div>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.5rem", opacity: isSearching ? 0.4 : 1, transition: "opacity var(--t-fast) var(--ease)", pointerEvents: isSearching ? "none" : "auto" }}>
-        {ALL_ONGLETS.map((o) => (
-          <button
-            key={o.key}
-            onClick={() => { setActiveTab(o.key); setSearch(""); setExpanded(null); setSubFilter(""); }}
-            style={{
-              display: "flex", alignItems: "center", gap: "0.4rem",
-              padding: "0.5rem 1rem",
-              borderRadius: 8,
-              border: `1px solid ${activeTab === o.key ? o.color + "60" : "var(--border)"}`,
-              background: activeTab === o.key ? o.color + "18" : "var(--surface)",
-              color: activeTab === o.key ? o.color : "var(--text-muted)",
-              cursor: "pointer",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "0.82rem",
-              fontWeight: activeTab === o.key ? 600 : 400,
-              transition: "all var(--t-fast) var(--ease)",
-            }}
-          >
-            <span>{o.icon}</span>
-            {o.label}
-          </button>
+      <div style={{ marginBottom: "1.5rem", opacity: isSearching ? 0.4 : 1, transition: "opacity var(--t-fast) var(--ease)", pointerEvents: isSearching ? "none" : "auto" }}>
+        {(["penal", "route", "federal"] as const).map((sectionKey) => (
+          <div key={sectionKey} style={{ marginBottom: "0.875rem" }}>
+            <div style={{
+              fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
+              color: "var(--text-dim)", marginBottom: "0.45rem",
+            }}>
+              {SECTION_LABELS[sectionKey]}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+              {(ONGLETS_PAR_SECTION[sectionKey] || []).map((o) => (
+                <button
+                  key={o.key}
+                  onClick={() => { setActiveTab(o.key); setSearch(""); setExpanded(null); setSubFilter(""); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "0.4rem",
+                    padding: "0.5rem 1rem",
+                    borderRadius: 8,
+                    border: `1px solid ${activeTab === o.key ? o.color + "60" : "var(--border)"}`,
+                    background: activeTab === o.key ? o.color + "18" : "var(--surface)",
+                    color: activeTab === o.key ? o.color : "var(--text-muted)",
+                    cursor: "pointer",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "0.82rem",
+                    fontWeight: activeTab === o.key ? 600 : 400,
+                    transition: "all var(--t-fast) var(--ease)",
+                  }}
+                >
+                  <span>{o.icon}</span>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
+
+        <div style={{ marginTop: "1.125rem", paddingTop: "0.875rem", borderTop: "1px solid var(--border)" }}>
+          <div style={{
+            fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
+            color: "var(--text-dim)", marginBottom: "0.45rem",
+          }}>
+            📚 Références rapides
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            {REF_ONGLETS.map((o) => (
+              <button
+                key={o.key}
+                onClick={() => { setActiveTab(o.key); setSearch(""); setExpanded(null); setSubFilter(""); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: "0.4rem",
+                  padding: "0.5rem 1rem",
+                  borderRadius: 8,
+                  border: `1px solid ${activeTab === o.key ? o.color + "60" : "var(--border)"}`,
+                  background: activeTab === o.key ? o.color + "18" : "var(--surface)",
+                  color: activeTab === o.key ? o.color : "var(--text-muted)",
+                  cursor: "pointer",
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "0.82rem",
+                  fontWeight: activeTab === o.key ? 600 : 400,
+                  transition: "all var(--t-fast) var(--ease)",
+                }}
+              >
+                <span>{o.icon}</span>
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {SUB_FILTERS[activeTab] && !isSearching && (
@@ -251,7 +315,8 @@ export default function JuridiqueePage() {
                 key={article.id}
                 style={{
                   background: "var(--card)",
-                  border: `1px solid ${isOpen ? color + "40" : "var(--border)"}`,
+                  border: `1px solid ${isOpen ? color + "45" : "var(--border)"}`,
+                  borderLeft: `3px solid ${isOpen ? color : color + "50"}`,
                   borderRadius: "var(--radius)",
                   overflow: "hidden",
                   transition: "border-color 0.15s",
@@ -274,6 +339,7 @@ export default function JuridiqueePage() {
                       flexShrink: 0,
                       fontSize: "0.7rem",
                       fontFamily: "'Cinzel', serif",
+                      fontWeight: 600,
                       letterSpacing: "0.05em",
                       color,
                       background: color + "15",
@@ -281,7 +347,7 @@ export default function JuridiqueePage() {
                       borderRadius: 4,
                       border: `1px solid ${color}30`,
                     }}>{article.id}</span>
-                    <span style={{ fontWeight: 500, fontSize: "0.875rem", flex: 1 }}>{article.titre}</span>
+                    <span style={{ fontWeight: 500, fontSize: "0.9rem", flex: 1, color: isOpen ? color : "var(--text)" }}>{article.titre}</span>
                     {isSearching && (
                       <span style={{
                         flexShrink: 0, fontSize: "0.65rem", fontWeight: 600,
@@ -292,19 +358,26 @@ export default function JuridiqueePage() {
                       </span>
                     )}
                     {article.amende && (
-                      <span style={{ flexShrink: 0, fontSize: "0.78rem", color: "var(--gold)", fontWeight: 600 }}>
+                      <span style={{ flexShrink: 0, fontSize: "0.78rem", color: "var(--gold)", fontWeight: 600, fontFamily: "monospace" }}>
                         {article.amende}
                       </span>
                     )}
                   </div>
-                  <span style={{ marginLeft: "0.75rem", color: "var(--text-dim)", transform: isOpen ? "rotate(90deg)" : "none", transition: "0.15s" }}>›</span>
+                  <span style={{
+                    marginLeft: "0.75rem", flexShrink: 0, width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center",
+                    borderRadius: "50%", color: isOpen ? color : "var(--text-dim)", background: isOpen ? color + "15" : "transparent",
+                    transform: isOpen ? "rotate(90deg)" : "none", transition: "all 0.15s",
+                  }}>›</span>
                 </button>
 
                 {isOpen && (
-                  <div style={{ padding: "0 1.25rem 1.25rem 1.25rem" }}>
-                    <div style={{ height: 1, background: "var(--border)", marginBottom: "1rem" }} />
+                  <div style={{ padding: "0 1.375rem 1.375rem 1.375rem" }}>
+                    <div style={{ height: 1, background: `linear-gradient(90deg, ${color}40, transparent)`, marginBottom: "1.125rem" }} />
 
-                    <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", lineHeight: 1.65, marginBottom: "1rem" }}>
+                    <p style={{
+                      fontSize: "0.92rem", color: "var(--text-muted)", lineHeight: 1.8,
+                      marginBottom: "1.125rem", fontFamily: "'Georgia', 'Playfair Display', serif",
+                    }}>
                       {article.contenu}
                     </p>
 

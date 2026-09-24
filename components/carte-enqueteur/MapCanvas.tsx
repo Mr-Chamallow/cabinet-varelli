@@ -330,6 +330,7 @@ const S: Record<string, CSSProperties> = {
     maxHeight: '90vh',
     display: 'flex',
     flexDirection: 'column',
+    overflow: 'hidden', // empêche tout contenu de déborder visuellement hors du cadre arrondi
     borderRadius: 8,
     border: `1px solid ${colors.borderLight}`,
     background: colors.panel,
@@ -1320,7 +1321,7 @@ function DossierModal({
 
         <fieldset
           disabled={readOnly}
-          style={{ border: 0, padding: 0, margin: 0, flex: 1, overflowY: 'auto', paddingRight: 6 }}
+          style={{ border: 0, padding: 0, margin: 0, flex: '1 1 0', minHeight: 0, overflowY: 'auto', paddingRight: 6 }}
           onPaste={handlePaste}
         >
           <label style={S.label}>Statut du dossier</label>

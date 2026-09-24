@@ -15,14 +15,14 @@ interface Result {
 }
 
 const QUICK_PAGES: Result[] = [
-  { type:"page", id:"p1", title:"Dashboard", subtitle:"Accueil", href:"/", icon:"◈" },
-  { type:"page", id:"p2", title:"Stocks",   subtitle:"Inventaire", href:"/obsidian/stocks", icon:"◉" },
-  { type:"page", id:"p3", title:"Armurerie",  subtitle:"Armes & munitions", href:"/obsidian/armurerie", icon:"◫" },
-  { type:"page", id:"p4", title:"Comptabilité",  subtitle:"Recettes & dépenses", href:"/obsidian/comptabilite", icon:"◳" },
-  { type:"page", id:"p5", title:"Garage",subtitle:"Véhicules", href:"/obsidian/garage", icon:"◐" },
-  { type:"page", id:"p6", title:"RDV", subtitle:"Rendez-vous", href:"/obsidian/rdv", icon:"◷" },
-  { type:"page", id:"p7", title:"Contrats",   subtitle:"Missions", href:"/obsidian/contrats", icon:"◪" },
-  { type:"page", id:"p8", title:"Fiches",   subtitle:"Personnes / orgas", href:"/obsidian/fiches", icon:"◧" },
+  { type:"page", id:"p1", title:"Dashboard", subtitle:"Accueil", href:"/", icon:"🏠" },
+  { type:"page", id:"p2", title:"Stocks",   subtitle:"Inventaire", href:"/obsidian/stocks", icon:"📦" },
+  { type:"page", id:"p3", title:"Armurerie",  subtitle:"Armes & munitions", href:"/obsidian/armurerie", icon:"🔫" },
+  { type:"page", id:"p4", title:"Comptabilité",  subtitle:"Recettes & dépenses", href:"/obsidian/comptabilite", icon:"🧾" },
+  { type:"page", id:"p5", title:"Garage",subtitle:"Véhicules", href:"/obsidian/garage", icon:"🚗" },
+  { type:"page", id:"p6", title:"RDV", subtitle:"Rendez-vous", href:"/obsidian/rdv", icon:"🗓️" },
+  { type:"page", id:"p7", title:"Contrats",   subtitle:"Missions", href:"/obsidian/contrats", icon:"📜" },
+  { type:"page", id:"p8", title:"Fiches",   subtitle:"Personnes / orgas", href:"/obsidian/fiches", icon:"🗂️" },
 ];
 
 const TYPE_COLORS: Record<string,string> = {
@@ -67,8 +67,8 @@ export default function CommandPalette() {
     ]);
 
     const r: Result[] = [
-      ...(fiches||[]).map((f:any) => ({ type:"client" as const, id:f.id, title:f.nom, subtitle:f.organisation||"Fiche", href:"/obsidian/fiches", icon:"◉" })),
-      ...(contrats||[]).map((c:any) => ({ type:"dossier" as const, id:c.id, title:c.titre, subtitle:c.type, href:"/obsidian/contrats", icon:"◫" })),
+      ...(fiches||[]).map((f:any) => ({ type:"client" as const, id:f.id, title:f.nom, subtitle:f.organisation||"Fiche", href:"/obsidian/fiches", icon:"🗂️" })),
+      ...(contrats||[]).map((c:any) => ({ type:"dossier" as const, id:c.id, title:c.titre, subtitle:c.type, href:"/obsidian/contrats", icon:"📜" })),
     ];
 
     const pageMatches = QUICK_PAGES.filter(p => p.title.toLowerCase().includes(q.toLowerCase()));
