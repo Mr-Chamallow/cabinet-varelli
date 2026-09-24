@@ -25,6 +25,7 @@ const NAV_SECTIONS = [
     { href: "/obsidian/paie",          label: "Paie & Commissions", icon: "💰", permission: "obsidian_paie" },
     { href: "/obsidian/employes",      label: "Employés",        icon: "🧑‍💼", permission: "obsidian_employes" },
     { href: "/juridique",       label: "Code pénal",       icon: "📖", permission: "juridique" },
+    { href: "/utile-samp",      label: "Utile SAMP",       icon: "🐈", permission: "juridique" },
     { href: "/carte-enqueteur", label: "Carte enquêteur",  icon: "🗺️", permission: "carte-enqueteur" },
   ]},
   { label: "Administration", items: [
@@ -107,6 +108,7 @@ export function Sidebar() {
       <SidebarPillTracker navRef={navRef} linkRefs={linkRefs} pathname={pathname} setPill={setPill} />
 
       <div className="sidebar-footer">
+        <span className="wandering-cat" aria-hidden="true">🐈</span>
         <button className="sidebar-user" onClick={() => signOut({ callbackUrl: "/login" })} title="Se déconnecter">
           <div className="user-avatar">{user.nom?.charAt(0)?.toUpperCase() || "?"}</div>
           <div style={{ minWidth: 0 }}>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Personne, Plaque } from './types';
+import { use3DTilt } from '@/lib/use3DTilt';
 import {
   createPersonne,
   createPlaque,
@@ -43,6 +44,7 @@ interface Props {
 }
 
 export default function RegistreModal({ onClose, readOnly = false }: Props) {
+  const tilt = use3DTilt<HTMLDivElement>(4);
   const [tab, setTab] = useState<'personnes' | 'plaques'>('personnes');
   const [personnes, setPersonnes] = useState<Personne[]>([]);
   const [plaques, setPlaques] = useState<Plaque[]>([]);
@@ -130,9 +132,13 @@ export default function RegistreModal({ onClose, readOnly = false }: Props) {
         justifyContent: 'center',
         background: 'rgba(0,0,0,0.6)',
         padding: 16,
+        perspective: '900px',
       }}
     >
       <div
+        ref={tilt.ref}
+        onMouseMove={tilt.onMouseMove}
+        onMouseLeave={tilt.onMouseLeave}
         style={{
           width: '100%',
           maxWidth: 720,
@@ -145,6 +151,8 @@ export default function RegistreModal({ onClose, readOnly = false }: Props) {
           background: colors.panel,
           color: colors.text,
           boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+          transformStyle: 'preserve-3d',
+          animation: 'modalFlipIn 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
         <div style={{ padding: 16, borderBottom: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

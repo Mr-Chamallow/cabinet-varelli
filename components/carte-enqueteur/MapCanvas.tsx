@@ -47,6 +47,7 @@ import RegistreModal from './RegistreModal';
 import NewPointModal from './NewPointModal';
 import GangsModal from './GangsModal';
 import TagsModal from './TagsModal';
+import { use3DTilt } from '@/lib/use3DTilt';
 
 // Fix icônes Leaflet sous Next.js
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
@@ -323,6 +324,7 @@ const S: Record<string, CSSProperties> = {
     justifyContent: 'center',
     background: 'rgba(0,0,0,0.6)',
     padding: 16,
+    perspective: '900px', // profondeur 3D pour l'entrée en flip du modal
   },
   modal: {
     width: '100%',
@@ -341,6 +343,8 @@ const S: Record<string, CSSProperties> = {
     padding: 16,
     color: colors.text,
     boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+    transformStyle: 'preserve-3d',
+    animation: 'modalFlipIn 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
   },
   modalTitleInput: {
     width: '100%',
@@ -1249,6 +1253,7 @@ function DossierModal({
   };
 
   const statut: DossierStatut = dossier.statut || 'actif';
+  const tilt = use3DTilt<HTMLDivElement>(5);
 
   const handleFiles = async (files: FileList | File[]) => {
     if (readOnly) return;
@@ -1286,7 +1291,7 @@ function DossierModal({
 
   return (
     <div style={S.modalOverlay}>
-      <div style={S.modal}>
+      <div ref={tilt.ref} onMouseMove={tilt.onMouseMove} onMouseLeave={tilt.onMouseLeave} style={S.modal}>
         <div style={{ marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 10 }}>
           <input
             value={point.title}

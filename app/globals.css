@@ -328,6 +328,7 @@ a { color: inherit; }
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(8px);
+  perspective: 500px; /* profondeur 3D pour l'icône qui "flotte" au survol */
   transition: border-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease), transform var(--t-base) var(--ease);
 }
 
@@ -363,7 +364,18 @@ a { color: inherit; }
   line-height: 1;
 }
 
-.stat-icon { font-size: 1.25rem; margin-bottom: 0.625rem; opacity: 0.75; }
+.stat-icon {
+  font-size: 1.25rem;
+  margin-bottom: 0.625rem;
+  opacity: 0.75;
+  display: inline-block;
+  transform: translateZ(0) scale(1);
+  transition: transform 0.35s var(--ease), opacity var(--t-base) var(--ease);
+}
+.stat-card:hover .stat-icon {
+  transform: translateZ(30px) scale(1.15); /* l'icône "sort" de la carte vers le regard */
+  opacity: 1;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    BUTTONS
@@ -567,6 +579,7 @@ tr:hover td { background: rgba(255,255,255,0.012); }
   justify-content: center;
   z-index: 200;
   padding: 1rem;
+  perspective: 900px; /* profondeur 3D pour l'entrée en flip du modal */
   animation: fadeIn var(--t-fast) ease;
 }
 
@@ -580,7 +593,8 @@ tr:hover td { background: rgba(255,255,255,0.012); }
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(12px);
-  animation: slideUp var(--t-base) var(--ease);
+  transform-style: preserve-3d;
+  animation: modalFlipIn 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-lg { max-width: 680px; }
@@ -808,6 +822,10 @@ tr:hover td { background: rgba(255,255,255,0.012); }
 @keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp   { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes toastFadeOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(6px) scale(0.96); } }
+@keyframes modalFlipIn {
+  0%   { opacity: 0; transform: rotateY(-52deg) rotateX(8deg) scale(0.88); }
+  100% { opacity: 1; transform: rotateY(0deg) rotateX(0deg) scale(1); }
+}
 @keyframes modalZoomIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
 
 /* ─── CHAT QUI SE BALADE (décoratif) ─────────────────────────────────────────── */
