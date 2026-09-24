@@ -77,6 +77,30 @@ export function hasPermission(userOrRole: AppUser | string | null, permission: s
 
 export const canAccess = hasPermission;
 
+// Ordre de priorité des pages d'atterrissage après connexion, utilisé quand
+// l'utilisateur n'a pas accès au Dashboard (ex: rôle "Légal Service" limité à la
+// carte enquêteur). Avant ce correctif, ces rôles étaient renvoyés vers /login,
+// qui les renvoyait vers /, qui les renvoyait vers /login... boucle infinie.
+const LANDING_PRIORITY: { path: string; permission: string }[] = [
+  { path: "/", permission: "obsidian_dashboard" },
+  { path: "/carte-enqueteur", permission: "carte-enqueteur" },
+  { path: "/juridique", permission: "juridique" },
+  { path: "/obsidian/prix", permission: "obsidian_prix" },
+  { path: "/cahier-vente", permission: "cahier_vente" },
+  { path: "/admin", permission: "admin" },
+  { path: "/supervision", permission: "supervision" },
+];
+
+// Renvoie la première page à laquelle l'utilisateur a réellement accès.
+// Ne renvoie JAMAIS "/login" pour un utilisateur déjà authentifié : ça créerait
+// la même boucle infinie que celle qu'on corrige ici.
+export function firstAccessiblePath(user: AppUser): string {
+  for (const { path, permission } of LANDING_PRIORITY) {
+    if (hasPermission(user, permission)) return path;
+  }
+  return "/no-access";
+}
+
 export function getMemberColor(roleOrName?: string, customColor?: string): string {
   if (customColor) return customColor;
   switch (roleOrName) {

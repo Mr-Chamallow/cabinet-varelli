@@ -51,12 +51,27 @@ export interface DossierPiece {
   url: string;
 }
 
+export interface ChecklistItem {
+  label: string;
+  done: boolean;
+}
+
+export type DossierStatut = 'actif' | 'resolu' | 'archive';
+
+export const STATUT_CONFIG: Record<DossierStatut, { label: string; icon: string; color: string }> = {
+  actif:   { label: 'Actif',   icon: '🔴', color: '#ef4444' },
+  resolu:  { label: 'Résolu',  icon: '🟢', color: '#22c55e' },
+  archive: { label: 'Archivé', icon: '⚪', color: '#64748b' },
+};
+
 export interface Dossier {
   id: string;
   point_id: string;
   description: string;
   tags: string[];
   pieces: DossierPiece[];
+  statut?: DossierStatut; // absent = 'actif' (comportement par défaut)
+  checklist?: ChecklistItem[];
   updated_at?: string;
 }
 

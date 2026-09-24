@@ -18,6 +18,14 @@ interface RoleOverride {
   updated_at?: string;
 }
 
+interface SiteLogin {
+  discord_id: string;
+  discord_name: string;
+  site_role: string;
+  first_login?: string;
+  last_login?: string;
+}
+
 interface Role {
   id: string;
   nom: string;
@@ -59,6 +67,8 @@ export default function AdminPage() {
   const router = useRouter();
   const { user, loading: userLoading } = useCurrentUser();
   const [overrides, setOverrides] = useState<RoleOverride[]>([]);
+  const [logins, setLogins] = useState<SiteLogin[]>([]);
+  const [loginSearch, setLoginSearch] = useState("");
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string>("");
@@ -108,14 +118,16 @@ export default function AdminPage() {
     setLoading(true);
     setFetchError("");
     try {
-      const [{ data: o, error: oErr }, rolesData] = await Promise.all([
+      const [{ data: o, error: oErr }, rolesData, { data: l }] = await Promise.all([
         supabase.from("role_overrides").select("*").order("updated_at", { ascending: false }),
         loadRolesFromSupabase(),
+        supabase.from("site_logins").select("*").order("last_login", { ascending: false }),
       ]);
       if (oErr) {
         setFetchError(`Erreur lors du chargement des overrides : ${oErr.message}`);
       }
       setOverrides(o || []);
+      setLogins(l || []);
       setRoles((rolesData as Role[]) || []);
       if ((!rolesData || rolesData.length === 0) && !oErr) {
         setFetchError("Aucun rôle trouvé. Vérifiez que la table `roles` existe et contient des données.");
@@ -350,6 +362,61 @@ export default function AdminPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", margin:"2rem 0 1rem" }}>
+            <div className="section-title">Membres connectés ({logins.length})</div>
+            <input
+              value={loginSearch}
+              onChange={(e) => setLoginSearch(e.target.value)}
+              placeholder="Rechercher un nom, un ID, un rôle..."
+              style={{ maxWidth: 260 }}
+            />
+          </div>
+          <p style={{ fontSize:"0.8rem", color:"var(--text-dim)", marginBottom:"1rem" }}>
+            Chaque personne qui s'est déjà connectée au site, avec le rôle détecté et sa dernière connexion —
+            utile pour vérifier si quelqu'un qui dit ne pas avoir accès s'est réellement connecté ou non.
+          </p>
+          {logins.length === 0 ? (
+            <div className="empty-state"><div className="empty-icon">👥</div><div className="empty-title">Personne ne s'est encore connecté</div></div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
+              {logins
+                .filter(l => {
+                  const q = loginSearch.toLowerCase().trim();
+                  if (!q) return true;
+                  return (l.discord_name||"").toLowerCase().includes(q) || l.discord_id.includes(q) || (l.site_role||"").toLowerCase().includes(q);
+                })
+                .map(l => {
+                  const roleData = roles.find(r => r.nom === l.site_role);
+                  const couleur = roleData?.couleur || "#8A93A6";
+                  return (
+                    <div key={l.discord_id} className="card" style={{ padding: "0.75rem 1rem" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:"0.875rem", flexWrap:"wrap" }}>
+                        <div style={{ width:36,height:36,borderRadius:"50%",flexShrink:0, background:couleur+"20",border:`2px solid ${couleur}40`, display:"flex",alignItems:"center",justifyContent:"center", fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"0.9rem",color:couleur }}>
+                          {(l.discord_name || l.discord_id).charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ flex:1, minWidth:140 }}>
+                          <div style={{ fontWeight:600, fontSize:"0.88rem", marginBottom:"0.15rem" }}>{l.discord_name || "(sans nom)"}</div>
+                          <div style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily:"monospace" }}>{l.discord_id}</div>
+                        </div>
+                        <span style={{ fontSize:"0.72rem", padding:"0.15rem 0.55rem", borderRadius:999, background:couleur+"18", color:couleur, border:`1px solid ${couleur}30`, fontWeight:600, flexShrink:0 }}>
+                          {l.site_role || "(aucun rôle)"}
+                        </span>
+                        <span style={{ fontSize:"0.72rem", color:"var(--text-dim)", flexShrink:0, minWidth: 90, textAlign: "right" }}>
+                          {l.last_login ? timeAgo(l.last_login) : "—"}
+                        </span>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => { setOverrideForm({ nom: l.discord_name || "", discord_id: l.discord_id, role: l.site_role || "" }); setCreateError(""); setShowCreateOverride(true); }}
+                        >
+                          🎭 Forcer un rôle
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           )}
         </div>

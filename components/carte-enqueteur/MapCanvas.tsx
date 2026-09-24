@@ -3,11 +3,17 @@
 import { useEffect, useRef, useState, CSSProperties, ClipboardEvent as ReactClipboardEvent } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import {
   CartePoint,
   Category,
   Dossier,
   DossierPiece,
+  DossierStatut,
+  STATUT_CONFIG,
+  ChecklistItem,
   Gang,
   Personne,
   Plaque,
@@ -467,6 +473,11 @@ export default function MapCanvas({
   const [pendingCoords, setPendingCoords] = useState<{ x: number; y: number } | null>(null);
   const [search, setSearch] = useState('');
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
+  const [groupFilter, setGroupFilter] = useState<string>(''); // '' = tous les groupes
+  const [statutFilter, setStatutFilter] = useState<string>('non_archive'); // 'tous' | 'non_archive' | DossierStatut
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<{ point: CartePoint; dossier: Dossier } | null>(null);
@@ -518,7 +529,20 @@ export default function MapCanvas({
     map.setMaxBounds(bounds);
     map.setView([-TILE_SIZE / 2, TILE_SIZE / 2], 2);
 
-    const layerGroup = L.layerGroup().addTo(map);
+    const layerGroup = (L as any).markerClusterGroup({
+      maxClusterRadius: 45,
+      disableClusteringAtZoom: MAX_ZOOM,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      iconCreateFunction: (cluster: any) => {
+        const count = cluster.getChildCount();
+        return L.divIcon({
+          className: '',
+          html: `<div style="width:36px;height:36px;border-radius:50%;background:${colors.amber};border:3px solid rgba(255,255,255,0.95);box-shadow:0 2px 10px rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:800;font-size:13px;color:#1a1206;">${count}</div>`,
+          iconSize: [36, 36],
+        });
+      },
+    }).addTo(map);
     layerGroupRef.current = layerGroup;
 
     map.on('mousemove', (e: L.LeafletMouseEvent) => {
@@ -632,8 +656,17 @@ export default function MapCanvas({
 
   const visiblePoints = points.filter((p) => {
     if (activeFilters.size > 0 && !activeFilters.has(p.category)) return false;
-    if (!search.trim()) return true;
+    if (groupFilter && p.groupe_id !== groupFilter) return false;
+
     const dossier = dossiers[p.id];
+    const statut: DossierStatut = dossier?.statut || 'actif';
+    if (statutFilter === 'non_archive' && statut === 'archive') return false;
+    if (statutFilter !== 'tous' && statutFilter !== 'non_archive' && statut !== statutFilter) return false;
+
+    if (dateFrom && (!p.created_at || p.created_at.slice(0, 10) < dateFrom)) return false;
+    if (dateTo && (!p.created_at || p.created_at.slice(0, 10) > dateTo)) return false;
+
+    if (!search.trim()) return true;
     const haystack = `${p.title} ${dossier?.description ?? ''} ${(dossier?.tags ?? []).join(' ')}`.toLowerCase();
     return haystack.includes(search.toLowerCase());
   });
@@ -644,23 +677,29 @@ export default function MapCanvas({
     layerGroup.clearLayers();
 
     visiblePoints.forEach((p) => {
+      const statut: DossierStatut = dossiers[p.id]?.statut || 'actif';
+      const dimmed = statut !== 'actif'; // résolu/archivé : marqueur estompé sur la carte
+      const opacityStyle = dimmed ? 'opacity:0.45;' : '';
+      const statutDot = statut !== 'actif'
+        ? `<div style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:${STATUT_CONFIG[statut].color};border:2px solid #0f172a;"></div>`
+        : '';
       const icon = p.icon_url
         ? L.divIcon({
             className: '',
-            html: `<div style="width:40px;height:40px;border-radius:50%;background:#0f172a;border:3px solid ${
+            html: `<div style="position:relative;${opacityStyle}"><div style="width:40px;height:40px;border-radius:50%;background:#0f172a;border:3px solid ${
               p.id === selectedId ? '#fff' : categoryColor(categories, p.category)
-            };box-shadow:0 2px 10px rgba(0,0,0,0.6);overflow:hidden;"><img src="${p.icon_url}" style="width:100%;height:100%;object-fit:cover;" /></div>`,
+            };box-shadow:0 2px 10px rgba(0,0,0,0.6);overflow:hidden;"><img src="${p.icon_url}" style="width:100%;height:100%;object-fit:cover;" /></div>${statutDot}</div>`,
             iconSize: [40, 40],
             iconAnchor: [20, 40],
           })
         : L.divIcon({
             className: '',
-            html: `<div style="width:24px;height:24px;border-radius:50%;background:${categoryColor(
+            html: `<div style="position:relative;${opacityStyle}"><div style="width:24px;height:24px;border-radius:50%;background:${categoryColor(
               categories,
               p.category,
             )};border:3px solid rgba(255,255,255,0.95);box-shadow:0 2px 8px rgba(0,0,0,0.6);${
               p.id === selectedId ? 'outline:3px solid white;outline-offset:1px;' : ''
-            }"></div>`,
+            }"></div>${statutDot}</div>`,
             iconSize: [24, 24],
             iconAnchor: [12, 12],
           });
@@ -670,10 +709,10 @@ export default function MapCanvas({
         setSelectedId(p.id);
         setEditing({
           point: p,
-          dossier: dossiers[p.id] ?? { id: '', point_id: p.id, description: '', tags: [], pieces: [] },
+          dossier: dossiers[p.id] ?? { id: '', point_id: p.id, description: '', tags: [], pieces: [], statut: 'actif', checklist: [] },
         });
       });
-      marker.bindTooltip(p.title, { direction: 'top', offset: [0, -10] });
+      marker.bindTooltip(`${p.title}${statut !== 'actif' ? ` — ${STATUT_CONFIG[statut].label}` : ''}`, { direction: 'top', offset: [0, -10] });
       marker.addTo(layerGroup);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -684,6 +723,28 @@ export default function MapCanvas({
     if (!map) return;
     map.flyTo(gameToLatLng(p.x, p.y), Math.max(map.getZoom(), 2));
   };
+
+  // Lien direct (?point=<id>) : une fois les points chargés, sélectionne et ouvre
+  // automatiquement le point ciblé, une seule fois (ne doit pas se redéclencher si
+  // l'utilisateur ferme la fiche et modifie d'autres points ensuite).
+  const deepLinkHandledRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandledRef.current) return;
+    if (points.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const targetId = params.get('point');
+    if (!targetId) { deepLinkHandledRef.current = true; return; }
+    const target = points.find((p) => p.id === targetId);
+    if (!target) return; // les points arrivent parfois par lots ; on retente au prochain rendu
+    deepLinkHandledRef.current = true;
+    setSelectedId(target.id);
+    flyToPoint(target);
+    setEditing({
+      point: target,
+      dossier: dossiers[target.id] ?? { id: '', point_id: target.id, description: '', tags: [], pieces: [], statut: 'actif', checklist: [] },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points]);
 
   const saveEditing = async () => {
     if (!editing) return;
@@ -810,7 +871,58 @@ export default function MapCanvas({
             <button onClick={() => setRegistreOpen(true)} style={S.manageTagsBtn}>
               📇 Registre
             </button>
+            <button
+              onClick={() => setAdvancedFiltersOpen((v) => !v)}
+              style={{
+                ...S.manageTagsBtn,
+                ...(advancedFiltersOpen || groupFilter || statutFilter !== 'non_archive' || dateFrom || dateTo
+                  ? { color: colors.amber, borderColor: colors.amber + '60' }
+                  : {}),
+              }}
+            >
+              🔍 Filtres{advancedFiltersOpen ? ' ▴' : ' ▾'}
+            </button>
           </div>
+
+          {advancedFiltersOpen && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', paddingTop: 10, marginTop: 2, borderTop: `1px solid ${colors.border}` }}>
+              <div>
+                <div style={{ fontSize: 10.5, color: colors.textDimmer, marginBottom: 3 }}>Groupe</div>
+                <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} style={{ ...S.search, minWidth: 150, maxWidth: 180 }}>
+                  <option value="">Tous les groupes</option>
+                  {gangs.map((g) => (
+                    <option key={g.id} value={g.id}>{g.nom} ({gangTypeLabel(g.type)})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <div style={{ fontSize: 10.5, color: colors.textDimmer, marginBottom: 3 }}>Statut</div>
+                <select value={statutFilter} onChange={(e) => setStatutFilter(e.target.value)} style={{ ...S.search, minWidth: 150, maxWidth: 180 }}>
+                  <option value="non_archive">Actifs + Résolus</option>
+                  <option value="tous">Tous (avec archivés)</option>
+                  <option value="actif">🔴 Actif uniquement</option>
+                  <option value="resolu">🟢 Résolu uniquement</option>
+                  <option value="archive">⚪ Archivé uniquement</option>
+                </select>
+              </div>
+              <div>
+                <div style={{ fontSize: 10.5, color: colors.textDimmer, marginBottom: 3 }}>Créé du</div>
+                <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={{ ...S.search, minWidth: 140, maxWidth: 150 }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 10.5, color: colors.textDimmer, marginBottom: 3 }}>Au</div>
+                <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ ...S.search, minWidth: 140, maxWidth: 150 }} />
+              </div>
+              {(groupFilter || statutFilter !== 'non_archive' || dateFrom || dateTo) && (
+                <button
+                  onClick={() => { setGroupFilter(''); setStatutFilter('non_archive'); setDateFrom(''); setDateTo(''); }}
+                  style={{ ...S.manageTagsBtn, alignSelf: 'center' }}
+                >
+                  ✕ Réinitialiser
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div ref={coordsLabelRef} style={S.coordsLabel}>
@@ -872,6 +984,10 @@ export default function MapCanvas({
                       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 4 }}>
                         {pts.map((p) => {
                           const isActive = p.id === selectedId;
+                          const dossier = dossiers[p.id];
+                          const statut: DossierStatut = dossier?.statut || 'actif';
+                          const checklist = dossier?.checklist || [];
+                          const checklistDone = checklist.filter((c) => c.done).length;
                           return (
                             <li key={p.id}>
                               <button
@@ -889,9 +1005,16 @@ export default function MapCanvas({
                                   borderLeft: `3px solid ${cat.color}`,
                                 }}
                               >
-                                <span style={{ minWidth: 0, flex: 1 }}>
-                                  <div style={{ color: colors.text, fontWeight: 600, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {p.title}
+                                <span style={{ minWidth: 0, flex: 1, opacity: statut === 'archive' ? 0.55 : 1 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                                    <div style={{ color: colors.text, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                                      {p.title}
+                                    </div>
+                                    {statut !== 'actif' && (
+                                      <span style={{ flexShrink: 0, fontSize: 13 }} title={STATUT_CONFIG[statut].label}>
+                                        {STATUT_CONFIG[statut].icon}
+                                      </span>
+                                    )}
                                   </div>
                                   <div
                                     style={{
@@ -903,6 +1026,11 @@ export default function MapCanvas({
                                   >
                                     X {p.x.toFixed(0)} · Y {p.y.toFixed(0)}
                                   </div>
+                                  {checklist.length > 0 && (
+                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10.5, fontWeight: 700, color: checklistDone === checklist.length ? '#22c55e' : colors.textDim, marginBottom: 3, marginLeft: 6 }}>
+                                      ✓ {checklistDone}/{checklist.length}
+                                    </div>
+                                  )}
                                   <div
                                     style={{
                                       fontSize: 12,
@@ -915,7 +1043,7 @@ export default function MapCanvas({
                                       WebkitBoxOrient: 'vertical',
                                     }}
                                   >
-                                    {dossiers[p.id]?.description || 'Aucune note pour le moment.'}
+                                    {dossier?.description || 'Aucune note pour le moment.'}
                                   </div>
                                 </span>
                               </button>
@@ -1072,6 +1200,9 @@ function DossierModal({
   onDelete: () => void;
 }) {
   const [tagsInput, setTagsInput] = useState(dossier.tags.join(', '));
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(dossier.checklist || []);
+  const [newChecklistLabel, setNewChecklistLabel] = useState('');
+  const [copiedFeedback, setCopiedFeedback] = useState<string | null>(null);
   const [pieces, setPieces] = useState<DossierPiece[]>(dossier.pieces);
   const [uploading, setUploading] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -1081,6 +1212,38 @@ function DossierModal({
   const commit = (patchPoint: Partial<CartePoint>, patchDossier: Partial<Dossier>) => {
     onChange({ ...point, ...patchPoint }, { ...dossier, ...patchDossier });
   };
+
+  const addChecklistItem = () => {
+    if (!newChecklistLabel.trim()) return;
+    const next = [...checklist, { label: newChecklistLabel.trim(), done: false }];
+    setChecklist(next);
+    setNewChecklistLabel('');
+    commit({}, { checklist: next });
+  };
+
+  const toggleChecklistItem = (idx: number) => {
+    const next = checklist.map((c, i) => (i === idx ? { ...c, done: !c.done } : c));
+    setChecklist(next);
+    commit({}, { checklist: next });
+  };
+
+  const removeChecklistItem = (idx: number) => {
+    const next = checklist.filter((_, i) => i !== idx);
+    setChecklist(next);
+    commit({}, { checklist: next });
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedFeedback(label);
+      setTimeout(() => setCopiedFeedback(null), 1800);
+    } catch {
+      window.alert(`Copie impossible. Voici la valeur :\n${text}`);
+    }
+  };
+
+  const statut: DossierStatut = dossier.statut || 'actif';
 
   const handleFiles = async (files: FileList | File[]) => {
     if (readOnly) return;
@@ -1119,7 +1282,7 @@ function DossierModal({
   return (
     <div style={S.modalOverlay}>
       <div style={S.modal}>
-        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 10 }}>
+        <div style={{ marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 10 }}>
           <input
             value={point.title}
             disabled={readOnly}
@@ -1138,11 +1301,48 @@ function DossierModal({
           <button onClick={onClose} style={S.closeBtn}>✕</button>
         </div>
 
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <button
+            onClick={() => copyToClipboard(`X: ${point.x.toFixed(0)} / Y: ${point.y.toFixed(0)}`, 'coords')}
+            style={S.manageTagsBtn}
+            title="Copier les coordonnées"
+          >
+            {copiedFeedback === 'coords' ? '✅ Copié' : '📋 Copier XY'}
+          </button>
+          <button
+            onClick={() => copyToClipboard(`${window.location.origin}${window.location.pathname}?point=${point.id}`, 'lien')}
+            style={S.manageTagsBtn}
+            title="Copier un lien direct vers ce point"
+          >
+            {copiedFeedback === 'lien' ? '✅ Copié' : '🔗 Copier le lien'}
+          </button>
+        </div>
+
         <fieldset
           disabled={readOnly}
           style={{ border: 0, padding: 0, margin: 0, flex: 1, overflowY: 'auto', paddingRight: 6 }}
           onPaste={handlePaste}
         >
+          <label style={S.label}>Statut du dossier</label>
+          <div style={{ marginBottom: 14, display: 'flex', gap: 6 }}>
+            {(Object.keys(STATUT_CONFIG) as DossierStatut[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => commit({}, { statut: s })}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8,
+                  fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: statut === s ? 700 : 500,
+                  background: statut === s ? STATUT_CONFIG[s].color + '18' : 'transparent',
+                  border: `1px solid ${statut === s ? STATUT_CONFIG[s].color + '50' : colors.border}`,
+                  color: statut === s ? STATUT_CONFIG[s].color : colors.textDim,
+                  cursor: 'pointer', transition: 'all 0.12s',
+                }}
+              >
+                {STATUT_CONFIG[s].icon} {STATUT_CONFIG[s].label}
+              </button>
+            ))}
+          </div>
+
           <label style={S.label}>Catégorie</label>
           <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {categories.map((c) => (
@@ -1244,6 +1444,34 @@ function DossierModal({
             placeholder="Drogue, Armes, Suspect, Enquête"
             style={{ ...S.input, marginBottom: 16 }}
           />
+
+          <label style={S.label}>Checklist ({checklist.filter((c) => c.done).length}/{checklist.length})</label>
+          <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {checklist.map((item, idx) => (
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)', border: `1px solid ${colors.border}` }}>
+                <input
+                  type="checkbox"
+                  checked={item.done}
+                  onChange={() => toggleChecklistItem(idx)}
+                  style={{ width: 15, height: 15, cursor: 'pointer', flexShrink: 0, accentColor: colors.amber }}
+                />
+                <span style={{ flex: 1, fontSize: 13, color: item.done ? colors.textDim : colors.text, textDecoration: item.done ? 'line-through' : 'none' }}>
+                  {item.label}
+                </span>
+                <button onClick={() => removeChecklistItem(idx)} style={{ background: 'transparent', border: 'none', color: colors.textDimmer, cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>✕</button>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+              <input
+                value={newChecklistLabel}
+                onChange={(e) => setNewChecklistLabel(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addChecklistItem())}
+                placeholder="Ex : Recensement 15/15, Arrestation suspect X..."
+                style={{ ...S.input, flex: 1 }}
+              />
+              <button onClick={addChecklistItem} style={S.manageTagsBtn}>+ Ajouter</button>
+            </div>
+          </div>
 
           <label style={S.label}>Pièces jointes / Preuves ({pieces.length})</label>
           <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>

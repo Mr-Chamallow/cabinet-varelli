@@ -35,6 +35,28 @@ async function getRolePermissions(roleName: string): Promise<string[] | null> {
   return data?.permissions ?? null;
 }
 
+// Trace chaque connexion (nom + rôle détecté + horodatage) dans site_logins, pour
+// avoir une vraie liste des membres qui utilisent le site (Admin > Membres) — et
+// pouvoir vérifier si quelqu'un qui dit "je n'arrive pas à accéder au site" s'est
+// réellement connecté ou non. Ne doit jamais faire planter la connexion en cas d'échec.
+async function recordLogin(discordId: string, discordName: string, role: string) {
+  if (!supabase) return;
+  try {
+    const { data: existing } = await supabase
+      .from("site_logins")
+      .select("discord_id")
+      .eq("discord_id", discordId)
+      .maybeSingle();
+    if (existing) {
+      await supabase.from("site_logins").update({ discord_name: discordName, site_role: role, last_login: new Date().toISOString() }).eq("discord_id", discordId);
+    } else {
+      await supabase.from("site_logins").insert([{ discord_id: discordId, discord_name: discordName, site_role: role }]);
+    }
+  } catch {
+    // La table n'existe peut-être pas encore (script SQL non exécuté) — ne bloque jamais la connexion pour ça.
+  }
+}
+
 // Config NextAuth centralisée, exportée pour être réutilisable côté serveur
 // (route handler ET lib/serverAuth.ts pour les routes API protégées).
 export const authOptions: NextAuthOptions = {
@@ -63,6 +85,9 @@ export const authOptions: NextAuthOptions = {
       if (token.site_role) {
         const perms = await getRolePermissions(token.site_role as string);
         token.permissions = perms;
+      }
+      if (account?.access_token && token.discord_id) {
+        await recordLogin(token.discord_id as string, (token.discord_name as string) || "Membre", (token.site_role as string) || "");
       }
       return token;
     },
