@@ -10,6 +10,7 @@ import { deriveGoldPalette, applyThemeToDocument, DEFAULT_GOLD, isValidHex } fro
 import { setPreviewRole } from "@/lib/previewRole";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DiagnosticTab } from "@/components/admin/DiagnosticTab";
 
 // Force le rendu dynamique côté serveur/client et désactive le pré-rendu statique au build Vercel
 export const dynamic = "force-dynamic";
@@ -48,9 +49,6 @@ const SITE_SETTINGS_KEYS = [
   { key: "logo_url", label: "URL du logo", placeholder: "https://..." },
 ];
 
-// Fetch défensif : ne jamais planter sur une réponse non-JSON (page d'erreur HTML, 500, etc.)
-// — avant, res.json() plantait silencieusement dans ce cas et le bouton restait bloqué sur
-// "..." indéfiniment, sans jamais montrer l'erreur réelle.
 async function apiRequest(url: string, options: RequestInit): Promise<{ ok: boolean; status: number; data: any; error?: string }> {
   try {
     const res = await fetch(url, options);
@@ -76,7 +74,7 @@ export default function AdminPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"membres"|"roles"|"journaux"|"site">("membres");
+  const [activeTab, setActiveTab] = useState<"membres"|"roles"|"journaux"|"site"|"diagnostic">("membres");
 
   const [showCreateOverride, setShowCreateOverride] = useState(false);
   const [overrideForm, setOverrideForm] = useState({ nom:"", discord_id:"", role:"" });
@@ -106,9 +104,6 @@ export default function AdminPage() {
   const [siteLoading, setSiteLoading] = useState(false);
   const [siteSaving, setSiteSaving] = useState(false);
 
-  // Plus de redirection automatique ici : le middleware protège déjà la route côté serveur.
-  // Rediriger EN PLUS depuis le client pouvait créer un aller-retour visible ("ça charge en
-  // boucle") si le rôle détecté différait entre le token serveur et l'état client.
   useEffect(() => {
     if (user && !userLoading && canAccess(user, "admin")) fetchAll();
   }, [user, userLoading]);
@@ -253,9 +248,7 @@ export default function AdminPage() {
   );
   const sitePalette = deriveGoldPalette(siteGold);
 
-  // ✅ FIX SÉCURITÉ : bloque le rendu si pas admin (empêche le flash de contenu avant redirect)
-  // ✅ FIX SÉCURITÉ : bloque le rendu si pas admin — mais montre POURQUOI au lieu d'un écran
-  // vide indéfini, pour pouvoir diagnostiquer sans deviner (rôle détecté, permissions, etc.)
+
   if (userLoading) {
     return <div className="page-container" style={{ color: "var(--text-dim)" }}>Chargement de la session…</div>;
   }
@@ -315,7 +308,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1.5rem", flexWrap:"wrap" }}>
-        {([["membres","👥 Membres"],["roles","🎭 Rôles & Permissions"],["journaux","📋 Journaux"],["site","⚙️ Site"]] as [string,string][]).map(([k,l]) => (
+        {([["membres","👥 Membres"],["roles","🎭 Rôles & Permissions"],["journaux","📋 Journaux"],["site","⚙️ Site"],["diagnostic","🩺 Diagnostic"]] as [string,string][]).map(([k,l]) => (
           <button key={k} onClick={() => setActiveTab(k as any)} style={{
             padding:"0.55rem 1.25rem", borderRadius:"var(--radius)", cursor:"pointer",
             fontFamily:"'Inter',sans-serif", fontSize:"0.85rem", fontWeight:activeTab===k?700:400,
@@ -601,8 +594,7 @@ export default function AdminPage() {
             </div>
           )}
         </div>
-      ) : (
-        // ── Onglet Site (Personnalisation centralisée) ──
+      ) : activeTab === "site" ? (
         <div>
           {siteLoading ? (
             <div style={{ color:"var(--text-dim)" }}>Chargement…</div>
@@ -658,6 +650,8 @@ export default function AdminPage() {
             </div>
           )}
         </div>
+      ) : (
+        <DiagnosticTab />
       )}
 
       {/* Modals */}
