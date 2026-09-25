@@ -1,0 +1,30 @@
+diff --git a/components/carte-enqueteur/types.ts b/components/carte-enqueteur/types.ts
+index b8b723b..14ea201 100644
+--- a/components/carte-enqueteur/types.ts
++++ b/components/carte-enqueteur/types.ts
+@@ -69,15 +69,17 @@ export function isChecklistItemDone(item: ChecklistItem): boolean {
+ // Checklists imposées d'office selon la catégorie du point (labo / table de
+ // purification) — demandé pour un suivi cohérent des recensements/arrestations
+ // sans avoir à les retaper à chaque nouveau point.
++const LABO_TABLE_CHECKLIST: ChecklistItem[] = [
++  { label: 'Recensements', done: false, kind: 'counter', count: 0, max: 15 },
++  { label: 'Arrestations avec délit mineur', done: false, kind: 'counter', count: 0, max: 4 },
++  { label: 'Confirmation DOJ', done: false },
++  { label: 'Arrestations avec photo de la fouille + photo sur la table', done: false, kind: 'counter', count: 0, max: 4 },
++  { label: 'Interrogatoires avec aveux "table de purification"', done: false, kind: 'counter', count: 0, max: 4 },
++];
++
+ export const DEFAULT_CHECKLISTS: Record<string, ChecklistItem[]> = {
+-  laboratoire: [
+-    { label: 'Recensement', done: false, kind: 'counter', count: 0, max: 15 },
+-    { label: 'Arrestations avec délit mineur', done: false, kind: 'counter', count: 0, max: 4 },
+-  ],
+-  'table de purification': [
+-    { label: 'Recensement', done: false, kind: 'counter', count: 0, max: 15 },
+-    { label: 'Arrestations avec délit mineur', done: false, kind: 'counter', count: 0, max: 4 },
+-  ],
++  laboratoire: LABO_TABLE_CHECKLIST,
++  'table de purification': LABO_TABLE_CHECKLIST,
+ };
+ 
+ // Retourne la checklist par défaut pour un libellé de catégorie donné (comparaison
