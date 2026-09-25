@@ -2,6 +2,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { useToast } from "@/lib/useToast";
+import { Toast } from "@/components/ui/Toast";
 import { hasPermission } from "@/lib/auth";
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 const CATS_R=["Vente drogue","Vente arme","Braquage ATM","Braquage superette","Braquage banque","Blanchiment","Cotisation","Autre"];
@@ -10,6 +12,7 @@ const SEMAINES_LABELS=["Cette semaine","Semaine -1","Semaine -2","Semaine -3","S
 function getWeekStart(offset=0){const d=new Date();d.setDate(d.getDate()-d.getDay()+1-offset*7);d.setHours(0,0,0,0);return d.toISOString().split("T")[0];}
 export default function ComptaPage(){
   const { user, loading: userLoading } = useCurrentUser();
+  const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_comptabilite"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [entries,setEntries]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
@@ -17,10 +20,8 @@ export default function ComptaPage(){
   const [weekOffset,setWeekOffset]=useState(0);
   const [form,setForm]=useState({type:"recette",categorie:"Vente drogue",montant:0,type_argent:"sale",motif:"",membre:""});
   const [saving,setSaving]=useState(false);
-  const [toast,setToast]=useState<string|null>(null);
   useEffect(()=>{load();},[]);
   async function load(){if(!supabase){setLoading(false);return;}const{data}=await supabase.from("obsidian_comptabilite").select("*").order("created_at",{ascending:false});setEntries(data||[]);setLoading(false);}
-  function showT(m:string){setToast(m);setTimeout(()=>setToast(null),3000);}
   async function save(){
   if(!form.motif||form.montant<=0)return;
   setSaving(true);
@@ -34,7 +35,7 @@ export default function ComptaPage(){
   if (!res.ok) { alert("❌ "+data.error); setSaving(false); return; }
   setEntries(e=>[data,...e]);
   setForm({type:"recette",categorie:"Vente drogue",montant:0,type_argent:"sale",motif:"",membre:""});
-  showT("Enregistré");setSaving(false);setTab("apercu");
+  showToast("Enregistré");setSaving(false);setTab("apercu");
 }
   async function del(id:string){
   const res = await fetch("/api/obsidian/comptabilite", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
@@ -85,7 +86,7 @@ export default function ComptaPage(){
         </div>
         <div className="card" style={{alignSelf:"start"}}><div className="section-title" style={{marginBottom:"0.875rem"}}>Aperçu</div>{form.montant>0&&<div style={{textAlign:"center",padding:"1rem 0"}}><div style={{fontSize:"0.65rem",color:"var(--text-dim)",textTransform:"uppercase",marginBottom:"0.4rem"}}>{form.type==="recette"?"Recette":"Dépense"}</div><div style={{fontFamily:"'Playfair Display',serif",fontWeight:900,fontSize:"2rem",color:form.type==="recette"?"var(--success)":"var(--danger)"}}>{form.type==="recette"?"+":"-"}{fmt(form.montant)}</div><div style={{fontSize:"0.72rem",color:"var(--text-dim)",marginTop:"0.4rem"}}>{form.categorie} · {form.type_argent}</div></div>}</div>
       </div>}
-      {toast&&<div className="toast-container"><div className="toast toast-success">✅ {toast}</div></div>}
+      <Toast toast={toast} />
     </div>
   );
 }

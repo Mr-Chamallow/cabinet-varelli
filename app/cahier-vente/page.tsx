@@ -3,6 +3,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { useToast } from "@/lib/useToast";
+import { Toast } from "@/components/ui/Toast";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { hasPermission } from "@/lib/auth";
 
 interface Transaction {
@@ -52,6 +55,7 @@ const EMPTY_FORM: FormState = { type: "entrée", montant: 0, categorie: "Vente d
 
 export default function CahierVentePage() {
   const { user, loading: userLoading } = useCurrentUser();
+  const { toast, showToast } = useToast();
   
   useEffect(() => { 
     if (!userLoading && (!user || !hasPermission(user, "cahier_vente"))) { 
@@ -73,7 +77,6 @@ export default function CahierVentePage() {
   // Formulaire saisie
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<string | null>(null);
 
   // Produit rapide / CRUD
@@ -95,10 +98,6 @@ export default function CahierVentePage() {
     setLoading(false);
   }
 
-  function showT(msg: string) { 
-    setToast(msg); 
-    setTimeout(() => setToast(null), 3000); 
-  }
 
   // Stats globales
   const stats = useMemo(() => {
@@ -154,7 +153,7 @@ export default function CahierVentePage() {
     }]).select().single();
     if (data) { 
       setTransactions(ts => [data, ...ts]); 
-      showT("Transaction enregistrée"); 
+      showToast("Transaction enregistrée"); 
       setForm({ ...EMPTY_FORM }); 
       setTab("apercu"); 
     }
@@ -166,7 +165,7 @@ export default function CahierVentePage() {
     await supabase.from("cahier_transactions").delete().eq("id", id);
     setTransactions(ts => ts.filter(t => t.id !== id));
     setConfirm(null); 
-    showT("Supprimé");
+    showToast("Supprimé");
   }
 
   async function saveProduit() {
@@ -175,7 +174,7 @@ export default function CahierVentePage() {
     const { data } = await supabase.from("cahier_produits").insert([{ ...produitForm, ordre: produits.length + 1 }]).select().single();
     if (data) { 
       setProduits(ps => [...ps, data]); 
-      showT("Produit ajouté"); 
+      showToast("Produit ajouté"); 
       setProduitForm({ nom: "", type: "drogue", emoji: "💊", prix_propre: 0, prix_sale: 0, actif: true, ordre: 0 }); 
     }
     setSaving(false);
@@ -186,7 +185,7 @@ export default function CahierVentePage() {
     await supabase.from("cahier_produits").update(editProduitForm).eq("id", id);
     setProduits(ps => ps.map(p => p.id === id ? { ...p, ...editProduitForm } as Produit : p));
     setEditProduitId(null); 
-    showT("Produit mis à jour");
+    showToast("Produit mis à jour");
   }
 
   async function deleteProduit(id: string) {
@@ -201,20 +200,16 @@ export default function CahierVentePage() {
 
   return (
     <div className="page-container">
-      {toast && <div className="toast">{toast}</div>}
+      <Toast toast={toast} />
 
       {/* Confirmation de suppression */}
       {confirm && (
-        <div className="modal-overlay">
-          <div className="card modal-content">
-            <h3>Confirmer la suppression</h3>
-            <p>Êtes-vous sûr de vouloir supprimer cette transaction ?</p>
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", justifyContent: "flex-end" }}>
-              <button className="btn btn-ghost" onClick={() => setConfirm(null)}>Annuler</button>
-              <button className="btn btn-danger" onClick={() => deleteTransaction(confirm)}>Supprimer</button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="Confirmer la suppression"
+          message="Êtes-vous sûr de vouloir supprimer cette transaction ?"
+          onCancel={() => setConfirm(null)}
+          onConfirm={() => deleteTransaction(confirm)}
+        />
       )}
 
       <a className="back-link" href="/">← Tableau de bord</a>

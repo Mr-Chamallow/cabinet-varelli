@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { getMemberColor, hasPermission } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { Modal } from "@/components/ui/Modal";
 
 interface Operation {
   id: string;
@@ -703,16 +704,21 @@ async function saveOperation() {
       </div>
 
       {detailOperation && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setDetailOperation(null)}>
-          <div className="modal" style={{ maxWidth: 460, animation: "modalZoomIn var(--t-base) var(--ease)" }}>
-            <div className="modal-header" style={{ borderBottom: `2px solid ${getColor(detailOperation.created_by)}40` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                <span style={{ fontSize: "1.3rem" }}>{TYPE_ICONS[detailOperation.type] || "📌"}</span>
-                <h2 className="modal-title">{detailOperation.titre}</h2>
-              </div>
-              <button className="modal-close" onClick={() => setDetailOperation(null)}>×</button>
-            </div>
-            <div className="modal-body">
+        <Modal
+          title={<div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <span style={{ fontSize: "1.3rem" }}>{TYPE_ICONS[detailOperation.type] || "📌"}</span>
+            <span>{detailOperation.titre}</span>
+          </div>}
+          onClose={() => setDetailOperation(null)}
+          style={{ maxWidth: 460 }}
+          headerStyle={{ borderBottom: `2px solid ${getColor(detailOperation.created_by)}40` }}
+          footer={<>
+            <button className="btn btn-ghost btn-sm" onClick={() => downloadICS(detailOperation)}>📥 Exporter .ics</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => { openDuplicate(detailOperation); setDetailOperation(null); }}>⧉ Dupliquer</button>
+            <button className="btn btn-outline btn-sm" onClick={() => { openEdit(detailOperation); setDetailOperation(null); }}>✏️ Modifier</button>
+            <button className="btn btn-danger btn-sm" onClick={() => { deleteOperation(detailOperation.id); setDetailOperation(null); }}>🗑️ Supprimer</button>
+          </>}
+        >
               <div style={{
                 display: "flex", alignItems: "center", gap: "1rem",
                 background: "var(--gold-muted)", border: "1px solid rgba(139,92,246,0.25)",
@@ -762,25 +768,17 @@ async function saveOperation() {
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: getColor(detailOperation.created_by) }} />
                 <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Créée par <strong style={{ color: "var(--text)" }}>{detailOperation.created_by}</strong></span>
               </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-ghost btn-sm" onClick={() => downloadICS(detailOperation)}>📥 Exporter .ics</button>
-              <button className="btn btn-ghost btn-sm" onClick={() => { openDuplicate(detailOperation); setDetailOperation(null); }}>⧉ Dupliquer</button>
-              <button className="btn btn-outline btn-sm" onClick={() => { openEdit(detailOperation); setDetailOperation(null); }}>✏️ Modifier</button>
-              <button className="btn btn-danger btn-sm" onClick={() => { deleteOperation(detailOperation.id); setDetailOperation(null); }}>🗑️ Supprimer</button>
-            </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {showModal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="modal" style={{ maxWidth: 540 }}>
-            <div className="modal-header">
-              <h2 className="modal-title">{editOperation ? "Modifier l'opération" : "Nouvelle opération"}</h2>
-              <button className="modal-close" onClick={() => { setShowModal(false); setEditOperation(null); }}>×</button>
-            </div>
-            <div className="modal-body">
+        <Modal title={<>{editOperation ? "Modifier l'opération" : "Nouvelle opération"}</>} onClose={() => { setShowModal(false); setEditOperation(null); }} style={{ maxWidth: 540 }} footer={<>
+              <button className="btn btn-outline" onClick={() => { setShowModal(false); setEditOperation(null); }}>Annuler</button>
+              <button
+                className="btn btn-gold"
+                onClick={saveOperation}
+                disabled={saving || !form.titre.trim() || !form.date}
+              >{saving ? "Sauvegarde…" : editOperation ? "Modifier" : "Créer l'opération"}</button></>}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                 <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                   <label>Titre *</label>
@@ -907,18 +905,7 @@ async function saveOperation() {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-outline" onClick={() => { setShowModal(false); setEditOperation(null); }}>Annuler</button>
-              <button
-                className="btn btn-gold"
-                onClick={saveOperation}
-                disabled={saving || !form.titre.trim() || !form.date}
-              >{saving ? "Sauvegarde…" : editOperation ? "Modifier" : "Créer l'opération"}</button>
-            </div>
-          </div>
-        </div>
+              </div></Modal>
       )}
     </div>
   );

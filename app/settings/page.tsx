@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { deriveGoldPalette, applyThemeToDocument, DEFAULT_GOLD, isValidHex } from "@/lib/theme";
+import { useToast } from "@/lib/useToast";
+import { Toast } from "@/components/ui/Toast";
 
 const SETTINGS_KEYS = [
   { key: "app_nom", label: "Nom du site", placeholder: "Obsidian Logistique" },
@@ -22,7 +24,7 @@ export default function SettingsPage() {
   const [goldInput, setGoldInput] = useState(DEFAULT_GOLD);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const { toast, showToast } = useToast();
 
   useEffect(() => { load(); }, []);
 
@@ -30,7 +32,7 @@ export default function SettingsPage() {
     if (!supabase) { setLoading(false); return; }
     const { data, error } = await supabase.from("app_settings").select("cle,valeur");
     if (error) {
-      showToast(`⚠️ Table app_settings introuvable (${error.message}) — voir le script SQL fourni.`);
+      showToast(`Table app_settings introuvable (${error.message}) — voir le script SQL fourni.`, "danger");
       setLoading(false);
       return;
     }
@@ -43,20 +45,15 @@ export default function SettingsPage() {
     setLoading(false);
   }
 
-  function showToast(m: string) {
-    setToast(m);
-    setTimeout(() => setToast(null), 4000);
-  }
-
   async function save(key: string, val: string) {
     if (!supabase) return;
     setSaving(true);
     const { error } = await supabase.from("app_settings").upsert({ cle: key, valeur: val }, { onConflict: "cle" });
     if (error) {
-      showToast(`❌ Échec de l'enregistrement : ${error.message}`);
+      showToast(`Échec de l'enregistrement : ${error.message}`, "danger");
     } else {
       setSettings((s) => ({ ...s, [key]: val }));
-      showToast("✅ Sauvegardé");
+      showToast("Sauvegardé");
     }
     setSaving(false);
   }
@@ -200,11 +197,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {toast && (
-        <div className="toast-container">
-          <div className={`toast ${toast.startsWith("❌") || toast.startsWith("⚠️") ? "toast-error" : "toast-success"}`}>{toast}</div>
-        </div>
-      )}
+      <Toast toast={toast} />
     </div>
   );
 }

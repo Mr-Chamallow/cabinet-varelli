@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { fetchRecentActivity, ACTIVITY_CONFIG, timeAgo, ActivityItem } from "@/lib/activity";
 import { deriveGoldPalette, applyThemeToDocument, DEFAULT_GOLD, isValidHex } from "@/lib/theme";
 import { setPreviewRole } from "@/lib/previewRole";
+import { Modal } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 // Force le rendu dynamique côté serveur/client et désactive le pré-rendu statique au build Vercel
 export const dynamic = "force-dynamic";
@@ -660,13 +662,9 @@ export default function AdminPage() {
 
       {/* Modals */}
       {showCreateOverride && (
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowCreateOverride(false)}>
-          <div className="modal">
-            <div className="modal-header">
-              <h2 className="modal-title">Forcer un rôle</h2>
-              <button className="modal-close" onClick={()=>setShowCreateOverride(false)}>×</button>
-            </div>
-            <div className="modal-body">
+        <Modal title={<>Forcer un rôle</>} onClose={()=>setShowCreateOverride(false)} footer={<>
+              <button className="btn btn-outline" onClick={()=>setShowCreateOverride(false)}>Annuler</button>
+              <button className="btn btn-gold" onClick={createOverride} disabled={creatingOverride||!overrideForm.discord_id.trim()||!overrideForm.role}>{creatingOverride?"Enregistrement…":"Forcer le rôle"}</button></>}>
               <div className="form-group"><label>Nom (repère visuel)</label><input placeholder="Ex : Marco Varelli" value={overrideForm.nom} onChange={e=>setOverrideForm(f=>({...f,nom:e.target.value}))} autoFocus/></div>
               <div className="form-group">
                 <label>ID Discord *</label>
@@ -679,21 +677,13 @@ export default function AdminPage() {
                   {(roles.length > 0 ? roles.map(r => r.nom) : Object.keys(DEFAULT_PERMISSIONS)).map(r=><option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
-              {createError&&<div style={{ background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius)",padding:"0.75rem",fontSize:"0.84rem",color:"var(--danger)" }}>⚠️ {createError}</div>}
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-outline" onClick={()=>setShowCreateOverride(false)}>Annuler</button>
-              <button className="btn btn-gold" onClick={createOverride} disabled={creatingOverride||!overrideForm.discord_id.trim()||!overrideForm.role}>{creatingOverride?"Enregistrement…":"Forcer le rôle"}</button>
-            </div>
-          </div>
-        </div>
+              {createError&&<div style={{ background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius)",padding:"0.75rem",fontSize:"0.84rem",color:"var(--danger)" }}>⚠️ {createError}</div>}</Modal>
       )}
 
       {showCreateRole && (
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowCreateRole(false)}>
-          <div className="modal modal-lg">
-            <div className="modal-header"><h2 className="modal-title">Nouveau rôle</h2><button className="modal-close" onClick={()=>setShowCreateRole(false)}>×</button></div>
-            <div className="modal-body">
+        <Modal title={<>Nouveau rôle</>} onClose={()=>setShowCreateRole(false)} size="lg" footer={<>
+              <button className="btn btn-outline" onClick={()=>setShowCreateRole(false)}>Annuler</button>
+              <button className="btn btn-gold" onClick={createRole} disabled={creatingRole||!roleForm.nom.trim()}>{creatingRole?"Création…":"Créer le rôle"}</button></>}>
               <div className="form-grid">
                 <div className="form-group"><label>Nom du rôle *</label><input placeholder="Ex : Stagiaire" value={roleForm.nom} onChange={e=>setRoleForm(f=>({...f,nom:e.target.value}))} autoFocus/></div>
                 <div className="form-group">
@@ -708,18 +698,11 @@ export default function AdminPage() {
                 <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:"0.375rem" }}>
                   {ALL_PERMISSIONS.map(p=>{ const has=roleForm.permissions.includes(p); return(<button key={p} onClick={()=>setRoleForm(f=>({...f,permissions:togglePerm(f.permissions,p)}))} style={{ display:"flex",alignItems:"center",gap:"0.4rem",padding:"0.35rem 0.625rem",borderRadius:8, background:has?roleForm.couleur+"15":"var(--surface)", border:`1px solid ${has?roleForm.couleur+"35":"var(--border)"}`, cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.72rem", color:has?roleForm.couleur:"var(--text-dim)",fontWeight:has?600:400,transition:"all 0.12s" }}><span style={{fontSize:"0.6rem"}}>{has?"✓":"○"}</span>{PERMISSION_LABELS[p]||p}</button>); })}
                 </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-outline" onClick={()=>setShowCreateRole(false)}>Annuler</button>
-              <button className="btn btn-gold" onClick={createRole} disabled={creatingRole||!roleForm.nom.trim()}>{creatingRole?"Création…":"Créer le rôle"}</button>
-            </div>
-          </div>
-        </div>
+              </div></Modal>
       )}
 
-      {deleteOverrideId&&(<div className="confirm-overlay"><div className="confirm-box"><div className="confirm-icon">⚠️</div><div className="confirm-title">Retirer cet override ?</div><div className="confirm-msg">Le rôle repassera au calcul automatique via Discord.</div><div className="confirm-actions"><button className="btn btn-outline" onClick={()=>setDeleteOverrideId(null)}>Annuler</button><button className="btn btn-danger" onClick={()=>deleteOverride(deleteOverrideId)}>Retirer</button></div></div></div>)}
-      {deleteRoleId&&(<div className="confirm-overlay"><div className="confirm-box"><div className="confirm-icon">⚠️</div><div className="confirm-title">Supprimer ce rôle ?</div><div className="confirm-msg">Les membres avec ce rôle perdront leurs accès.</div><div className="confirm-actions"><button className="btn btn-outline" onClick={()=>setDeleteRoleId(null)}>Annuler</button><button className="btn btn-danger" onClick={()=>deleteRole(deleteRoleId)}>Supprimer</button></div></div></div>)}
+      {deleteOverrideId&&(<ConfirmDialog title="Retirer cet override ?" message="Le rôle repassera au calcul automatique via Discord." onCancel={()=>setDeleteOverrideId(null)} onConfirm={()=>deleteOverride(deleteOverrideId)} confirmLabel="Retirer" />)}
+      {deleteRoleId&&(<ConfirmDialog title="Supprimer ce rôle ?" message="Les membres avec ce rôle perdront leurs accès." onCancel={()=>setDeleteRoleId(null)} onConfirm={()=>deleteRole(deleteRoleId)} confirmLabel="Supprimer" />)}
     </div>
   );
 }

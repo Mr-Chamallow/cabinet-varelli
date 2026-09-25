@@ -2,6 +2,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { useToast } from "@/lib/useToast";
+import { Toast } from "@/components/ui/Toast";
 import { hasPermission } from "@/lib/auth";
 
 function getWeekStart(offset = 0) {
@@ -30,6 +32,7 @@ interface EmployeeRow {
 
 export default function PaieObsidianPage() {
   const { user, loading: userLoading } = useCurrentUser();
+  const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_paie"))) { window.location.href = "/"; } }, [user, userLoading]);
 
   const [tab, setTab] = useState<"apercu" | "historique" | "reglages">("apercu");
@@ -42,7 +45,6 @@ export default function PaieObsidianPage() {
   const [pct, setPct] = useState(10);
   const [savingPct, setSavingPct] = useState(false);
   const [payAmount, setPayAmount] = useState<Record<string, number>>({});
-  const [toast, setToast] = useState<string | null>(null);
 
   const weekStart = getWeekStart(weekOffset);
   const weekStartISO = toISO(weekStart);
@@ -67,7 +69,6 @@ export default function PaieObsidianPage() {
     setLoading(false);
   }
 
-  function showT(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000); }
 
   // ─── Agrégation par employé pour la semaine sélectionnée ───────────────────
   const rows: EmployeeRow[] = useMemo(() => {
@@ -125,7 +126,7 @@ export default function PaieObsidianPage() {
       body: JSON.stringify({ employe: nom, semaine: weekStartISO, montant, paid_by: user.nom, paid_by_id: user.id }),
     });
     if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); return; }
-    showT(`${nom} marqué payé (${fmt(montant)})`);
+    showToast(`${nom} marqué payé (${fmt(montant)})`);
     load();
   }
 
@@ -133,7 +134,7 @@ export default function PaieObsidianPage() {
     if (!supabase) return;
     setSavingPct(true);
     await supabase.from("obsidian_settings").upsert([{ id: "default", commission_pct: pct, updated_at: new Date().toISOString() }]);
-    showT("Taux de commission mis à jour");
+    showToast("Taux de commission mis à jour");
     setSavingPct(false);
   }
 
@@ -253,7 +254,7 @@ export default function PaieObsidianPage() {
         </div>
       )}
 
-      {toast && <div className="toast-container"><div className="toast toast-success">✅ {toast}</div></div>}
+      <Toast toast={toast} />
     </div>
   );
 }

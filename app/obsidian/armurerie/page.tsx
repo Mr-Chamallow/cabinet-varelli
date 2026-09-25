@@ -2,11 +2,15 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { useToast } from "@/lib/useToast";
+import { Toast } from "@/components/ui/Toast";
+import { Modal } from "@/components/ui/Modal";
 import { hasPermission } from "@/lib/auth";
 const CATS=["arme","munition","accessoire","explosif","gilet","radio","autre"];
 const CAT_ICONS:Record<string,string>={arme:"🔫",munition:"🔴",accessoire:"🔧",explosif:"💣",gilet:"🦺",radio:"📻",autre:"📦"};
 export default function ArmureriePage(){
   const { user, loading: userLoading } = useCurrentUser();
+  const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_armurerie"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [stocks,setStocks]=useState<any[]>([]);
   const [logs,setLogs]=useState<any[]>([]);
@@ -17,7 +21,6 @@ export default function ArmureriePage(){
   const [showPrise,setShowPrise]=useState<any>(null);
   const [priseForm,setPriseForm]=useState({quantite:1,motif:"",retour:false});
   const [saving,setSaving]=useState(false);
-  const [toast,setToast]=useState<string|null>(null);
   useEffect(()=>{load();},[]);
   async function load(){
     if(!supabase){setLoading(false);return;}
@@ -27,7 +30,6 @@ export default function ArmureriePage(){
     ]);
     setStocks(s||[]);setLogs(l||[]);setLoading(false);
   }
-  function showT(m:string){setToast(m);setTimeout(()=>setToast(null),3000);}
   async function addStock(){
     if(!form.nom)return;setSaving(true);
     const res = await fetch("/api/obsidian/stocks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
@@ -35,7 +37,7 @@ export default function ArmureriePage(){
     if (!res.ok) { alert("❌ Erreur: "+data.error); setSaving(false); return; }
     setStocks(s=>[...s,data]);
     setForm({nom:"",categorie:"arme",emoji:"🔫",quantite:0,seuil_alerte:0,unite:"unité",prix_unitaire:0,notes:""});
-    showT("Ajouté");setSaving(false);setTab("inventaire");
+    showToast("Ajouté");setSaving(false);setTab("inventaire");
   }
   async function enregistrerPrise(stock:any){
     if(priseForm.quantite<=0)return;setSaving(true);
@@ -48,7 +50,7 @@ export default function ArmureriePage(){
     if (!res.ok) { alert("❌ Erreur: "+data.error); setSaving(false); return; }
     setStocks(s=>s.map(x=>x.id===stock.id?data.stock:x));
     setLogs(l=>[{id:Date.now().toString(),stock_nom:stock.nom,type:"sortie",quantite:priseForm.quantite,motif:priseForm.motif+" | "+retourTxt,membre:user?.nom||"",created_at:new Date().toISOString()},...l]);
-    setShowPrise(null);setPriseForm({quantite:1,motif:"",retour:false});showT("Prise enregistrée");setSaving(false);
+    setShowPrise(null);setPriseForm({quantite:1,motif:"",retour:false});showToast("Prise enregistrée");setSaving(false);
   }
   async function ajusterQuantite(s:any, newQ:number){
     const res = await fetch("/api/obsidian/stocks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: s.id, quantite: newQ }) });
@@ -86,8 +88,8 @@ export default function ArmureriePage(){
       </>}
       {tab==="historique"&&<div style={{display:"flex",flexDirection:"column",gap:"0.375rem"}}>{logs.length===0?<div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">Aucun historique</div></div>:logs.map((l:any)=><div key={l.id} style={{display:"flex",alignItems:"center",gap:"0.875rem",padding:"0.625rem 1rem",background:"var(--card)",borderRadius:"var(--radius)",border:"1px solid var(--border)",borderLeft:`3px solid ${l.type==="entrée"?"var(--success)":"var(--danger)"}`}}><div style={{flex:1}}><div style={{fontWeight:600,fontSize:"0.82rem"}}>{l.stock_nom} <span style={{color:l.type==="entrée"?"var(--success)":"var(--danger)",fontWeight:700}}>×{l.quantite}</span></div><div style={{fontSize:"0.65rem",color:"var(--text-dim)"}}>{l.motif||"—"} · {l.membre} · {new Date(l.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</div></div><span style={{fontSize:"0.68rem",padding:"0.08rem 0.4rem",borderRadius:999,background:l.motif?.includes("Retour: NON")?"rgba(239,68,68,0.1)":"rgba(34,197,94,0.1)",color:l.motif?.includes("Retour: NON")?"var(--danger)":"var(--success)",border:"1px solid currentColor",flexShrink:0}}>{l.motif?.includes("Retour: NON")?"Sans retour":"Retour prévu"}</span></div>)}</div>}
       {tab==="ajouter"&&<div className="card" style={{maxWidth:540}}><div className="section-title" style={{marginBottom:"1rem"}}>Ajouter à l'armurerie</div><div className="form-grid"><div className="form-group"><label>Emoji</label><input value={form.emoji} onChange={e=>setForm(f=>({...f,emoji:e.target.value}))} style={{width:70}}/></div><div className="form-group"><label>Nom *</label><input autoFocus value={form.nom} onChange={e=>setForm(f=>({...f,nom:e.target.value}))}/></div><div className="form-group"><label>Catégorie</label><select value={form.categorie} onChange={e=>setForm(f=>({...f,categorie:e.target.value}))}>{CATS.map(c=><option key={c}>{c}</option>)}</select></div><div className="form-group"><label>Quantité</label><input type="number" value={form.quantite||""} onChange={e=>setForm(f=>({...f,quantite:+e.target.value}))}/></div><div className="form-group"><label>Seuil alerte</label><input type="number" value={form.seuil_alerte||""} onChange={e=>setForm(f=>({...f,seuil_alerte:+e.target.value}))}/></div><div className="form-group"><label>Unité</label><input value={form.unite} onChange={e=>setForm(f=>({...f,unite:e.target.value}))}/></div></div><div className="form-group" style={{marginBottom:"1.25rem"}}><label>Notes</label><textarea rows={2} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/></div><div style={{display:"flex",gap:"0.5rem"}}><button className="btn btn-outline" onClick={()=>setTab("inventaire")}>Annuler</button><button className="btn btn-gold" onClick={addStock} disabled={saving||!form.nom}>{saving?"…":"Ajouter"}</button></div></div>}
-      {showPrise&&<div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowPrise(null)}><div className="modal"><div className="modal-header"><h2 className="modal-title">↓ Prise — {showPrise.nom}</h2><button className="modal-close" onClick={()=>setShowPrise(null)}>×</button></div><div className="modal-body"><div style={{background:"var(--surface)",borderRadius:"var(--radius)",padding:"0.75rem",marginBottom:"1rem",textAlign:"center"}}><div style={{fontSize:"0.65rem",color:"var(--text-dim)",marginBottom:"0.2rem"}}>Stock actuel</div><div style={{fontFamily:"'Playfair Display',serif",fontWeight:900,fontSize:"1.75rem"}}>{showPrise.quantite} {showPrise.unite}</div></div><div className="form-group"><label>Quantité prise *</label><input type="number" min={1} max={showPrise.quantite} autoFocus value={priseForm.quantite} onChange={e=>setPriseForm(f=>({...f,quantite:+e.target.value}))}/></div><div className="form-group"><label>Motif / Mission</label><input value={priseForm.motif} onChange={e=>setPriseForm(f=>({...f,motif:e.target.value}))} placeholder={`Ex: Mission "Port"`}/></div><label style={{display:"flex",alignItems:"center",gap:"0.625rem",cursor:"pointer",padding:"0.5rem 0.75rem",borderRadius:"var(--radius)",background:priseForm.retour?"rgba(34,197,94,0.08)":"var(--surface)",border:`1px solid ${priseForm.retour?"rgba(34,197,94,0.25)":"var(--border)"}`}}><input type="checkbox" checked={priseForm.retour} onChange={e=>setPriseForm(f=>({...f,retour:e.target.checked}))}/><span style={{fontSize:"0.82rem",color:priseForm.retour?"var(--success)":"var(--text-muted)"}}>Retour prévu</span></label></div><div className="modal-footer"><button className="btn btn-outline" onClick={()=>setShowPrise(null)}>Annuler</button><button className="btn btn-gold" onClick={()=>enregistrerPrise(showPrise)} disabled={saving||priseForm.quantite<=0}>{saving?"…":"Enregistrer la prise"}</button></div></div></div>}
-      {toast&&<div className="toast-container"><div className="toast toast-success">✅ {toast}</div></div>}
+      {showPrise&&<Modal title={<>↓ Prise — {showPrise.nom}</>} onClose={()=>setShowPrise(null)} footer={<><button className="btn btn-outline" onClick={()=>setShowPrise(null)}>Annuler</button><button className="btn btn-gold" onClick={()=>enregistrerPrise(showPrise)} disabled={saving||priseForm.quantite<=0}>{saving?"…":"Enregistrer la prise"}</button></>}><div style={{background:"var(--surface)",borderRadius:"var(--radius)",padding:"0.75rem",marginBottom:"1rem",textAlign:"center"}}><div style={{fontSize:"0.65rem",color:"var(--text-dim)",marginBottom:"0.2rem"}}>Stock actuel</div><div style={{fontFamily:"'Playfair Display',serif",fontWeight:900,fontSize:"1.75rem"}}>{showPrise.quantite} {showPrise.unite}</div></div><div className="form-group"><label>Quantité prise *</label><input type="number" min={1} max={showPrise.quantite} autoFocus value={priseForm.quantite} onChange={e=>setPriseForm(f=>({...f,quantite:+e.target.value}))}/></div><div className="form-group"><label>Motif / Mission</label><input value={priseForm.motif} onChange={e=>setPriseForm(f=>({...f,motif:e.target.value}))} placeholder={`Ex: Mission "Port"`}/></div><label style={{display:"flex",alignItems:"center",gap:"0.625rem",cursor:"pointer",padding:"0.5rem 0.75rem",borderRadius:"var(--radius)",background:priseForm.retour?"rgba(34,197,94,0.08)":"var(--surface)",border:`1px solid ${priseForm.retour?"rgba(34,197,94,0.25)":"var(--border)"}`}}><input type="checkbox" checked={priseForm.retour} onChange={e=>setPriseForm(f=>({...f,retour:e.target.checked}))}/><span style={{fontSize:"0.82rem",color:priseForm.retour?"var(--success)":"var(--text-muted)"}}>Retour prévu</span></label></Modal>}
+      <Toast toast={toast} />
     </div>
   );
 }

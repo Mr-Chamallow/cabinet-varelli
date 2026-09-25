@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { useToast } from "@/lib/useToast";
+import { Toast } from "@/components/ui/Toast";
 import { hasPermission } from "@/lib/auth";
 
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
@@ -10,6 +12,7 @@ const ACCS=[{nom:"Chargeurs Pistolets",prix:225000},{nom:"Chargeurs Auto",prix:5
 
 export default function PrixPage() {
   const { user, loading: userLoading } = useCurrentUser();
+  const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_prix"))) { window.location.href = "/"; } }, [user, userLoading]);
 
   const [tab,setTab]=useState<"drogues"|"armes"|"accessoires"|"zones">("drogues");
@@ -17,7 +20,6 @@ export default function PrixPage() {
   const [armes,setArmes]=useState<any[]>([]);
   const [zones,setZones]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
-  const [toast,setToast]=useState<string|null>(null);
 
   const [editDrogueId,setEditDrogueId]=useState<string|null>(null);
   const [editDrogueForm,setEditDrogueForm]=useState<any>({});
@@ -41,26 +43,25 @@ export default function PrixPage() {
     ]);
     setDrogues(d||[]);setArmes(a||[]);setZones(z||[]);setLoading(false);
   }
-  function showT(m:string){setToast(m);setTimeout(()=>setToast(null),3000);}
 
   // ── Drogues ──
   async function addDrogue(){
     if(!supabase||!newDrogue.nom)return;
     const{data,error}=await supabase.from("obsidian_drogues").insert([{...newDrogue,ordre:drogues.length+1}]).select().single();
     if(error){alert("❌ "+error.message);return;}
-    setDrogues(d=>[...d,data]);setNewDrogue({nom:"",emoji:"💊",prix_min:0,prix_max:0,semaines_revend:0});showT("Drogue ajoutée");
+    setDrogues(d=>[...d,data]);setNewDrogue({nom:"",emoji:"💊",prix_min:0,prix_max:0,semaines_revend:0});showToast("Drogue ajoutée");
   }
   async function saveDrogue(id:string){
     if(!supabase)return;
     const{error}=await supabase.from("obsidian_drogues").update(editDrogueForm).eq("id",id);
     if(error){alert("❌ "+error.message);return;}
-    setDrogues(d=>d.map(x=>x.id===id?{...x,...editDrogueForm}:x));setEditDrogueId(null);showT("Mis à jour");
+    setDrogues(d=>d.map(x=>x.id===id?{...x,...editDrogueForm}:x));setEditDrogueId(null);showToast("Mis à jour");
   }
   async function delDrogue(id:string){
     if(!supabase)return;
     const{error}=await supabase.from("obsidian_drogues").delete().eq("id",id);
     if(error){alert("❌ "+error.message);return;}
-    setDrogues(d=>d.filter(x=>x.id!==id));showT("Supprimée");
+    setDrogues(d=>d.filter(x=>x.id!==id));showToast("Supprimée");
   }
 
   // ── Armes ──
@@ -68,19 +69,19 @@ export default function PrixPage() {
     if(!supabase||!newArme.nom)return;
     const{data,error}=await supabase.from("obsidian_armes_prix").insert([{...newArme,ordre:armes.length+1}]).select().single();
     if(error){alert("❌ "+error.message);return;}
-    setArmes(a=>[...a,data]);setNewArme({nom:"",prix:0});showT("Arme ajoutée");
+    setArmes(a=>[...a,data]);setNewArme({nom:"",prix:0});showToast("Arme ajoutée");
   }
   async function saveArme(id:string){
     if(!supabase)return;
     const{error}=await supabase.from("obsidian_armes_prix").update(editArmeForm).eq("id",id);
     if(error){alert("❌ "+error.message);return;}
-    setArmes(a=>a.map(x=>x.id===id?{...x,...editArmeForm}:x));setEditArmeId(null);showT("Mis à jour");
+    setArmes(a=>a.map(x=>x.id===id?{...x,...editArmeForm}:x));setEditArmeId(null);showToast("Mis à jour");
   }
   async function delArme(id:string){
     if(!supabase)return;
     const{error}=await supabase.from("obsidian_armes_prix").delete().eq("id",id);
     if(error){alert("❌ "+error.message);return;}
-    setArmes(a=>a.filter(x=>x.id!==id));showT("Supprimée");
+    setArmes(a=>a.filter(x=>x.id!==id));showToast("Supprimée");
   }
 
   // ── Zones ──
@@ -88,19 +89,19 @@ export default function PrixPage() {
     if(!supabase||!newZone.nom)return;
     const{data,error}=await supabase.from("obsidian_zones").insert([{...newZone,ordre:zones.length+1}]).select().single();
     if(error){alert("❌ "+error.message);return;}
-    setZones(z=>[...z,data]);setNewZone({nom:"",bonus:"",drogue:"",revendique_par:""});showT("Zone ajoutée");
+    setZones(z=>[...z,data]);setNewZone({nom:"",bonus:"",drogue:"",revendique_par:""});showToast("Zone ajoutée");
   }
   async function saveZone(id:string){
     if(!supabase)return;
     const{error}=await supabase.from("obsidian_zones").update(editZoneForm).eq("id",id);
     if(error){alert("❌ "+error.message);return;}
-    setZones(z=>z.map(x=>x.id===id?{...x,...editZoneForm}:x));setEditZoneId(null);showT("Mis à jour");
+    setZones(z=>z.map(x=>x.id===id?{...x,...editZoneForm}:x));setEditZoneId(null);showToast("Mis à jour");
   }
   async function delZone(id:string){
     if(!supabase)return;
     const{error}=await supabase.from("obsidian_zones").delete().eq("id",id);
     if(error){alert("❌ "+error.message);return;}
-    setZones(z=>z.filter(x=>x.id!==id));showT("Supprimée");
+    setZones(z=>z.filter(x=>x.id!==id));showToast("Supprimée");
   }
 
   if (userLoading || !user) return null;
@@ -275,7 +276,7 @@ export default function PrixPage() {
       )}
 
       </>}
-      {toast&&<div className="toast-container"><div className="toast toast-success">✅ {toast}</div></div>}
+      <Toast toast={toast} />
     </div>
   );
 }

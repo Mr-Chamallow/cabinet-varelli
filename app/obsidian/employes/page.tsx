@@ -2,6 +2,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { useToast } from "@/lib/useToast";
+import { Toast } from "@/components/ui/Toast";
+import { Modal } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { hasPermission, DEFAULT_PERMISSIONS, getMemberColor } from "@/lib/auth";
 
 interface Employe {
@@ -16,6 +20,7 @@ const ROLES_LOGISTIQUE = Object.keys(DEFAULT_PERMISSIONS).filter(r =>
 
 export default function EmployesObsidianPage() {
   const { user, loading: userLoading } = useCurrentUser();
+  const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_employes"))) { window.location.href = "/"; } }, [user, userLoading]);
 
   const [employes, setEmployes] = useState<Employe[]>([]);
@@ -26,7 +31,6 @@ export default function EmployesObsidianPage() {
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState<string | null>(null);
   const [showInactifs, setShowInactifs] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -38,7 +42,6 @@ export default function EmployesObsidianPage() {
     setLoading(false);
   }
 
-  function showT(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000); }
 
   function openNew() { setForm({ ...EMPTY }); setEditId(null); setShowForm(true); }
   function openEdit(e: Employe) {
@@ -53,7 +56,7 @@ export default function EmployesObsidianPage() {
       ? await fetch("/api/obsidian/employes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editId, ...form }) })
       : await fetch("/api/obsidian/employes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, created_by: user.nom, created_by_id: user.id }) });
     if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); setSaving(false); return; }
-    showT(editId ? "Fiche mise à jour" : "Employé ajouté");
+    showToast(editId ? "Fiche mise à jour" : "Employé ajouté");
     setShowForm(false);
     setSaving(false);
     load();
@@ -63,7 +66,7 @@ export default function EmployesObsidianPage() {
     const res = await fetch("/api/obsidian/employes", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
     if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); return; }
     setConfirm(null);
-    showT("Fiche supprimée");
+    showToast("Fiche supprimée");
     load();
   }
 
@@ -125,13 +128,9 @@ export default function EmployesObsidianPage() {
       )}
 
       {showForm && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowForm(false)}>
-          <div className="modal">
-            <div className="modal-header">
-              <h2 className="modal-title">{editId ? "Modifier l'employé" : "Nouvel employé"}</h2>
-              <button className="modal-close" onClick={() => setShowForm(false)}>×</button>
-            </div>
-            <div className="modal-body">
+        <Modal title={<>{editId ? "Modifier l'employé" : "Nouvel employé"}</>} onClose={() => setShowForm(false)} footer={<>
+              <button className="btn btn-outline" onClick={() => setShowForm(false)}>Annuler</button>
+              <button className="btn btn-gold" onClick={save} disabled={saving || !form.nom.trim()}>{saving ? "…" : editId ? "Mettre à jour" : "Ajouter"}</button></>}>
               <div className="form-group"><label>Nom *</label><input autoFocus value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} /></div>
               <div className="form-group">
                 <label>Rôle</label>
@@ -147,24 +146,14 @@ export default function EmployesObsidianPage() {
               <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
                 <input type="checkbox" checked={form.actif} onChange={e => setForm(f => ({ ...f, actif: e.target.checked }))} style={{ width: 16, height: 16 }} />
                 <span style={{ fontSize: "0.82rem" }}>Actif</span>
-              </label>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-outline" onClick={() => setShowForm(false)}>Annuler</button>
-              <button className="btn btn-gold" onClick={save} disabled={saving || !form.nom.trim()}>{saving ? "…" : editId ? "Mettre à jour" : "Ajouter"}</button>
-            </div>
-          </div>
-        </div>
+              </label></Modal>
       )}
 
       {confirm && (
-        <div className="confirm-overlay"><div className="confirm-box">
-          <div className="confirm-icon">⚠️</div><div className="confirm-title">Supprimer cette fiche ?</div>
-          <div className="confirm-actions"><button className="btn btn-outline" onClick={() => setConfirm(null)}>Annuler</button><button className="btn btn-danger" onClick={() => remove(confirm)}>Supprimer</button></div>
-        </div></div>
+        <ConfirmDialog title="Supprimer cette fiche ?" message="" onCancel={() => setConfirm(null)} onConfirm={() => remove(confirm)} confirmLabel="Supprimer" />
       )}
 
-      {toast && <div className="toast-container"><div className="toast toast-success">✅ {toast}</div></div>}
+      <Toast toast={toast} />
     </div>
   );
 }

@@ -2,6 +2,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { useToast } from "@/lib/useToast";
+import { Toast } from "@/components/ui/Toast";
+import { Modal } from "@/components/ui/Modal";
 import { hasPermission } from "@/lib/auth";
 const STATUTS=["Disponible","Sortie","Fourrière","Endommagé","Détruit"];
 const SCOL:Record<string,string>={Disponible:"var(--success)",Sortie:"var(--warning)",Fourrière:"var(--danger)",Endommagé:"#f97316",Détruit:"var(--text-dim)"};
@@ -9,6 +12,7 @@ const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",
 const EMPTY={modele:"",plaque:"",couleur:"",position:"",statut:"Disponible",assigne_a:"",notes:"",valeur:0};
 export default function GaragePage(){
   const { user, loading: userLoading } = useCurrentUser();
+  const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_garage"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [veh,setVeh]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
@@ -16,14 +20,12 @@ export default function GaragePage(){
   const [editId,setEditId]=useState<string|null>(null);
   const [form,setForm]=useState({...EMPTY});
   const [saving,setSaving]=useState(false);
-  const [toast,setToast]=useState<string|null>(null);
   const [filterStatut,setFilterStatut]=useState("");
   useEffect(()=>{load();},[]);
   async function load(){if(!supabase){setLoading(false);return;}const{data}=await supabase.from("obsidian_garage").select("*").order("statut").order("modele");setVeh(data||[]);setLoading(false);}
-  function showT(m:string){setToast(m);setTimeout(()=>setToast(null),3000);}
-  async function save(){if(!supabase||!form.modele||!form.plaque)return;setSaving(true);if(editId){const{data,error}=await supabase.from("obsidian_garage").update(form).eq("id",editId).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>v.map(x=>x.id===editId?data:x));showT("Mis à jour");}else{const{data,error}=await supabase.from("obsidian_garage").insert([{...form,created_by:user?.nom||""}]).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>[...v,data]);showT("Ajouté");}setShowForm(false);setEditId(null);setForm({...EMPTY});setSaving(false);}
+  async function save(){if(!supabase||!form.modele||!form.plaque)return;setSaving(true);if(editId){const{data,error}=await supabase.from("obsidian_garage").update(form).eq("id",editId).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>v.map(x=>x.id===editId?data:x));showToast("Mis à jour");}else{const{data,error}=await supabase.from("obsidian_garage").insert([{...form,created_by:user?.nom||""}]).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>[...v,data]);showToast("Ajouté");}setShowForm(false);setEditId(null);setForm({...EMPTY});setSaving(false);}
   async function changeStatut(id:string,statut:string){if(!supabase)return;await supabase.from("obsidian_garage").update({statut}).eq("id",id);setVeh(v=>v.map(x=>x.id===id?{...x,statut}:x));}
-  async function del(id:string){if(!supabase)return;await supabase.from("obsidian_garage").delete().eq("id",id);setVeh(v=>v.filter(x=>x.id!==id));showT("Supprimé");}
+  async function del(id:string){if(!supabase)return;await supabase.from("obsidian_garage").delete().eq("id",id);setVeh(v=>v.filter(x=>x.id!==id));showToast("Supprimé");}
   const filtered=veh.filter(v=>!filterStatut||v.statut===filterStatut);
   return(
     <div className="page-container">
@@ -62,8 +64,8 @@ export default function GaragePage(){
         </div>;})}
         {filtered.length===0&&<div className="empty-state"><div className="empty-icon">🚗</div><div className="empty-title">Aucun véhicule</div></div>}
       </div>}
-      {showForm&&<div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowForm(false)}><div className="modal modal-lg"><div className="modal-header"><h2 className="modal-title">{editId?"Modifier":"Ajouter"} un véhicule</h2><button className="modal-close" onClick={()=>setShowForm(false)}>×</button></div><div className="modal-body"><div className="form-grid"><div className="form-group"><label>Modèle *</label><input autoFocus value={form.modele} onChange={e=>setForm(f=>({...f,modele:e.target.value}))} placeholder="Ex: Sultan RS"/></div><div className="form-group"><label>Plaque *</label><input value={form.plaque} onChange={e=>setForm(f=>({...f,plaque:e.target.value}))} placeholder="Ex: OBS-001" style={{fontFamily: "var(--font-mono)"}}/></div><div className="form-group"><label>Couleur</label><input value={form.couleur} onChange={e=>setForm(f=>({...f,couleur:e.target.value}))}/></div><div className="form-group"><label>Position / Garage</label><input value={form.position} onChange={e=>setForm(f=>({...f,position:e.target.value}))} placeholder="Ex: Garage Mission Row"/></div><div className="form-group"><label>Statut</label><select value={form.statut} onChange={e=>setForm(f=>({...f,statut:e.target.value}))}>{STATUTS.map(s=><option key={s}>{s}</option>)}</select></div><div className="form-group"><label>Assigné à</label><input value={form.assigne_a} onChange={e=>setForm(f=>({...f,assigne_a:e.target.value}))}/></div><div className="form-group"><label>Valeur ($)</label><input type="number" value={form.valeur||""} onChange={e=>setForm(f=>({...f,valeur:+e.target.value}))}/></div></div><div className="form-group" style={{marginBottom:0}}><label>Notes</label><textarea rows={2} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/></div></div><div className="modal-footer"><button className="btn btn-outline" onClick={()=>setShowForm(false)}>Annuler</button><button className="btn btn-gold" onClick={save} disabled={saving||!form.modele||!form.plaque}>{saving?"…":"Sauvegarder"}</button></div></div></div>}
-      {toast&&<div className="toast-container"><div className="toast toast-success">✅ {toast}</div></div>}
+      {showForm&&<Modal title={`${editId?"Modifier":"Ajouter"} un véhicule`} onClose={()=>setShowForm(false)} size="lg" footer={<><button className="btn btn-outline" onClick={()=>setShowForm(false)}>Annuler</button><button className="btn btn-gold" onClick={save} disabled={saving||!form.modele||!form.plaque}>{saving?"…":"Sauvegarder"}</button></>}><div className="form-grid"><div className="form-group"><label>Modèle *</label><input autoFocus value={form.modele} onChange={e=>setForm(f=>({...f,modele:e.target.value}))} placeholder="Ex: Sultan RS"/></div><div className="form-group"><label>Plaque *</label><input value={form.plaque} onChange={e=>setForm(f=>({...f,plaque:e.target.value}))} placeholder="Ex: OBS-001" style={{fontFamily: "var(--font-mono)"}}/></div><div className="form-group"><label>Couleur</label><input value={form.couleur} onChange={e=>setForm(f=>({...f,couleur:e.target.value}))}/></div><div className="form-group"><label>Position / Garage</label><input value={form.position} onChange={e=>setForm(f=>({...f,position:e.target.value}))} placeholder="Ex: Garage Mission Row"/></div><div className="form-group"><label>Statut</label><select value={form.statut} onChange={e=>setForm(f=>({...f,statut:e.target.value}))}>{STATUTS.map(s=><option key={s}>{s}</option>)}</select></div><div className="form-group"><label>Assigné à</label><input value={form.assigne_a} onChange={e=>setForm(f=>({...f,assigne_a:e.target.value}))}/></div><div className="form-group"><label>Valeur ($)</label><input type="number" value={form.valeur||""} onChange={e=>setForm(f=>({...f,valeur:+e.target.value}))}/></div></div><div className="form-group" style={{marginBottom:0}}><label>Notes</label><textarea rows={2} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/></div></Modal>}
+      <Toast toast={toast} />
     </div>
   );
 }

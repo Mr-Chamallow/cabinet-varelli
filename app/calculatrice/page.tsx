@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/lib/useToast";
+import { Toast } from "@/components/ui/Toast";
 
 interface Drogue {
   id: string; nom: string; emoji: string;
@@ -31,6 +33,7 @@ const fmt  = (n:number) => n.toLocaleString("fr-FR",{style:"currency",currency:"
 const fmtN = (n:number) => n.toLocaleString("fr-FR",{maximumFractionDigits:0});
 
 export default function CalculatricePage() {
+  const { toast, showToast } = useToast();
   const [drogues, setDrogues] = useState<Drogue[]>(DEFAULT_DROGUES);
   const [loading, setLoading]   = useState(true);
   const [tab, setTab]           = useState<"convert"|"equiv"|"config">("convert");
@@ -45,7 +48,6 @@ export default function CalculatricePage() {
   const [editForm, setEditForm]     = useState<Partial<Drogue>>({});
   const [newForm, setNewForm]       = useState({nom:"",emoji:"💊",prix_min:0,prix_max:0,semaines_revend:0});
   const [saving, setSaving]         = useState(false);
-  const [toast, setToast]           = useState<string|null>(null);
 
   useEffect(() => {
     (async () => {
@@ -57,7 +59,6 @@ export default function CalculatricePage() {
     })();
   }, []);
 
-  function showT(msg:string) { setToast(msg); setTimeout(()=>setToast(null),3000); }
 
   const taux = TYPES_CLIENT.find(t=>t.key===typeClient)?.taux || 0.2;
 
@@ -86,7 +87,7 @@ export default function CalculatricePage() {
     setSaving(true);
     if (supabase) await supabase.from("calculatrice_config").update(editForm).eq("id", editId);
     setDrogues(ds => ds.map(d => d.id===editId ? {...d,...editForm} as Drogue : d));
-    setEditId(null); showT("Mis à jour"); setSaving(false);
+    setEditId(null); showToast("Mis à jour"); setSaving(false);
   }
 
   async function addDrogue() {
@@ -100,7 +101,7 @@ export default function CalculatricePage() {
       setDrogues(ds=>[...ds,{...row,id:String(Date.now())}]);
     }
     setNewForm({nom:"",emoji:"💊",prix_min:0,prix_max:0,semaines_revend:0});
-    showT("Drogue ajoutée"); setSaving(false);
+    showToast("Drogue ajoutée"); setSaving(false);
   }
 
   async function toggleActif(d:Drogue) {
@@ -319,7 +320,7 @@ export default function CalculatricePage() {
         </div>
       )}
 
-      {toast&&<div className="toast-container"><div className="toast toast-success">✅ {toast}</div></div>}
+      <Toast toast={toast} />
     </div>
   );
 }
