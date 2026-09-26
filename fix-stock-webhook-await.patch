@@ -1,0 +1,16 @@
+diff --git a/app/api/obsidian/mouvements/route.ts b/app/api/obsidian/mouvements/route.ts
+index a36d641..4603862 100644
+--- a/app/api/obsidian/mouvements/route.ts
++++ b/app/api/obsidian/mouvements/route.ts
+@@ -41,7 +41,10 @@ export async function POST(req: Request) {
+     const kind = ARMURERIE_CATEGORIES.includes(stock.categorie) ? "armurerie" : "stocks";
+     const seuil = stock.seuil_alerte || 0;
+     const bas = seuil > 0 && newQty <= seuil;
+-    sendDiscordAlert(
++    // IMPORTANT : await obligatoire ici — sans lui, Vercel peut couper la fonction juste
++    // après la réponse, avant que la requête Discord soit réellement partie (le bug qui
++    // faisait que ce message ne partait jamais, contrairement au bouton "Tester").
++    await sendDiscordAlert(
+       kind,
+       `**${isEntree ? "➕ Entrée" : "➖ Sortie"}** sur **${stock.nom}** : ${quantite} ${stock.unite || ""} (${membre || created_by || "inconnu"})\nNouvelle quantité : ${newQty} ${stock.unite || ""}${bas ? ` — ⚠️ **sous le seuil d'alerte (${seuil})**` : ""}`,
+       { title: kind === "armurerie" ? "🔫 Mouvement armurerie" : "📦 Mouvement stock", color: bas ? 0xef4444 : 0xa48fff }
