@@ -7,6 +7,7 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Modal } from "@/components/ui/Modal";
 import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
+import { notifyDiscord } from "@/lib/notifyDiscord";
 
 interface Operation {
   id: string;
@@ -165,6 +166,7 @@ async function saveOperation() {
   } else {
     const res = await supabase.from("obsidian_rdv").insert([{ ...form, created_by: user.nom, created_by_id: user.id }]);
     error = res.error;
+    if (!error) notifyDiscord("rdv", `Nouvelle opération : **${form.titre}** le ${form.date} à ${form.heure} (${form.lieu || "lieu non précisé"})`, "📅 Nouveau RDV");
   }
   setSaving(false);
   if (error) {
@@ -183,6 +185,7 @@ async function saveOperation() {
     setOperations(ops => ops.filter(o => o.id !== id));
     scheduleDelete(`"${op.titre}" supprimée`, async () => {
       await supabase!.from("obsidian_rdv").delete().eq("id", id);
+      notifyDiscord("rdv", `Opération supprimée : **${op.titre}**`, "📅 RDV supprimé");
     }, () => setOperations(ops => [...ops, op]));
   }
 

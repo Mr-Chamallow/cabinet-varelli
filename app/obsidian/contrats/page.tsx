@@ -6,6 +6,7 @@ import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { hasPermission } from "@/lib/auth";
+import { notifyDiscord } from "@/lib/notifyDiscord";
 const TYPES=["Livraison","Surveillance","Intimidation","Récupération","Braquage","Autre"];
 const DIFFS=["Facile","Normale","Difficile","Extrême"];
 const STATUTS=["En attente","En cours","Terminé","Échoué","Annulé"];
@@ -29,10 +30,10 @@ export default function ContratsPage(){
   const [saving,setSaving]=useState(false);
   useEffect(()=>{load();},[]);
   async function load(){if(!supabase){setLoading(false);return;}const{data}=await supabase.from("obsidian_contrats").select("*").order("created_at",{ascending:false});setContrats(data||[]);setLoading(false);}
-  async function save(){if(!supabase||!form.titre)return;setSaving(true);const membres=membresInput.split(",").map(s=>s.trim()).filter(Boolean);const payload={...form,membres_affectes:membres,created_by:user?.nom||""};if(editId){const{data,error}=await supabase.from("obsidian_contrats").update(payload).eq("id",editId).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setContrats(c=>c.map(x=>x.id===editId?data:x));showToast("Mis à jour");}else{const{data,error}=await supabase.from("obsidian_contrats").insert([payload]).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setContrats(c=>[data,...c]);showToast("Contrat créé");}setShowForm(false);setEditId(null);setForm({...EMPTY});setMembresInput("");setSaving(false);}
+  async function save(){if(!supabase||!form.titre)return;setSaving(true);const membres=membresInput.split(",").map(s=>s.trim()).filter(Boolean);const payload={...form,membres_affectes:membres,created_by:user?.nom||""};if(editId){const{data,error}=await supabase.from("obsidian_contrats").update(payload).eq("id",editId).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setContrats(c=>c.map(x=>x.id===editId?data:x));showToast("Mis à jour");}else{const{data,error}=await supabase.from("obsidian_contrats").insert([payload]).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setContrats(c=>[data,...c]);showToast("Contrat créé");notifyDiscord("contrats",`Nouveau contrat : **${data.titre}** (${data.type}, ${data.difficulte}) — récompense ${fmt(data.recompense||0)}`,"📋 Nouveau contrat");}setShowForm(false);setEditId(null);setForm({...EMPTY});setMembresInput("");setSaving(false);}
   async function saveRapport(){if(!supabase||!showRapport)return;await supabase.from("obsidian_contrats").update({rapport}).eq("id",showRapport.id);setContrats(c=>c.map(x=>x.id===showRapport.id?{...x,rapport}:x));setShowRapport(null);showToast("Rapport sauvegardé");}
-  async function changeStatut(id:string,statut:string){if(!supabase)return;await supabase.from("obsidian_contrats").update({statut}).eq("id",id);setContrats(c=>c.map(x=>x.id===id?{...x,statut}:x));}
-  async function del(id:string){if(!supabase)return;await supabase.from("obsidian_contrats").delete().eq("id",id);setContrats(c=>c.filter(x=>x.id!==id));showToast("Supprimé");}
+  async function changeStatut(id:string,statut:string){if(!supabase)return;await supabase.from("obsidian_contrats").update({statut}).eq("id",id);const c0=contrats.find(x=>x.id===id);setContrats(c=>c.map(x=>x.id===id?{...x,statut}:x));if(c0)notifyDiscord("contrats",`**${c0.titre}** est passé à **${statut}**`,"📋 Contrat mis à jour");}
+  async function del(id:string){if(!supabase)return;const c0=contrats.find(x=>x.id===id);await supabase.from("obsidian_contrats").delete().eq("id",id);setContrats(c=>c.filter(x=>x.id!==id));showToast("Supprimé");if(c0)notifyDiscord("contrats",`Contrat supprimé : **${c0.titre}**`,"📋 Contrat supprimé");}
   const filtered=contrats.filter(c=>!filterStatut||c.statut===filterStatut);
   return(
     <div className="page-container">

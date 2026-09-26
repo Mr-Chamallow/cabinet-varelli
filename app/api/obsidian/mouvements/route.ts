@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
+import { sendDiscordAlert, ARMURERIE_CATEGORIES } from "@/lib/discordAlert";
 
 // Enregistre un mouvement de stock ET met à jour la quantité de l'article lié, en un
 // seul appel serveur (les deux vont toujours ensemble côté UI — évite d'exposer deux
@@ -35,6 +36,16 @@ export async function POST(req: Request) {
       .select()
       .single();
     if (updErr) return NextResponse.json({ error: updErr.message }, { status: 400 });
+
+    // Alerte Discord à chaque mouvement, sur le webhook du bon module (armurerie vs stocks).
+    const kind = ARMURERIE_CATEGORIES.includes(stock.categorie) ? "armurerie" : "stocks";
+    const seuil = stock.seuil_alerte || 0;
+    const bas = seuil > 0 && newQty <= seuil;
+    sendDiscordAlert(
+      kind,
+      `**${isEntree ? "➕ Entrée" : "➖ Sortie"}** sur **${stock.nom}** : ${quantite} ${stock.unite || ""} (${membre || created_by || "inconnu"})\nNouvelle quantité : ${newQty} ${stock.unite || ""}${bas ? ` — ⚠️ **sous le seuil d'alerte (${seuil})**` : ""}`,
+      { title: kind === "armurerie" ? "🔫 Mouvement armurerie" : "📦 Mouvement stock", color: bas ? 0xef4444 : 0xa48fff }
+    );
 
     return NextResponse.json({ stock: updated });
   } catch (e: any) {

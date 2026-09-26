@@ -1,17 +1,28 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Providers } from '@/components/Providers';
 import { Sidebar } from '@/components/Sidebar';
 import { PreviewBanner } from '@/components/PreviewBanner';
+import { PwaRegister } from '@/components/PwaRegister';
 
 export const metadata: Metadata = {
   title: 'Obsidian Logistique',
   description: 'Plateforme de gestion - Obsidian Logistique',
+  manifest: '/manifest.json',
   icons: {
     icon: '/logo.png',
     shortcut: '/logo.png',
-    apple: '/logo.png',
+    apple: '/icon-192.png',
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Obsidian Logistique',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#a48fff',
 };
 
 export default function RootLayout({
@@ -22,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="fr" className="h-full">
       <body className="bg-slate-900 text-slate-100 antialiased h-screen w-screen overflow-hidden flex">
+        <PwaRegister />
         <Providers>
           <div className="w-64 flex-shrink-0 h-full z-20">
             <Sidebar />

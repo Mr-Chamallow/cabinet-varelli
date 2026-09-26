@@ -6,6 +6,7 @@ import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { hasPermission } from "@/lib/auth";
+import { notifyDiscord } from "@/lib/notifyDiscord";
 const TYPES=["personne","entreprise","organisation","inconnu"];
 const PRIOS=["Basse","Normale","Haute","Critique","Neutralisé"];
 const PCOL:Record<string,string>={Basse:"var(--text-dim)",Normale:"var(--info)",Haute:"var(--warning)",Critique:"var(--danger)",Neutralisé:"var(--success)"};
@@ -25,8 +26,8 @@ export default function FichesPage(){
   const [saving,setSaving]=useState(false);
   useEffect(()=>{load();},[]);
   async function load(){if(!supabase){setLoading(false);return;}const{data}=await supabase.from("obsidian_fiches").select("*").order("priorite").order("nom");setFiches(data||[]);setLoading(false);}
-  async function save(){if(!supabase||!form.nom)return;setSaving(true);const tags=tagsInput.split(",").map(s=>s.trim()).filter(Boolean);const payload={...form,tags,updated_at:new Date().toISOString()};if(editId){const{data,error}=await supabase.from("obsidian_fiches").update(payload).eq("id",editId).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setFiches(f=>f.map(x=>x.id===editId?data:x));setSelected(data);showToast("Mis à jour");}else{const{data,error}=await supabase.from("obsidian_fiches").insert([{...payload,created_by:user?.nom||""}]).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setFiches(f=>[...f,data]);showToast("Fiche créée");}setShowForm(false);setEditId(null);setForm({...EMPTY});setTagsInput("");setSaving(false);}
-  async function del(id:string){if(!supabase)return;await supabase.from("obsidian_fiches").delete().eq("id",id);setFiches(f=>f.filter(x=>x.id!==id));if(selected?.id===id)setSelected(null);showToast("Supprimé");}
+  async function save(){if(!supabase||!form.nom)return;setSaving(true);const tags=tagsInput.split(",").map(s=>s.trim()).filter(Boolean);const payload={...form,tags,updated_at:new Date().toISOString()};if(editId){const{data,error}=await supabase.from("obsidian_fiches").update(payload).eq("id",editId).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setFiches(f=>f.map(x=>x.id===editId?data:x));setSelected(data);showToast("Mis à jour");}else{const{data,error}=await supabase.from("obsidian_fiches").insert([{...payload,created_by:user?.nom||""}]).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setFiches(f=>[...f,data]);showToast("Fiche créée");notifyDiscord("fiches",`Nouvelle fiche : **${data.nom}** (${data.type}, priorité ${data.priorite})`,"🗂️ Nouvelle fiche");}setShowForm(false);setEditId(null);setForm({...EMPTY});setTagsInput("");setSaving(false);}
+  async function del(id:string){if(!supabase)return;const f0=fiches.find(x=>x.id===id);await supabase.from("obsidian_fiches").delete().eq("id",id);setFiches(f=>f.filter(x=>x.id!==id));if(selected?.id===id)setSelected(null);showToast("Supprimé");if(f0)notifyDiscord("fiches",`Fiche supprimée : **${f0.nom}**`,"🗂️ Fiche supprimée");}
   const filtered=fiches.filter(f=>!search||f.nom.toLowerCase().includes(search.toLowerCase())||(f.organisation||"").toLowerCase().includes(search.toLowerCase()));
   return(
     <div className="page-container">

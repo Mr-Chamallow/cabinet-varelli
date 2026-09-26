@@ -103,6 +103,7 @@ export default function AdminPage() {
   const [siteGoldInput, setSiteGoldInput] = useState(DEFAULT_GOLD);
   const [siteLoading, setSiteLoading] = useState(false);
   const [siteSaving, setSiteSaving] = useState(false);
+  const [discordTestMsg, setDiscordTestMsg] = useState<Record<string,string>>({});
 
   useEffect(() => {
     if (user && !userLoading && canAccess(user, "admin")) fetchAll();
@@ -187,6 +188,12 @@ export default function AdminPage() {
     setSiteGold(hex); setSiteGoldInput(hex);
     applyThemeToDocument(hex);
     await saveSiteKey("couleur_gold", hex);
+  }
+
+  async function testDiscordWebhook(kind: string) {
+    setDiscordTestMsg(m => ({ ...m, [kind]: "…" }));
+    const res = await apiRequest("/api/admin/discord-test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind }) });
+    setDiscordTestMsg(m => ({ ...m, [kind]: res.ok ? "✅ Envoyé" : `❌ ${res.error}` }));
   }
 
   async function createOverride() {
@@ -643,6 +650,22 @@ export default function AdminPage() {
                           <input value={siteSettings[key]||""} onChange={e=>setSiteSettings(s=>({...s,[key]:e.target.value}))} placeholder={placeholder} style={{ flex:1 }}/>
                           <button className="btn btn-gold btn-sm" onClick={()=>saveSiteKey(key, siteSettings[key]||"")} disabled={siteSaving}>{siteSaving?"…":"✓"}</button>
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="card">
+                  <div className="section-title" style={{ marginBottom:"0.5rem" }}>🔔 Alertes Discord</div>
+                  <p style={{ fontSize:"0.7rem", color:"var(--text-dim)", marginBottom:"0.875rem" }}>
+                    Chaque module a son propre webhook, configuré via variable d'environnement sur Vercel (DISCORD_WEBHOOK_STOCKS, _ARMURERIE, _RDV, _CONTRATS, _FICHES). Teste ici que chacun est bien branché.
+                  </p>
+                  <div style={{ display:"flex", flexDirection:"column", gap:"0.6rem" }}>
+                    {["stocks","armurerie","rdv","contrats","fiches"].map(kind => (
+                      <div key={kind} style={{ display:"flex", alignItems:"center", gap:"0.6rem" }}>
+                        <span style={{ flex:1, fontSize:"0.8rem", textTransform:"capitalize" }}>{kind}</span>
+                        {discordTestMsg[kind] && <span style={{ fontSize:"0.68rem", color:"var(--text-dim)" }}>{discordTestMsg[kind]}</span>}
+                        <button className="btn btn-outline btn-sm" onClick={()=>testDiscordWebhook(kind)}>Tester</button>
                       </div>
                     ))}
                   </div>
