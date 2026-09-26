@@ -1,0 +1,13 @@
+diff --git a/app/globals.css b/app/globals.css
+index cdeec8d..dd2fef1 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -348,7 +348,7 @@ a { color: inherit; }
+    PAGE LAYOUT
+    ═══════════════════════════════════════════════════════════════════════════ */
+ .page-container {
+-  max-width: 1180px;
++  max-width: 1560px;
+   margin: 0 auto;
+   padding: 2rem 1.75rem;
+   animation: pageEnter var(--t-slow) var(--ease);
