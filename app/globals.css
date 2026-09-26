@@ -341,9 +341,10 @@ a { color: inherit; }
    PAGE LAYOUT
    ═══════════════════════════════════════════════════════════════════════════ */
 .page-container {
-  max-width: 1560px;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
-  padding: 2rem 1.75rem;
+  padding: 2rem 2.5rem;
   animation: pageEnter var(--t-slow) var(--ease);
 }
 
