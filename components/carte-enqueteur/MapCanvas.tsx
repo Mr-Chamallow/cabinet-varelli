@@ -82,6 +82,35 @@ const colors = {
   redLight: '#f87171',
 };
 
+// ─── Marqueur "pin" pro (remplace les anciens ronds plats) ───────────────
+// Forme goutte + tête blanche, ombre portée, pointe ancrée sur la coordonnée exacte.
+function pinMarkerHtml(color: string, selected: boolean, dimmed: boolean) {
+  const ring = selected ? '#fff' : 'rgba(255,255,255,0.85)';
+  const glow = selected ? `filter:drop-shadow(0 0 6px ${color}90);` : '';
+  return `
+    <div style="position:relative;width:34px;height:44px;opacity:${dimmed ? 0.45 : 1};${glow}">
+      <svg width="34" height="44" viewBox="0 0 34 44" style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.55));">
+        <path d="M17 43C17 43 30 27.5 30 16.5C30 8.49 24.18 2 17 2C9.82 2 4 8.49 4 16.5C4 27.5 17 43 17 43Z"
+              fill="${color}" stroke="${ring}" stroke-width="2.5"/>
+        <circle cx="17" cy="16.5" r="6.5" fill="#0f172a" opacity="0.85"/>
+      </svg>
+    </div>`;
+}
+
+// ─── Badge de cluster : cohérent avec la charte (au lieu du orange brut par défaut) ───
+function clusterMarkerHtml(count: number) {
+  const size = count >= 10 ? 42 : 36;
+  return `
+    <div style="width:${size}px;height:${size}px;border-radius:50%;
+      background:radial-gradient(circle at 32% 28%, ${colors.amberDark}, ${colors.amber} 70%);
+      border:3px solid ${colors.bgDarker};
+      box-shadow:0 3px 12px rgba(0,0,0,0.55), 0 0 0 3px rgba(245,158,11,0.22);
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Inter',sans-serif;font-weight:800;font-size:${count >= 10 ? 14 : 13}px;color:#1a1206;">
+      ${count}
+    </div>`;
+}
+
 const S: Record<string, CSSProperties> = {
   root: {
     display: 'flex',
@@ -551,10 +580,11 @@ export default function MapCanvas({
       showCoverageOnHover: false,
       iconCreateFunction: (cluster: any) => {
         const count = cluster.getChildCount();
+        const size = count >= 10 ? 42 : 36;
         return L.divIcon({
           className: '',
-          html: `<div style="width:36px;height:36px;border-radius:50%;background:${colors.amber};border:3px solid rgba(255,255,255,0.95);box-shadow:0 2px 10px rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:800;font-size:13px;color:#1a1206;">${count}</div>`,
-          iconSize: [36, 36],
+          html: clusterMarkerHtml(count),
+          iconSize: [size, size],
         });
       },
     }).addTo(map);
@@ -715,25 +745,31 @@ export default function MapCanvas({
       const statutDot = statut !== 'actif'
         ? `<div style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:${STATUT_CONFIG[statut].color};border:2px solid #0f172a;"></div>`
         : '';
+      const catColor = categoryColor(categories, p.category);
+      const isSelected = p.id === selectedId;
       const icon = p.icon_url
         ? L.divIcon({
             className: '',
-            html: `<div style="position:relative;${opacityStyle}"><div style="width:40px;height:40px;border-radius:50%;background:#0f172a;border:3px solid ${
-              p.id === selectedId ? '#fff' : categoryColor(categories, p.category)
-            };box-shadow:0 2px 10px rgba(0,0,0,0.6);overflow:hidden;"><img src="${p.icon_url}" style="width:100%;height:100%;object-fit:cover;" /></div>${statutDot}</div>`,
-            iconSize: [40, 40],
-            iconAnchor: [20, 40],
+            html: `<div style="position:relative;width:40px;height:52px;opacity:${dimmed ? 0.45 : 1};${
+              isSelected ? `filter:drop-shadow(0 0 6px ${catColor}90);` : ''
+            }">
+              <svg width="40" height="52" viewBox="0 0 40 52" style="position:absolute;top:0;left:0;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.55));">
+                <path d="M20 51C20 51 36 32.5 36 19.5C36 9.85 28.84 2 20 2C11.16 2 4 9.85 4 19.5C4 32.5 20 51 20 51Z"
+                      fill="${catColor}" stroke="${isSelected ? '#fff' : 'rgba(255,255,255,0.85)'}" stroke-width="2.5"/>
+              </svg>
+              <div style="position:absolute;top:4px;left:6px;width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid rgba(15,23,42,0.9);">
+                <img src="${p.icon_url}" style="width:100%;height:100%;object-fit:cover;" />
+              </div>
+              ${statutDot}
+            </div>`,
+            iconSize: [40, 52],
+            iconAnchor: [20, 51],
           })
         : L.divIcon({
             className: '',
-            html: `<div style="position:relative;${opacityStyle}"><div style="width:24px;height:24px;border-radius:50%;background:${categoryColor(
-              categories,
-              p.category,
-            )};border:3px solid rgba(255,255,255,0.95);box-shadow:0 2px 8px rgba(0,0,0,0.6);${
-              p.id === selectedId ? 'outline:3px solid white;outline-offset:1px;' : ''
-            }"></div>${statutDot}</div>`,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12],
+            html: `<div style="position:relative;${opacityStyle}">${pinMarkerHtml(catColor, isSelected, false)}${statutDot}</div>`,
+            iconSize: [34, 44],
+            iconAnchor: [17, 43],
           });
 
       const marker = L.marker(gameToLatLng(p.x, p.y), { icon });
