@@ -88,14 +88,16 @@ const colors = {
 function pinMarkerHtml(color: string, selected: boolean, dimmed: boolean, emoji: string) {
   const ring = selected ? '#fff' : 'rgba(255,255,255,0.85)';
   const glow = selected ? `filter:drop-shadow(0 0 6px ${color}90);` : '';
+  // L'emoji est dessiné en <text> SVG (pas un <span> HTML superposé) : ça garantit
+  // qu'il reste au-dessus du pin et s'affiche pareil sur tous les navigateurs.
   return `
     <div style="position:relative;width:34px;height:44px;opacity:${dimmed ? 0.45 : 1};${glow}">
       <svg width="34" height="44" viewBox="0 0 34 44" style="position:absolute;top:0;left:0;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.55));">
         <path d="M17 43C17 43 30 27.5 30 16.5C30 8.49 24.18 2 17 2C9.82 2 4 8.49 4 16.5C4 27.5 17 43 17 43Z"
               fill="${color}" stroke="${ring}" stroke-width="2.5"/>
-        <circle cx="17" cy="16.5" r="9" fill="#0f172a" opacity="0.9"/>
+        <circle cx="17" cy="16.5" r="9.5" fill="#0f172a" opacity="0.92"/>
+        <text x="17" y="17.2" text-anchor="middle" dominant-baseline="middle" font-size="12" style="user-select:none;">${emoji}</text>
       </svg>
-      <span style="position:absolute;top:8.5px;left:0;width:34px;text-align:center;font-size:13px;line-height:1;pointer-events:none;">${emoji}</span>
     </div>`;
 }
 
@@ -764,8 +766,8 @@ export default function MapCanvas({
                 <path d="M20 51C20 51 36 32.5 36 19.5C36 9.85 28.84 2 20 2C11.16 2 4 9.85 4 19.5C4 32.5 20 51 20 51Z"
                       fill="${catColor}" stroke="${isSelected ? '#fff' : 'rgba(255,255,255,0.85)'}" stroke-width="2.5"/>
               </svg>
-              <div style="position:absolute;top:4px;left:6px;width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid rgba(15,23,42,0.9);">
-                <img src="${p.icon_url}" style="width:100%;height:100%;object-fit:cover;" />
+              <div style="position:absolute;top:4px;left:6px;width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid rgba(15,23,42,0.9);background:${catColor};">
+                <img src="${p.icon_url}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none'" />
               </div>
               ${statutDot}
             </div>`,
