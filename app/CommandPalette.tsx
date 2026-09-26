@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
+import { CODE_COMPLET } from "@/lib/code-penal";
 
 interface Result {
-  type: "client" | "dossier" | "facture" | "casier" | "page";
+  type: "client" | "dossier" | "stock" | "employe" | "article" | "page";
   id: string;
   title: string;
   subtitle: string;
@@ -14,20 +16,46 @@ interface Result {
   icon: string;
 }
 
-const QUICK_PAGES: Result[] = [
-  { type:"page", id:"p1", title:"Dashboard", subtitle:"Accueil", href:"/", icon:"🏠" },
-  { type:"page", id:"p2", title:"Stocks",   subtitle:"Inventaire", href:"/obsidian/stocks", icon:"📦" },
-  { type:"page", id:"p3", title:"Armurerie",  subtitle:"Armes & munitions", href:"/obsidian/armurerie", icon:"🔫" },
-  { type:"page", id:"p4", title:"Comptabilité",  subtitle:"Recettes & dépenses", href:"/obsidian/comptabilite", icon:"🧾" },
-  { type:"page", id:"p5", title:"Garage",subtitle:"Véhicules", href:"/obsidian/garage", icon:"🚗" },
-  { type:"page", id:"p6", title:"RDV", subtitle:"Rendez-vous", href:"/obsidian/rdv", icon:"🗓️" },
-  { type:"page", id:"p7", title:"Contrats",   subtitle:"Missions", href:"/obsidian/contrats", icon:"📜" },
-  { type:"page", id:"p8", title:"Fiches",   subtitle:"Personnes / orgas", href:"/obsidian/fiches", icon:"🗂️" },
+interface PageEntry {
+  title: string;
+  subtitle: string;
+  href: string;
+  icon: string;
+  permission: string;
+}
+
+// Reflète l'intégralité des pages de la Sidebar (+ Calculatrice, orpheline : accessible
+// par URL directe mais absente du menu — la recherche est la seule façon de la trouver).
+const ALL_PAGES: PageEntry[] = [
+  { title: "Dashboard", subtitle: "Accueil", href: "/", icon: "🏠", permission: "obsidian_dashboard" },
+  { title: "Tableau des prix", subtitle: "Drogues, armes, accessoires", href: "/obsidian/prix", icon: "🏷️", permission: "obsidian_prix" },
+  { title: "Stocks", subtitle: "Inventaire", href: "/obsidian/stocks", icon: "📦", permission: "obsidian_stocks" },
+  { title: "Armurerie", subtitle: "Armes & munitions", href: "/obsidian/armurerie", icon: "🔫", permission: "obsidian_armurerie" },
+  { title: "Garage", subtitle: "Véhicules", href: "/obsidian/garage", icon: "🚗", permission: "obsidian_garage" },
+  { title: "Comptabilité", subtitle: "Recettes & dépenses", href: "/obsidian/comptabilite", icon: "🧾", permission: "obsidian_comptabilite" },
+  { title: "Rendez-vous", subtitle: "Planning opérations", href: "/obsidian/rdv", icon: "🗓️", permission: "obsidian_rdv" },
+  { title: "Contrats", subtitle: "Missions", href: "/obsidian/contrats", icon: "📜", permission: "obsidian_contrats" },
+  { title: "Statistiques", subtitle: "Chiffres clés", href: "/obsidian/stats", icon: "📊", permission: "obsidian_stats" },
+  { title: "Fiches", subtitle: "Personnes / organisations", href: "/obsidian/fiches", icon: "🗂️", permission: "obsidian_stats" },
+  { title: "Cahier de vente", subtitle: "Transactions", href: "/cahier-vente", icon: "🧮", permission: "cahier_vente" },
+  { title: "Paie & Commissions", subtitle: "Salaires", href: "/obsidian/paie", icon: "💰", permission: "obsidian_paie" },
+  { title: "Employés", subtitle: "Membres du personnel", href: "/obsidian/employes", icon: "🧑‍💼", permission: "obsidian_employes" },
+  { title: "Code pénal", subtitle: "Articles de loi", href: "/juridique", icon: "📖", permission: "juridique" },
+  { title: "Utile SAMP", subtitle: "Intel police", href: "/utile-samp", icon: "🐈", permission: "utile_samp" },
+  { title: "Carte enquêteur", subtitle: "Points chauds, dossiers", href: "/carte-enqueteur", icon: "🗺️", permission: "carte-enqueteur" },
+  { title: "Calculatrice", subtitle: "Blanchiment", href: "/calculatrice", icon: "🧮", permission: "calculatrice" },
+  { title: "Personnalisation", subtitle: "Thème, logo, couleurs", href: "/settings", icon: "🎨", permission: "admin" },
+  { title: "Supervision", subtitle: "Vue d'ensemble", href: "/supervision", icon: "📡", permission: "supervision" },
+  { title: "Admin", subtitle: "Membres, rôles, diagnostic", href: "/admin", icon: "🛡️", permission: "admin" },
 ];
 
 const TYPE_COLORS: Record<string,string> = {
-  client:"var(--success)", dossier:"var(--info)", facture:"var(--gold)",
-  casier:"var(--danger)", page:"var(--text-dim)",
+  client:"var(--success)", dossier:"var(--info)", stock:"var(--warning)",
+  employe:"var(--gold)", article:"#7c3aed", page:"var(--text-dim)",
+};
+const SECTION_LABELS: Record<string,string> = {
+  client:"Fiches", dossier:"Contrats", stock:"Stocks", employe:"Employés",
+  article:"Code pénal", page:"Pages",
 };
 
 export default function CommandPalette() {
@@ -38,6 +66,15 @@ export default function CommandPalette() {
   const [results, setResults] = useState<Result[]>([]);
   const [selected, setSelected] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  // Pages réellement accessibles à CET utilisateur — recalculé seulement quand il
+  // change, pas à chaque frappe.
+  const accessiblePages = useMemo<Result[]>(() => {
+    if (!user) return [];
+    return ALL_PAGES
+      .filter(p => hasPermission(user, p.permission))
+      .map((p, i) => ({ type: "page" as const, id: `page-${i}`, title: p.title, subtitle: p.subtitle, href: p.href, icon: p.icon }));
+  }, [user]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -52,29 +89,61 @@ export default function CommandPalette() {
   }, []);
 
   const search = useCallback(async (q: string) => {
-    if (!supabase || !user) { setResults(QUICK_PAGES); return; }
+    if (!user) { setResults(accessiblePages); return; }
 
     if (!q.trim()) {
-      setResults(QUICK_PAGES);
+      setResults(accessiblePages);
       return;
     }
 
     setLoading(true);
     const like = `%${q}%`;
-    const [{ data: fiches }, { data: contrats }] = await Promise.all([
-      supabase.from("obsidian_fiches").select("id,nom,organisation").ilike("nom", like).limit(5),
-      supabase.from("obsidian_contrats").select("id,titre,type").ilike("titre", like).limit(5),
-    ]);
+    const ql = q.toLowerCase();
 
-    const r: Result[] = [
-      ...(fiches||[]).map((f:any) => ({ type:"client" as const, id:f.id, title:f.nom, subtitle:f.organisation||"Fiche", href:"/obsidian/fiches", icon:"🗂️" })),
-      ...(contrats||[]).map((c:any) => ({ type:"dossier" as const, id:c.id, title:c.titre, subtitle:c.type, href:"/obsidian/contrats", icon:"📜" })),
-    ];
+    const queries: any[] = [];
+    const sources: string[] = [];
 
-    const pageMatches = QUICK_PAGES.filter(p => p.title.toLowerCase().includes(q.toLowerCase()));
+    if (supabase && hasPermission(user, "obsidian_stats")) {
+      queries.push(supabase.from("obsidian_fiches").select("id,nom,organisation").ilike("nom", like).limit(5));
+      sources.push("client");
+    }
+    if (supabase && hasPermission(user, "obsidian_contrats")) {
+      queries.push(supabase.from("obsidian_contrats").select("id,titre,type").ilike("titre", like).limit(5));
+      sources.push("dossier");
+    }
+    if (supabase && hasPermission(user, "obsidian_stocks")) {
+      queries.push(supabase.from("obsidian_stocks").select("id,nom,categorie").ilike("nom", like).limit(5));
+      sources.push("stock");
+    }
+    if (supabase && hasPermission(user, "obsidian_employes")) {
+      queries.push(supabase.from("obsidian_employes").select("id,nom,poste").ilike("nom", like).limit(5));
+      sources.push("employe");
+    }
+
+    const responses = await Promise.all(queries);
+    const r: Result[] = [];
+    responses.forEach((res, i) => {
+      const type = sources[i];
+      const data = res.data || [];
+      if (type === "client") r.push(...data.map((f: any) => ({ type: "client" as const, id: f.id, title: f.nom, subtitle: f.organisation || "Fiche", href: "/obsidian/fiches", icon: "🗂️" })));
+      if (type === "dossier") r.push(...data.map((c: any) => ({ type: "dossier" as const, id: c.id, title: c.titre, subtitle: c.type, href: "/obsidian/contrats", icon: "📜" })));
+      if (type === "stock") r.push(...data.map((s: any) => ({ type: "stock" as const, id: s.id, title: s.nom, subtitle: s.categorie || "Stock", href: "/obsidian/stocks", icon: "📦" })));
+      if (type === "employe") r.push(...data.map((e: any) => ({ type: "employe" as const, id: e.id, title: e.nom, subtitle: e.poste || "Employé", href: "/obsidian/employes", icon: "🧑‍💼" })));
+    });
+
+    // Code pénal : recherche locale (pas de table, article statique) — seulement si accès
+    if (hasPermission(user, "juridique")) {
+      const articleMatches = CODE_COMPLET
+        .filter(a => a.titre.toLowerCase().includes(ql) || a.contenu.toLowerCase().includes(ql))
+        .slice(0, 5)
+        .map(a => ({ type: "article" as const, id: a.id, title: a.titre, subtitle: "Code pénal", href: "/juridique", icon: "📖" }));
+      r.push(...articleMatches);
+    }
+
+    const pageMatches = accessiblePages.filter(p => p.title.toLowerCase().includes(ql));
     setResults([...r, ...pageMatches]);
     setLoading(false);
-  }, [user]);
+  }, [user, accessiblePages]);
 
   useEffect(() => {
     if (open) {
@@ -84,8 +153,8 @@ export default function CommandPalette() {
   }, [query, open, search]);
 
   useEffect(() => {
-    if (open) { setQuery(""); setResults(QUICK_PAGES); setSelected(0); }
-  }, [open]);
+    if (open) { setQuery(""); setResults(accessiblePages); setSelected(0); }
+  }, [open, accessiblePages]);
 
   function navigate(r: Result) {
     setOpen(false);
@@ -102,7 +171,6 @@ export default function CommandPalette() {
 
   const grouped: Record<string, Result[]> = {};
   results.forEach(r => { if (!grouped[r.type]) grouped[r.type] = []; grouped[r.type].push(r); });
-  const sectionLabels: Record<string,string> = { client:"Fiches", dossier:"Contrats", facture:"Factures", casier:"Casiers", page:"Pages" };
 
   let flatIndex = 0;
 
@@ -113,7 +181,7 @@ export default function CommandPalette() {
           <span style={{ color:"var(--text-dim)" }}>🔍</span>
           <input
             autoFocus
-            placeholder="Rechercher fiches, contrats, pages…"
+            placeholder="Rechercher fiches, stocks, employés, code pénal, pages…"
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyNav}
@@ -130,7 +198,7 @@ export default function CommandPalette() {
           )}
           {!loading && Object.entries(grouped).map(([type, items]) => (
             <div key={type}>
-              <div className="cmdk-section-label">{sectionLabels[type]}</div>
+              <div className="cmdk-section-label">{SECTION_LABELS[type]}</div>
               {items.map(r => {
                 const isSelected = flatIndex === selected;
                 const idx = flatIndex++;
