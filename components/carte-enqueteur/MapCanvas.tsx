@@ -68,6 +68,11 @@ const DEFAULT_ORIGIN = { px: 3755, py: 5525 };
 const TILE_SIZE = 256;
 const MAX_ZOOM = 5;
 
+// ─── Extensions hors-San Andreas (placement approximatif, non calé sur les coords réelles du jeu) ───
+// Cayo Perico : image statique accrochée en bas à droite de la carte principale.
+const CAYO_IMAGE_URL = '/map/cayo-perico.jpg';
+const CAYO_SIZE = 90; // taille du carré ajouté (mêmes unités que TILE_SIZE)
+
 const colors = {
   bg: '#0F1420',
   bgDarker: '#0B0F18',
@@ -614,12 +619,20 @@ export default function MapCanvas({
 
     L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
+    // Bounds de navigation élargis pour laisser de la place à Cayo Perico en bas à droite
     const bounds: L.LatLngBoundsExpression = [
-      [-TILE_SIZE, 0],
-      [0, TILE_SIZE],
+      [-TILE_SIZE - CAYO_SIZE, 0],
+      [0, TILE_SIZE + CAYO_SIZE],
     ];
     map.setMaxBounds(bounds);
     map.setView([-TILE_SIZE / 2, TILE_SIZE / 2], 2);
+
+    // Cayo Perico : image collée au coin bas-droit de la carte principale (placement approximatif)
+    const cayoBounds: L.LatLngBoundsExpression = [
+      [-TILE_SIZE - CAYO_SIZE, TILE_SIZE],
+      [-TILE_SIZE, TILE_SIZE + CAYO_SIZE],
+    ];
+    L.imageOverlay(CAYO_IMAGE_URL, cayoBounds, { opacity: 1 }).addTo(map);
 
     const layerGroup = (L as any).markerClusterGroup({
       maxClusterRadius: 45,
