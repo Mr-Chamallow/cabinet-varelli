@@ -7,7 +7,8 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Modal } from "@/components/ui/Modal";
 import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
-import { notifyDiscord } from "@/lib/notifyDiscord";
+import { notifyDiscordCreate, notifyDiscordUpdate, notifyDiscordDelete } from "@/lib/notifyDiscord";
+import { buildRdvEmbed } from "@/lib/discordEmbeds";
 
 interface Operation {
   id: string;
@@ -25,6 +26,7 @@ interface Operation {
   contrat_ref?: string;
   rappel_minutes?: number;
   visible_pour?: string[];
+  discord_message_id?: string;
 }
 
 const TYPES = ["Livraison", "Braquage", "Surveillance", "Réunion", "Rencontre fournisseur", "Récupération", "Intimidation", "Entraînement", "Autre"];
@@ -161,12 +163,17 @@ async function saveOperation() {
   setSaving(true);
   let error = null;
   if (editOperation) {
-    const res = await supabase.from("obsidian_rdv").update({ ...form }).eq("id", editOperation.id);
+    const res = await supabase.from("obsidian_rdv").update({ ...form }).eq("id", editOperation.id).select().single();
     error = res.error;
+    if (!error && res.data) notifyDiscordUpdate("rdv", res.data.discord_message_id, buildRdvEmbed(res.data));
   } else {
-    const res = await supabase.from("obsidian_rdv").insert([{ ...form, created_by: user.nom, created_by_id: user.id }]);
+    const res = await supabase.from("obsidian_rdv").insert([{ ...form, created_by: user.nom, created_by_id: user.id }]).select().single();
     error = res.error;
-    if (!error) notifyDiscord("rdv", `Nouvelle opération : **${form.titre}** le ${form.date} à ${form.heure} (${form.lieu || "lieu non précisé"})`, "📅 Nouveau RDV");
+    if (!error && res.data) {
+      notifyDiscordCreate("rdv", buildRdvEmbed(res.data)).then(msgId => {
+        if (msgId && supabase) supabase.from("obsidian_rdv").update({ discord_message_id: msgId }).eq("id", res.data!.id).then();
+      });
+    }
   }
   setSaving(false);
   if (error) {
@@ -185,7 +192,7 @@ async function saveOperation() {
     setOperations(ops => ops.filter(o => o.id !== id));
     scheduleDelete(`"${op.titre}" supprimée`, async () => {
       await supabase!.from("obsidian_rdv").delete().eq("id", id);
-      notifyDiscord("rdv", `Opération supprimée : **${op.titre}**`, "📅 RDV supprimé");
+      notifyDiscordDelete("rdv", op.discord_message_id, buildRdvEmbed(op));
     }, () => setOperations(ops => [...ops, op]));
   }
 

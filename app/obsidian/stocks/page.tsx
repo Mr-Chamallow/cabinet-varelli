@@ -8,6 +8,7 @@ import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
 import { Modal } from "@/components/ui/Modal";
 import { hasPermission } from "@/lib/auth";
+import { useRealtimeTable } from "@/lib/useRealtimeTable";
 const CATS=["drogue","arme","accessoire","composant","objet_rare","autre"];
 const fmtN=(n:number)=>n.toLocaleString("fr-FR",{maximumFractionDigits:2});
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
@@ -28,6 +29,7 @@ export default function StocksPage(){
   const [showMvt,setShowMvt]=useState<Stock|null>(null);
   const [saving,setSaving]=useState(false);
   useEffect(()=>{load();},[]);
+  useRealtimeTable(["obsidian_stocks","obsidian_mouvements"], load);
   async function load(){if(!supabase){setLoading(false);return;}
     const[{data:s},{data:m}]=await Promise.all([supabase.from("obsidian_stocks").select("*").order("categorie").order("nom"),supabase.from("obsidian_mouvements").select("*").order("created_at",{ascending:false}).limit(100)]);
     setStocks(s||[]);setMouvements(m||[]);setLoading(false);}

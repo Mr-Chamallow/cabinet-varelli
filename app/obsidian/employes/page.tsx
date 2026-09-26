@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
 import { hasPermission, DEFAULT_PERMISSIONS, getMemberColor } from "@/lib/auth";
+import { useRealtimeTable } from "@/lib/useRealtimeTable";
 
 interface Employe {
   id: string; nom: string; role: string; telephone: string; discord: string;
@@ -34,6 +35,7 @@ export default function EmployesObsidianPage() {
   const [showInactifs, setShowInactifs] = useState(false);
 
   useEffect(() => { load(); }, []);
+  useRealtimeTable("obsidian_employes", load);
 
   async function load() {
     if (!supabase) return;

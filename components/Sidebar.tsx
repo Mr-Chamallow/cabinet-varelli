@@ -35,7 +35,7 @@ const NAV_SECTIONS = [
   ]},
 ];
 
-export function Sidebar() {
+export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
   const { user, loading } = useCurrentUser();
   const [identity, setIdentity] = useState<Identity>({ logoUrl: DEFAULT_LOGO_URL, appNom: DEFAULT_APP_NOM });
@@ -64,7 +64,7 @@ export function Sidebar() {
   if (loading || !user) return null;
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${open ? " open" : ""}`}>
       <div className="sidebar-logo">
         <div className="sidebar-logo-title" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <img
@@ -94,6 +94,7 @@ export function Sidebar() {
                     href={item.href}
                     ref={(el) => { linkRefs.current[item.href] = el; }}
                     className={`sidebar-link${isActive ? " active" : ""}`}
+                    onClick={onNavigate}
                   >
                     <span className="sidebar-link-icon">{item.icon}</span>
                     <span>{item.label}</span>
