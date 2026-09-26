@@ -75,6 +75,11 @@ html, body {
 
 a { color: inherit; }
 
+/* Les <button> n'héritent PAS de la couleur du texte par défaut (contrairement
+   aux <div>/<span>) : sans ça, tout bouton "brut" sans classe .btn-* affiche
+   du texte noir par défaut du navigateur, même sur fond sombre. */
+button { color: inherit; font: inherit; }
+
 /* ═══════════════════════════════════════════════════════════════════════════
    TYPOGRAPHIE — Hiérarchie renforcée
    ═══════════════════════════════════════════════════════════════════════════ */
