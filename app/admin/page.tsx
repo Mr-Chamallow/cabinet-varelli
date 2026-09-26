@@ -9,7 +9,8 @@ import { fetchRecentActivity, ACTIVITY_CONFIG, timeAgo, ActivityItem } from "@/l
 import { deriveGoldPalette, applyThemeToDocument, DEFAULT_GOLD, isValidHex } from "@/lib/theme";
 import { setPreviewRole } from "@/lib/previewRole";
 import { Modal } from "@/components/ui/Modal";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { UndoToast } from "@/components/ui/UndoToast";
+import { useUndoAction } from "@/lib/useUndoAction";
 import { DiagnosticTab } from "@/components/admin/DiagnosticTab";
 
 // Force le rendu dynamique côté serveur/client et désactive le pré-rendu statique au build Vercel
@@ -67,6 +68,7 @@ async function apiRequest(url: string, options: RequestInit): Promise<{ ok: bool
 export default function AdminPage() {
   const router = useRouter();
   const { user, loading: userLoading } = useCurrentUser();
+  const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
   const [overrides, setOverrides] = useState<RoleOverride[]>([]);
   const [logins, setLogins] = useState<SiteLogin[]>([]);
   const [loginSearch, setLoginSearch] = useState("");
@@ -80,7 +82,6 @@ export default function AdminPage() {
   const [overrideForm, setOverrideForm] = useState({ nom:"", discord_id:"", role:"" });
   const [creatingOverride, setCreatingOverride] = useState(false);
   const [createError, setCreateError] = useState("");
-  const [deleteOverrideId, setDeleteOverrideId] = useState<string|null>(null);
 
   const [showCreateRole, setShowCreateRole] = useState(false);
   const [roleForm, setRoleForm] = useState({ nom:"", permissions:[] as string[], couleur:"#6366f1" });
@@ -90,7 +91,6 @@ export default function AdminPage() {
   const [editRolePerms, setEditRolePerms] = useState<string[]>([]);
   const [editRoleCouleur, setEditRoleCouleur] = useState("#c9a84c");
   const [savingRole, setSavingRole] = useState(false);
-  const [deleteRoleId, setDeleteRoleId] = useState<string|null>(null);
 
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [actLoading, setActLoading] = useState(false);
@@ -201,10 +201,17 @@ export default function AdminPage() {
     setCreatingOverride(false);
   }
 
-  async function deleteOverride(discordId: string) {
-    const r = await apiRequest("/api/admin/overrides", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
-    if (!r.ok) setFetchError(`Impossible de retirer l'override : ${r.error}`);
-    setDeleteOverrideId(null); await fetchAll();
+  function deleteOverride(discordId: string) {
+    const ov = overrides.find(o => o.discord_id === discordId);
+    if (!ov) return;
+    setOverrides(list => list.filter(o => o.discord_id !== discordId));
+    scheduleDelete(`Override de "${ov.nom || discordId}" retiré`, async () => {
+      const r = await apiRequest("/api/admin/overrides", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
+      if (!r.ok) setFetchError(`Impossible de retirer l'override : ${r.error}`);
+    }, async () => {
+      setOverrides(list => [...list, ov]);
+      await apiRequest("/api/admin/overrides", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(ov) });
+    });
   }
 
   async function createRole() {
@@ -230,11 +237,18 @@ export default function AdminPage() {
     await fetchAll(); setSavingRole(false);
   }
 
-  async function deleteRole(id: string) {
+  function deleteRole(id: string) {
+    const role = roles.find(r => r.id === id);
+    if (!role) return;
+    setRoles(list => list.filter(r => r.id !== id));
     setFetchError("");
-    const r = await apiRequest("/api/admin/roles", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-    if (!r.ok) setFetchError(`Impossible de supprimer le rôle : ${r.error}`);
-    setDeleteRoleId(null); await fetchAll();
+    scheduleDelete(`Rôle "${role.nom}" supprimé`, async () => {
+      const r = await apiRequest("/api/admin/roles", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+      if (!r.ok) setFetchError(`Impossible de supprimer le rôle : ${r.error}`);
+    }, async () => {
+      setRoles(list => [...list, role]);
+      await apiRequest("/api/admin/roles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(role) });
+    });
   }
 
   function togglePerm(perms: string[], perm: string): string[] {
@@ -354,7 +368,7 @@ export default function AdminPage() {
                           <span style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily: "var(--font-mono)" }}>{o.discord_id}</span>
                         </div>
                       </div>
-                      <button className="btn btn-ghost btn-sm" style={{color:"var(--danger)"}} onClick={()=>setDeleteOverrideId(o.discord_id)}>🗑️ Retirer</button>
+                      <button className="btn btn-ghost btn-sm" style={{color:"var(--danger)"}} onClick={()=>deleteOverride(o.discord_id)}>🗑️ Retirer</button>
                     </div>
                   </div>
                 );
@@ -495,7 +509,7 @@ export default function AdminPage() {
                             👁️ Aperçu
                           </button>
                           <button className="btn btn-outline btn-sm" onClick={() => { setEditRoleId(r.id); setEditRolePerms([...(r.permissions || [])]); setEditRoleCouleur(r.couleur || "#c9a84c"); }}>✏️ Modifier</button>
-                          <button className="btn btn-ghost btn-sm" style={{color:"var(--danger)"}} onClick={()=>setDeleteRoleId(r.id)}>🗑️</button>
+                          <button className="btn btn-ghost btn-sm" style={{color:"var(--danger)"}} onClick={()=>deleteRole(r.id)}>🗑️</button>
                         </>
                       ) : (
                         <>
@@ -695,8 +709,7 @@ export default function AdminPage() {
               </div></Modal>
       )}
 
-      {deleteOverrideId&&(<ConfirmDialog title="Retirer cet override ?" message="Le rôle repassera au calcul automatique via Discord." onCancel={()=>setDeleteOverrideId(null)} onConfirm={()=>deleteOverride(deleteOverrideId)} confirmLabel="Retirer" />)}
-      {deleteRoleId&&(<ConfirmDialog title="Supprimer ce rôle ?" message="Les membres avec ce rôle perdront leurs accès." onCancel={()=>setDeleteRoleId(null)} onConfirm={()=>deleteRole(deleteRoleId)} confirmLabel="Supprimer" />)}
+      <UndoToast pending={pendingUndo} onUndo={undoDelete} />
     </div>
   );
 }

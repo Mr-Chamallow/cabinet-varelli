@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { getMemberColor, hasPermission } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Modal } from "@/components/ui/Modal";
+import { UndoToast } from "@/components/ui/UndoToast";
+import { useUndoAction } from "@/lib/useUndoAction";
 
 interface Operation {
   id: string;
@@ -95,6 +97,7 @@ function relativeDayLabel(dateStr: string, todayStr: string): string | null {
 
 export default function PlanningOperationsPage() {
   const { user, loading: userLoading } = useCurrentUser();
+  const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
   useEffect(() => {
     if (!userLoading && (!user || !hasPermission(user, "obsidian_rdv"))) { window.location.href = "/"; }
   }, [user, userLoading]);
@@ -174,10 +177,13 @@ async function saveOperation() {
   fetchOperations();
 }
 
-  async function deleteOperation(id: string) {
-    if (!supabase) return;
-    await supabase.from("obsidian_rdv").delete().eq("id", id);
-    fetchOperations();
+  function deleteOperation(id: string) {
+    const op = operations.find(o => o.id === id);
+    if (!op || !supabase) return;
+    setOperations(ops => ops.filter(o => o.id !== id));
+    scheduleDelete(`"${op.titre}" supprimée`, async () => {
+      await supabase!.from("obsidian_rdv").delete().eq("id", id);
+    }, () => setOperations(ops => [...ops, op]));
   }
 
   function openCreate(date?: string) {
@@ -907,6 +913,8 @@ async function saveOperation() {
                 </div>
               </div></Modal>
       )}
+
+      <UndoToast pending={pendingUndo} onUndo={undoDelete} />
     </div>
   );
 }
