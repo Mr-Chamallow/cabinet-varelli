@@ -88,9 +88,22 @@ const colors = {
 // Badge circulaire + pointe fine (style Google Maps / Mapbox) — remplace l'ancienne
 // grosse goutte. Le disque intérieur est blanc pour un contraste net avec l'emoji,
 // quelle que soit la couleur de catégorie.
-function pinMarkerHtml(color: string, selected: boolean, dimmed: boolean, emoji: string) {
+function sanitizeUrl(url: string) {
+  // Neutralise les guillemets qui casseraient l'attribut HTML généré en string
+  // (ex: token d'URL Supabase mal échappé) et évite qu'un pin entier disparaisse.
+  return url.replace(/"/g, '%22').replace(/'/g, '%27');
+}
+
+function pinMarkerHtml(color: string, selected: boolean, dimmed: boolean, emoji: string, photoUrl?: string | null) {
   const ring = selected ? color : 'rgba(255,255,255,0.9)';
   const glow = selected ? `filter:drop-shadow(0 0 5px ${color});` : '';
+  const photo = photoUrl
+    ? `<foreignObject x="4.5" y="3.5" width="21" height="21">
+         <img src="${sanitizeUrl(photoUrl)}" xmlns="http://www.w3.org/1999/xhtml"
+           style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;"
+           onerror="this.style.display='none'" />
+       </foreignObject>`
+    : '';
   return `
     <div style="position:relative;width:30px;height:38px;opacity:${dimmed ? 0.45 : 1};${glow}">
       <svg width="30" height="38" viewBox="0 0 30 38" style="position:absolute;top:0;left:0;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
@@ -98,6 +111,7 @@ function pinMarkerHtml(color: string, selected: boolean, dimmed: boolean, emoji:
         <circle cx="15" cy="14" r="13" fill="${color}" stroke="#fff" stroke-width="2"/>
         <circle cx="15" cy="14" r="10.5" fill="#fff"/>
         <text x="15" y="14.7" text-anchor="middle" dominant-baseline="central" font-size="13">${emoji}</text>
+        ${photo}
         ${selected ? `<circle cx="15" cy="14" r="13" fill="none" stroke="${ring}" stroke-width="2"/>` : ''}
       </svg>
     </div>`;
@@ -752,36 +766,23 @@ export default function MapCanvas({
       const p = editing && editing.point.id === p0.id ? { ...p0, ...editing.point } : p0;
       const statut: DossierStatut = dossiers[p.id]?.statut || 'actif';
       const dimmed = statut !== 'actif'; // résolu/archivé : marqueur estompé sur la carte
-      const opacityStyle = dimmed ? 'opacity:0.45;' : '';
       const statutDot = statut !== 'actif'
         ? `<div style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:${STATUT_CONFIG[statut].color};border:2px solid #0f172a;"></div>`
         : '';
       const catColor = categoryColor(categories, p.category);
       const isSelected = p.id === selectedId;
-      const icon = p.icon_url
-        ? L.divIcon({
-            className: '',
-            html: `<div style="position:relative;width:30px;height:38px;opacity:${dimmed ? 0.45 : 1};${
-              isSelected ? `filter:drop-shadow(0 0 5px ${catColor});` : ''
-            }">
-              <svg width="30" height="38" viewBox="0 0 30 38" style="position:absolute;top:0;left:0;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
-                <path d="M15 37c0 0 5.5-8 5.5-13.2C20.5 19 18 16 15 16s-5.5 3-5.5 7.8C9.5 29 15 37 15 37z" fill="${catColor}"/>
-                <circle cx="15" cy="14" r="13" fill="${catColor}" stroke="#fff" stroke-width="2"/>
-              </svg>
-              <div style="position:absolute;top:2.5px;left:2.5px;width:25px;height:25px;border-radius:50%;overflow:hidden;background:#fff;">
-                <img src="${p.icon_url}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none'" />
-              </div>
-              ${statutDot}
-            </div>`,
-            iconSize: [30, 38],
-            iconAnchor: [15, 37],
-          })
-        : L.divIcon({
-            className: '',
-            html: `<div style="position:relative;${opacityStyle}">${pinMarkerHtml(catColor, isSelected, false, categoryEmoji(categories, p.category))}${statutDot}</div>`,
-            iconSize: [30, 38],
-            iconAnchor: [15, 37],
-          });
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="position:relative;">${pinMarkerHtml(
+          catColor,
+          isSelected,
+          dimmed,
+          categoryEmoji(categories, p.category),
+          p.icon_url
+        )}${statutDot}</div>`,
+        iconSize: [30, 38],
+        iconAnchor: [15, 37],
+      });
 
       const marker = L.marker(gameToLatLng(p.x, p.y), { icon });
       marker.on('click', () => {
