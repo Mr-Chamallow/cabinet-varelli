@@ -265,10 +265,28 @@ export default function BaseDeDonneesPage() {
     showToast("Groupe créé");
   }
   async function removeGroupe(id: string) {
+    const nbPersonnes = membresDe(id).length;
+    const nbVehicules = vehiculesGroupe(id).length;
+    if (nbPersonnes + nbVehicules > 0) {
+      const ok = window.confirm(
+        `Ce groupe est lié à ${nbPersonnes} personne(s) et ${nbVehicules} véhicule(s).\n` +
+        `Elles seront détachées (pas supprimées) du groupe. Continuer ?`
+      );
+      if (!ok) return;
+    }
+    // Cascade : on détache les fiches liées (pas de suppression des personnes/véhicules eux-mêmes)
+    if (nbPersonnes > 0) {
+      await supabase.from("bdd_personnes").update({ groupe_id: null }).eq("groupe_id", id);
+    }
+    if (nbVehicules > 0) {
+      await supabase.from("bdd_vehicules").update({ groupe_id: null }).eq("groupe_id", id);
+    }
     await deleteGang(id);
+    setPersonnes(list => list.map(p => (p.groupe_id === id ? { ...p, groupe_id: null } : p)));
+    setVehicules(list => list.map(v => (v.groupe_id === id ? { ...v, groupe_id: null } : v)));
     setGangs(list => list.filter(g => g.id !== id));
     if (selectedGroupeId === id) setSelectedGroupeId(null);
-    showToast("Groupe supprimé");
+    showToast("Groupe supprimé, fiches détachées");
   }
 
   if (loading) return <div className="page-container"><div style={{ color: "var(--text-dim)" }}>Chargement…</div></div>;
