@@ -16,73 +16,9 @@ import {
 } from "@/components/carte-enqueteur/supabase-carte";
 import { gangTypeLabel } from "@/components/carte-enqueteur/types";
 import type { Gang, CartePoint } from "@/components/carte-enqueteur/types";
-
-// ─── Types locaux (miroir des tables bdd_personnes / bdd_vehicules) ───────
-type Personne = {
-  id: string; nom: string; prenom?: string; surnom?: string; telephone?: string;
-  age?: number | null; origine?: string; occupation?: string; organisation?: string;
-  groupe_id?: string | null; photo_identite?: string | null; photo_police?: string | null;
-  statut?: string; priorite?: string; tags?: string[]; adresses?: string;
-  comptes_bancaires?: string; relations?: string; notes_publiques?: string; notes_privees?: string;
-  discord?: string; created_at?: string; liens_ids?: string[];
-};
-type Vehicule = {
-  id: string; plaque: string; marque_modele?: string; couleur?: string;
-  proprietaire_id?: string | null; groupe_id?: string | null; photos?: string[]; notes?: string; created_at?: string;
-};
-
-const PRIOS = ["Basse", "Normale", "Haute", "Critique", "Neutralisé"];
-const PCOL: Record<string, string> = { Basse: "var(--text-dim)", Normale: "var(--info)", Haute: "var(--warning)", Critique: "var(--danger)", Neutralisé: "var(--success)" };
-const EMPTY_PERSONNE: Omit<Personne, "id"> = { nom: "", prenom: "", surnom: "", telephone: "", age: null, origine: "", occupation: "", organisation: "", groupe_id: null, photo_identite: null, photo_police: null, statut: "Actif", priorite: "Normale", tags: [], adresses: "", comptes_bancaires: "", relations: "", notes_publiques: "", notes_privees: "", discord: "", liens_ids: [] };
-
-// ─── Timeline d'activité (table bdd_activites) ────────────────────────────
-type Activite = { id: string; personne_id: string; type: string; description: string; created_at: string; created_by?: string };
-const ACT_ICON: Record<string, string> = { creation: "🆕", statut: "🔁", groupe: "🛡️", recensement: "📍", lien: "🔗", edition: "✏️" };
-const EMPTY_VEHICULE: Omit<Vehicule, "id"> = { plaque: "", marque_modele: "", couleur: "", proprietaire_id: null, groupe_id: null, photos: [], notes: "" };
-
-function fullName(p: Personne) {
-  return [p.nom, p.prenom].filter(Boolean).join(" ") || p.nom;
-}
-
-// ─── Emplacement photo (upload / lecture seule) : remplace les cases grises
-// peu lisibles par une icône + libellé en bon contraste, cohérent avec le
-// design "badge" de la carte enquêteur. ─────────────────────────────────
-function PhotoSlot({ url, icon, label, size = 64, onUpload, onRemove }: {
-  url?: string | null; icon: string; label: string; size?: number;
-  onUpload?: (file: File) => void; onRemove?: () => void;
-}) {
-  return (
-    <div
-      style={{
-        position: "relative", width: size, height: size, borderRadius: 10, overflow: "hidden",
-        background: url ? "var(--card)" : "linear-gradient(160deg, var(--surface), var(--card))",
-        border: `1px solid ${url ? "var(--border-light)" : "var(--border)"}`,
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
-        boxShadow: url ? "0 2px 8px rgba(0,0,0,0.35)" : "none",
-      }}
-    >
-      {url ? (
-        <img src={url} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      ) : (
-        <>
-          <span style={{ fontSize: Math.round(size * 0.3), opacity: 0.6 }}>{icon}</span>
-          <span style={{ fontSize: 9.5, color: "var(--text-muted)", fontWeight: 700, letterSpacing: "0.02em", textAlign: "center", padding: "0 4px", textTransform: "uppercase" }}>{label}</span>
-        </>
-      )}
-      {onUpload && (
-        <input
-          type="file" accept="image/*"
-          onChange={e => e.target.files?.[0] && onUpload(e.target.files[0])}
-          title={`Changer : ${label}`}
-          style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
-        />
-      )}
-      {url && onRemove && (
-        <button onClick={onRemove} style={{ position: "absolute", top: 3, right: 3, width: 17, height: 17, borderRadius: "50%", background: "rgba(0,0,0,0.65)", color: "#fff", border: "none", fontSize: 10, cursor: "pointer", lineHeight: "17px" }}>×</button>
-      )}
-    </div>
-  );
-}
+import { PhotoSlot } from "@/components/base-de-donnees/PhotoSlot";
+import { PRIOS, PCOL, EMPTY_PERSONNE, EMPTY_VEHICULE, ACT_ICON, fullName } from "@/components/base-de-donnees/types";
+import type { Personne, Vehicule, Activite } from "@/components/base-de-donnees/types";
 
 export default function BaseDeDonneesPage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -246,6 +182,17 @@ export default function BaseDeDonneesPage() {
     }
   }
 
+  // ─── Notification Discord — uniquement les events "importants" ────────
+  async function notifyDiscord(title: string, description: string, color = 0xef4444) {
+    try {
+      await fetch("/api/discord-notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "base_donnees", title, description, color }),
+      });
+    } catch { /* une alerte Discord qui échoue ne doit jamais bloquer l'action */ }
+  }
+
   async function savePersonne() {
     if (!supabase || !personneForm.nom) return;
     setSavingPersonne(true);
@@ -260,6 +207,9 @@ export default function BaseDeDonneesPage() {
       showToast("Fiche mise à jour");
       if (before && before.statut !== data.statut) await logActivite(data.id, "statut", `Statut : ${before.statut || "—"} → ${data.statut || "—"}`);
       if (before && before.groupe_id !== data.groupe_id) await logActivite(data.id, "groupe", `Groupe : ${gangOf(before.groupe_id)?.nom || "aucun"} → ${gangOf(data.groupe_id)?.nom || "aucun"}`);
+      if (before && before.priorite !== "Critique" && data.priorite === "Critique") {
+        await notifyDiscord("🚨 Priorité CRITIQUE", `**${fullName(data)}** est passé(e) en priorité Critique${user?.nom ? ` (par ${user.nom})` : ""}.`);
+      }
     } else {
       const { data, error } = await supabase.from("bdd_personnes").insert([{ ...payload, created_by: user?.nom || "" }]).select().single();
       if (error) { alert("❌ Erreur: " + error.message); setSavingPersonne(false); return; }
@@ -268,6 +218,9 @@ export default function BaseDeDonneesPage() {
       savedId = data.id;
       showToast("Personne recensée");
       await logActivite(data.id, "creation", `Fiche créée${user?.nom ? " par " + user.nom : ""}`);
+      if (data.priorite === "Critique") {
+        await notifyDiscord("🚨 Nouvelle fiche CRITIQUE", `**${fullName(data)}** recensé(e) directement en priorité Critique${user?.nom ? ` (par ${user.nom})` : ""}.`);
+      }
     }
     if (savedId) {
       await linkPersonneToPoint(savedId, formPointId);
@@ -293,6 +246,25 @@ export default function BaseDeDonneesPage() {
   const filteredVehicules = vehicules.filter(v => !search || v.plaque.toLowerCase().includes(search.toLowerCase()));
   const selectedVehicule = vehicules.find(v => v.id === selectedVehiculeId) || null;
 
+  // ─── Alerte plaque récurrente : même plaque déjà vue sur une autre fiche ───
+  const norm = (p: string) => (p || "").trim().toUpperCase().replace(/\s+/g, "");
+  function autresFichesPourPlaque(plaque: string, excludeId?: string | null) {
+    const p = norm(plaque);
+    if (!p) return [];
+    return vehicules.filter(v => norm(v.plaque) === p && v.id !== excludeId);
+  }
+  const plaquesRecurrentes = useMemo(() => {
+    const set = new Set<string>();
+    const seen = new Map<string, number>();
+    vehicules.forEach(v => { const p = norm(v.plaque); seen.set(p, (seen.get(p) || 0) + 1); });
+    seen.forEach((count, p) => { if (count > 1) set.add(p); });
+    return set;
+  }, [vehicules]);
+  const vehiculeFormDoublons = useMemo(
+    () => autresFichesPourPlaque(vehiculeForm.plaque, editVehiculeId),
+    [vehiculeForm.plaque, vehicules, editVehiculeId]
+  );
+
   function openNewVehicule() { setVehiculeForm({ ...EMPTY_VEHICULE }); setEditVehiculeId(null); setShowVehiculeForm(true); }
   function openEditVehicule(v: Vehicule) { setVehiculeForm({ ...v, photos: v.photos || [] }); setEditVehiculeId(v.id); setShowVehiculeForm(true); }
 
@@ -300,6 +272,7 @@ export default function BaseDeDonneesPage() {
     if (!supabase || !vehiculeForm.plaque) return;
     setSavingVehicule(true);
     const payload = { ...vehiculeForm, updated_at: new Date().toISOString() };
+    const doublonsAvant = autresFichesPourPlaque(vehiculeForm.plaque, editVehiculeId);
     if (editVehiculeId) {
       const { data, error } = await supabase.from("bdd_vehicules").update(payload).eq("id", editVehiculeId).select().single();
       if (error) { alert("❌ Erreur: " + error.message); setSavingVehicule(false); return; }
@@ -311,6 +284,10 @@ export default function BaseDeDonneesPage() {
       setVehicules(list => [...list, data]);
       setSelectedVehiculeId(data.id);
       showToast("Véhicule ajouté");
+      if (doublonsAvant.length > 0) {
+        const noms = doublonsAvant.map(v => v.marque_modele || v.id).join(", ");
+        await notifyDiscord("🚨 Plaque récurrente détectée", `La plaque **${data.plaque}** est déjà enregistrée sur ${doublonsAvant.length} autre(s) fiche(s) (${noms})${user?.nom ? ` — ajoutée par ${user.nom}` : ""}.`, 0xf97316);
+      }
     }
     setShowVehiculeForm(false); setEditVehiculeId(null); setSavingVehicule(false);
   }
@@ -532,7 +509,13 @@ export default function BaseDeDonneesPage() {
                     <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, overflow: "hidden", background: "var(--surface)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {v.photos?.[0] ? <img src={v.photos[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🚗"}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 700, fontSize: "0.82rem", fontFamily: "var(--font-mono)" }}>{v.plaque}</div><div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>{v.marque_modele || "—"}</div></div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <div style={{ fontWeight: 700, fontSize: "0.82rem", fontFamily: "var(--font-mono)" }}>{v.plaque}</div>
+                        {plaquesRecurrentes.has(norm(v.plaque)) && <span title="Plaque récurrente : vue sur plusieurs fiches">⚠️</span>}
+                      </div>
+                      <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>{v.marque_modele || "—"}</div>
+                    </div>
                   </button>
                 );
               })}
@@ -543,7 +526,7 @@ export default function BaseDeDonneesPage() {
           {selectedVehicule ? (
             <div className="card">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
-                <div><h2 style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.3rem", margin: 0 }}>{selectedVehicule.plaque}</h2><div style={{ fontSize: "0.82rem", color: "var(--text-dim)" }}>{selectedVehicule.marque_modele}{selectedVehicule.couleur ? " · " + selectedVehicule.couleur : ""}</div></div>
+                <div><h2 style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.3rem", margin: 0 }}>{selectedVehicule.plaque} {plaquesRecurrentes.has(norm(selectedVehicule.plaque)) && <span title="Plaque récurrente">⚠️</span>}</h2><div style={{ fontSize: "0.82rem", color: "var(--text-dim)" }}>{selectedVehicule.marque_modele}{selectedVehicule.couleur ? " · " + selectedVehicule.couleur : ""}</div></div>
                 <div style={{ display: "flex", gap: "0.35rem" }}>
                   {canWrite && <button className="btn btn-outline btn-sm" onClick={() => openEditVehicule(selectedVehicule)}>✏️</button>}
                   {canWrite && <button className="btn btn-ghost btn-sm" onClick={() => deleteVehicule(selectedVehicule.id)} style={{ color: "var(--danger)" }}>🗑️</button>}
@@ -567,6 +550,19 @@ export default function BaseDeDonneesPage() {
               </div>
 
               {selectedVehicule.notes && <div style={{ marginTop: "0.75rem", padding: "0.625rem 0.875rem", background: "var(--surface)", borderRadius: "var(--radius)", borderLeft: "3px solid var(--gold)" }}><div style={{ fontSize: "0.6rem", color: "var(--text-dim)", marginBottom: "0.2rem" }}>📝 Notes</div><div style={{ fontSize: "0.8rem", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>{selectedVehicule.notes}</div></div>}
+
+              {autresFichesPourPlaque(selectedVehicule.plaque, selectedVehicule.id).length > 0 && (
+                <div style={{ marginTop: "0.75rem", padding: "0.625rem 0.875rem", background: "rgba(249,115,22,0.08)", borderRadius: "var(--radius)", borderLeft: "3px solid #f97316" }}>
+                  <div style={{ fontSize: "0.68rem", color: "#f97316", fontWeight: 700, marginBottom: "0.35rem" }}>⚠️ Plaque récurrente — autres fiches avec la même plaque</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {autresFichesPourPlaque(selectedVehicule.plaque, selectedVehicule.id).map(v => (
+                      <button key={v.id} onClick={() => gotoVehicule(v.id)} className="card" style={{ padding: "0.35rem 0.6rem", cursor: "pointer", fontSize: "0.76rem" }}>
+                        {v.marque_modele || "Véhicule"}{v.proprietaire_id ? " · " + fullName(personnes.find(p => p.id === v.proprietaire_id) || { nom: "Inconnu" } as Personne) : ""}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : <div className="empty-state" style={{ alignSelf: "start", padding: "3rem" }}><div className="empty-icon">🚗</div><div className="empty-title">Sélectionnez un véhicule</div></div>}
         </div>
@@ -711,7 +707,15 @@ export default function BaseDeDonneesPage() {
             )}
           </div>
           <div className="form-grid">
-            <div className="form-group"><label>Plaque *</label><input autoFocus value={vehiculeForm.plaque} onChange={e => setVehiculeForm(f => ({ ...f, plaque: e.target.value.toUpperCase() }))} /></div>
+            <div className="form-group">
+              <label>Plaque *</label>
+              <input autoFocus value={vehiculeForm.plaque} onChange={e => setVehiculeForm(f => ({ ...f, plaque: e.target.value.toUpperCase() }))} />
+              {vehiculeFormDoublons.length > 0 && (
+                <div style={{ marginTop: 6, padding: "0.5rem 0.7rem", background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.3)", borderRadius: "var(--radius)", fontSize: "0.74rem", color: "#f97316" }}>
+                  ⚠️ Plaque déjà enregistrée sur {vehiculeFormDoublons.length} autre(s) fiche(s) : {vehiculeFormDoublons.map(v => v.marque_modele || v.plaque).join(", ")}
+                </div>
+              )}
+            </div>
             <div className="form-group"><label>Marque / modèle</label><input value={vehiculeForm.marque_modele} onChange={e => setVehiculeForm(f => ({ ...f, marque_modele: e.target.value }))} /></div>
             <div className="form-group"><label>Couleur</label><input value={vehiculeForm.couleur} onChange={e => setVehiculeForm(f => ({ ...f, couleur: e.target.value }))} /></div>
             <div className="form-group"><label>Propriétaire</label><select value={vehiculeForm.proprietaire_id || ""} onChange={e => setVehiculeForm(f => ({ ...f, proprietaire_id: e.target.value || null }))}><option value="">Aucun</option>{personnes.map(p => <option key={p.id} value={p.id}>{fullName(p)}</option>)}</select></div>

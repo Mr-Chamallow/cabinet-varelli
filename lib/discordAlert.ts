@@ -1,7 +1,7 @@
 // Envoie une alerte vers le webhook Discord du module concerné.
 // Chaque module a son propre webhook, configuré via variable d'environnement Vercel
 // (jamais en base : ces URLs sont secrètes, la table app_settings est lisible publiquement).
-export type DiscordWebhookKind = "stocks" | "armurerie" | "rdv" | "contrats" | "fiches";
+export type DiscordWebhookKind = "stocks" | "armurerie" | "rdv" | "contrats" | "fiches" | "base_donnees";
 
 const ENV_KEYS: Record<DiscordWebhookKind, string> = {
   stocks: "DISCORD_WEBHOOK_STOCKS",
@@ -9,6 +9,7 @@ const ENV_KEYS: Record<DiscordWebhookKind, string> = {
   rdv: "DISCORD_WEBHOOK_RDV",
   contrats: "DISCORD_WEBHOOK_CONTRATS",
   fiches: "DISCORD_WEBHOOK_FICHES",
+  base_donnees: "DISCORD_WEBHOOK_BASE_DONNEES",
 };
 
 // Catégories obsidian_stocks considérées comme "armurerie" (voir app/obsidian/armurerie/page.tsx).
