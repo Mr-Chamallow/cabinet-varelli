@@ -28,6 +28,7 @@ const NAV_SECTIONS = [
     { href: "/calculatrice",    label: "Calculatrice",     icon: "🧮", permission: "calculatrice" },
     { href: "/utile-samp",      label: "Utile SAMP",       icon: "🐈", permission: "utile_samp" },
     { href: "/carte-enqueteur", label: "Carte enquêteur",  icon: "🗺️", permission: "carte-enqueteur" },
+    { href: "/base-de-donnees", label: "Base de données",  icon: "🗄️", permission: "base_donnees" },
   ]},
   { label: "Administration", items: [
     { href: "/settings",    label: "Personnalisation", icon: "🎨", permission: "admin" },

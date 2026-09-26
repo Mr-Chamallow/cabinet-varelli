@@ -1,10 +1,3 @@
-// Pas de "use client" ici : ce module est utilisé aussi bien par des Client Components
-// (Sidebar, pages) que par du code serveur (lib/serverAuth.ts, dans les routes API).
-// Marquer ce fichier "use client" transforme ses exports en "Client References" côté
-// serveur : appeler hasPermission() depuis une route API plante avec
-// "Attempted to call hasPermission() from the server but hasPermission is on the client."
-// Ce module ne contient que des fonctions pures / constantes — aucune API navigateur,
-// aucun hook React — donc il n'a jamais eu besoin de cette directive.
 import { supabase } from "@/lib/supabase";
 
 export interface AppUser {
@@ -22,7 +15,7 @@ export const ALL_PERMISSIONS = [
   "obsidian_dashboard", "obsidian_prix", "obsidian_stocks", "obsidian_armurerie",
   "obsidian_garage", "obsidian_comptabilite", "obsidian_rdv", "obsidian_contrats", "obsidian_stats", "cahier_vente", "obsidian_paie",
   "obsidian_employes", "h47", "admin", "supervision", "delete_all", "edit_all",
-  "juridique", "calculatrice", "carte-enqueteur", "utile_samp",
+  "juridique", "calculatrice", "carte-enqueteur", "utile_samp", "base_donnees",
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
@@ -36,7 +29,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   h47: "H-47", admin: "Administration", supervision: "Supervision",
   delete_all: "Suppression globale", edit_all: "Édition globale",
   juridique: "Code pénal", calculatrice: "Calculatrice", "carte-enqueteur": "Carte enquêteur",
-  utile_samp: "Utile SAMP",
+  utile_samp: "Utile SAMP", base_donnees: "Base de données",
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
