@@ -632,7 +632,27 @@ export default function MapCanvas({
       [-TILE_SIZE - CAYO_SIZE, TILE_SIZE],
       [-TILE_SIZE, TILE_SIZE + CAYO_SIZE],
     ];
-    L.imageOverlay(CAYO_IMAGE_URL, cayoBounds, { opacity: 1 }).addTo(map);
+    L.imageOverlay(CAYO_IMAGE_URL, cayoBounds, {
+      opacity: 1,
+      className: 'map-extension-overlay',
+    }).addTo(map);
+
+    // Étiquette au-dessus de la vignette Cayo Perico
+    L.marker([-TILE_SIZE - 4, TILE_SIZE + CAYO_SIZE / 2], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div style="
+          display:flex; align-items:center; gap:6px;
+          background:${colors.panel}; border:1px solid ${colors.amber};
+          color:#fff; font:600 11px system-ui,sans-serif;
+          padding:3px 10px; border-radius:999px; white-space:nowrap;
+          box-shadow:0 2px 8px rgba(0,0,0,.4); transform:translate(-50%,-100%);
+        ">🌴 Cayo Perico</div>`,
+        iconSize: [0, 0],
+      }),
+      interactive: false,
+      keyboard: false,
+    }).addTo(map);
 
     const layerGroup = (L as any).markerClusterGroup({
       maxClusterRadius: 45,
