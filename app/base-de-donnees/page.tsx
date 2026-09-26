@@ -38,6 +38,46 @@ function fullName(p: Personne) {
   return [p.nom, p.prenom].filter(Boolean).join(" ") || p.nom;
 }
 
+// ─── Emplacement photo (upload / lecture seule) : remplace les cases grises
+// peu lisibles par une icône + libellé en bon contraste, cohérent avec le
+// design "badge" de la carte enquêteur. ─────────────────────────────────
+function PhotoSlot({ url, icon, label, size = 64, onUpload, onRemove }: {
+  url?: string | null; icon: string; label: string; size?: number;
+  onUpload?: (file: File) => void; onRemove?: () => void;
+}) {
+  return (
+    <div
+      style={{
+        position: "relative", width: size, height: size, borderRadius: 10, overflow: "hidden",
+        background: url ? "var(--card)" : "linear-gradient(160deg, var(--surface), var(--card))",
+        border: `1px solid ${url ? "var(--border-light)" : "var(--border)"}`,
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
+        boxShadow: url ? "0 2px 8px rgba(0,0,0,0.35)" : "none",
+      }}
+    >
+      {url ? (
+        <img src={url} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      ) : (
+        <>
+          <span style={{ fontSize: Math.round(size * 0.3), opacity: 0.6 }}>{icon}</span>
+          <span style={{ fontSize: 9.5, color: "var(--text-muted)", fontWeight: 700, letterSpacing: "0.02em", textAlign: "center", padding: "0 4px", textTransform: "uppercase" }}>{label}</span>
+        </>
+      )}
+      {onUpload && (
+        <input
+          type="file" accept="image/*"
+          onChange={e => e.target.files?.[0] && onUpload(e.target.files[0])}
+          title={`Changer : ${label}`}
+          style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
+        />
+      )}
+      {url && onRemove && (
+        <button onClick={onRemove} style={{ position: "absolute", top: 3, right: 3, width: 17, height: 17, borderRadius: "50%", background: "rgba(0,0,0,0.65)", color: "#fff", border: "none", fontSize: 10, cursor: "pointer", lineHeight: "17px" }}>×</button>
+      )}
+    </div>
+  );
+}
+
 export default function BaseDeDonneesPage() {
   const { user, loading: userLoading } = useCurrentUser();
   const { toast, showToast } = useToast();
@@ -260,7 +300,7 @@ export default function BaseDeDonneesPage() {
                       {p.photo_identite ? <img src={p.photo_identite} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /> : fullName(p).charAt(0).toUpperCase()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600, fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fullName(p)}</div><div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>{p.surnom ? "alias " + p.surnom : (gangOf(p.groupe_id)?.nom || "")}</div></div>
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: col, flexShrink: 0 }} />
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: col, flexShrink: 0, boxShadow: `0 0 6px ${col}80` }} />
                   </button>
                 );
               })}
@@ -273,12 +313,8 @@ export default function BaseDeDonneesPage() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 10, overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "var(--text-dim)" }}>
-                      {selectedPersonne.photo_identite ? <img src={selectedPersonne.photo_identite} alt="Carte ID" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "Carte ID"}
-                    </div>
-                    <div style={{ width: 56, height: 56, borderRadius: 10, overflow: "hidden", background: "var(--surface)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "var(--text-dim)" }}>
-                      {selectedPersonne.photo_police ? <img src={selectedPersonne.photo_police} alt="Photo police" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "Photo police"}
-                    </div>
+                    <PhotoSlot url={selectedPersonne.photo_identite} icon="🪪" label="Carte ID" size={56} />
+                    <PhotoSlot url={selectedPersonne.photo_police} icon="👮" label="Police" size={56} />
                   </div>
                   <div>
                     <h2 style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: "1.2rem", margin: 0, marginBottom: "0.2rem" }}>{fullName(selectedPersonne)}{selectedPersonne.surnom && <span style={{ color: "var(--text-dim)", fontWeight: 400, fontSize: "0.9rem" }}> alias {selectedPersonne.surnom}</span>}</h2>
@@ -425,21 +461,9 @@ export default function BaseDeDonneesPage() {
       {showPersonneForm && (
         <Modal title={<>{editPersonneId ? "Modifier" : "Nouveau"} recensement</>} onClose={() => setShowPersonneForm(false)} size="lg" footer={<><button className="btn btn-outline" onClick={() => setShowPersonneForm(false)}>Annuler</button><button className="btn btn-gold" onClick={savePersonne} disabled={savingPersonne || !personneForm.nom}>{savingPersonne ? "…" : "Sauvegarder"}</button></>}>
           <div style={{ maxHeight: "62vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", gap: 12, marginBottom: "0.875rem" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: 4 }}>📇 Carte d'identité</label>
-                <div style={{ width: 96, height: 96, borderRadius: 8, background: "var(--surface)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
-                  {personneForm.photo_identite && <img src={personneForm.photo_identite} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
-                  <input type="file" accept="image/*" onChange={e => e.target.files?.[0] && uploadPersonnePhoto("photo_identite", e.target.files[0])} style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
-                </div>
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: 4 }}>🚔 Photo police</label>
-                <div style={{ width: 96, height: 96, borderRadius: 8, background: "var(--surface)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
-                  {personneForm.photo_police && <img src={personneForm.photo_police} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
-                  <input type="file" accept="image/*" onChange={e => e.target.files?.[0] && uploadPersonnePhoto("photo_police", e.target.files[0])} style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
-                </div>
-              </div>
+            <div style={{ display: "flex", gap: 14, marginBottom: "1rem" }}>
+              <PhotoSlot url={personneForm.photo_identite} icon="🪪" label="Carte ID" size={92} onUpload={f => uploadPersonnePhoto("photo_identite", f)} />
+              <PhotoSlot url={personneForm.photo_police} icon="👮" label="Photo police" size={92} onUpload={f => uploadPersonnePhoto("photo_police", f)} />
             </div>
             <div className="form-grid">
               <div className="form-group"><label>Nom *</label><input autoFocus value={personneForm.nom} onChange={e => setPersonneForm(f => ({ ...f, nom: e.target.value }))} /></div>
@@ -468,17 +492,18 @@ export default function BaseDeDonneesPage() {
       {/* ─── Modale Véhicule ──────────────────────────────────────────── */}
       {showVehiculeForm && (
         <Modal title={<>{editVehiculeId ? "Modifier" : "Nouveau"} véhicule</>} onClose={() => setShowVehiculeForm(false)} footer={<><button className="btn btn-outline" onClick={() => setShowVehiculeForm(false)}>Annuler</button><button className="btn btn-gold" onClick={saveVehicule} disabled={savingVehicule || !vehiculeForm.plaque}>{savingVehicule ? "…" : "Sauvegarder"}</button></>}>
-          <label style={{ display: "block", fontSize: "0.7rem", color: "var(--text-dim)", marginBottom: 4 }}>📸 Photos (3 max)</label>
-          <div style={{ display: "flex", gap: 8, marginBottom: "0.875rem" }}>
+          <label style={{ display: "block", fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>📸 Photos (3 max)</label>
+          <div style={{ display: "flex", gap: 8, marginBottom: "1rem" }}>
             {(vehiculeForm.photos || []).map((url, i) => (
-              <div key={i} style={{ position: "relative", width: 80, height: 60 }}>
-                <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 6 }} />
-                <button onClick={() => removeVehiculePhoto(i)} style={{ position: "absolute", top: -6, right: -6, background: "var(--danger)", color: "#fff", border: "none", borderRadius: "50%", width: 18, height: 18, fontSize: 11, cursor: "pointer" }}>×</button>
+              <div key={i} style={{ position: "relative", width: 84, height: 64, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border-light)", boxShadow: "0 2px 8px rgba(0,0,0,0.35)" }}>
+                <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <button onClick={() => removeVehiculePhoto(i)} style={{ position: "absolute", top: 3, right: 3, background: "rgba(0,0,0,0.65)", color: "#fff", border: "none", borderRadius: "50%", width: 17, height: 17, fontSize: 10, cursor: "pointer", lineHeight: "17px" }}>×</button>
               </div>
             ))}
             {(vehiculeForm.photos || []).length < 3 && (
-              <div style={{ width: 80, height: 60, borderRadius: 6, background: "var(--surface)", border: "1px dashed var(--border)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", fontSize: "1.2rem", color: "var(--text-dim)" }}>
-                +
+              <div style={{ width: 84, height: 64, borderRadius: 8, background: "linear-gradient(160deg, var(--surface), var(--card))", border: "1px dashed var(--border-light)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, position: "relative" }}>
+                <span style={{ fontSize: "1.1rem", color: "var(--gold)", opacity: 0.8 }}>+</span>
+                <span style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>Ajouter</span>
                 <input type="file" accept="image/*" onChange={e => e.target.files?.[0] && addVehiculePhoto(e.target.files[0])} style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
               </div>
             )}
