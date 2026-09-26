@@ -797,6 +797,12 @@ export default function MapCanvas({
       const statutDot = statut !== 'actif'
         ? `<div style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:${STATUT_CONFIG[statut].color};border:2px solid #0f172a;"></div>`
         : '';
+      // Nombre de personnes recensées liées à ce point (Base de données) — affiché
+      // en badge sur le pin, la majorité des recensements se faisant sur un point chaud.
+      const personneCount = (p.personne_ids || []).length;
+      const countBadge = personneCount > 0
+        ? `<div style="position:absolute;top:-5px;left:-5px;min-width:16px;height:16px;padding:0 3px;border-radius:999px;background:${colors.amber};border:1.5px solid #0f172a;color:#1a1206;font:700 10px/16px 'Inter',sans-serif;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.5);">${personneCount}</div>`
+        : '';
       const catColor = categoryColor(categories, p.category);
       const isSelected = p.id === selectedId;
       const icon = L.divIcon({
@@ -807,7 +813,7 @@ export default function MapCanvas({
           dimmed,
           categoryEmoji(categories, p.category),
           p.icon_url
-        )}${statutDot}</div>`,
+        )}${statutDot}${countBadge}</div>`,
         iconSize: [30, 38],
         iconAnchor: [15, 37],
       });
@@ -1148,6 +1154,11 @@ export default function MapCanvas({
                                   >
                                     X {p.x.toFixed(0)} · Y {p.y.toFixed(0)}
                                   </div>
+                                  {(p.personne_ids || []).length > 0 && (
+                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10.5, fontWeight: 700, color: colors.amber, marginBottom: 3, marginLeft: 6 }}>
+                                      👤 {(p.personne_ids || []).length}
+                                    </div>
+                                  )}
                                   {checklist.length > 0 && (
                                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10.5, fontWeight: 700, color: checklistDone === checklist.length ? '#22c55e' : colors.textDim, marginBottom: 3, marginLeft: 6 }}>
                                       ✓ {checklistDone}/{checklist.length}

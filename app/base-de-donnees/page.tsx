@@ -11,9 +11,11 @@ import {
   createGang,
   deleteGang,
   uploadImage,
+  fetchPoints,
+  updatePoint,
 } from "@/components/carte-enqueteur/supabase-carte";
 import { gangTypeLabel } from "@/components/carte-enqueteur/types";
-import type { Gang } from "@/components/carte-enqueteur/types";
+import type { Gang, CartePoint } from "@/components/carte-enqueteur/types";
 
 // ─── Types locaux (miroir des tables bdd_personnes / bdd_vehicules) ───────
 type Personne = {
@@ -88,6 +90,7 @@ export default function BaseDeDonneesPage() {
   const [personnes, setPersonnes] = useState<Personne[]>([]);
   const [vehicules, setVehicules] = useState<Vehicule[]>([]);
   const [gangs, setGangs] = useState<Gang[]>([]);
+  const [points, setPoints] = useState<CartePoint[]>([]);
 
   const [selectedPersonneId, setSelectedPersonneId] = useState<string | null>(null);
   const [selectedVehiculeId, setSelectedVehiculeId] = useState<string | null>(null);
@@ -110,20 +113,42 @@ export default function BaseDeDonneesPage() {
   const [showGroupeForm, setShowGroupeForm] = useState(false);
   const [groupeNom, setGroupeNom] = useState("");
   const [groupeType, setGroupeType] = useState<Gang["type"]>("orga");
+  const [formPointId, setFormPointId] = useState<string>("");
 
   useEffect(() => { load(); }, []);
 
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const [{ data: p }, { data: v }, gs] = await Promise.all([
+    const [{ data: p }, { data: v }, gs, pts] = await Promise.all([
       supabase.from("bdd_personnes").select("*").order("nom"),
       supabase.from("bdd_vehicules").select("*").order("plaque"),
       fetchGangs(),
+      fetchPoints(),
     ]);
     setPersonnes(p || []);
     setVehicules(v || []);
     setGangs(gs || []);
+    setPoints(pts || []);
     setLoading(false);
+  }
+
+  // ─── Lien personne ↔ point chaud (stocké côté carte_points.personne_ids,
+  // réutilise le champ déjà existant sur la carte enquêteur) ───────────────
+  function pointOf(personneId: string): CartePoint | null {
+    return points.find(pt => (pt.personne_ids || []).includes(personneId)) || null;
+  }
+
+  async function linkPersonneToPoint(personneId: string, newPointId: string) {
+    const old = pointOf(personneId);
+    if (old && old.id !== newPointId) {
+      await updatePoint(old.id, { personne_ids: (old.personne_ids || []).filter(id => id !== personneId) });
+    }
+    if (newPointId && newPointId !== old?.id) {
+      const target = points.find(pt => pt.id === newPointId);
+      const ids = Array.from(new Set([...(target?.personne_ids || []), personneId]));
+      await updatePoint(newPointId, { personne_ids: ids });
+    }
+    if (old || newPointId) setPoints(await fetchPoints());
   }
 
   // ─── Recherche globale (personne ou plaque) ───────────────────────────
@@ -145,14 +170,15 @@ export default function BaseDeDonneesPage() {
   const vehiculesDe = (personneId: string) => vehicules.filter(v => v.proprietaire_id === personneId);
   const gangOf = (id?: string | null) => gangs.find(g => g.id === id) || null;
 
-  function openNewPersonne() { setPersonneForm({ ...EMPTY_PERSONNE }); setEditPersonneId(null); setTagsInput(""); setShowPersonneForm(true); }
-  function openEditPersonne(p: Personne) { setPersonneForm({ ...p }); setEditPersonneId(p.id); setTagsInput((p.tags || []).join(", ")); setShowPersonneForm(true); }
+  function openNewPersonne() { setPersonneForm({ ...EMPTY_PERSONNE }); setEditPersonneId(null); setTagsInput(""); setFormPointId(""); setShowPersonneForm(true); }
+  function openEditPersonne(p: Personne) { setPersonneForm({ ...p }); setEditPersonneId(p.id); setTagsInput((p.tags || []).join(", ")); setFormPointId(pointOf(p.id)?.id || ""); setShowPersonneForm(true); }
 
   async function savePersonne() {
     if (!supabase || !personneForm.nom) return;
     setSavingPersonne(true);
     const tags = tagsInput.split(",").map(s => s.trim()).filter(Boolean);
     const payload = { ...personneForm, tags, updated_at: new Date().toISOString() };
+    let savedId = editPersonneId;
     if (editPersonneId) {
       const { data, error } = await supabase.from("bdd_personnes").update(payload).eq("id", editPersonneId).select().single();
       if (error) { alert("❌ Erreur: " + error.message); setSavingPersonne(false); return; }
@@ -163,8 +189,10 @@ export default function BaseDeDonneesPage() {
       if (error) { alert("❌ Erreur: " + error.message); setSavingPersonne(false); return; }
       setPersonnes(list => [...list, data]);
       setSelectedPersonneId(data.id);
+      savedId = data.id;
       showToast("Personne recensée");
     }
+    if (savedId) await linkPersonneToPoint(savedId, formPointId);
     setShowPersonneForm(false); setEditPersonneId(null); setSavingPersonne(false);
   }
 
@@ -322,6 +350,7 @@ export default function BaseDeDonneesPage() {
                       <span style={{ fontSize: "0.62rem", padding: "0.08rem 0.4rem", borderRadius: 999, background: (PCOL[selectedPersonne.priorite || "Normale"] || "var(--text-dim)") + "15", color: PCOL[selectedPersonne.priorite || "Normale"] || "var(--text-dim)", border: `1px solid ${(PCOL[selectedPersonne.priorite || "Normale"] || "var(--text-dim)")}25`, fontWeight: 600 }}>{selectedPersonne.priorite || "Normale"}</span>
                       {selectedPersonne.statut && <span style={{ fontSize: "0.62rem", padding: "0.08rem 0.4rem", borderRadius: 999, background: "rgba(34,197,94,0.1)", color: "var(--success)", border: "1px solid rgba(34,197,94,0.2)" }}>{selectedPersonne.statut}</span>}
                       {gangOf(selectedPersonne.groupe_id) && <span style={{ fontSize: "0.62rem", padding: "0.08rem 0.4rem", borderRadius: 999, background: "var(--gold-muted)", color: "var(--gold)", border: "1px solid rgba(var(--gold-rgb), 0.3)" }}>🛡️ {gangOf(selectedPersonne.groupe_id)!.nom}</span>}
+                      {pointOf(selectedPersonne.id) && <a href={`/carte-enqueteur?point=${pointOf(selectedPersonne.id)!.id}`} style={{ fontSize: "0.62rem", padding: "0.08rem 0.4rem", borderRadius: 999, background: "rgba(100,181,246,0.12)", color: "var(--info)", border: "1px solid rgba(100,181,246,0.3)", textDecoration: "none" }}>📍 {pointOf(selectedPersonne.id)!.title}</a>}
                     </div>
                   </div>
                 </div>
@@ -473,6 +502,7 @@ export default function BaseDeDonneesPage() {
               <div className="form-group"><label>Priorité</label><select value={personneForm.priorite} onChange={e => setPersonneForm(f => ({ ...f, priorite: e.target.value }))}>{PRIOS.map(p => <option key={p}>{p}</option>)}</select></div>
               <div className="form-group"><label>Statut</label><input value={personneForm.statut} onChange={e => setPersonneForm(f => ({ ...f, statut: e.target.value }))} /></div>
               <div className="form-group"><label>Groupe</label><select value={personneForm.groupe_id || ""} onChange={e => setPersonneForm(f => ({ ...f, groupe_id: e.target.value || null }))}><option value="">Aucun</option>{gangs.map(g => <option key={g.id} value={g.id}>{g.nom}</option>)}</select></div>
+              <div className="form-group"><label>📍 Point chaud (recensement)</label><select value={formPointId} onChange={e => setFormPointId(e.target.value)}><option value="">Aucun</option>{[...points].sort((a, b) => a.title.localeCompare(b.title)).map(pt => <option key={pt.id} value={pt.id}>{pt.title}</option>)}</select></div>
               <div className="form-group"><label>Discord</label><input value={personneForm.discord} onChange={e => setPersonneForm(f => ({ ...f, discord: e.target.value }))} /></div>
               <div className="form-group"><label>Organisation</label><input value={personneForm.organisation} onChange={e => setPersonneForm(f => ({ ...f, organisation: e.target.value }))} /></div>
               <div className="form-group"><label>Occupation</label><input value={personneForm.occupation} onChange={e => setPersonneForm(f => ({ ...f, occupation: e.target.value }))} /></div>
