@@ -22,6 +22,7 @@ import {
   Plaque,
   Preset,
   categoryColor,
+  categoryEmoji,
   gangTypeLabel,
   parseVector3,
   slugify,
@@ -84,16 +85,17 @@ const colors = {
 
 // ─── Marqueur "pin" pro (remplace les anciens ronds plats) ───────────────
 // Forme goutte + tête blanche, ombre portée, pointe ancrée sur la coordonnée exacte.
-function pinMarkerHtml(color: string, selected: boolean, dimmed: boolean) {
+function pinMarkerHtml(color: string, selected: boolean, dimmed: boolean, emoji: string) {
   const ring = selected ? '#fff' : 'rgba(255,255,255,0.85)';
   const glow = selected ? `filter:drop-shadow(0 0 6px ${color}90);` : '';
   return `
     <div style="position:relative;width:34px;height:44px;opacity:${dimmed ? 0.45 : 1};${glow}">
-      <svg width="34" height="44" viewBox="0 0 34 44" style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.55));">
+      <svg width="34" height="44" viewBox="0 0 34 44" style="position:absolute;top:0;left:0;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.55));">
         <path d="M17 43C17 43 30 27.5 30 16.5C30 8.49 24.18 2 17 2C9.82 2 4 8.49 4 16.5C4 27.5 17 43 17 43Z"
               fill="${color}" stroke="${ring}" stroke-width="2.5"/>
-        <circle cx="17" cy="16.5" r="6.5" fill="#0f172a" opacity="0.85"/>
+        <circle cx="17" cy="16.5" r="9" fill="#0f172a" opacity="0.9"/>
       </svg>
+      <span style="position:absolute;top:8.5px;left:0;width:34px;text-align:center;font-size:13px;line-height:1;pointer-events:none;">${emoji}</span>
     </div>`;
 }
 
@@ -772,7 +774,7 @@ export default function MapCanvas({
           })
         : L.divIcon({
             className: '',
-            html: `<div style="position:relative;${opacityStyle}">${pinMarkerHtml(catColor, isSelected, false)}${statutDot}</div>`,
+            html: `<div style="position:relative;${opacityStyle}">${pinMarkerHtml(catColor, isSelected, false, categoryEmoji(categories, p.category))}${statutDot}</div>`,
             iconSize: [34, 44],
             iconAnchor: [17, 43],
           });
@@ -835,6 +837,7 @@ export default function MapCanvas({
         groupe_id: point.groupe_id ?? null,
         personne_ids: point.personne_ids ?? [],
         icon_url: point.icon_url ?? null,
+        drogue_liee: point.drogue_liee ?? null,
       });
       await upsertDossier(dossier);
     } catch (err) {
@@ -1154,6 +1157,7 @@ export default function MapCanvas({
           dossier={editing.dossier}
           categories={categories}
           gangs={gangs}
+          presets={presets}
           personnesAll={personnesAll}
           plaquesAll={plaquesAll}
           readOnly={readOnly}
@@ -1261,6 +1265,7 @@ function DossierModal({
   dossier,
   categories,
   gangs,
+  presets,
   personnesAll,
   plaquesAll,
   readOnly = false,
@@ -1273,6 +1278,7 @@ function DossierModal({
   dossier: Dossier;
   categories: Category[];
   gangs: Gang[];
+  presets: Preset[];
   personnesAll: Personne[];
   plaquesAll: Plaque[];
   readOnly?: boolean;
@@ -1462,6 +1468,21 @@ function DossierModal({
               <option key={g.id} value={g.id}>
                 {g.nom} ({gangTypeLabel(g.type)})
               </option>
+            ))}
+          </select>
+
+          <label style={S.label}>Drogue liée (logo affiché sur la carte)</label>
+          <select
+            value={point.drogue_liee ?? ''}
+            onChange={(e) => {
+              const preset = presets.find((p) => p.groupe === 'drogue' && p.nom === e.target.value);
+              commit({ drogue_liee: preset?.nom ?? null, icon_url: preset?.icon_url ?? null }, {});
+            }}
+            style={{ ...S.input, marginBottom: 12 }}
+          >
+            <option value="">— Aucune (pastille de catégorie) —</option>
+            {presets.filter((p) => p.groupe === 'drogue').map((p) => (
+              <option key={p.id} value={p.nom}>{p.nom}</option>
             ))}
           </select>
 

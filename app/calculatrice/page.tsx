@@ -1,26 +1,19 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/lib/useToast";
-import { Toast } from "@/components/ui/Toast";
 
 interface Drogue {
   id: string; nom: string; emoji: string;
   prix_min: number; prix_max: number;
-  semaines_revend: number; actif: boolean; ordre: number;
+  semaines_revend: number; ordre?: number;
 }
 
-const DEFAULT_DROGUES: Drogue[] = [
-  { id:"1",nom:"Cocaïne",   emoji:"❄️", prix_min:429,prix_max:449,semaines_revend:17,actif:true,ordre:1 },
-  { id:"2",nom:"Tranq",     emoji:"💉", prix_min:285,prix_max:300,semaines_revend:1, actif:true,ordre:2 },
-  { id:"3",nom:"Meth Bleue",emoji:"🔵", prix_min:279,prix_max:299,semaines_revend:3, actif:true,ordre:3 },
-  { id:"4",nom:"Weed",      emoji:"🌿", prix_min:422,prix_max:444,semaines_revend:11,actif:true,ordre:4 },
-  { id:"5",nom:"Purple",    emoji:"🟣", prix_min:312,prix_max:334,semaines_revend:0, actif:true,ordre:5 },
-  { id:"6",nom:"Crack",     emoji:"💎", prix_min:319,prix_max:339,semaines_revend:7, actif:true,ordre:6 },
-  { id:"7",nom:"Mexicana",  emoji:"🌶️",prix_min:339,prix_max:359,semaines_revend:9, actif:true,ordre:7 },
-  { id:"8",nom:"Ecstasy",   emoji:"💊", prix_min:180,prix_max:300,semaines_revend:0, actif:true,ordre:8 },
-  { id:"9",nom:"Lean",      emoji:"🥤", prix_min:300,prix_max:350,semaines_revend:0, actif:true,ordre:9 },
-  { id:"10",nom:"B-Magic",  emoji:"✨", prix_min:450,prix_max:470,semaines_revend:0, actif:true,ordre:10 },
+// Filet de sécurité uniquement si Supabase est injoignable — la vraie source
+// est désormais "Tableau des prix" (table obsidian_drogues), plus de config
+// séparée à maintenir en double.
+const FALLBACK_DROGUES: Drogue[] = [
+  { id:"1",nom:"Cocaïne",   emoji:"❄️", prix_min:429,prix_max:449,semaines_revend:17 },
+  { id:"2",nom:"Weed",      emoji:"🌿", prix_min:422,prix_max:444,semaines_revend:11 },
 ];
 
 const TYPES_CLIENT = [
@@ -33,32 +26,20 @@ const fmt  = (n:number) => n.toLocaleString("fr-FR",{style:"currency",currency:"
 const fmtN = (n:number) => n.toLocaleString("fr-FR",{maximumFractionDigits:0});
 
 export default function CalculatricePage() {
-  const { toast, showToast } = useToast();
-  const [drogues, setDrogues] = useState<Drogue[]>(DEFAULT_DROGUES);
-  const [loading, setLoading]   = useState(true);
-  const [tab, setTab]           = useState<"convert"|"equiv"|"config">("convert");
+  const [drogues, setDrogues] = useState<Drogue[]>(FALLBACK_DROGUES);
+  const [tab, setTab]         = useState<"convert"|"equiv">("convert");
 
-  // Convert
   const [typeClient, setTypeClient] = useState("Gang / Organisation");
   const [montant, setMontant]       = useState(0);
   const [sens, setSens]             = useState<"sale_to_propre"|"propre_to_sale">("sale_to_propre");
 
-  // Config
-  const [editId, setEditId]         = useState<string|null>(null);
-  const [editForm, setEditForm]     = useState<Partial<Drogue>>({});
-  const [newForm, setNewForm]       = useState({nom:"",emoji:"💊",prix_min:0,prix_max:0,semaines_revend:0});
-  const [saving, setSaving]         = useState(false);
-
   useEffect(() => {
     (async () => {
-      if (supabase) {
-        const { data } = await supabase.from("calculatrice_config").select("*").order("ordre");
-        if (data && data.length > 0) { setDrogues(data); setLoading(false); return; }
-      }
-      setLoading(false);
+      if (!supabase) return;
+      const { data } = await supabase.from("obsidian_drogues").select("*").order("ordre");
+      if (data && data.length > 0) setDrogues(data as Drogue[]);
     })();
   }, []);
-
 
   const taux = TYPES_CLIENT.find(t=>t.key===typeClient)?.taux || 0.2;
 
@@ -76,38 +57,11 @@ export default function CalculatricePage() {
   const montantPropre = sens === "sale_to_propre" ? resultat : montant;
 
   const equivalents = useMemo(() =>
-    drogues.filter(d=>d.actif).map(d => {
+    drogues.map(d => {
       const mid = (d.prix_min + d.prix_max) / 2;
       return { ...d, mid, units: mid > 0 ? Math.floor(montantPropre / mid) : 0 };
     }), [drogues, montantPropre]
   );
-
-  async function saveEdit() {
-    if (!editId) return;
-    setSaving(true);
-    if (supabase) await supabase.from("calculatrice_config").update(editForm).eq("id", editId);
-    setDrogues(ds => ds.map(d => d.id===editId ? {...d,...editForm} as Drogue : d));
-    setEditId(null); showToast("Mis à jour"); setSaving(false);
-  }
-
-  async function addDrogue() {
-    if (!newForm.nom.trim()) return;
-    setSaving(true);
-    const row = {...newForm, actif:true, ordre:drogues.length+1};
-    if (supabase) {
-      const { data } = await supabase.from("calculatrice_config").insert([row]).select().single();
-      if (data) setDrogues(ds=>[...ds,data]);
-    } else {
-      setDrogues(ds=>[...ds,{...row,id:String(Date.now())}]);
-    }
-    setNewForm({nom:"",emoji:"💊",prix_min:0,prix_max:0,semaines_revend:0});
-    showToast("Drogue ajoutée"); setSaving(false);
-  }
-
-  async function toggleActif(d:Drogue) {
-    if (supabase) await supabase.from("calculatrice_config").update({actif:!d.actif}).eq("id",d.id);
-    setDrogues(ds=>ds.map(x=>x.id===d.id?{...x,actif:!x.actif}:x));
-  }
 
   const maxUnits = Math.max(...equivalents.map(e=>e.units), 1);
 
@@ -117,14 +71,14 @@ export default function CalculatricePage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Calculatrice</h1>
-          <p className="page-subtitle">Blanchiment · Équivalents drogues · Configuration des prix</p>
+          <p className="page-subtitle">Blanchiment · Équivalents drogues — prix synchronisés avec le Tableau des prix</p>
           <div className="gold-line"/>
         </div>
       </div>
 
       {/* Tabs */}
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.5rem"}}>
-        {([["convert","💰 Convertisseur"],["equiv","💊 Équivalents"],["config","⚙️ Config prix"]] as [string,string][]).map(([k,l])=>(
+        {([["convert","💰 Convertisseur"],["equiv","💊 Équivalents"]] as [string,string][]).map(([k,l])=>(
           <button key={k} onClick={()=>setTab(k as any)} style={{padding:"0.55rem 1.25rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.85rem",fontWeight:tab===k?700:400,background:tab===k?"var(--gold-muted)":"var(--surface)",border:`1px solid ${tab===k?"rgba(var(--gold-rgb), 0.4)":"var(--border)"}`,color:tab===k?"var(--gold)":"var(--text-muted)",transition:"all 0.15s"}}>{l}</button>
         ))}
       </div>
@@ -233,7 +187,7 @@ export default function CalculatricePage() {
             {equivalents.map(d=>{
               const bar = maxUnits>0 ? (d.units/maxUnits)*100 : 0;
               return (
-                <div key={d.id} className="card" style={{opacity:d.actif?1:0.4,position:"relative",overflow:"hidden"}}>
+                <div key={d.id} className="card" style={{position:"relative",overflow:"hidden"}}>
                   <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,var(--gold) ${bar}%,transparent ${bar}%)`}}/>
                   <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.75rem"}}>
                     <span style={{fontSize:"1.4rem"}}>{d.emoji}</span>
@@ -260,67 +214,6 @@ export default function CalculatricePage() {
           </div>
         </>
       )}
-
-      {/* ── CONFIG ── */}
-      {tab==="config" && (
-        <div style={{display:"grid",gridTemplateColumns:"1fr 340px",gap:"1.5rem"}}>
-          <div>
-            <div className="section-title" style={{marginBottom:"1rem"}}>Prix de vente actuels</div>
-            <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
-              {drogues.map(d=>(
-                <div key={d.id} className="card" style={{opacity:d.actif?1:0.45}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"0.75rem"}}>
-                    <span style={{fontSize:"1.25rem",flexShrink:0}}>{d.emoji}</span>
-                    <div style={{flex:1}}>
-                      <div style={{fontWeight:600,fontSize:"0.875rem"}}>{d.nom}</div>
-                      <div style={{fontSize:"0.68rem",color:"var(--text-dim)"}}>
-                        {fmt(d.prix_min)} – {fmt(d.prix_max)} / unité
-                        {d.semaines_revend>0&&<span style={{color:"var(--success)",marginLeft:"0.5rem"}}>· {d.semaines_revend} sem. revendication</span>}
-                      </div>
-                    </div>
-                    <div style={{display:"flex",gap:"0.35rem",flexShrink:0}}>
-                      <button className="btn btn-outline btn-sm" onClick={()=>{setEditId(d.id);setEditForm({prix_min:d.prix_min,prix_max:d.prix_max,semaines_revend:d.semaines_revend});}}>✏️</button>
-                      <button className="btn btn-ghost btn-sm" onClick={()=>toggleActif(d)} style={{color:d.actif?"var(--warning)":"var(--success)",fontSize:"0.72rem"}}>
-                        {d.actif?"Masquer":"Afficher"}
-                      </button>
-                    </div>
-                  </div>
-                  {editId===d.id&&(
-                    <div style={{marginTop:"0.875rem",paddingTop:"0.875rem",borderTop:"1px solid var(--border)"}}>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"0.5rem",marginBottom:"0.625rem"}}>
-                        {[["Prix min ($)","prix_min"],["Prix max ($)","prix_max"],["Semaines revend.","semaines_revend"]].map(([l,k])=>(
-                          <div key={k} className="form-group" style={{marginBottom:0}}>
-                            <label>{l}</label>
-                            <input type="number" value={(editForm as any)[k]||0} onChange={e=>setEditForm(f=>({...f,[k]:+e.target.value}))}/>
-                          </div>
-                        ))}
-                      </div>
-                      <div style={{display:"flex",gap:"0.5rem",justifyContent:"flex-end"}}>
-                        <button className="btn btn-ghost btn-sm" onClick={()=>setEditId(null)}>Annuler</button>
-                        <button className="btn btn-gold btn-sm" onClick={saveEdit} disabled={saving}>{saving?"…":"Sauvegarder"}</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="card" style={{alignSelf:"start"}}>
-            <div className="section-title" style={{marginBottom:"1rem"}}>Ajouter une drogue</div>
-            <div className="form-group"><label>Nom</label><input placeholder="Ex: Héroïne" value={newForm.nom} onChange={e=>setNewForm(f=>({...f,nom:e.target.value}))}/></div>
-            <div className="form-group"><label>Emoji</label><input placeholder="💊" value={newForm.emoji} onChange={e=>setNewForm(f=>({...f,emoji:e.target.value}))} style={{width:70}}/></div>
-            <div className="form-grid">
-              <div className="form-group"><label>Prix min ($)</label><input type="number" value={newForm.prix_min||""} onChange={e=>setNewForm(f=>({...f,prix_min:+e.target.value}))}/></div>
-              <div className="form-group"><label>Prix max ($)</label><input type="number" value={newForm.prix_max||""} onChange={e=>setNewForm(f=>({...f,prix_max:+e.target.value}))}/></div>
-            </div>
-            <div className="form-group" style={{marginBottom:"1.25rem"}}><label>Semaines de revendication</label><input type="number" min={0} value={newForm.semaines_revend||""} onChange={e=>setNewForm(f=>({...f,semaines_revend:+e.target.value}))}/></div>
-            <button className="btn btn-gold" onClick={addDrogue} disabled={saving||!newForm.nom.trim()} style={{width:"100%",justifyContent:"center"}}>+ Ajouter</button>
-          </div>
-        </div>
-      )}
-
-      <Toast toast={toast} />
     </div>
   );
 }

@@ -117,6 +117,31 @@ export function categoryLabel(categories: Category[], slug: string): string {
   return categories.find((c) => c.slug === slug)?.label ?? slug;
 }
 
+// Emoji discret affiché au centre du pin quand le point n'a pas de logo de
+// drogue lié — déduit du libellé de la catégorie (reconnaît les mots-clés
+// usuels, marche aussi pour des catégories perso ajoutées via ⚙ Catégories).
+const CATEGORY_EMOJI_RULES: [RegExp, string][] = [
+  [/labo/, '🧪'],
+  [/purif|table/, '⚗️'],
+  [/planque|qg|repaire|cache/, '🏠'],
+  [/otage/, '⛓️'],
+  [/r[ée]colte|champ|plant/, '🌿'],
+  [/arme|armurerie/, '🔫'],
+  [/vehicule|véhicule|garage/, '🚗'],
+  [/argent|blanchi|coffre/, '💰'],
+];
+
+export function categoryEmoji(categories: Category[], slug: string): string {
+  const label = categoryLabel(categories, slug)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+  for (const [re, emoji] of CATEGORY_EMOJI_RULES) {
+    if (re.test(label)) return emoji;
+  }
+  return '📍';
+}
+
 export function slugify(label: string): string {
   return (
     label
