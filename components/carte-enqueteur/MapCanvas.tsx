@@ -477,13 +477,41 @@ const S: Record<string, CSSProperties> = {
   },
 };
 
-const dotStyle = (color: string, size = 8): CSSProperties => ({
-  width: size,
-  height: size,
-  borderRadius: '50%',
-  background: color,
-  display: 'inline-block',
-});
+// ─── Mini badge catégorie : même DA que les pins de la carte (cercle + emoji) ───
+// remplace les puces de couleur plates dans le bandeau et la liste "Points chauds".
+function CategoryBadge({ color, emoji, size = 20, photoUrl }: { color: string; emoji: string; size?: number; photoUrl?: string | null }) {
+  return (
+    <span
+      style={{
+        position: 'relative',
+        width: size,
+        height: size,
+        flexShrink: 0,
+        borderRadius: '50%',
+        background: color,
+        border: '1.5px solid #fff',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: Math.round(size * 0.58),
+        lineHeight: 1,
+        overflow: 'hidden',
+      }}
+    >
+      {emoji}
+      {photoUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={photoUrl}
+          alt=""
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+        />
+      )}
+    </span>
+  );
+}
 
 const categoryBtnStyle = (active: boolean, color: string): CSSProperties => ({
   display: 'flex',
@@ -940,7 +968,7 @@ export default function MapCanvas({
                   opacity: activeFilters.size === 0 || activeFilters.has(c.slug) ? 1 : 0.4,
                 }}
               >
-                <span style={dotStyle(c.color, 7)} />
+                <CategoryBadge color={c.color} emoji={categoryEmoji(categories, c.slug)} size={16} />
                 {c.label}
               </button>
             ))}
@@ -1062,7 +1090,7 @@ export default function MapCanvas({
                         fontFamily: "'Inter',sans-serif",
                       }}
                     >
-                      <span style={{ width: 9, height: 9, borderRadius: '50%', background: cat.color, flexShrink: 0, boxShadow: `0 0 6px ${cat.color}80` }} />
+                      <CategoryBadge color={cat.color} emoji={categoryEmoji(categories, cat.slug)} size={18} />
                       <span style={{ fontSize: 12.5, fontWeight: 700, color: cat.color, flex: 1, textAlign: 'left' }}>{cat.label}</span>
                       <span style={{ fontSize: 10.5, fontFamily: "var(--font-mono)", color: colors.textDimmer, background: 'rgba(255,255,255,0.05)', borderRadius: 999, padding: '1px 7px' }}>{pts.length}</span>
                       <span style={{ fontSize: 10, color: colors.textDimmer, transform: isCollapsed ? 'rotate(-90deg)' : 'none', transition: '0.15s' }}>▾</span>
@@ -1093,6 +1121,12 @@ export default function MapCanvas({
                                   borderLeft: `3px solid ${cat.color}`,
                                 }}
                               >
+                                <CategoryBadge
+                                  color={cat.color}
+                                  emoji={categoryEmoji(categories, p.category)}
+                                  photoUrl={p.icon_url}
+                                  size={26}
+                                />
                                 <span style={{ minWidth: 0, flex: 1, opacity: statut === 'archive' ? 0.55 : 1 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
                                     <div style={{ color: colors.text, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
@@ -1456,7 +1490,7 @@ function DossierModal({
                 onClick={() => commit({ category: c.slug }, {})}
                 style={categoryBtnStyle(point.category === c.slug, c.color)}
               >
-                <span style={dotStyle(c.color)} />
+                <CategoryBadge color={c.color} emoji={categoryEmoji(categories, c.slug)} size={16} />
                 {c.label}
               </button>
             ))}
