@@ -738,7 +738,12 @@ export default function MapCanvas({
     if (!layerGroup) return;
     layerGroup.clearLayers();
 
-    visiblePoints.forEach((p) => {
+    visiblePoints.forEach((p0) => {
+      // Pendant l'édition (champs X/Y/Z ou collage d'un Vector3), on affiche tout de
+      // suite la position à jour du point sur la carte au lieu d'attendre le clic sur
+      // "Enregistrer" — sinon la fiche affiche de nouvelles coordonnées pendant que le
+      // marqueur reste planté à l'ancien endroit.
+      const p = editing && editing.point.id === p0.id ? { ...p0, ...editing.point } : p0;
       const statut: DossierStatut = dossiers[p.id]?.statut || 'actif';
       const dimmed = statut !== 'actif'; // résolu/archivé : marqueur estompé sur la carte
       const opacityStyle = dimmed ? 'opacity:0.45;' : '';
@@ -784,7 +789,7 @@ export default function MapCanvas({
       marker.addTo(layerGroup);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visiblePoints, selectedId, dossiers, categories]);
+  }, [visiblePoints, selectedId, dossiers, categories, editing]);
 
   const flyToPoint = (p: CartePoint) => {
     const map = mapRef.current;
