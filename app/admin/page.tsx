@@ -262,6 +262,22 @@ export default function AdminPage() {
     return perms.includes(perm) ? perms.filter(p => p !== perm) : [...perms, perm];
   }
 
+  // ─── Niveau d'accès par permission : aucun → lecture → écriture → aucun ───
+  // Stocké comme "perm" (écriture, rétro-compat) ou "perm:read" (lecture seule).
+  type PermLvl = "none" | "read" | "write";
+  function getPermLvl(perms: string[], perm: string): PermLvl {
+    if (perms.includes(perm)) return "write";
+    if (perms.includes(perm + ":read")) return "read";
+    return "none";
+  }
+  function cyclePermLvl(perms: string[], perm: string): string[] {
+    const current = getPermLvl(perms, perm);
+    const stripped = perms.filter(p => p !== perm && p !== perm + ":read");
+    if (current === "none") return [...stripped, perm + ":read"];
+    if (current === "read") return [...stripped, perm];
+    return stripped; // write → none
+  }
+
   const uniqueActMembers = [...new Set(activity.map(a => a.by))].filter(Boolean).sort();
   const filteredActivity = activity.filter(a =>
     (!filterActMember || a.by === filterActMember) &&
@@ -503,7 +519,7 @@ export default function AdminPage() {
                     <div style={{ display:"flex", alignItems:"center", gap:"0.75rem" }}>
                       <div style={{ width:12,height:12,borderRadius:"50%",background:currentCouleur,flexShrink:0 }}/>
                       <div style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:"1.05rem", color:currentCouleur }}>{r.nom}</div>
-                      <span style={{ fontSize:"0.72rem",color:"var(--text-dim)" }}>{currentPerms.length}/{ALL_PERMISSIONS.length} permissions</span>
+                      <span style={{ fontSize:"0.72rem",color:"var(--text-dim)" }}>{ALL_PERMISSIONS.filter(p => getPermLvl(currentPerms, p) !== "none").length}/{ALL_PERMISSIONS.length} permissions</span>
                     </div>
                     <div style={{ display:"flex", gap:"0.4rem", flexShrink:0 }}>
                       {!isEditing ? (
@@ -539,24 +555,32 @@ export default function AdminPage() {
                     </div>
                   )}
 
+                  {isEditing && (
+                    <p style={{ fontSize:"0.68rem", color:"var(--text-dim)", marginBottom:"0.5rem" }}>
+                      Clique une permission pour faire tourner : ○ Aucun → 👁 Lecture seule → ✓ Écriture
+                    </p>
+                  )}
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))", gap:"0.375rem" }}>
                     {ALL_PERMISSIONS.map(p => {
-                      const has = currentPerms.includes(p);
+                      const lvl = getPermLvl(currentPerms, p);
+                      const icon = lvl === "write" ? "✓" : lvl === "read" ? "👁" : "○";
+                      const color = lvl === "write" ? currentCouleur : lvl === "read" ? "var(--info)" : "var(--text-dim)";
                       return (
                         <button
                           key={p}
                           disabled={!isEditing}
-                          onClick={() => isEditing && setEditRolePerms(perms => togglePerm(perms, p))}
+                          onClick={() => isEditing && setEditRolePerms(perms => cyclePermLvl(perms, p))}
+                          title={lvl === "write" ? "Écriture" : lvl === "read" ? "Lecture seule" : "Aucun accès"}
                           style={{
                             display:"flex",alignItems:"center",gap:"0.4rem",padding:"0.3rem 0.55rem",borderRadius:6,
-                            background:has?currentCouleur+"15":"transparent",
-                            border:`1px solid ${has?currentCouleur+"30":"var(--border)"}`,
+                            background:lvl!=="none"?color+"15":"transparent",
+                            border:`1px solid ${lvl!=="none"?color+"30":"var(--border)"}`,
                             cursor:isEditing?"pointer":"default",fontFamily:"'Inter',sans-serif",fontSize:"0.7rem",
-                            color:has?currentCouleur:"var(--text-dim)",fontWeight:has?600:400,
+                            color:lvl!=="none"?color:"var(--text-dim)",fontWeight:lvl!=="none"?600:400,
                             opacity:isEditing?1:0.85, transition:"all 0.12s",
                           }}
                         >
-                          <span style={{fontSize:"0.58rem"}}>{has?"✓":"○"}</span>{PERMISSION_LABELS[p]||p}
+                          <span style={{fontSize:"0.58rem"}}>{icon}</span>{PERMISSION_LABELS[p]||p}
                         </button>
                       );
                     })}
@@ -727,7 +751,12 @@ export default function AdminPage() {
               <div className="form-group">
                 <label>Permissions</label>
                 <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:"0.375rem" }}>
-                  {ALL_PERMISSIONS.map(p=>{ const has=roleForm.permissions.includes(p); return(<button key={p} onClick={()=>setRoleForm(f=>({...f,permissions:togglePerm(f.permissions,p)}))} style={{ display:"flex",alignItems:"center",gap:"0.4rem",padding:"0.35rem 0.625rem",borderRadius:8, background:has?roleForm.couleur+"15":"var(--surface)", border:`1px solid ${has?roleForm.couleur+"35":"var(--border)"}`, cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.72rem", color:has?roleForm.couleur:"var(--text-dim)",fontWeight:has?600:400,transition:"all 0.12s" }}><span style={{fontSize:"0.6rem"}}>{has?"✓":"○"}</span>{PERMISSION_LABELS[p]||p}</button>); })}
+                  {ALL_PERMISSIONS.map(p=>{
+                    const lvl = getPermLvl(roleForm.permissions, p);
+                    const icon = lvl === "write" ? "✓" : lvl === "read" ? "👁" : "○";
+                    const color = lvl === "write" ? roleForm.couleur : lvl === "read" ? "var(--info)" : "var(--text-dim)";
+                    return(<button key={p} onClick={()=>setRoleForm(f=>({...f,permissions:cyclePermLvl(f.permissions,p)}))} title={lvl === "write" ? "Écriture" : lvl === "read" ? "Lecture seule" : "Aucun accès"} style={{ display:"flex",alignItems:"center",gap:"0.4rem",padding:"0.35rem 0.625rem",borderRadius:8, background:lvl!=="none"?color+"15":"var(--surface)", border:`1px solid ${lvl!=="none"?color+"35":"var(--border)"}`, cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.72rem", color:lvl!=="none"?color:"var(--text-dim)",fontWeight:lvl!=="none"?600:400,transition:"all 0.12s" }}><span style={{fontSize:"0.6rem"}}>{icon}</span>{PERMISSION_LABELS[p]||p}</button>);
+                  })}
                 </div>
               </div></Modal>
       )}

@@ -5,7 +5,7 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
-import { hasPermission } from "@/lib/auth";
+import { hasPermission, hasWriteAccess } from "@/lib/auth";
 import {
   fetchGangs,
   createGang,
@@ -24,7 +24,7 @@ type Personne = {
   groupe_id?: string | null; photo_identite?: string | null; photo_police?: string | null;
   statut?: string; priorite?: string; tags?: string[]; adresses?: string;
   comptes_bancaires?: string; relations?: string; notes_publiques?: string; notes_privees?: string;
-  discord?: string; created_at?: string;
+  discord?: string; created_at?: string; liens_ids?: string[];
 };
 type Vehicule = {
   id: string; plaque: string; marque_modele?: string; couleur?: string;
@@ -33,7 +33,11 @@ type Vehicule = {
 
 const PRIOS = ["Basse", "Normale", "Haute", "Critique", "Neutralisé"];
 const PCOL: Record<string, string> = { Basse: "var(--text-dim)", Normale: "var(--info)", Haute: "var(--warning)", Critique: "var(--danger)", Neutralisé: "var(--success)" };
-const EMPTY_PERSONNE: Omit<Personne, "id"> = { nom: "", prenom: "", surnom: "", telephone: "", age: null, origine: "", occupation: "", organisation: "", groupe_id: null, photo_identite: null, photo_police: null, statut: "Actif", priorite: "Normale", tags: [], adresses: "", comptes_bancaires: "", relations: "", notes_publiques: "", notes_privees: "", discord: "" };
+const EMPTY_PERSONNE: Omit<Personne, "id"> = { nom: "", prenom: "", surnom: "", telephone: "", age: null, origine: "", occupation: "", organisation: "", groupe_id: null, photo_identite: null, photo_police: null, statut: "Actif", priorite: "Normale", tags: [], adresses: "", comptes_bancaires: "", relations: "", notes_publiques: "", notes_privees: "", discord: "", liens_ids: [] };
+
+// ─── Timeline d'activité (table bdd_activites) ────────────────────────────
+type Activite = { id: string; personne_id: string; type: string; description: string; created_at: string; created_by?: string };
+const ACT_ICON: Record<string, string> = { creation: "🆕", statut: "🔁", groupe: "🛡️", recensement: "📍", lien: "🔗", edition: "✏️" };
 const EMPTY_VEHICULE: Omit<Vehicule, "id"> = { plaque: "", marque_modele: "", couleur: "", proprietaire_id: null, groupe_id: null, photos: [], notes: "" };
 
 function fullName(p: Personne) {
@@ -84,6 +88,7 @@ export default function BaseDeDonneesPage() {
   const { user, loading: userLoading } = useCurrentUser();
   const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "base_donnees"))) { window.location.href = "/"; } }, [user, userLoading]);
+  const canWrite = hasWriteAccess(user, "base_donnees");
 
   const [tab, setTab] = useState<"personnes" | "vehicules" | "groupes">("personnes");
   const [loading, setLoading] = useState(true);
@@ -114,6 +119,10 @@ export default function BaseDeDonneesPage() {
   const [groupeNom, setGroupeNom] = useState("");
   const [groupeType, setGroupeType] = useState<Gang["type"]>("orga");
   const [formPointId, setFormPointId] = useState<string>("");
+
+  const [liensQuery, setLiensQuery] = useState("");
+  const [activites, setActivites] = useState<Activite[]>([]);
+  const [quickImportQuery, setQuickImportQuery] = useState("");
 
   useEffect(() => { load(); }, []);
 
@@ -151,6 +160,17 @@ export default function BaseDeDonneesPage() {
     if (old || newPointId) setPoints(await fetchPoints());
   }
 
+  // ─── Timeline d'activité ────────────────────────────────────────────────
+  async function logActivite(personneId: string, type: string, description: string) {
+    if (!supabase) return;
+    await supabase.from("bdd_activites").insert([{ personne_id: personneId, type, description, created_by: user?.nom || "" }]);
+  }
+  useEffect(() => {
+    if (!supabase || !selectedPersonneId) { setActivites([]); return; }
+    supabase.from("bdd_activites").select("*").eq("personne_id", selectedPersonneId).order("created_at", { ascending: false })
+      .then(({ data }: any) => setActivites(data || []));
+  }, [selectedPersonneId]);
+
   // ─── Recherche globale (personne ou plaque) ───────────────────────────
   const globalResults = useMemo(() => {
     const q = globalQuery.trim().toLowerCase();
@@ -161,6 +181,34 @@ export default function BaseDeDonneesPage() {
     };
   }, [globalQuery, personnes, vehicules]);
 
+  // ─── Import rapide : détecte un doublon pendant la création (nom, tel, discord) ───
+  const quickImportMatches = useMemo(() => {
+    const q = quickImportQuery.trim().toLowerCase();
+    if (!q || editPersonneId) return [];
+    return personnes.filter(p => `${fullName(p)} ${p.telephone || ""} ${p.discord || ""}`.toLowerCase().includes(q)).slice(0, 5);
+  }, [quickImportQuery, personnes, editPersonneId]);
+
+  function importPersonne(p: Personne) {
+    setQuickImportQuery("");
+    openEditPersonne(p);
+  }
+
+  // ─── Dossiers liés : recherche pour ajouter un lien ────────────────────
+  const liensMatches = useMemo(() => {
+    const q = liensQuery.trim().toLowerCase();
+    if (!q) return [];
+    const current = personneForm.liens_ids || [];
+    return personnes.filter(p => p.id !== editPersonneId && !current.includes(p.id) && fullName(p).toLowerCase().includes(q)).slice(0, 6);
+  }, [liensQuery, personnes, personneForm.liens_ids, editPersonneId]);
+
+  function addLien(id: string) {
+    setPersonneForm(f => ({ ...f, liens_ids: Array.from(new Set([...(f.liens_ids || []), id])) }));
+    setLiensQuery("");
+  }
+  function removeLien(id: string) {
+    setPersonneForm(f => ({ ...f, liens_ids: (f.liens_ids || []).filter(x => x !== id) }));
+  }
+
   function gotoPersonne(id: string) { setTab("personnes"); setSelectedPersonneId(id); setGlobalQuery(""); }
   function gotoVehicule(id: string) { setTab("vehicules"); setSelectedVehiculeId(id); setGlobalQuery(""); }
 
@@ -170,13 +218,39 @@ export default function BaseDeDonneesPage() {
   const vehiculesDe = (personneId: string) => vehicules.filter(v => v.proprietaire_id === personneId);
   const gangOf = (id?: string | null) => gangs.find(g => g.id === id) || null;
 
-  function openNewPersonne() { setPersonneForm({ ...EMPTY_PERSONNE }); setEditPersonneId(null); setTagsInput(""); setFormPointId(""); setShowPersonneForm(true); }
-  function openEditPersonne(p: Personne) { setPersonneForm({ ...p }); setEditPersonneId(p.id); setTagsInput((p.tags || []).join(", ")); setFormPointId(pointOf(p.id)?.id || ""); setShowPersonneForm(true); }
+  function openNewPersonne() { setPersonneForm({ ...EMPTY_PERSONNE }); setEditPersonneId(null); setTagsInput(""); setFormPointId(""); setLiensQuery(""); setQuickImportQuery(""); setShowPersonneForm(true); }
+  function openEditPersonne(p: Personne) { setPersonneForm({ ...p, liens_ids: p.liens_ids || [] }); setEditPersonneId(p.id); setTagsInput((p.tags || []).join(", ")); setFormPointId(pointOf(p.id)?.id || ""); setLiensQuery(""); setQuickImportQuery(""); setShowPersonneForm(true); }
+
+  // ─── Dossiers liés (liens_ids, symétrique entre les deux fiches) ───────
+  async function syncLiens(personneId: string, newLiens: string[]) {
+    if (!supabase) return;
+    const before = personnes.find(p => p.id === personneId);
+    const oldLiens = before?.liens_ids || [];
+    const added = newLiens.filter(id => !oldLiens.includes(id));
+    const removed = oldLiens.filter(id => !newLiens.includes(id));
+    for (const otherId of added) {
+      const other = personnes.find(p => p.id === otherId);
+      const otherLiens = Array.from(new Set([...(other?.liens_ids || []), personneId]));
+      await supabase.from("bdd_personnes").update({ liens_ids: otherLiens }).eq("id", otherId);
+      setPersonnes(list => list.map(p => p.id === otherId ? { ...p, liens_ids: otherLiens } : p));
+    }
+    for (const otherId of removed) {
+      const other = personnes.find(p => p.id === otherId);
+      const otherLiens = (other?.liens_ids || []).filter(id => id !== personneId);
+      await supabase.from("bdd_personnes").update({ liens_ids: otherLiens }).eq("id", otherId);
+      setPersonnes(list => list.map(p => p.id === otherId ? { ...p, liens_ids: otherLiens } : p));
+    }
+    if (added.length) {
+      const noms = added.map(id => fullName(personnes.find(p => p.id === id) || ({ nom: "?" } as Personne)));
+      await logActivite(personneId, "lien", `Dossier lié à : ${noms.join(", ")}`);
+    }
+  }
 
   async function savePersonne() {
     if (!supabase || !personneForm.nom) return;
     setSavingPersonne(true);
     const tags = tagsInput.split(",").map(s => s.trim()).filter(Boolean);
+    const before = editPersonneId ? personnes.find(x => x.id === editPersonneId) : null;
     const payload = { ...personneForm, tags, updated_at: new Date().toISOString() };
     let savedId = editPersonneId;
     if (editPersonneId) {
@@ -184,6 +258,8 @@ export default function BaseDeDonneesPage() {
       if (error) { alert("❌ Erreur: " + error.message); setSavingPersonne(false); return; }
       setPersonnes(list => list.map(x => x.id === editPersonneId ? data : x));
       showToast("Fiche mise à jour");
+      if (before && before.statut !== data.statut) await logActivite(data.id, "statut", `Statut : ${before.statut || "—"} → ${data.statut || "—"}`);
+      if (before && before.groupe_id !== data.groupe_id) await logActivite(data.id, "groupe", `Groupe : ${gangOf(before.groupe_id)?.nom || "aucun"} → ${gangOf(data.groupe_id)?.nom || "aucun"}`);
     } else {
       const { data, error } = await supabase.from("bdd_personnes").insert([{ ...payload, created_by: user?.nom || "" }]).select().single();
       if (error) { alert("❌ Erreur: " + error.message); setSavingPersonne(false); return; }
@@ -191,8 +267,12 @@ export default function BaseDeDonneesPage() {
       setSelectedPersonneId(data.id);
       savedId = data.id;
       showToast("Personne recensée");
+      await logActivite(data.id, "creation", `Fiche créée${user?.nom ? " par " + user.nom : ""}`);
     }
-    if (savedId) await linkPersonneToPoint(savedId, formPointId);
+    if (savedId) {
+      await linkPersonneToPoint(savedId, formPointId);
+      await syncLiens(savedId, personneForm.liens_ids || []);
+    }
     setShowPersonneForm(false); setEditPersonneId(null); setSavingPersonne(false);
   }
 
@@ -334,7 +414,7 @@ export default function BaseDeDonneesPage() {
           <div>
             <div style={{ display: "flex", gap: 8, marginBottom: "0.75rem" }}>
               <div className="search-bar" style={{ flex: 1 }}><span className="search-icon">🔍</span><input placeholder="Filtrer…" value={search} onChange={e => setSearch(e.target.value)} /></div>
-              <button className="btn btn-gold btn-sm" onClick={openNewPersonne}>+</button>
+              {canWrite && <button className="btn btn-gold btn-sm" onClick={openNewPersonne}>+</button>}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
               {filteredPersonnes.map(p => {
@@ -373,8 +453,8 @@ export default function BaseDeDonneesPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "0.35rem" }}>
-                  <button className="btn btn-outline btn-sm" onClick={() => openEditPersonne(selectedPersonne)}>✏️</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => deletePersonne(selectedPersonne.id)} style={{ color: "var(--danger)" }}>🗑️</button>
+                  {canWrite && <button className="btn btn-outline btn-sm" onClick={() => openEditPersonne(selectedPersonne)}>✏️</button>}
+                  {canWrite && <button className="btn btn-ghost btn-sm" onClick={() => deletePersonne(selectedPersonne.id)} style={{ color: "var(--danger)" }}>🗑️</button>}
                 </div>
               </div>
 
@@ -399,8 +479,38 @@ export default function BaseDeDonneesPage() {
                 </div>
               )}
 
+              {(selectedPersonne.liens_ids || []).length > 0 && (
+                <div style={{ marginTop: "0.875rem" }}>
+                  <div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.35rem" }}>🔗 Dossiers liés</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {(selectedPersonne.liens_ids || []).map(id => {
+                      const p2 = personnes.find(x => x.id === id);
+                      if (!p2) return null;
+                      return <button key={id} onClick={() => gotoPersonne(id)} className="card" style={{ padding: "0.4rem 0.7rem", cursor: "pointer", fontSize: "0.78rem" }}>{fullName(p2)}</button>;
+                    })}
+                  </div>
+                </div>
+              )}
+
               {selectedPersonne.notes_publiques && <div style={{ marginTop: "0.75rem", padding: "0.625rem 0.875rem", background: "var(--surface)", borderRadius: "var(--radius)", borderLeft: "3px solid var(--gold)" }}><div style={{ fontSize: "0.6rem", color: "var(--text-dim)", marginBottom: "0.2rem" }}>📝 Notes</div><div style={{ fontSize: "0.8rem", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>{selectedPersonne.notes_publiques}</div></div>}
               {selectedPersonne.notes_privees && <div style={{ marginTop: "0.75rem", padding: "0.625rem 0.875rem", background: "rgba(239,68,68,0.06)", borderRadius: "var(--radius)", borderLeft: "3px solid var(--danger)" }}><div style={{ fontSize: "0.6rem", color: "var(--danger)", marginBottom: "0.2rem" }}>🔒 Notes privées</div><div style={{ fontSize: "0.8rem", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>{selectedPersonne.notes_privees}</div></div>}
+
+              {activites.length > 0 && (
+                <div style={{ marginTop: "1rem", borderTop: "1px solid var(--border)", paddingTop: "0.75rem" }}>
+                  <div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>🕒 Activité</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", maxHeight: 220, overflowY: "auto" }}>
+                    {activites.map(a => (
+                      <div key={a.id} style={{ display: "flex", gap: 8, fontSize: "0.76rem" }}>
+                        <span>{ACT_ICON[a.type] || "•"}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ color: "var(--text-muted)" }}>{a.description}</div>
+                          <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>{new Date(a.created_at).toLocaleString("fr-FR")}{a.created_by ? " — " + a.created_by : ""}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : <div className="empty-state" style={{ alignSelf: "start", padding: "3rem" }}><div className="empty-icon">👤</div><div className="empty-title">Sélectionnez une personne</div></div>}
         </div>
@@ -412,7 +522,7 @@ export default function BaseDeDonneesPage() {
           <div>
             <div style={{ display: "flex", gap: 8, marginBottom: "0.75rem" }}>
               <div className="search-bar" style={{ flex: 1 }}><span className="search-icon">🔍</span><input placeholder="Filtrer une plaque…" value={search} onChange={e => setSearch(e.target.value)} /></div>
-              <button className="btn btn-gold btn-sm" onClick={openNewVehicule}>+</button>
+              {canWrite && <button className="btn btn-gold btn-sm" onClick={openNewVehicule}>+</button>}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
               {filteredVehicules.map(v => {
@@ -435,8 +545,8 @@ export default function BaseDeDonneesPage() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
                 <div><h2 style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.3rem", margin: 0 }}>{selectedVehicule.plaque}</h2><div style={{ fontSize: "0.82rem", color: "var(--text-dim)" }}>{selectedVehicule.marque_modele}{selectedVehicule.couleur ? " · " + selectedVehicule.couleur : ""}</div></div>
                 <div style={{ display: "flex", gap: "0.35rem" }}>
-                  <button className="btn btn-outline btn-sm" onClick={() => openEditVehicule(selectedVehicule)}>✏️</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => deleteVehicule(selectedVehicule.id)} style={{ color: "var(--danger)" }}>🗑️</button>
+                  {canWrite && <button className="btn btn-outline btn-sm" onClick={() => openEditVehicule(selectedVehicule)}>✏️</button>}
+                  {canWrite && <button className="btn btn-ghost btn-sm" onClick={() => deleteVehicule(selectedVehicule.id)} style={{ color: "var(--danger)" }}>🗑️</button>}
                 </div>
               </div>
 
@@ -466,7 +576,7 @@ export default function BaseDeDonneesPage() {
       {tab === "groupes" && (
         <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "1.25rem", alignItems: "start" }}>
           <div>
-            <div style={{ marginBottom: "0.75rem" }}><button className="btn btn-gold btn-sm" onClick={() => setShowGroupeForm(true)}>+ Nouveau groupe</button></div>
+            {canWrite && <div style={{ marginBottom: "0.75rem" }}><button className="btn btn-gold btn-sm" onClick={() => setShowGroupeForm(true)}>+ Nouveau groupe</button></div>}
             <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
               {gangs.map(g => {
                 const isSel = selectedGroupeId === g.id;
@@ -485,7 +595,7 @@ export default function BaseDeDonneesPage() {
             <div className="card">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
                 <div><h2 style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: "1.2rem", margin: 0 }}>🛡️ {selectedGroupe.nom}</h2><div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>{gangTypeLabel(selectedGroupe.type)}</div></div>
-                <button className="btn btn-ghost btn-sm" onClick={() => removeGroupe(selectedGroupe.id)} style={{ color: "var(--danger)" }}>🗑️</button>
+                {canWrite && <button className="btn btn-ghost btn-sm" onClick={() => removeGroupe(selectedGroupe.id)} style={{ color: "var(--danger)" }}>🗑️</button>}
               </div>
 
               <div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.35rem" }}>👤 Membres ({membresDe(selectedGroupe.id).length})</div>
@@ -508,6 +618,26 @@ export default function BaseDeDonneesPage() {
       {showPersonneForm && (
         <Modal title={<>{editPersonneId ? "Modifier" : "Nouveau"} recensement</>} onClose={() => setShowPersonneForm(false)} size="lg" footer={<><button className="btn btn-outline" onClick={() => setShowPersonneForm(false)}>Annuler</button><button className="btn btn-gold" onClick={savePersonne} disabled={savingPersonne || !personneForm.nom}>{savingPersonne ? "…" : "Sauvegarder"}</button></>}>
           <div style={{ maxHeight: "62vh", overflowY: "auto" }}>
+            {!editPersonneId && (
+              <div style={{ position: "relative", marginBottom: "1rem" }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>🔎 Import rapide — vérifier si la fiche existe déjà (nom, tel, Discord)</label>
+                  <input value={quickImportQuery} onChange={e => setQuickImportQuery(e.target.value)} placeholder="Taper un nom, un téléphone ou un pseudo Discord…" />
+                </div>
+                {quickImportMatches.length > 0 && (
+                  <div className="card" style={{ marginTop: 6, padding: "0.4rem" }}>
+                    {quickImportMatches.map(p => (
+                      <button key={p.id} onClick={() => importPersonne(p)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "0.45rem 0.6rem", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}>
+                        <span>👤</span><span style={{ fontWeight: 600 }}>{fullName(p)}</span>
+                        {p.telephone && <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>{p.telephone}</span>}
+                        {p.discord && <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>Discord: {p.discord}</span>}
+                        <span style={{ marginLeft: "auto", fontSize: "0.68rem", color: "var(--gold)" }}>Ouvrir →</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <div style={{ display: "flex", gap: 14, marginBottom: "1rem" }}>
               <PhotoSlot url={personneForm.photo_identite} icon="🪪" label="Carte ID" size={92} onUpload={f => uploadPersonnePhoto("photo_identite", f)} />
               <PhotoSlot url={personneForm.photo_police} icon="👮" label="Photo police" size={92} onUpload={f => uploadPersonnePhoto("photo_police", f)} />
@@ -531,6 +661,30 @@ export default function BaseDeDonneesPage() {
             <div className="form-group"><label>Adresses</label><textarea rows={2} value={personneForm.adresses} onChange={e => setPersonneForm(f => ({ ...f, adresses: e.target.value }))} /></div>
             <div className="form-group"><label>Comptes bancaires RP</label><textarea rows={2} value={personneForm.comptes_bancaires} onChange={e => setPersonneForm(f => ({ ...f, comptes_bancaires: e.target.value }))} /></div>
             <div className="form-group"><label>Relations</label><textarea rows={2} value={personneForm.relations} onChange={e => setPersonneForm(f => ({ ...f, relations: e.target.value }))} /></div>
+
+            <div className="form-group" style={{ position: "relative" }}>
+              <label>🔗 Dossiers liés</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                {(personneForm.liens_ids || []).map(id => {
+                  const p2 = personnes.find(x => x.id === id);
+                  return (
+                    <span key={id} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.72rem", padding: "0.15rem 0.5rem", borderRadius: 999, background: "var(--gold-muted)", color: "var(--gold)", border: "1px solid rgba(var(--gold-rgb), 0.3)" }}>
+                      {p2 ? fullName(p2) : "?"}
+                      <button onClick={() => removeLien(id)} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", fontWeight: 700, padding: 0 }}>×</button>
+                    </span>
+                  );
+                })}
+              </div>
+              <input value={liensQuery} onChange={e => setLiensQuery(e.target.value)} placeholder="Chercher une personne à lier…" />
+              {liensMatches.length > 0 && (
+                <div className="card" style={{ position: "absolute", zIndex: 10, marginTop: 4, padding: "0.35rem", width: "100%" }}>
+                  {liensMatches.map(p => (
+                    <button key={p.id} onClick={() => addLien(p.id)} style={{ display: "block", width: "100%", textAlign: "left", padding: "0.4rem 0.55rem", borderRadius: 6, background: "none", border: "none", cursor: "pointer", color: "var(--text)", fontSize: "0.78rem" }}>{fullName(p)}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="form-group"><label>Notes</label><textarea rows={3} value={personneForm.notes_publiques} onChange={e => setPersonneForm(f => ({ ...f, notes_publiques: e.target.value }))} /></div>
             <div className="form-group" style={{ marginBottom: 0 }}><label>Notes privées 🔒</label><textarea rows={2} value={personneForm.notes_privees} onChange={e => setPersonneForm(f => ({ ...f, notes_privees: e.target.value }))} /></div>
           </div>

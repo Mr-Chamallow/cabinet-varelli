@@ -50,23 +50,52 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
 
 // Rôles dont l'accès à la carte enquêteur est strictement en lecture seule
 // (pas de création/édition/suppression de point, dossier, registre, catégories, groupes).
+// Conservé pour compat, mais désormais doublé par le système de niveaux ci-dessous
+// (une permission stockée en "perm:read" produit le même effet, rôle par rôle).
 export const READONLY_ROLES = ["Légal Service"];
 
-export function isReadOnlyRole(userOrRole: AppUser | string | null): boolean {
-  const role = typeof userOrRole === "string" ? userOrRole : userOrRole?.role;
-  return !!role && READONLY_ROLES.includes(role);
+// ─── Niveaux d'accès par permission (onglet) ────────────────────────────
+// Une entrée de permission peut s'écrire "perm" (= écriture, comportement
+// historique) ou "perm:read" (lecture seule). Rien ne casse pour les rôles
+// non migrés : toute entrée sans suffixe reste en écriture comme avant.
+export type PermLevel = "none" | "read" | "write";
+
+function parsePermEntry(entry: string): { key: string; level: PermLevel } {
+  if (entry.endsWith(":read")) return { key: entry.slice(0, -5), level: "read" };
+  if (entry.endsWith(":write")) return { key: entry.slice(0, -6), level: "write" };
+  return { key: entry, level: "write" };
+}
+
+export function getPermLevel(userOrRole: AppUser | string | null, permission: string): PermLevel {
+  if (!userOrRole) return "none";
+  const role = typeof userOrRole === "string" ? userOrRole : userOrRole.role;
+  const supaPerms = typeof userOrRole === "string" ? [] : (userOrRole.permissions || []);
+  const defaultPerms = DEFAULT_PERMISSIONS[role] || [];
+  const all = [...new Set([...supaPerms, ...defaultPerms])];
+  if (all.includes("admin")) return "write";
+  let level: PermLevel = "none";
+  for (const entry of all) {
+    const { key, level: l } = parsePermEntry(entry);
+    if (key !== permission) continue;
+    if (l === "write") return "write"; // l'écriture l'emporte si les deux existent
+    level = l;
+  }
+  return level;
 }
 
 export function hasPermission(userOrRole: AppUser | string | null, permission: string): boolean {
-  if (!userOrRole) return false;
-  if (typeof userOrRole === "string") {
-    const perms = DEFAULT_PERMISSIONS[userOrRole] || [];
-    return perms.includes(permission) || perms.includes("admin");
-  }
-  const supaPerms = userOrRole.permissions || [];
-  const defaultPerms = DEFAULT_PERMISSIONS[userOrRole.role] || [];
-  const perms = [...new Set([...supaPerms, ...defaultPerms])]; // union — toujours à jour même si Supabase pas migré
-  return perms.includes(permission) || perms.includes("admin");
+  return getPermLevel(userOrRole, permission) !== "none";
+}
+
+// Accès en écriture (création/édition/suppression) sur un onglet donné.
+export function hasWriteAccess(userOrRole: AppUser | string | null, permission: string): boolean {
+  return getPermLevel(userOrRole, permission) === "write";
+}
+
+export function isReadOnlyRole(userOrRole: AppUser | string | null): boolean {
+  const role = typeof userOrRole === "string" ? userOrRole : userOrRole?.role;
+  if (!!role && READONLY_ROLES.includes(role)) return true;
+  return getPermLevel(userOrRole, "carte-enqueteur") === "read";
 }
 
 export const canAccess = hasPermission;
