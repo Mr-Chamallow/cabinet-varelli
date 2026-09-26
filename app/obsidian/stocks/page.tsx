@@ -4,6 +4,8 @@ import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
+import { UndoToast } from "@/components/ui/UndoToast";
+import { useUndoAction } from "@/lib/useUndoAction";
 import { Modal } from "@/components/ui/Modal";
 import { hasPermission } from "@/lib/auth";
 const CATS=["drogue","arme","accessoire","composant","objet_rare","autre"];
@@ -14,6 +16,7 @@ interface Mouvement{id:string;stock_nom:string;type:string;quantite:number;motif
 export default function StocksPage(){
   const { user, loading: userLoading } = useCurrentUser();
   const { toast, showToast } = useToast();
+  const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_stocks"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [stocks,setStocks]=useState<Stock[]>([]);
   const [mouvements,setMouvements]=useState<Mouvement[]>([]);
@@ -51,9 +54,14 @@ export default function StocksPage(){
     setMouvements(m=>[{id:Date.now().toString(),stock_nom:stock.nom,type:mvtForm.type,quantite:mvtForm.quantite,motif:mvtForm.motif,membre:mvtForm.membre||user?.nom||"",created_at:new Date().toISOString()},...m]);
     setShowMvt(null);setMvtForm({stock_id:"",type:"sortie",quantite:1,motif:"",membre:""});showToast(`${mvtForm.type==="entrée"?"Entrée":"Sortie"} enregistrée`);setSaving(false);}
   async function deleteStock(id:string){
-    const res = await fetch("/api/obsidian/stocks", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-    if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); return; }
-    setStocks(s=>s.filter(x=>x.id!==id));}
+    const item = stocks.find(s=>s.id===id);
+    if (!item) return;
+    setStocks(s=>s.filter(x=>x.id!==id));
+    scheduleDelete(`"${item.nom}" supprimé`, async () => {
+      const res = await fetch("/api/obsidian/stocks", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+      if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); }
+    }, () => setStocks(s=>[...s, item]));
+  }
   const filtered=stocks.filter(s=>!filterCat||s.categorie===filterCat);
   const alerts=stocks.filter(s=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte);
   const CAT_COL:Record<string,string>={drogue:"#7c3aed",arme:"var(--danger)",accessoire:"var(--warning)",composant:"var(--info)",objet_rare:"var(--gold)",autre:"var(--text-muted)"};
@@ -97,6 +105,7 @@ export default function StocksPage(){
       {tab==="ajouter"&&<div className="card" style={{maxWidth:560}}><div className="section-title" style={{marginBottom:"1rem"}}>Nouveau stock</div><div className="form-grid"><div className="form-group"><label>Emoji</label><input value={form.emoji} onChange={e=>setForm(f=>({...f,emoji:e.target.value}))} style={{width:70}}/></div><div className="form-group"><label>Nom *</label><input autoFocus value={form.nom} onChange={e=>setForm(f=>({...f,nom:e.target.value}))}/></div><div className="form-group"><label>Catégorie</label><select value={form.categorie} onChange={e=>setForm(f=>({...f,categorie:e.target.value}))}>{CATS.map(c=><option key={c}>{c}</option>)}</select></div><div className="form-group"><label>Quantité initiale</label><input type="number" value={form.quantite||""} onChange={e=>setForm(f=>({...f,quantite:+e.target.value}))}/></div><div className="form-group"><label>Seuil alerte</label><input type="number" value={form.seuil_alerte||""} onChange={e=>setForm(f=>({...f,seuil_alerte:+e.target.value}))}/></div><div className="form-group"><label>Unité</label><input value={form.unite} onChange={e=>setForm(f=>({...f,unite:e.target.value}))}/></div><div className="form-group"><label>Prix unitaire ($)</label><input type="number" value={form.prix_unitaire||""} onChange={e=>setForm(f=>({...f,prix_unitaire:+e.target.value}))}/></div></div><div className="form-group" style={{marginBottom:"1.25rem"}}><label>Notes</label><textarea rows={2} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/></div><div style={{display:"flex",gap:"0.5rem"}}><button className="btn btn-outline" onClick={()=>setTab("stocks")}>Annuler</button><button className="btn btn-gold" onClick={addStock} disabled={saving||!form.nom}>{saving?"…":"Créer"}</button></div></div>}
       {showMvt&&<Modal title={<>{mvtForm.type==="entrée"?"↑ Entrée":"↓ Sortie"} — {showMvt.nom}</>} onClose={()=>setShowMvt(null)} footer={<><button className="btn btn-outline" onClick={()=>setShowMvt(null)}>Annuler</button><button className="btn btn-gold" onClick={()=>addMouvement(showMvt)} disabled={saving||mvtForm.quantite<=0}>{saving?"…":"Enregistrer"}</button></>}><div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem"}}>{["entrée","sortie"].map(t=><button key={t} onClick={()=>setMvtForm(f=>({...f,type:t}))} style={{flex:1,padding:"0.5rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:mvtForm.type===t?700:400,background:mvtForm.type===t?(t==="entrée"?"rgba(34,197,94,0.12)":"rgba(239,68,68,0.12)"):"var(--surface)",border:`1px solid ${mvtForm.type===t?(t==="entrée"?"rgba(34,197,94,0.4)":"rgba(239,68,68,0.4)"):"var(--border)"}`,color:mvtForm.type===t?(t==="entrée"?"var(--success)":"var(--danger)"):"var(--text-muted)"}}>{t==="entrée"?"↑ Entrée":"↓ Sortie"}</button>)}</div><div style={{background:"var(--surface)",borderRadius:"var(--radius)",padding:"0.75rem",marginBottom:"1rem",textAlign:"center"}}><div style={{fontSize:"0.65rem",color:"var(--text-dim)",marginBottom:"0.2rem"}}>Stock actuel</div><div style={{fontFamily:"'Playfair Display',serif",fontWeight:900,fontSize:"1.75rem"}}>{fmtN(showMvt.quantite)} <span style={{fontSize:"1rem",fontWeight:400}}>{showMvt.unite}</span></div></div><div className="form-group"><label>Quantité *</label><input type="number" min={1} autoFocus value={mvtForm.quantite} onChange={e=>setMvtForm(f=>({...f,quantite:+e.target.value}))}/></div><div className="form-group"><label>Motif</label><input value={mvtForm.motif} onChange={e=>setMvtForm(f=>({...f,motif:e.target.value}))} placeholder="Ex: Mission Port · Vente Vlad..."/></div><div className="form-group" style={{marginBottom:0}}><label>Membre</label><input value={mvtForm.membre} onChange={e=>setMvtForm(f=>({...f,membre:e.target.value}))} placeholder={user?.nom||""}/></div></Modal>}
       <Toast toast={toast} />
+      <UndoToast pending={pendingUndo} onUndo={undoDelete} />
     </div>
   );
 }

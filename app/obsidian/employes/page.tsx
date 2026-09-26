@@ -5,7 +5,8 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { UndoToast } from "@/components/ui/UndoToast";
+import { useUndoAction } from "@/lib/useUndoAction";
 import { hasPermission, DEFAULT_PERMISSIONS, getMemberColor } from "@/lib/auth";
 
 interface Employe {
@@ -29,7 +30,7 @@ export default function EmployesObsidianPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...EMPTY });
   const [saving, setSaving] = useState(false);
-  const [confirm, setConfirm] = useState<string | null>(null);
+  const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
   const [showInactifs, setShowInactifs] = useState(false);
 
   useEffect(() => { load(); }, []);
@@ -62,12 +63,14 @@ export default function EmployesObsidianPage() {
     load();
   }
 
-  async function remove(id: string) {
-    const res = await fetch("/api/obsidian/employes", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-    if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); return; }
-    setConfirm(null);
-    showToast("Fiche supprimée");
-    load();
+  function remove(id: string) {
+    const emp = employes.find((e) => e.id === id);
+    if (!emp) return;
+    setEmployes((list) => list.filter((e) => e.id !== id));
+    scheduleDelete(`"${emp.nom}" supprimé`, async () => {
+      const res = await fetch("/api/obsidian/employes", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+      if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); }
+    }, () => setEmployes((list) => [...list, emp]));
   }
 
   const visibles = employes.filter(e => showInactifs ? true : e.actif !== false);
@@ -119,7 +122,7 @@ export default function EmployesObsidianPage() {
                 {e.notes && <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginBottom: "0.75rem", fontStyle: "italic" }}>{e.notes}</div>}
                 <div style={{ display: "flex", gap: "0.4rem" }}>
                   <button className="btn btn-outline btn-sm" style={{ flex: 1 }} onClick={() => openEdit(e)}>✏️ Modifier</button>
-                  <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => setConfirm(e.id)}>🗑️</button>
+                  <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => remove(e.id)}>🗑️</button>
                 </div>
               </div>
             );
@@ -149,9 +152,7 @@ export default function EmployesObsidianPage() {
               </label></Modal>
       )}
 
-      {confirm && (
-        <ConfirmDialog title="Supprimer cette fiche ?" message="" onCancel={() => setConfirm(null)} onConfirm={() => remove(confirm)} confirmLabel="Supprimer" />
-      )}
+      <UndoToast pending={pendingUndo} onUndo={undoDelete} />
 
       <Toast toast={toast} />
     </div>

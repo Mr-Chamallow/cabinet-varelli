@@ -47,6 +47,8 @@ import {
   upsertDossier,
 } from './supabase-carte';
 import RegistreModal from './RegistreModal';
+import { useUndoAction } from '@/lib/useUndoAction';
+import { UndoToast } from '@/components/ui/UndoToast';
 import NewPointModal from './NewPointModal';
 import GangsModal from './GangsModal';
 import TagsModal from './TagsModal';
@@ -472,6 +474,7 @@ export default function MapCanvas({
   const addModeRef = useRef(false);
 
   const [points, setPoints] = useState<CartePoint[]>([]);
+  const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
   const [dossiers, setDossiers] = useState<Record<string, Dossier>>({});
   const [categories, setCategories] = useState<Category[]>([]);
   const [gangs, setGangs] = useState<Gang[]>([]);
@@ -800,7 +803,9 @@ export default function MapCanvas({
   };
 
   const removePoint = async (id: string) => {
-    if (!window.confirm('Supprimer ce point et son dossier ?')) return;
+    const point = points.find((p) => p.id === id);
+    const dossier = dossiers[id];
+    if (!point) return;
     setPoints((p) => p.filter((pt) => pt.id !== id));
     setDossiers((d) => {
       const { [id]: _, ...rest } = d;
@@ -808,11 +813,16 @@ export default function MapCanvas({
     });
     setEditing(null);
     if (selectedId === id) setSelectedId(null);
-    try {
-      await deletePoint(id);
-    } catch (err) {
-      console.error(err);
-    }
+    scheduleDelete(
+      `"${point.title}" supprimé`,
+      async () => {
+        try { await deletePoint(id); } catch (err) { console.error(err); }
+      },
+      () => {
+        setPoints((p) => [...p, point]);
+        if (dossier) setDossiers((d) => ({ ...d, [id]: dossier }));
+      },
+    );
   };
 
   const toggleFilter = (cat: string) => {
@@ -1199,6 +1209,8 @@ export default function MapCanvas({
           }}
         />
       )}
+
+      <UndoToast pending={pendingUndo} onUndo={undoDelete} />
     </div>
   );
 }

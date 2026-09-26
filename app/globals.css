@@ -660,6 +660,31 @@ tr:hover td { background: rgba(255,255,255,0.012); }
 .toast-success { background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.25); color: var(--success); }
 .toast-danger  { background: rgba(239,68,68,0.12);  border-color: rgba(239,68,68,0.25);  color: var(--danger); }
 
+.toast-undo {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  background: rgba(16,19,30,0.96);
+  border-color: var(--border-light);
+  color: var(--text);
+  /* Fenêtre d'annulation de 5s (voir lib/useUndoAction.ts) — le fondu de sortie est
+     donc programmé plus tard que celui du toast normal (3s), pour rester synchronisé
+     avec le vrai délai côté JS. */
+  animation: slideUp var(--t-base) var(--ease), toastFadeOut 0.3s var(--ease) 4.7s forwards;
+}
+.toast-undo-btn {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+  flex-shrink: 0;
+  padding: 0;
+}
+.toast-undo-btn:hover { color: var(--gold-light); }
+
 /* ═══════════════════════════════════════════════════════════════════════════
    CONFIRM DIALOG
    ═══════════════════════════════════════════════════════════════════════════ */

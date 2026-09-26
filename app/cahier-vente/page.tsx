@@ -5,7 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { UndoToast } from "@/components/ui/UndoToast";
+import { useUndoAction } from "@/lib/useUndoAction";
 import { hasPermission } from "@/lib/auth";
 
 interface Transaction {
@@ -77,7 +78,7 @@ export default function CahierVentePage() {
   // Formulaire saisie
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
-  const [confirm, setConfirm] = useState<string | null>(null);
+  const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
 
   // Produit rapide / CRUD
   const [produitForm, setProduitForm] = useState({ nom: "", type: "drogue", emoji: "💊", prix_propre: 0, prix_sale: 0, actif: true, ordre: 0 });
@@ -160,12 +161,13 @@ export default function CahierVentePage() {
     setSaving(false);
   }
 
-  async function deleteTransaction(id: string) {
-    if (!supabase) return;
-    await supabase.from("cahier_transactions").delete().eq("id", id);
+  function deleteTransaction(id: string) {
+    const tx = transactions.find(t => t.id === id);
+    if (!tx || !supabase) return;
     setTransactions(ts => ts.filter(t => t.id !== id));
-    setConfirm(null); 
-    showToast("Supprimé");
+    scheduleDelete(`Transaction "${tx.produit_nom || tx.motif}" supprimée`, async () => {
+      await supabase!.from("cahier_transactions").delete().eq("id", id);
+    }, () => setTransactions(ts => [tx, ...ts]));
   }
 
   async function saveProduit() {
@@ -188,10 +190,13 @@ export default function CahierVentePage() {
     showToast("Produit mis à jour");
   }
 
-  async function deleteProduit(id: string) {
-    if (!supabase) return;
-    await supabase.from("cahier_produits").delete().eq("id", id);
-    setProduits(ps => ps.filter(p => p.id !== id));
+  function deleteProduit(id: string) {
+    const p = produits.find(x => x.id === id);
+    if (!p || !supabase) return;
+    setProduits(ps => ps.filter(x => x.id !== id));
+    scheduleDelete(`Produit "${p.nom}" supprimé`, async () => {
+      await supabase!.from("cahier_produits").delete().eq("id", id);
+    }, () => setProduits(ps => [...ps, p]));
   }
 
   const uniqueMembers = [...new Set(transactions.map(t => t.created_by))].filter(Boolean);
@@ -201,16 +206,7 @@ export default function CahierVentePage() {
   return (
     <div className="page-container">
       <Toast toast={toast} />
-
-      {/* Confirmation de suppression */}
-      {confirm && (
-        <ConfirmDialog
-          title="Confirmer la suppression"
-          message="Êtes-vous sûr de vouloir supprimer cette transaction ?"
-          onCancel={() => setConfirm(null)}
-          onConfirm={() => deleteTransaction(confirm)}
-        />
-      )}
+      <UndoToast pending={pendingUndo} onUndo={undoDelete} />
 
       <a className="back-link" href="/">← Tableau de bord</a>
       <div className="page-header">
@@ -391,7 +387,7 @@ export default function CahierVentePage() {
                     {t.type === "entrée" ? "+" : "-"}{fmt(t.montant)}
                   </div>
                   {t.created_by === user?.nom && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setConfirm(t.id)} style={{ color: "var(--danger)", flexShrink: 0 }}>🗑️</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => deleteTransaction(t.id)} style={{ color: "var(--danger)", flexShrink: 0 }}>🗑️</button>
                   )}
                 </div>
               ))}
