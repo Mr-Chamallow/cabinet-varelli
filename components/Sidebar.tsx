@@ -25,6 +25,7 @@ const NAV_SECTIONS = [
     { href: "/obsidian/paie",          label: "Paie & Commissions", icon: "💰", permission: "obsidian_paie" },
     { href: "/obsidian/employes",      label: "Employés",        icon: "🧑‍💼", permission: "obsidian_employes" },
     { href: "/juridique",       label: "Code pénal",       icon: "📖", permission: "juridique" },
+    { href: "/calculatrice",    label: "Calculatrice",     icon: "🧮", permission: "calculatrice" },
     { href: "/utile-samp",      label: "Utile SAMP",       icon: "🐈", permission: "utile_samp" },
     { href: "/carte-enqueteur", label: "Carte enquêteur",  icon: "🗺️", permission: "carte-enqueteur" },
   ]},

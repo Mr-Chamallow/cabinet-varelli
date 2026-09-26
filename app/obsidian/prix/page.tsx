@@ -8,6 +8,21 @@ import { hasPermission } from "@/lib/auth";
 
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 
+// Regroupe les drogues par famille (même nom de base, ex: "Cocaïne") et les
+// trie par % de pureté croissant à l'intérieur de chaque famille.
+function drogueKey(nom:string){
+  const m=(nom||"").match(/^(.*?)\s*(\d+)\s*%?\s*$/);
+  if(m) return {base:m[1].trim().toLowerCase(),purity:parseInt(m[2],10)};
+  return {base:(nom||"").trim().toLowerCase(),purity:0};
+}
+function sortDrogues(list:any[]){
+  return [...list].sort((a,b)=>{
+    const ka=drogueKey(a.nom),kb=drogueKey(b.nom);
+    if(ka.base!==kb.base) return ka.base.localeCompare(kb.base,"fr");
+    return ka.purity-kb.purity;
+  });
+}
+
 const ACCS=[{nom:"Chargeurs Pistolets",prix:225000},{nom:"Chargeurs Auto",prix:500000},{nom:"Chargeurs Lourdes",prix:750000},{nom:"Silencieux Pistolets",prix:17500},{nom:"Silencieux Auto",prix:25000},{nom:"Silencieux Lourdes",prix:30000},{nom:"Viseurs Pistolets",prix:17500},{nom:"Viseurs Auto",prix:25000},{nom:"Viseurs Lourdes",prix:30000},{nom:"Poignées Lourdes",prix:30000},{nom:"Lampes Pistolets",prix:17500},{nom:"Lampes Lourdes",prix:30000},{nom:"Compensateurs Pistolets",prix:17500},{nom:"Freins Auto",prix:25000},{nom:"Freins Lourdes",prix:30000},{nom:"Canons Auto",prix:25000},{nom:"Canons Lourdes",prix:30000}];
 
 export default function PrixPage() {
@@ -123,7 +138,7 @@ export default function PrixPage() {
       {tab==="drogues" && (
         <>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:"0.75rem",marginBottom:"1.5rem"}}>
-            {drogues.map(d=>{
+            {sortDrogues(drogues).map(d=>{
               const isEdit=editDrogueId===d.id;
               return (
                 <div key={d.id} className="card">
