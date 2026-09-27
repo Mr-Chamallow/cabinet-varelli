@@ -5,14 +5,19 @@ import { supabase } from "@/lib/supabase";
 
 const ADMIN_DISCORD_ID = process.env.ADMIN_DISCORD_ID || "";
 
-async function fetchGuildRoles(accessToken: string): Promise<string[]> {
+// ⚠️ Distingue "pas membre du serveur Discord" (inGuild: false) de "membre mais
+// aucun des rôles suivis" (inGuild: true, roles: []). Avant ce fix, les deux cas
+// renvoyaient un simple [] et getHighestRole() retombait sur "Opérateur stagiaire"
+// par défaut — donnant accès au site à N'IMPORTE QUI se connectant via Discord,
+// même hors du serveur. Voir Admin > Journaux pour vérifier qui s'est connecté ainsi.
+async function fetchGuildMembership(accessToken: string): Promise<{ inGuild: boolean; roles: string[] }> {
   const res = await fetch(
     `https://discord.com/api/users/@me/guilds/${DISCORD_SERVER_ID}/member`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );
-  if (!res.ok) return [];
+  if (!res.ok) return { inGuild: false, roles: [] };
   const data = await res.json();
-  return data.roles || [];
+  return { inGuild: true, roles: data.roles || [] };
 }
 
 async function getRoleOverride(discordId: string): Promise<string | null> {
@@ -91,15 +96,25 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    // Bloque la connexion AVANT même de créer une session si la personne n'est pas
+    // membre du serveur Discord (sauf le compte admin, qui garde toujours l'accès).
+    async signIn({ account }) {
+      if (!account?.access_token) return false;
+      if (account.providerAccountId === ADMIN_DISCORD_ID) return true;
+      const { inGuild } = await fetchGuildMembership(account.access_token);
+      return inGuild;
+    },
     async jwt({ token, account, profile }) {
       if (account?.access_token) {
-        const roles = await fetchGuildRoles(account.access_token);
+        const { inGuild, roles } = await fetchGuildMembership(account.access_token);
         token.discord_id = account.providerAccountId;
         token.discord_name = (profile as any)?.username || "Membre";
         token.site_role =
           account.providerAccountId === ADMIN_DISCORD_ID
             ? "Associé / Patron"
-            : getHighestRole(roles);
+            // Garde-fou : même si signIn() a déjà filtré, on ne donne jamais le rôle
+            // par défaut à quelqu'un que Discord ne confirme plus comme membre.
+            : (inGuild ? getHighestRole(roles) : null);
       }
       if (token.discord_id) {
         const override = await getRoleOverride(token.discord_id as string);

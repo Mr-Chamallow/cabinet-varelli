@@ -53,7 +53,11 @@ function LoginContent() {
         <div style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "2rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
           Accès réservé
         </div>
-        {discordError && <p style={{ color: "#ef4444", marginBottom: "1rem" }}>Connexion refusée. Réessaie.</p>}
+        {discordError === "AccessDenied" ? (
+          <p style={{ color: "#ef4444", marginBottom: "1rem", maxWidth: 320 }}>Tu dois être membre du serveur Discord pour accéder au site.</p>
+        ) : discordError ? (
+          <p style={{ color: "#ef4444", marginBottom: "1rem" }}>Connexion refusée. Réessaie.</p>
+        ) : null}
         <button className="btn btn-gold" onClick={() => signIn("discord")}>
           Se connecter avec Discord
         </button>
