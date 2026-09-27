@@ -50,6 +50,16 @@ export function useCurrentUser(): {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [discordId, discordName, role, permsKey]);
 
+  // ─── Heartbeat de présence : signale toutes les 45s qu'on est actif, pour que
+  // Admin > Membres puisse afficher qui est "en ligne" en temps réel. ─────────
+  useEffect(() => {
+    if (!discordId) return;
+    const ping = () => { fetch("/api/presence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "heartbeat" }) }).catch(() => {}); };
+    ping();
+    const id = setInterval(ping, 45000);
+    return () => clearInterval(id);
+  }, [discordId]);
+
   const isRealAdmin = !!realUser && hasPermission(realUser, "admin");
   const previewRole = isRealAdmin ? previewRoleRaw : null;
 

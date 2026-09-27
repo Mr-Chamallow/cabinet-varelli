@@ -112,7 +112,11 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
 
       <div className="sidebar-footer">
         <span className="wandering-cat" aria-hidden="true">🐈</span>
-        <button className="sidebar-user" onClick={() => signOut({ callbackUrl: "/login" })} title="Se déconnecter">
+        <button className="sidebar-user" onClick={() => {
+          fetch("/api/presence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "logout" }) }).catch(() => {}).finally(() => {
+            signOut({ callbackUrl: "/login" });
+          });
+        }} title="Se déconnecter">
           <div className="user-avatar">{user.nom?.charAt(0)?.toUpperCase() || "?"}</div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: "0.82rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.nom}</div>

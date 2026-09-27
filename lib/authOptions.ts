@@ -35,6 +35,29 @@ async function getRolePermissions(roleName: string): Promise<string[] | null> {
   return data?.permissions ?? null;
 }
 
+// Vérifie si ce Discord ID est banni du site. Ne doit jamais faire planter la
+// connexion si la table n'existe pas encore (migration pas encore exécutée).
+async function checkBan(discordId: string): Promise<{ banned: boolean; motif: string }> {
+  if (!supabase) return { banned: false, motif: "" };
+  try {
+    const { data } = await supabase.from("site_bans").select("motif").eq("discord_id", discordId).maybeSingle();
+    return data ? { banned: true, motif: data.motif || "" } : { banned: false, motif: "" };
+  } catch {
+    return { banned: false, motif: "" };
+  }
+}
+
+// Trace chaque connexion/déconnexion réelle (pas les rafraîchissements de token) dans
+// site_session_log, pour un vrai journal consultable dans Admin > Journaux.
+async function logSession(discordId: string, discordName: string, event: "connect" | "disconnect") {
+  if (!supabase) return;
+  try {
+    await supabase.from("site_session_log").insert([{ discord_id: discordId, discord_name: discordName, event }]);
+  } catch {
+    // Table pas encore créée (migration non exécutée) — ne bloque jamais la connexion pour ça.
+  }
+}
+
 // Trace chaque connexion (nom + rôle détecté + horodatage) dans site_logins, pour
 // avoir une vraie liste des membres qui utilisent le site (Admin > Membres) — et
 // pouvoir vérifier si quelqu'un qui dit "je n'arrive pas à accéder au site" s'est
@@ -88,6 +111,12 @@ export const authOptions: NextAuthOptions = {
       }
       if (account?.access_token && token.discord_id) {
         await recordLogin(token.discord_id as string, (token.discord_name as string) || "Membre", (token.site_role as string) || "");
+        await logSession(token.discord_id as string, (token.discord_name as string) || "Membre", "connect");
+      }
+      if (token.discord_id) {
+        const ban = await checkBan(token.discord_id as string);
+        token.banned = ban.banned;
+        token.ban_reason = ban.motif;
       }
       return token;
     },
@@ -97,6 +126,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).discord_name = token.discord_name;
         (session.user as any).discord_id = token.discord_id;
         (session.user as any).permissions = token.permissions || null;
+        (session.user as any).banned = !!token.banned;
+        (session.user as any).ban_reason = token.ban_reason || "";
       }
       return session;
     },

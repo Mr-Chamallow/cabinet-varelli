@@ -30,6 +30,31 @@ interface SiteLogin {
   site_role: string;
   first_login?: string;
   last_login?: string;
+  last_seen?: string;
+}
+
+interface SiteBan {
+  discord_id: string;
+  nom?: string;
+  motif?: string;
+  banned_by?: string;
+  banned_at?: string;
+}
+
+interface SessionLogItem {
+  id: string;
+  discord_id: string;
+  discord_name: string;
+  event: "connect" | "disconnect";
+  created_at: string;
+}
+
+// Un membre est considéré "en ligne" si son heartbeat (/api/presence, toutes les
+// 45s pendant qu'il navigue sur le site) date de moins de 90 secondes.
+const ONLINE_THRESHOLD_MS = 90_000;
+function isOnline(l: SiteLogin): boolean {
+  if (!l.last_seen) return false;
+  return Date.now() - new Date(l.last_seen).getTime() < ONLINE_THRESHOLD_MS;
 }
 
 interface Role {
@@ -63,10 +88,19 @@ export default function AdminPage() {
   const [creatingOverride, setCreatingOverride] = useState(false);
   const [createError, setCreateError] = useState("");
 
+  const [bans, setBans] = useState<SiteBan[]>([]);
+  const [showBanForm, setShowBanForm] = useState(false);
+  const [banForm, setBanForm] = useState({ discord_id:"", nom:"", motif:"" });
+  const [banningId, setBanningId] = useState<string | null>(null);
+  const [showBansList, setShowBansList] = useState(false);
+
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [actLoading, setActLoading] = useState(false);
   const [filterActMember, setFilterActMember] = useState("");
   const [filterActType, setFilterActType] = useState("");
+  const [journauxSubTab, setJournauxSubTab] = useState<"activite" | "connexions">("activite");
+  const [sessionLog, setSessionLog] = useState<SessionLogItem[]>([]);
+  const [sessionLogLoading, setSessionLogLoading] = useState(false);
 
   // Site (Personnalisation centralisée)
   const [siteSettings, setSiteSettings] = useState<Record<string,string>>({});
@@ -89,16 +123,18 @@ export default function AdminPage() {
     setLoading(true);
     setFetchError("");
     try {
-      const [{ data: o, error: oErr }, rolesData, { data: l }] = await Promise.all([
+      const [{ data: o, error: oErr }, rolesData, { data: l }, { data: b }] = await Promise.all([
         supabase.from("role_overrides").select("*").order("updated_at", { ascending: false }),
         loadRolesFromSupabase(),
         supabase.from("site_logins").select("*").order("last_login", { ascending: false }),
+        supabase.from("site_bans").select("*").order("banned_at", { ascending: false }),
       ]);
       if (oErr) {
         setFetchError(`Erreur lors du chargement des overrides : ${oErr.message}`);
       }
       setOverrides(o || []);
       setLogins(l || []);
+      setBans(b || []);
       setRoles((rolesData as Role[]) || []);
       if ((!rolesData || rolesData.length === 0) && !oErr) {
         setFetchError("Aucun rôle trouvé. Vérifiez que la table `roles` existe et contient des données.");
@@ -123,9 +159,29 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    if (activeTab === "journaux" && activity.length === 0) loadActivity();
+    if (activeTab === "journaux" && journauxSubTab === "activite" && activity.length === 0) loadActivity();
+    if (activeTab === "journaux" && journauxSubTab === "connexions") loadSessionLog();
     if (activeTab === "site" && Object.keys(siteSettings).length === 0) loadSite();
+  }, [activeTab, journauxSubTab]);
+
+  // Rafraîchit les statuts "en ligne" (last_seen) toutes les 20s tant qu'on regarde
+  // l'onglet Membres, sans re-déclencher tout fetchAll (overrides, rôles, etc.).
+  useEffect(() => {
+    if (activeTab !== "membres" || !supabase) return;
+    const id = setInterval(async () => {
+      const { data } = await supabase!.from("site_logins").select("*").order("last_login", { ascending: false });
+      if (data) setLogins(data);
+    }, 20000);
+    return () => clearInterval(id);
   }, [activeTab]);
+
+  async function loadSessionLog() {
+    if (!supabase) return;
+    setSessionLogLoading(true);
+    const { data } = await supabase.from("site_session_log").select("*").order("created_at", { ascending: false }).limit(80);
+    setSessionLog(data || []);
+    setSessionLogLoading(false);
+  }
 
   async function loadSite() {
     if (!supabase) return;
@@ -191,6 +247,29 @@ export default function AdminPage() {
       await apiRequest("/api/admin/overrides", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(ov) });
     });
   }
+
+  async function confirmBan() {
+    if (!banForm.discord_id.trim()) return;
+    setBanningId(banForm.discord_id);
+    const r = await apiRequest("/api/admin/bans", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(banForm),
+    });
+    if (!r.ok) { setFetchError(`Impossible de bannir : ${r.error}`); }
+    else { setShowBanForm(false); setBanForm({ discord_id:"", nom:"", motif:"" }); await fetchAll(); }
+    setBanningId(null);
+  }
+
+  async function unbanUser(discordId: string, nom: string) {
+    if (!window.confirm(`Lever le bannissement de "${nom || discordId}" ?`)) return;
+    setBanningId(discordId);
+    const r = await apiRequest("/api/admin/bans", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
+    if (!r.ok) setFetchError(`Impossible de débannir : ${r.error}`);
+    else await fetchAll();
+    setBanningId(null);
+  }
+
+  function bannedInfo(discordId: string) { return bans.find(b => b.discord_id === discordId) || null; }
 
   const uniqueActMembers = [...new Set(activity.map(a => a.by))].filter(Boolean).sort();
   const filteredActivity = activity.filter(a =>
@@ -314,8 +393,15 @@ export default function AdminPage() {
           )}
 
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", margin:"2rem 0 1rem", flexWrap:"wrap", gap:"0.5rem" }}>
-            <div className="section-title">Membres connectés ({logins.length})</div>
+            <div className="section-title">
+              Membres connectés ({logins.length})
+              {" · "}
+              <span style={{ color:"var(--success)", fontWeight:600 }}>🟢 {logins.filter(isOnline).length} en ligne</span>
+            </div>
             <div style={{ display:"flex", gap:"0.5rem" }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowBansList(v => !v)} style={bans.length ? { color:"var(--danger)" } : {}}>
+                🚫 Bannis ({bans.length})
+              </button>
               <button
                 className="btn btn-ghost btn-sm"
                 onClick={() => setGroupByRole(v => !v)}
@@ -331,9 +417,36 @@ export default function AdminPage() {
               />
             </div>
           </div>
+          {showBansList && (
+            <div style={{ marginBottom:"1.25rem" }}>
+              {bans.length === 0 ? (
+                <div style={{ fontSize:"0.8rem", color:"var(--text-dim)" }}>Aucun membre banni.</div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
+                  {bans.map(b => (
+                    <div key={b.discord_id} className="card" style={{ padding:"0.6rem 0.875rem", borderColor:"rgba(239,68,68,0.3)" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", flexWrap:"wrap" }}>
+                        <div style={{ flex:1, minWidth:140 }}>
+                          <div style={{ fontWeight:600, fontSize:"0.85rem" }}>🚫 {b.nom || b.discord_id}</div>
+                          {b.motif && <div style={{ fontSize:"0.72rem", color:"var(--text-dim)" }}>Motif : {b.motif}</div>}
+                          <div style={{ fontSize:"0.65rem", color:"var(--text-dim)" }}>
+                            {b.banned_at ? timeAgo(b.banned_at) : ""}{b.banned_by ? ` — par ${b.banned_by}` : ""}
+                          </div>
+                        </div>
+                        <button className="btn btn-outline btn-sm" disabled={banningId === b.discord_id} onClick={() => unbanUser(b.discord_id, b.nom || "")}>
+                          {banningId === b.discord_id ? "…" : "✅ Débannir"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <p style={{ fontSize:"0.8rem", color:"var(--text-dim)", marginBottom:"1rem" }}>
-            Chaque personne qui s'est déjà connectée au site, avec le rôle détecté et sa dernière connexion —
-            utile pour vérifier si quelqu'un qui dit ne pas avoir accès s'est réellement connecté ou non.
+            Chaque personne qui s'est déjà connectée au site, avec le rôle détecté, sa dernière connexion et si elle est
+            actuellement en ligne — utile pour vérifier si quelqu'un qui dit ne pas avoir accès s'est réellement connecté ou non.
           </p>
           {logins.length === 0 ? (
             <div className="empty-state"><div className="empty-icon">👥</div><div className="empty-title">Personne ne s'est encore connecté</div></div>
@@ -347,14 +460,19 @@ export default function AdminPage() {
             const memberCard = (l: SiteLogin) => {
               const roleData = roles.find(r => r.nom === l.site_role);
               const couleur = roleData?.couleur || "#8A93A6";
+              const online = isOnline(l);
+              const banned = bannedInfo(l.discord_id);
               return (
-                <div key={l.discord_id} className="card" style={{ padding: "0.75rem 1rem" }}>
+                <div key={l.discord_id} className="card" style={{ padding: "0.75rem 1rem", borderColor: banned ? "rgba(239,68,68,0.35)" : undefined }}>
                   <div style={{ display:"flex", alignItems:"center", gap:"0.875rem", flexWrap:"wrap" }}>
-                    <div style={{ width:36,height:36,borderRadius:"50%",flexShrink:0, background:couleur+"20",border:`2px solid ${couleur}40`, display:"flex",alignItems:"center",justifyContent:"center", fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"0.9rem",color:couleur }}>
-                      {(l.discord_name || l.discord_id).charAt(0).toUpperCase()}
+                    <div style={{ position:"relative", flexShrink:0 }}>
+                      <div style={{ width:36,height:36,borderRadius:"50%", background:couleur+"20",border:`2px solid ${couleur}40`, display:"flex",alignItems:"center",justifyContent:"center", fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"0.9rem",color:couleur }}>
+                        {(l.discord_name || l.discord_id).charAt(0).toUpperCase()}
+                      </div>
+                      <span title={online ? "En ligne" : "Hors ligne"} style={{ position:"absolute", bottom:-1, right:-1, width:10, height:10, borderRadius:"50%", background: online ? "var(--success)" : "var(--text-dim)", border:"2px solid var(--card)", boxShadow: online ? "0 0 6px var(--success)" : "none" }} />
                     </div>
                     <div style={{ flex:1, minWidth:140 }}>
-                      <div style={{ fontWeight:600, fontSize:"0.88rem", marginBottom:"0.15rem" }}>{l.discord_name || "(sans nom)"}</div>
+                      <div style={{ fontWeight:600, fontSize:"0.88rem", marginBottom:"0.15rem" }}>{l.discord_name || "(sans nom)"}{banned && <span style={{ marginLeft:6 }} title={`Banni : ${banned.motif || ""}`}>🚫</span>}</div>
                       <div style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily: "var(--font-mono)" }}>{l.discord_id}</div>
                     </div>
                     {!groupByRole && (
@@ -362,8 +480,8 @@ export default function AdminPage() {
                         {l.site_role || "(aucun rôle)"}
                       </span>
                     )}
-                    <span style={{ fontSize:"0.72rem", color:"var(--text-dim)", flexShrink:0, minWidth: 90, textAlign: "right" }}>
-                      {l.last_login ? timeAgo(l.last_login) : "—"}
+                    <span style={{ fontSize:"0.72rem", color:online?"var(--success)":"var(--text-dim)", flexShrink:0, minWidth: 90, textAlign: "right", fontWeight: online?600:400 }}>
+                      {online ? "🟢 en ligne" : (l.last_login ? timeAgo(l.last_login) : "—")}
                     </span>
                     <button
                       className="btn btn-ghost btn-sm"
@@ -371,6 +489,15 @@ export default function AdminPage() {
                     >
                       🎭 Forcer un rôle
                     </button>
+                    {banned ? (
+                      <button className="btn btn-outline btn-sm" disabled={banningId === l.discord_id} onClick={() => unbanUser(l.discord_id, l.discord_name)}>
+                        {banningId === l.discord_id ? "…" : "✅ Débannir"}
+                      </button>
+                    ) : (
+                      <button className="btn btn-ghost btn-sm" style={{ color:"var(--danger)" }} onClick={() => { setBanForm({ discord_id: l.discord_id, nom: l.discord_name || "", motif: "" }); setShowBanForm(true); }}>
+                        🚫 Bannir
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -412,51 +539,84 @@ export default function AdminPage() {
         <RolesTab />
       ) : activeTab === "journaux" ? (
         <div>
-          <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1rem", flexWrap:"wrap", alignItems:"center" }}>
-            <select value={filterActMember} onChange={e=>setFilterActMember(e.target.value)} style={{ maxWidth:200 }}>
-              <option value="">Tous les membres</option>
-              {uniqueActMembers.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-            <div style={{ display:"flex", gap:"0.3rem", flexWrap:"wrap" }}>
-              <button className="btn btn-ghost btn-sm" onClick={()=>setFilterActType("")} style={{ fontWeight:filterActType===""?700:400 }}>Tous</button>
-              {(Object.keys(ACTIVITY_CONFIG) as (keyof typeof ACTIVITY_CONFIG)[]).map(t => (
-                <button key={t} className="btn btn-ghost btn-sm" onClick={()=>setFilterActType(t)} style={{
-                  fontWeight:filterActType===t?700:400,
-                  color:filterActType===t?ACTIVITY_CONFIG[t].color:"var(--text-muted)",
-                }}>
-                  {ACTIVITY_CONFIG[t].icon} {ACTIVITY_CONFIG[t].label}
-                </button>
-              ))}
-            </div>
-            <button className="btn btn-outline btn-sm" style={{ marginLeft:"auto" }} onClick={loadActivity}>↻ Actualiser</button>
+          <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1rem" }}>
+            <button className={journauxSubTab==="activite" ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} onClick={()=>setJournauxSubTab("activite")}>📋 Activité</button>
+            <button className={journauxSubTab==="connexions" ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} onClick={()=>setJournauxSubTab("connexions")}>🔌 Connexions</button>
           </div>
 
-          {actLoading ? (
-            <div style={{ color:"var(--text-dim)" }}>Chargement du journal…</div>
-          ) : filteredActivity.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">Aucune entrée</div></div>
-          ) : (
-            <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
-              {filteredActivity.map((item, i) => {
-                const cfg = ACTIVITY_CONFIG[item.type];
-                return (
-                  <div key={i} style={{ display:"flex", gap:"0.875rem", position:"relative", padding:"0.625rem 0", borderBottom:"1px solid var(--border)" }}>
-                    <div style={{ width:30, height:30, borderRadius:"50%", flexShrink:0, background:cfg.color+"18", border:`2px solid ${cfg.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"0.78rem" }}>
-                      {cfg.icon}
-                    </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", flexWrap:"wrap", marginBottom:"0.1rem" }}>
-                        <span style={{ fontSize:"0.62rem", padding:"0.08rem 0.4rem", borderRadius:999, background:cfg.color+"15", color:cfg.color, border:`1px solid ${cfg.color}30`, fontWeight:600 }}>{cfg.label}</span>
-                        <span style={{ fontWeight:600, fontSize:"0.84rem", color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:260 }}>{item.label}</span>
-                        <span style={{ marginLeft:"auto", fontSize:"0.65rem", color:"var(--text-dim)", flexShrink:0, whiteSpace:"nowrap" }}>{timeAgo(item.at)}</span>
+          {journauxSubTab === "activite" ? (
+            <>
+              <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1rem", flexWrap:"wrap", alignItems:"center" }}>
+                <select value={filterActMember} onChange={e=>setFilterActMember(e.target.value)} style={{ maxWidth:200 }}>
+                  <option value="">Tous les membres</option>
+                  {uniqueActMembers.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <div style={{ display:"flex", gap:"0.3rem", flexWrap:"wrap" }}>
+                  <button className="btn btn-ghost btn-sm" onClick={()=>setFilterActType("")} style={{ fontWeight:filterActType===""?700:400 }}>Tous</button>
+                  {(Object.keys(ACTIVITY_CONFIG) as (keyof typeof ACTIVITY_CONFIG)[]).map(t => (
+                    <button key={t} className="btn btn-ghost btn-sm" onClick={()=>setFilterActType(t)} style={{
+                      fontWeight:filterActType===t?700:400,
+                      color:filterActType===t?ACTIVITY_CONFIG[t].color:"var(--text-muted)",
+                    }}>
+                      {ACTIVITY_CONFIG[t].icon} {ACTIVITY_CONFIG[t].label}
+                    </button>
+                  ))}
+                </div>
+                <button className="btn btn-outline btn-sm" style={{ marginLeft:"auto" }} onClick={loadActivity}>↻ Actualiser</button>
+              </div>
+
+              {actLoading ? (
+                <div style={{ color:"var(--text-dim)" }}>Chargement du journal…</div>
+              ) : filteredActivity.length === 0 ? (
+                <div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">Aucune entrée</div></div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+                  {filteredActivity.map((item, i) => {
+                    const cfg = ACTIVITY_CONFIG[item.type];
+                    return (
+                      <div key={i} style={{ display:"flex", gap:"0.875rem", position:"relative", padding:"0.625rem 0", borderBottom:"1px solid var(--border)" }}>
+                        <div style={{ width:30, height:30, borderRadius:"50%", flexShrink:0, background:cfg.color+"18", border:`2px solid ${cfg.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"0.78rem" }}>
+                          {cfg.icon}
+                        </div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", flexWrap:"wrap", marginBottom:"0.1rem" }}>
+                            <span style={{ fontSize:"0.62rem", padding:"0.08rem 0.4rem", borderRadius:999, background:cfg.color+"15", color:cfg.color, border:`1px solid ${cfg.color}30`, fontWeight:600 }}>{cfg.label}</span>
+                            <span style={{ fontWeight:600, fontSize:"0.84rem", color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:260 }}>{item.label}</span>
+                            <span style={{ marginLeft:"auto", fontSize:"0.65rem", color:"var(--text-dim)", flexShrink:0, whiteSpace:"nowrap" }}>{timeAgo(item.at)}</span>
+                          </div>
+                          <div style={{ fontSize:"0.75rem", color:"var(--text-dim)" }}>{item.detail}</div>
+                          <div style={{ fontSize:"0.65rem", color:"var(--text-dim)", marginTop:"0.1rem" }}>par {item.by}</div>
+                        </div>
                       </div>
-                      <div style={{ fontSize:"0.75rem", color:"var(--text-dim)" }}>{item.detail}</div>
-                      <div style={{ fontSize:"0.65rem", color:"var(--text-dim)", marginTop:"0.1rem" }}>par {item.by}</div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:"0.75rem" }}>
+                <button className="btn btn-outline btn-sm" onClick={loadSessionLog}>↻ Actualiser</button>
+              </div>
+              {sessionLogLoading ? (
+                <div style={{ color:"var(--text-dim)" }}>Chargement…</div>
+              ) : sessionLog.length === 0 ? (
+                <div className="empty-state"><div className="empty-icon">🔌</div><div className="empty-title">Aucune connexion enregistrée</div></div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+                  {sessionLog.map(item => (
+                    <div key={item.id} style={{ display:"flex", alignItems:"center", gap:"0.75rem", padding:"0.55rem 0", borderBottom:"1px solid var(--border)" }}>
+                      <span style={{ fontSize:"0.9rem" }}>{item.event === "connect" ? "🟢" : "🔴"}</span>
+                      <span style={{ fontWeight:600, fontSize:"0.82rem", flex:1 }}>{item.discord_name || item.discord_id}</span>
+                      <span style={{ fontSize:"0.72rem", color: item.event === "connect" ? "var(--success)" : "var(--text-dim)" }}>
+                        {item.event === "connect" ? "Connexion" : "Déconnexion"}
+                      </span>
+                      <span style={{ fontSize:"0.68rem", color:"var(--text-dim)", minWidth:90, textAlign:"right" }}>{timeAgo(item.created_at)}</span>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       ) : activeTab === "site" ? (
@@ -553,6 +713,18 @@ export default function AdminPage() {
                 </select>
               </div>
               {createError&&<div style={{ background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius)",padding:"0.75rem",fontSize:"0.84rem",color:"var(--danger)" }}>⚠️ {createError}</div>}</Modal>
+      )}
+
+      {showBanForm && (
+        <Modal title={<>🚫 Bannir {banForm.nom || banForm.discord_id}</>} onClose={()=>setShowBanForm(false)} footer={<>
+              <button className="btn btn-outline" onClick={()=>setShowBanForm(false)}>Annuler</button>
+              <button className="btn btn-gold" style={{ background:"var(--danger)" }} onClick={confirmBan} disabled={banningId===banForm.discord_id}>{banningId===banForm.discord_id?"…":"Confirmer le bannissement"}</button></>}>
+              <p style={{ fontSize:"0.8rem", color:"var(--text-dim)", marginBottom:"0.875rem" }}>
+                Le membre sera immédiatement redirigé vers une page de bannissement à sa prochaine navigation, et ne pourra plus accéder au site tant que le bannissement n'est pas levé.
+              </p>
+              <div className="form-group"><label>ID Discord</label><input value={banForm.discord_id} disabled style={{ fontFamily:"var(--font-mono)", opacity:0.7 }}/></div>
+              <div className="form-group" style={{ marginBottom:0 }}><label>Motif</label><textarea rows={3} autoFocus value={banForm.motif} onChange={e=>setBanForm(f=>({...f,motif:e.target.value}))} placeholder="Ex : comportement toxique, triche…"/></div>
+        </Modal>
       )}
 
       <UndoToast pending={pendingUndo} onUndo={undoDelete} />

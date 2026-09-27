@@ -23,6 +23,12 @@ export default withAuth(
     const token = (req as any).nextauth?.token;
     const pathname = req.nextUrl.pathname;
 
+    // Un membre banni est redirigé vers /banni, quelle que soit la page demandée
+    // (sauf /banni elle-même, pour ne pas boucler).
+    if (token?.banned && pathname !== "/banni") {
+      return NextResponse.redirect(new URL("/banni", req.url));
+    }
+
     if (ADMIN_ONLY_PATHS.some(p => pathname.startsWith(p))) {
       const perms: string[] = token?.permissions || [];
       const role = token?.site_role as string | undefined;
@@ -47,6 +53,6 @@ export const config = {
     // On exclut TOUT /api/* : les routes API gèrent déjà leur propre vérification
     // (requirePermission côté serveur) et doivent répondre en JSON, jamais être
     // redirigées vers /login par le middleware (ça cassait fetch() en boucle).
-    "/((?!login|api|_next/static|_next/image|favicon.ico|logo.png).*)",
+    "/((?!login|banni|api|_next/static|_next/image|favicon.ico|logo.png).*)",
   ],
 };
