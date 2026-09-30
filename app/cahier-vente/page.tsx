@@ -161,13 +161,27 @@ export default function CahierVentePage() {
     setSaving(false);
   }
 
-  function deleteTransaction(id: string) {
+  // ⚠️ La vraie suppression (appel Supabase) se fait IMMÉDIATEMENT, pas après le
+  // délai du toast "Annuler" : un refresh pendant les 5s du toast tuerait le
+  // setTimeout avant son exécution, donc la transaction ne serait jamais réellement
+  // supprimée en base et réapparaîtrait au rechargement. Le toast ne sert plus qu'à
+  // proposer de RECRÉER la transaction (nouvel id) si on clique "Annuler" à temps.
+  async function deleteTransaction(id: string) {
     const tx = transactions.find(t => t.id === id);
     if (!tx || !supabase) return;
     setTransactions(ts => ts.filter(t => t.id !== id));
-    scheduleDelete(`Transaction "${tx.produit_nom || tx.motif}" supprimée`, async () => {
-      await supabase!.from("cahier_transactions").delete().eq("id", id);
-    }, () => setTransactions(ts => [tx, ...ts]));
+
+    const { error } = await supabase.from("cahier_transactions").delete().eq("id", id);
+    if (error) {
+      setTransactions(ts => [tx, ...ts]);
+      return;
+    }
+
+    scheduleDelete(`Transaction "${tx.produit_nom || tx.motif}" supprimée`, async () => {}, async () => {
+      const { id: _id, ...rest } = tx;
+      const { data } = await supabase!.from("cahier_transactions").insert([rest]).select().single();
+      if (data) setTransactions(ts => [data, ...ts]);
+    });
   }
 
   async function saveProduit() {
@@ -190,13 +204,27 @@ export default function CahierVentePage() {
     showToast("Produit mis à jour");
   }
 
-  function deleteProduit(id: string) {
+  // ⚠️ La vraie suppression (appel Supabase) se fait IMMÉDIATEMENT, pas après le
+  // délai du toast "Annuler" : un refresh pendant les 5s du toast tuerait le
+  // setTimeout avant son exécution, donc le produit ne serait jamais réellement
+  // supprimé en base et réapparaîtrait au rechargement. Le toast ne sert plus qu'à
+  // proposer de RECRÉER le produit (nouvel id) si on clique "Annuler" à temps.
+  async function deleteProduit(id: string) {
     const p = produits.find(x => x.id === id);
     if (!p || !supabase) return;
     setProduits(ps => ps.filter(x => x.id !== id));
-    scheduleDelete(`Produit "${p.nom}" supprimé`, async () => {
-      await supabase!.from("cahier_produits").delete().eq("id", id);
-    }, () => setProduits(ps => [...ps, p]));
+
+    const { error } = await supabase.from("cahier_produits").delete().eq("id", id);
+    if (error) {
+      setProduits(ps => [...ps, p]);
+      return;
+    }
+
+    scheduleDelete(`Produit "${p.nom}" supprimé`, async () => {}, async () => {
+      const { id: _id, ...rest } = p;
+      const { data } = await supabase!.from("cahier_produits").insert([rest]).select().single();
+      if (data) setProduits(ps => [...ps, data]);
+    });
   }
 
   const uniqueMembers = [...new Set(transactions.map(t => t.created_by))].filter(Boolean);

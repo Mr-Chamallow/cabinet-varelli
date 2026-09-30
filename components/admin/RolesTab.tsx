@@ -87,17 +87,31 @@ export function RolesTab() {
     await refresh(); setSavingRole(false);
   }
 
-  function deleteRole(id: string) {
+  // ⚠️ La vraie suppression (appel API) se fait IMMÉDIATEMENT, pas après le délai
+  // du toast "Annuler" : un refresh pendant les 5s du toast tuerait le setTimeout
+  // avant son exécution, donc le rôle ne serait jamais réellement supprimé côté
+  // serveur et réapparaîtrait au rechargement. Le toast ne sert plus qu'à proposer
+  // de RECRÉER le rôle (nouvel id) si on clique "Annuler" à temps.
+  async function deleteRole(id: string) {
     const role = roles.find(r => r.id === id);
     if (!role) return;
     setRoles(list => list.filter(r => r.id !== id));
     setFetchError("");
-    scheduleDelete(`Rôle "${role.nom}" supprimé`, async () => {
-      const r = await apiRequest("/api/admin/roles", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-      if (!r.ok) setFetchError(`Impossible de supprimer le rôle : ${r.error}`);
-    }, async () => {
+
+    const r = await apiRequest("/api/admin/roles", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    if (!r.ok) {
+      setFetchError(`Impossible de supprimer le rôle : ${r.error}`);
       setRoles(list => [...list, role]);
-      await apiRequest("/api/admin/roles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(role) });
+      return;
+    }
+
+    scheduleDelete(`Rôle "${role.nom}" supprimé`, async () => {}, async () => {
+      const created = await apiRequest("/api/admin/roles", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nom: role.nom, permissions: role.permissions, couleur: role.couleur }),
+      });
+      await refresh();
+      if (!created.ok) setFetchError(`Impossible de restaurer le rôle : ${created.error}`);
     });
   }
 

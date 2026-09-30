@@ -186,14 +186,33 @@ async function saveOperation() {
   fetchOperations();
 }
 
-  function deleteOperation(id: string) {
+  // ⚠️ La vraie suppression (appel Supabase) se fait IMMÉDIATEMENT, pas après le
+  // délai du toast "Annuler" : un refresh pendant les 5s du toast tuerait le
+  // setTimeout avant son exécution, donc l'opération ne serait jamais réellement
+  // supprimée en base et réapparaîtrait au rechargement. Le toast ne sert plus qu'à
+  // proposer de RECRÉER l'opération (nouvel id) si on clique "Annuler" à temps.
+  async function deleteOperation(id: string) {
     const op = operations.find(o => o.id === id);
     if (!op || !supabase) return;
     setOperations(ops => ops.filter(o => o.id !== id));
-    scheduleDelete(`"${op.titre}" supprimée`, async () => {
-      await supabase!.from("obsidian_rdv").delete().eq("id", id);
-      notifyDiscordDelete("rdv", op.discord_message_id, buildRdvEmbed(op));
-    }, () => setOperations(ops => [...ops, op]));
+
+    const { error } = await supabase.from("obsidian_rdv").delete().eq("id", id);
+    if (error) {
+      setOperations(ops => [...ops, op]);
+      return;
+    }
+    notifyDiscordDelete("rdv", op.discord_message_id, buildRdvEmbed(op));
+
+    scheduleDelete(`"${op.titre}" supprimée`, async () => {}, async () => {
+      const { id: _id, created_at: _ca, discord_message_id: _dmid, ...rest } = op;
+      const { data } = await supabase!.from("obsidian_rdv").insert([rest]).select().single();
+      if (data) {
+        setOperations(ops => [...ops, data]);
+        notifyDiscordCreate("rdv", buildRdvEmbed(data)).then(msgId => {
+          if (msgId && supabase) supabase.from("obsidian_rdv").update({ discord_message_id: msgId }).eq("id", data.id).then();
+        });
+      }
+    });
   }
 
   function openCreate(date?: string) {

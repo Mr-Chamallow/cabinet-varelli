@@ -150,25 +150,23 @@ const S: Record<string, CSSProperties> = {
   mapCol: { position: 'relative', flex: 1, height: '100%', width: '100%', overflow: 'hidden' },
   toolbar: {
     position: 'absolute',
-    top: 12,
+    top: 16,
     left: '50%',
     transform: 'translateX(-50%)',
     zIndex: 500,
     display: 'inline-flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 8,
-    padding: '8px 12px',
-    borderRadius: 12,
+    gap: 10,
+    padding: '12px 16px',
+    borderRadius: 16,
     width: 'max-content',
     maxWidth: 'min(880px, calc(100% - 32px))',
-    background: 'linear-gradient(180deg, rgba(17,24,38,0.72), rgba(11,15,24,0.72))',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
-    border: `1px solid ${colors.border}`,
-    boxShadow: '0 4px 16px rgba(0,0,0,0.28)',
-    opacity: 0.94,
-    transition: 'opacity 0.15s, box-shadow 0.15s',
+    background: 'linear-gradient(180deg, rgba(17,24,38,0.92), rgba(11,15,24,0.92))',
+    backdropFilter: 'blur(14px)',
+    WebkitBackdropFilter: 'blur(14px)',
+    border: `1px solid ${colors.borderLight}`,
+    boxShadow: '0 10px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
   },
   toolbarRow: {
     display: 'flex',
@@ -198,16 +196,16 @@ const S: Record<string, CSSProperties> = {
   },
   btn: {
     pointerEvents: 'auto',
-    borderRadius: 8,
-    padding: '6px 13px',
-    fontSize: 12.5,
-    fontWeight: 600,
+    borderRadius: 9,
+    padding: '8px 16px',
+    fontSize: 13,
+    fontWeight: 700,
     background: `linear-gradient(180deg, ${colors.amberDark}, ${colors.amber})`,
     color: '#1a1206',
     border: 'none',
     cursor: 'pointer',
     letterSpacing: '0.01em',
-    boxShadow: '0 1px 4px rgba(245,158,11,0.18)',
+    boxShadow: '0 2px 8px rgba(245,158,11,0.25)',
     transition: 'filter 0.15s, transform 0.1s',
     whiteSpace: 'nowrap',
   },
@@ -634,27 +632,7 @@ export default function MapCanvas({
       [-TILE_SIZE - CAYO_SIZE, TILE_SIZE],
       [-TILE_SIZE, TILE_SIZE + CAYO_SIZE],
     ];
-    L.imageOverlay(CAYO_IMAGE_URL, cayoBounds, {
-      opacity: 1,
-      className: 'map-extension-overlay',
-    }).addTo(map);
-
-    // Étiquette au-dessus de la vignette Cayo Perico
-    L.marker([-TILE_SIZE - 4, TILE_SIZE + CAYO_SIZE / 2], {
-      icon: L.divIcon({
-        className: '',
-        html: `<div style="
-          display:flex; align-items:center; gap:6px;
-          background:${colors.panel}; border:1px solid ${colors.amber};
-          color:#fff; font:600 11px system-ui,sans-serif;
-          padding:3px 10px; border-radius:999px; white-space:nowrap;
-          box-shadow:0 2px 8px rgba(0,0,0,.4); transform:translate(-50%,-100%);
-        ">🌴 Cayo Perico</div>`,
-        iconSize: [0, 0],
-      }),
-      interactive: false,
-      keyboard: false,
-    }).addTo(map);
+    L.imageOverlay(CAYO_IMAGE_URL, cayoBounds, { opacity: 1 }).addTo(map);
 
     const layerGroup = (L as any).markerClusterGroup({
       maxClusterRadius: 45,
@@ -920,6 +898,11 @@ export default function MapCanvas({
     setEditing(null);
   };
 
+  // ⚠️ La vraie suppression (appel Supabase) se fait IMMÉDIATEMENT, pas après le
+  // délai du toast "Annuler" : avant ce fix, un refresh pendant les 5s du toast
+  // tuait le setTimeout avant qu'il ne s'exécute, donc le point n'était jamais
+  // réellement supprimé en base et réapparaissait au rechargement. Le toast ne sert
+  // plus qu'à proposer de RECRÉER le point (nouvel id) si on clique "Annuler" à temps.
   const removePoint = async (id: string) => {
     const point = points.find((p) => p.id === id);
     const dossier = dossiers[id];
@@ -931,14 +914,32 @@ export default function MapCanvas({
     });
     setEditing(null);
     if (selectedId === id) setSelectedId(null);
+
+    try {
+      await deletePoint(id);
+    } catch (err) {
+      console.error(err);
+      // Échec réel de la suppression (réseau, permissions…) : on restaure tout de
+      // suite, pas de faux "Annuler" sur quelque chose qui n'a jamais été supprimé.
+      setPoints((p) => [...p, point]);
+      if (dossier) setDossiers((d) => ({ ...d, [id]: dossier }));
+      return;
+    }
+
     scheduleDelete(
       `"${point.title}" supprimé`,
+      () => {}, // déjà supprimé en base au-dessus, rien à confirmer après le délai
       async () => {
-        try { await deletePoint(id); } catch (err) { console.error(err); }
-      },
-      () => {
-        setPoints((p) => [...p, point]);
-        if (dossier) setDossiers((d) => ({ ...d, [id]: dossier }));
+        try {
+          const { id: _oldId, created_at: _ca, ...rest } = point;
+          const recreated = await createPoint(rest);
+          setPoints((p) => [...p, recreated]);
+          if (dossier) {
+            const newDossier = { ...dossier, point_id: recreated.id };
+            await upsertDossier(newDossier);
+            setDossiers((d) => ({ ...d, [recreated.id]: newDossier }));
+          }
+        } catch (err) { console.error(err); }
       },
     );
   };

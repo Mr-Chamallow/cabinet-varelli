@@ -235,14 +235,24 @@ export default function AdminPage() {
     setCreatingOverride(false);
   }
 
-  function deleteOverride(discordId: string) {
+  // ⚠️ La vraie suppression (appel API) se fait IMMÉDIATEMENT, pas après le délai
+  // du toast "Annuler" : un refresh pendant les 5s du toast tuerait le setTimeout
+  // avant son exécution, donc l'override ne serait jamais réellement supprimé côté
+  // serveur et réapparaîtrait au rechargement. Le toast ne sert plus qu'à proposer
+  // de RECRÉER l'override si on clique "Annuler" à temps.
+  async function deleteOverride(discordId: string) {
     const ov = overrides.find(o => o.discord_id === discordId);
     if (!ov) return;
     setOverrides(list => list.filter(o => o.discord_id !== discordId));
-    scheduleDelete(`Override de "${ov.nom || discordId}" retiré`, async () => {
-      const r = await apiRequest("/api/admin/overrides", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
-      if (!r.ok) setFetchError(`Impossible de retirer l'override : ${r.error}`);
-    }, async () => {
+
+    const r = await apiRequest("/api/admin/overrides", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
+    if (!r.ok) {
+      setFetchError(`Impossible de retirer l'override : ${r.error}`);
+      setOverrides(list => [...list, ov]);
+      return;
+    }
+
+    scheduleDelete(`Override de "${ov.nom || discordId}" retiré`, async () => {}, async () => {
       setOverrides(list => [...list, ov]);
       await apiRequest("/api/admin/overrides", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(ov) });
     });

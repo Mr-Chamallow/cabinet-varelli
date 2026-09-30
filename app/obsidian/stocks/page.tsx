@@ -55,14 +55,28 @@ export default function StocksPage(){
     setStocks(s=>s.map(x=>x.id===stock.id?data.stock:x));
     setMouvements(m=>[{id:Date.now().toString(),stock_nom:stock.nom,type:mvtForm.type,quantite:mvtForm.quantite,motif:mvtForm.motif,membre:mvtForm.membre||user?.nom||"",created_at:new Date().toISOString()},...m]);
     setShowMvt(null);setMvtForm({stock_id:"",type:"sortie",quantite:1,motif:"",membre:""});showToast(`${mvtForm.type==="entrée"?"Entrée":"Sortie"} enregistrée`);setSaving(false);}
+  // ⚠️ La vraie suppression (appel API) se fait IMMÉDIATEMENT, pas après le délai
+  // du toast "Annuler" : un refresh pendant les 5s du toast tuerait le setTimeout
+  // avant son exécution, donc le stock ne serait jamais réellement supprimé côté
+  // serveur et réapparaîtrait au rechargement. Le toast ne sert plus qu'à proposer
+  // de RECRÉER le stock (nouvel id) si on clique "Annuler" à temps.
   async function deleteStock(id:string){
     const item = stocks.find(s=>s.id===id);
     if (!item) return;
     setStocks(s=>s.filter(x=>x.id!==id));
-    scheduleDelete(`"${item.nom}" supprimé`, async () => {
-      const res = await fetch("/api/obsidian/stocks", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-      if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); }
-    }, () => setStocks(s=>[...s, item]));
+
+    const res = await fetch("/api/obsidian/stocks", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    if (!res.ok) {
+      const data = await res.json(); alert("❌ "+data.error);
+      setStocks(s=>[...s, item]);
+      return;
+    }
+
+    scheduleDelete(`"${item.nom}" supprimé`, async () => {}, async () => {
+      const { id: _id, ...rest } = item;
+      const r = await fetch("/api/obsidian/stocks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rest) });
+      if (r.ok) { const recreated = await r.json(); setStocks(s=>[...s, recreated]); }
+    });
   }
   const filtered=stocks.filter(s=>!filterCat||s.categorie===filterCat);
   const alerts=stocks.filter(s=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte);

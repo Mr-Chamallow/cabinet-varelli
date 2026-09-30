@@ -1,0 +1,256 @@
+diff --git app/admin/page.tsx app/admin/page.tsx
+--- app/admin/page.tsx
++++ app/admin/page.tsx
+@@ -235,14 +235,24 @@
+     setCreatingOverride(false);
+   }
+ 
+-  function deleteOverride(discordId: string) {
++  // ⚠️ La vraie suppression (appel API) se fait IMMÉDIATEMENT, pas après le délai
++  // du toast "Annuler" : un refresh pendant les 5s du toast tuerait le setTimeout
++  // avant son exécution, donc l'override ne serait jamais réellement supprimé côté
++  // serveur et réapparaîtrait au rechargement. Le toast ne sert plus qu'à proposer
++  // de RECRÉER l'override si on clique "Annuler" à temps.
++  async function deleteOverride(discordId: string) {
+     const ov = overrides.find(o => o.discord_id === discordId);
+     if (!ov) return;
+     setOverrides(list => list.filter(o => o.discord_id !== discordId));
+-    scheduleDelete(`Override de "${ov.nom || discordId}" retiré`, async () => {
+-      const r = await apiRequest("/api/admin/overrides", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
+-      if (!r.ok) setFetchError(`Impossible de retirer l'override : ${r.error}`);
+-    }, async () => {
++
++    const r = await apiRequest("/api/admin/overrides", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
++    if (!r.ok) {
++      setFetchError(`Impossible de retirer l'override : ${r.error}`);
++      setOverrides(list => [...list, ov]);
++      return;
++    }
++
++    scheduleDelete(`Override de "${ov.nom || discordId}" retiré`, async () => {}, async () => {
+       setOverrides(list => [...list, ov]);
+       await apiRequest("/api/admin/overrides", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(ov) });
+     });
+diff --git app/cahier-vente/page.tsx app/cahier-vente/page.tsx
+--- app/cahier-vente/page.tsx
++++ app/cahier-vente/page.tsx
+@@ -161,13 +161,27 @@
+     setSaving(false);
+   }
+ 
+-  function deleteTransaction(id: string) {
++  // ⚠️ La vraie suppression (appel Supabase) se fait IMMÉDIATEMENT, pas après le
++  // délai du toast "Annuler" : un refresh pendant les 5s du toast tuerait le
++  // setTimeout avant son exécution, donc la transaction ne serait jamais réellement
++  // supprimée en base et réapparaîtrait au rechargement. Le toast ne sert plus qu'à
++  // proposer de RECRÉER la transaction (nouvel id) si on clique "Annuler" à temps.
++  async function deleteTransaction(id: string) {
+     const tx = transactions.find(t => t.id === id);
+     if (!tx || !supabase) return;
+     setTransactions(ts => ts.filter(t => t.id !== id));
+-    scheduleDelete(`Transaction "${tx.produit_nom || tx.motif}" supprimée`, async () => {
+-      await supabase!.from("cahier_transactions").delete().eq("id", id);
+-    }, () => setTransactions(ts => [tx, ...ts]));
++
++    const { error } = await supabase.from("cahier_transactions").delete().eq("id", id);
++    if (error) {
++      setTransactions(ts => [tx, ...ts]);
++      return;
++    }
++
++    scheduleDelete(`Transaction "${tx.produit_nom || tx.motif}" supprimée`, async () => {}, async () => {
++      const { id: _id, ...rest } = tx;
++      const { data } = await supabase!.from("cahier_transactions").insert([rest]).select().single();
++      if (data) setTransactions(ts => [data, ...ts]);
++    });
+   }
+ 
+   async function saveProduit() {
+@@ -190,13 +204,27 @@
+     showToast("Produit mis à jour");
+   }
+ 
+-  function deleteProduit(id: string) {
++  // ⚠️ La vraie suppression (appel Supabase) se fait IMMÉDIATEMENT, pas après le
++  // délai du toast "Annuler" : un refresh pendant les 5s du toast tuerait le
++  // setTimeout avant son exécution, donc le produit ne serait jamais réellement
++  // supprimé en base et réapparaîtrait au rechargement. Le toast ne sert plus qu'à
++  // proposer de RECRÉER le produit (nouvel id) si on clique "Annuler" à temps.
++  async function deleteProduit(id: string) {
+     const p = produits.find(x => x.id === id);
+     if (!p || !supabase) return;
+     setProduits(ps => ps.filter(x => x.id !== id));
+-    scheduleDelete(`Produit "${p.nom}" supprimé`, async () => {
+-      await supabase!.from("cahier_produits").delete().eq("id", id);
+-    }, () => setProduits(ps => [...ps, p]));
++
++    const { error } = await supabase.from("cahier_produits").delete().eq("id", id);
++    if (error) {
++      setProduits(ps => [...ps, p]);
++      return;
++    }
++
++    scheduleDelete(`Produit "${p.nom}" supprimé`, async () => {}, async () => {
++      const { id: _id, ...rest } = p;
++      const { data } = await supabase!.from("cahier_produits").insert([rest]).select().single();
++      if (data) setProduits(ps => [...ps, data]);
++    });
+   }
+ 
+   const uniqueMembers = [...new Set(transactions.map(t => t.created_by))].filter(Boolean);
+diff --git app/obsidian/employes/page.tsx app/obsidian/employes/page.tsx
+--- app/obsidian/employes/page.tsx
++++ app/obsidian/employes/page.tsx
+@@ -65,14 +65,28 @@
+     load();
+   }
+ 
+-  function remove(id: string) {
++  // ⚠️ La vraie suppression (appel API) se fait IMMÉDIATEMENT, pas après le délai
++  // du toast "Annuler" : un refresh pendant les 5s du toast tuerait le setTimeout
++  // avant son exécution, donc l'employé ne serait jamais réellement supprimé côté
++  // serveur et réapparaîtrait au rechargement. Le toast ne sert plus qu'à proposer
++  // de RECRÉER l'employé (nouvel id) si on clique "Annuler" à temps.
++  async function remove(id: string) {
+     const emp = employes.find((e) => e.id === id);
+     if (!emp) return;
+     setEmployes((list) => list.filter((e) => e.id !== id));
+-    scheduleDelete(`"${emp.nom}" supprimé`, async () => {
+-      const res = await fetch("/api/obsidian/employes", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+-      if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); }
+-    }, () => setEmployes((list) => [...list, emp]));
++
++    const res = await fetch("/api/obsidian/employes", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
++    if (!res.ok) {
++      const data = await res.json(); alert("❌ "+data.error);
++      setEmployes((list) => [...list, emp]);
++      return;
++    }
++
++    scheduleDelete(`"${emp.nom}" supprimé`, async () => {}, async () => {
++      const { id: _id, created_at: _ca, ...rest } = emp;
++      const r = await fetch("/api/obsidian/employes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rest) });
++      if (r.ok) { const recreated = await r.json(); setEmployes((list) => [...list, recreated]); }
++    });
+   }
+ 
+   const visibles = employes.filter(e => showInactifs ? true : e.actif !== false);
+diff --git app/obsidian/rdv/page.tsx app/obsidian/rdv/page.tsx
+--- app/obsidian/rdv/page.tsx
++++ app/obsidian/rdv/page.tsx
+@@ -186,14 +186,33 @@
+   fetchOperations();
+ }
+ 
+-  function deleteOperation(id: string) {
++  // ⚠️ La vraie suppression (appel Supabase) se fait IMMÉDIATEMENT, pas après le
++  // délai du toast "Annuler" : un refresh pendant les 5s du toast tuerait le
++  // setTimeout avant son exécution, donc l'opération ne serait jamais réellement
++  // supprimée en base et réapparaîtrait au rechargement. Le toast ne sert plus qu'à
++  // proposer de RECRÉER l'opération (nouvel id) si on clique "Annuler" à temps.
++  async function deleteOperation(id: string) {
+     const op = operations.find(o => o.id === id);
+     if (!op || !supabase) return;
+     setOperations(ops => ops.filter(o => o.id !== id));
+-    scheduleDelete(`"${op.titre}" supprimée`, async () => {
+-      await supabase!.from("obsidian_rdv").delete().eq("id", id);
+-      notifyDiscordDelete("rdv", op.discord_message_id, buildRdvEmbed(op));
+-    }, () => setOperations(ops => [...ops, op]));
++
++    const { error } = await supabase.from("obsidian_rdv").delete().eq("id", id);
++    if (error) {
++      setOperations(ops => [...ops, op]);
++      return;
++    }
++    notifyDiscordDelete("rdv", op.discord_message_id, buildRdvEmbed(op));
++
++    scheduleDelete(`"${op.titre}" supprimée`, async () => {}, async () => {
++      const { id: _id, created_at: _ca, discord_message_id: _dmid, ...rest } = op;
++      const { data } = await supabase!.from("obsidian_rdv").insert([rest]).select().single();
++      if (data) {
++        setOperations(ops => [...ops, data]);
++        notifyDiscordCreate("rdv", buildRdvEmbed(data)).then(msgId => {
++          if (msgId && supabase) supabase.from("obsidian_rdv").update({ discord_message_id: msgId }).eq("id", data.id).then();
++        });
++      }
++    });
+   }
+ 
+   function openCreate(date?: string) {
+diff --git app/obsidian/stocks/page.tsx app/obsidian/stocks/page.tsx
+--- app/obsidian/stocks/page.tsx
++++ app/obsidian/stocks/page.tsx
+@@ -55,14 +55,28 @@
+     setStocks(s=>s.map(x=>x.id===stock.id?data.stock:x));
+     setMouvements(m=>[{id:Date.now().toString(),stock_nom:stock.nom,type:mvtForm.type,quantite:mvtForm.quantite,motif:mvtForm.motif,membre:mvtForm.membre||user?.nom||"",created_at:new Date().toISOString()},...m]);
+     setShowMvt(null);setMvtForm({stock_id:"",type:"sortie",quantite:1,motif:"",membre:""});showToast(`${mvtForm.type==="entrée"?"Entrée":"Sortie"} enregistrée`);setSaving(false);}
++  // ⚠️ La vraie suppression (appel API) se fait IMMÉDIATEMENT, pas après le délai
++  // du toast "Annuler" : un refresh pendant les 5s du toast tuerait le setTimeout
++  // avant son exécution, donc le stock ne serait jamais réellement supprimé côté
++  // serveur et réapparaîtrait au rechargement. Le toast ne sert plus qu'à proposer
++  // de RECRÉER le stock (nouvel id) si on clique "Annuler" à temps.
+   async function deleteStock(id:string){
+     const item = stocks.find(s=>s.id===id);
+     if (!item) return;
+     setStocks(s=>s.filter(x=>x.id!==id));
+-    scheduleDelete(`"${item.nom}" supprimé`, async () => {
+-      const res = await fetch("/api/obsidian/stocks", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+-      if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); }
+-    }, () => setStocks(s=>[...s, item]));
++
++    const res = await fetch("/api/obsidian/stocks", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
++    if (!res.ok) {
++      const data = await res.json(); alert("❌ "+data.error);
++      setStocks(s=>[...s, item]);
++      return;
++    }
++
++    scheduleDelete(`"${item.nom}" supprimé`, async () => {}, async () => {
++      const { id: _id, ...rest } = item;
++      const r = await fetch("/api/obsidian/stocks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rest) });
++      if (r.ok) { const recreated = await r.json(); setStocks(s=>[...s, recreated]); }
++    });
+   }
+   const filtered=stocks.filter(s=>!filterCat||s.categorie===filterCat);
+   const alerts=stocks.filter(s=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte);
+diff --git components/admin/RolesTab.tsx components/admin/RolesTab.tsx
+--- components/admin/RolesTab.tsx
++++ components/admin/RolesTab.tsx
+@@ -87,17 +87,31 @@
+     await refresh(); setSavingRole(false);
+   }
+ 
+-  function deleteRole(id: string) {
++  // ⚠️ La vraie suppression (appel API) se fait IMMÉDIATEMENT, pas après le délai
++  // du toast "Annuler" : un refresh pendant les 5s du toast tuerait le setTimeout
++  // avant son exécution, donc le rôle ne serait jamais réellement supprimé côté
++  // serveur et réapparaîtrait au rechargement. Le toast ne sert plus qu'à proposer
++  // de RECRÉER le rôle (nouvel id) si on clique "Annuler" à temps.
++  async function deleteRole(id: string) {
+     const role = roles.find(r => r.id === id);
+     if (!role) return;
+     setRoles(list => list.filter(r => r.id !== id));
+     setFetchError("");
+-    scheduleDelete(`Rôle "${role.nom}" supprimé`, async () => {
+-      const r = await apiRequest("/api/admin/roles", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+-      if (!r.ok) setFetchError(`Impossible de supprimer le rôle : ${r.error}`);
+-    }, async () => {
++
++    const r = await apiRequest("/api/admin/roles", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
++    if (!r.ok) {
++      setFetchError(`Impossible de supprimer le rôle : ${r.error}`);
+       setRoles(list => [...list, role]);
+-      await apiRequest("/api/admin/roles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(role) });
++      return;
++    }
++
++    scheduleDelete(`Rôle "${role.nom}" supprimé`, async () => {}, async () => {
++      const created = await apiRequest("/api/admin/roles", {
++        method: "POST", headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ nom: role.nom, permissions: role.permissions, couleur: role.couleur }),
++      });
++      await refresh();
++      if (!created.ok) setFetchError(`Impossible de restaurer le rôle : ${created.error}`);
+     });
+   }
+ 

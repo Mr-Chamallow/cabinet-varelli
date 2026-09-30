@@ -65,14 +65,28 @@ export default function EmployesObsidianPage() {
     load();
   }
 
-  function remove(id: string) {
+  // ⚠️ La vraie suppression (appel API) se fait IMMÉDIATEMENT, pas après le délai
+  // du toast "Annuler" : un refresh pendant les 5s du toast tuerait le setTimeout
+  // avant son exécution, donc l'employé ne serait jamais réellement supprimé côté
+  // serveur et réapparaîtrait au rechargement. Le toast ne sert plus qu'à proposer
+  // de RECRÉER l'employé (nouvel id) si on clique "Annuler" à temps.
+  async function remove(id: string) {
     const emp = employes.find((e) => e.id === id);
     if (!emp) return;
     setEmployes((list) => list.filter((e) => e.id !== id));
-    scheduleDelete(`"${emp.nom}" supprimé`, async () => {
-      const res = await fetch("/api/obsidian/employes", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-      if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); }
-    }, () => setEmployes((list) => [...list, emp]));
+
+    const res = await fetch("/api/obsidian/employes", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    if (!res.ok) {
+      const data = await res.json(); alert("❌ "+data.error);
+      setEmployes((list) => [...list, emp]);
+      return;
+    }
+
+    scheduleDelete(`"${emp.nom}" supprimé`, async () => {}, async () => {
+      const { id: _id, created_at: _ca, ...rest } = emp;
+      const r = await fetch("/api/obsidian/employes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rest) });
+      if (r.ok) { const recreated = await r.json(); setEmployes((list) => [...list, recreated]); }
+    });
   }
 
   const visibles = employes.filter(e => showInactifs ? true : e.actif !== false);
