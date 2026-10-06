@@ -129,15 +129,29 @@ export const authOptions: NextAuthOptions = {
     // scope refusé / erreur API) au lieu d'un simple true/false opaque, pour que
     // /login affiche un message précis et qu'on n'ait plus à deviner.
     async signIn({ account, profile }) {
-      if (!account?.access_token) return "/login?error=AccessDenied";
-      if (account.providerAccountId === ADMIN_DISCORD_ID) return true;
-      const { inGuild, failReason } = await fetchGuildMembership(account.access_token);
-      if (inGuild) return true;
+      // Tout est enveloppé dans un try/catch : avant ce fix, une exception imprévue
+      // ici (fetch qui throw, etc.) remontait tout droit à NextAuth, qui affichait
+      // juste "Connexion refusée. Réessaie." SANS rien logguer dans
+      // site_login_failures — impossible de savoir pourquoi. Maintenant la vraie
+      // erreur est toujours enregistrée, visible dans Admin > Journaux > 🚫 Refusées.
       const discordName = (profile as any)?.username || "Inconnu";
-      await logFailedLogin(account.providerAccountId, discordName, failReason || "api_error");
-      if (failReason === "missing_scope") return "/login?error=MissingScope";
-      if (failReason === "not_member") return "/login?error=NotMember";
-      return "/login?error=AccessDenied";
+      try {
+        if (!account?.access_token) {
+          await logFailedLogin("inconnu", discordName, "no_access_token");
+          return "/login?error=AccessDenied";
+        }
+        if (account.providerAccountId === ADMIN_DISCORD_ID) return true;
+        const { inGuild, failReason } = await fetchGuildMembership(account.access_token);
+        if (inGuild) return true;
+        await logFailedLogin(account.providerAccountId, discordName, failReason || "api_error");
+        if (failReason === "missing_scope") return "/login?error=MissingScope";
+        if (failReason === "not_member") return "/login?error=NotMember";
+        return "/login?error=AccessDenied";
+      } catch (err: any) {
+        const reason = `exception: ${err?.message || String(err)}`.slice(0, 500);
+        await logFailedLogin(account?.providerAccountId || "inconnu", discordName, reason);
+        return "/login?error=AccessDenied";
+      }
     },
     async jwt({ token, account, profile }) {
       if (account?.access_token) {

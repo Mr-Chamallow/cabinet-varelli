@@ -49,6 +49,14 @@ interface SessionLogItem {
   created_at: string;
 }
 
+interface LoginFailureItem {
+  id: string;
+  discord_id: string;
+  discord_name: string;
+  reason: string;
+  created_at: string;
+}
+
 // Un membre est considéré "en ligne" si son heartbeat (/api/presence, toutes les
 // 45s pendant qu'il navigue sur le site) date de moins de 90 secondes.
 const ONLINE_THRESHOLD_MS = 90_000;
@@ -98,9 +106,11 @@ export default function AdminPage() {
   const [actLoading, setActLoading] = useState(false);
   const [filterActMember, setFilterActMember] = useState("");
   const [filterActType, setFilterActType] = useState("");
-  const [journauxSubTab, setJournauxSubTab] = useState<"activite" | "connexions">("activite");
+  const [journauxSubTab, setJournauxSubTab] = useState<"activite" | "connexions" | "refusees">("activite");
   const [sessionLog, setSessionLog] = useState<SessionLogItem[]>([]);
   const [sessionLogLoading, setSessionLogLoading] = useState(false);
+  const [loginFailures, setLoginFailures] = useState<LoginFailureItem[]>([]);
+  const [loginFailuresLoading, setLoginFailuresLoading] = useState(false);
 
   // Site (Personnalisation centralisée)
   const [siteSettings, setSiteSettings] = useState<Record<string,string>>({});
@@ -161,6 +171,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab === "journaux" && journauxSubTab === "activite" && activity.length === 0) loadActivity();
     if (activeTab === "journaux" && journauxSubTab === "connexions") loadSessionLog();
+    if (activeTab === "journaux" && journauxSubTab === "refusees") loadLoginFailures();
     if (activeTab === "site" && Object.keys(siteSettings).length === 0) loadSite();
   }, [activeTab, journauxSubTab]);
 
@@ -181,6 +192,17 @@ export default function AdminPage() {
     const { data } = await supabase.from("site_session_log").select("*").order("created_at", { ascending: false }).limit(80);
     setSessionLog(data || []);
     setSessionLogLoading(false);
+  }
+
+  // Connexions BLOQUÉES avant même la création de session (pas membre Discord,
+  // scope refusé, ou exception) — ce que site_session_log ne peut pas montrer,
+  // vu que ce journal-là n'est rempli qu'après une connexion réussie.
+  async function loadLoginFailures() {
+    if (!supabase) return;
+    setLoginFailuresLoading(true);
+    const { data } = await supabase.from("site_login_failures").select("*").order("created_at", { ascending: false }).limit(80);
+    setLoginFailures(data || []);
+    setLoginFailuresLoading(false);
   }
 
   async function loadSite() {
@@ -552,6 +574,7 @@ export default function AdminPage() {
           <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1rem" }}>
             <button className={journauxSubTab==="activite" ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} onClick={()=>setJournauxSubTab("activite")}>📋 Activité</button>
             <button className={journauxSubTab==="connexions" ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} onClick={()=>setJournauxSubTab("connexions")}>🔌 Connexions</button>
+            <button className={journauxSubTab==="refusees" ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} onClick={()=>setJournauxSubTab("refusees")}>🚫 Refusées</button>
           </div>
 
           {journauxSubTab === "activite" ? (
@@ -603,7 +626,7 @@ export default function AdminPage() {
                 </div>
               )}
             </>
-          ) : (
+          ) : journauxSubTab === "connexions" ? (
             <>
               <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:"0.75rem" }}>
                 <button className="btn btn-outline btn-sm" onClick={loadSessionLog}>↻ Actualiser</button>
@@ -620,6 +643,30 @@ export default function AdminPage() {
                       <span style={{ fontWeight:600, fontSize:"0.82rem", flex:1 }}>{item.discord_name || item.discord_id}</span>
                       <span style={{ fontSize:"0.72rem", color: item.event === "connect" ? "var(--success)" : "var(--text-dim)" }}>
                         {item.event === "connect" ? "Connexion" : "Déconnexion"}
+                      </span>
+                      <span style={{ fontSize:"0.68rem", color:"var(--text-dim)", minWidth:90, textAlign:"right" }}>{timeAgo(item.created_at)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:"0.75rem" }}>
+                <button className="btn btn-outline btn-sm" onClick={loadLoginFailures}>↻ Actualiser</button>
+              </div>
+              {loginFailuresLoading ? (
+                <div style={{ color:"var(--text-dim)" }}>Chargement…</div>
+              ) : loginFailures.length === 0 ? (
+                <div className="empty-state"><div className="empty-icon">🚫</div><div className="empty-title">Aucune connexion refusée</div></div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+                  {loginFailures.map(item => (
+                    <div key={item.id} style={{ display:"flex", alignItems:"center", gap:"0.75rem", padding:"0.55rem 0", borderBottom:"1px solid var(--border)" }}>
+                      <span style={{ fontSize:"0.9rem" }}>🚫</span>
+                      <span style={{ fontWeight:600, fontSize:"0.82rem", flex:1 }}>{item.discord_name || item.discord_id}</span>
+                      <span style={{ fontSize:"0.72rem", color:"var(--danger, #ef4444)", maxWidth:280, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={item.reason}>
+                        {item.reason}
                       </span>
                       <span style={{ fontSize:"0.68rem", color:"var(--text-dim)", minWidth:90, textAlign:"right" }}>{timeAgo(item.created_at)}</span>
                     </div>
