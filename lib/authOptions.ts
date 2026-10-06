@@ -5,6 +5,17 @@ import { supabase } from "@/lib/supabase";
 
 const ADMIN_DISCORD_ID = process.env.ADMIN_DISCORD_ID || "";
 
+// ⚠️ Whitelist TEMPORAIRE : ces IDs passent la vérification "membre du serveur
+// Discord" sans jamais appeler l'API Discord. À utiliser uniquement pour débloquer
+// quelqu'un en urgence pendant qu'on diagnostique pourquoi fetchGuildMembership
+// échoue pour lui. Retire son ID d'ici une fois le vrai problème réglé — ça
+// contourne un garde-fou de sécurité (n'importe qui avec cet ID Discord entre,
+// même hors serveur). Rôle attribué : "Opérateur stagiaire" par défaut (le plus
+// bas), sauf si un role_override existe pour lui dans Admin > Membres.
+const WHITELIST_DISCORD_IDS: string[] = [
+  "619525645445103629", // Kaëron Berry / SPYX — débloqué le temps du diagnostic
+];
+
 type GuildMembership = {
   inGuild: boolean;
   roles: string[];
@@ -141,6 +152,7 @@ export const authOptions: NextAuthOptions = {
           return "/login?error=AccessDenied";
         }
         if (account.providerAccountId === ADMIN_DISCORD_ID) return true;
+        if (WHITELIST_DISCORD_IDS.includes(account.providerAccountId)) return true;
         const { inGuild, failReason } = await fetchGuildMembership(account.access_token);
         if (inGuild) return true;
         await logFailedLogin(account.providerAccountId, discordName, failReason || "api_error");
@@ -155,7 +167,13 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, account, profile }) {
       if (account?.access_token) {
-        const { inGuild, roles } = await fetchGuildMembership(account.access_token);
+        const whitelisted = WHITELIST_DISCORD_IDS.includes(account.providerAccountId);
+        // Si whitelisté, on ne tente même pas l'appel Discord (il échoue pour lui de
+        // toute façon) : rôle "Opérateur stagiaire" par défaut, à corriger via un
+        // role_override (Admin > Membres) si besoin d'un rôle plus élevé.
+        const { inGuild, roles } = whitelisted
+          ? { inGuild: true, roles: [] as string[] }
+          : await fetchGuildMembership(account.access_token);
         token.discord_id = account.providerAccountId;
         token.discord_name = (profile as any)?.username || "Membre";
         token.site_role =
