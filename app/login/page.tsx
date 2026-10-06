@@ -53,7 +53,13 @@ function LoginContent() {
         <div style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "2rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
           Accès réservé
         </div>
-        {discordError === "AccessDenied" ? (
+        {discordError === "NotMember" ? (
+          <p style={{ color: "#ef4444", marginBottom: "1rem", maxWidth: 320 }}>Tu dois être membre du serveur Discord pour accéder au site.</p>
+        ) : discordError === "MissingScope" ? (
+          <p style={{ color: "#ef4444", marginBottom: "1rem", maxWidth: 320 }}>
+            Discord n'a pas transmis tes rôles de serveur. Reconnecte-toi et accepte <b>toutes</b> les autorisations demandées (pas juste "identifier").
+          </p>
+        ) : discordError === "AccessDenied" ? (
           <p style={{ color: "#ef4444", marginBottom: "1rem", maxWidth: 320 }}>Tu dois être membre du serveur Discord pour accéder au site.</p>
         ) : discordError ? (
           <p style={{ color: "#ef4444", marginBottom: "1rem" }}>Connexion refusée. Réessaie.</p>

@@ -5,19 +5,46 @@ import { supabase } from "@/lib/supabase";
 
 const ADMIN_DISCORD_ID = process.env.ADMIN_DISCORD_ID || "";
 
+type GuildMembership = {
+  inGuild: boolean;
+  roles: string[];
+  // Pourquoi ce n'est pas un membre valide, quand inGuild = false :
+  // 'not_member'    -> Discord répond 404 : le compte n'est juste pas sur le serveur.
+  // 'missing_scope' -> Discord répond 401/403 : le scope guilds.members.read n'a
+  //                     pas été accordé à l'écran d'autorisation (case décochée).
+  // 'api_error'      -> autre code/erreur réseau.
+  failReason?: "not_member" | "missing_scope" | "api_error";
+};
+
 // ⚠️ Distingue "pas membre du serveur Discord" (inGuild: false) de "membre mais
 // aucun des rôles suivis" (inGuild: true, roles: []). Avant ce fix, les deux cas
 // renvoyaient un simple [] et getHighestRole() retombait sur "Opérateur stagiaire"
 // par défaut — donnant accès au site à N'IMPORTE QUI se connectant via Discord,
 // même hors du serveur. Voir Admin > Journaux pour vérifier qui s'est connecté ainsi.
-async function fetchGuildMembership(accessToken: string): Promise<{ inGuild: boolean; roles: string[] }> {
+async function fetchGuildMembership(accessToken: string): Promise<GuildMembership> {
   const res = await fetch(
     `https://discord.com/api/users/@me/guilds/${DISCORD_SERVER_ID}/member`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );
-  if (!res.ok) return { inGuild: false, roles: [] };
-  const data = await res.json();
-  return { inGuild: true, roles: data.roles || [] };
+  if (res.ok) {
+    const data = await res.json();
+    return { inGuild: true, roles: data.roles || [] };
+  }
+  if (res.status === 404) return { inGuild: false, roles: [], failReason: "not_member" };
+  if (res.status === 401 || res.status === 403) return { inGuild: false, roles: [], failReason: "missing_scope" };
+  return { inGuild: false, roles: [], failReason: "api_error" };
+}
+
+// Journalise une connexion REFUSÉE (avant création de session) avec la vraie raison,
+// pour ne plus avoir à deviner quand quelqu'un dit "je n'arrive pas à me connecter".
+// Ne doit jamais faire planter la connexion si la table n'existe pas encore.
+async function logFailedLogin(discordId: string, discordName: string, reason: string) {
+  if (!supabase) return;
+  try {
+    await supabase.from("site_login_failures").insert([{ discord_id: discordId, discord_name: discordName, reason }]);
+  } catch {
+    // Table pas encore créée (migration non exécutée) — ne bloque jamais la connexion pour ça.
+  }
 }
 
 async function getRoleOverride(discordId: string): Promise<string | null> {
@@ -98,11 +125,19 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     // Bloque la connexion AVANT même de créer une session si la personne n'est pas
     // membre du serveur Discord (sauf le compte admin, qui garde toujours l'accès).
-    async signIn({ account }) {
-      if (!account?.access_token) return false;
+    // Retourne une URL de redirection différente selon la vraie cause (pas membre /
+    // scope refusé / erreur API) au lieu d'un simple true/false opaque, pour que
+    // /login affiche un message précis et qu'on n'ait plus à deviner.
+    async signIn({ account, profile }) {
+      if (!account?.access_token) return "/login?error=AccessDenied";
       if (account.providerAccountId === ADMIN_DISCORD_ID) return true;
-      const { inGuild } = await fetchGuildMembership(account.access_token);
-      return inGuild;
+      const { inGuild, failReason } = await fetchGuildMembership(account.access_token);
+      if (inGuild) return true;
+      const discordName = (profile as any)?.username || "Inconnu";
+      await logFailedLogin(account.providerAccountId, discordName, failReason || "api_error");
+      if (failReason === "missing_scope") return "/login?error=MissingScope";
+      if (failReason === "not_member") return "/login?error=NotMember";
+      return "/login?error=AccessDenied";
     },
     async jwt({ token, account, profile }) {
       if (account?.access_token) {
