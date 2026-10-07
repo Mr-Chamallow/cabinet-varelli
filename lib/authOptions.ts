@@ -35,6 +35,29 @@ async function fetchGuildMembership(accessToken: string): Promise<GuildMembershi
   return { inGuild: false, roles: [], failReason: "api_error" };
 }
 
+// Synchro auto des rôles Discord -> site : intervalle de relecture.
+const ROLE_SYNC_INTERVAL_MS = 5 * 60 * 1000;
+
+// Renouvelle le token Discord de l'utilisateur (il expire après ~7 jours).
+async function refreshDiscordToken(refreshToken: string): Promise<{ access_token: string; refresh_token: string; expires_in: number } | null> {
+  try {
+    const res = await fetch("https://discord.com/api/oauth2/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: process.env.DISCORD_CLIENT_ID!,
+        client_secret: process.env.DISCORD_CLIENT_SECRET!,
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 // Journalise une connexion REFUSÉE (avant création de session) avec la vraie raison,
 // pour ne plus avoir à deviner quand quelqu'un dit "je n'arrive pas à me connecter".
 // Ne doit jamais faire planter la connexion si la table n'existe pas encore.
@@ -162,18 +185,48 @@ export const authOptions: NextAuthOptions = {
       }
     },
     async jwt({ token, account, profile }) {
+      // 1) Connexion : on mémorise l'identité + les tokens Discord (pour la synchro auto).
       if (account?.access_token) {
         const { inGuild, roles } = await fetchGuildMembership(account.access_token);
         token.discord_id = account.providerAccountId;
         token.discord_name = (profile as any)?.username || "Membre";
-        token.site_role =
-          account.providerAccountId === ADMIN_DISCORD_ID
-            ? "Associé / Patron"
-            // Garde-fou : même si signIn() a déjà filtré, on ne donne jamais le rôle
-            // par défaut à quelqu'un que Discord ne confirme plus comme membre.
-            : (inGuild ? getHighestRole(roles) : null);
+        token.discord_access = account.access_token;
+        token.discord_refresh = account.refresh_token;
+        token.discord_expires = account.expires_at ? account.expires_at * 1000 : 0;
+        token.roles_checked_at = Date.now();
+        token.discord_roles = roles;
+        token.in_guild = inGuild;
+      } else if (token.discord_id && token.discord_id !== ADMIN_DISCORD_ID) {
+        // 2) Sessions suivantes : re-lit les rôles Discord toutes les 5 min.
+        const last = (token.roles_checked_at as number) || 0;
+        if (Date.now() - last > ROLE_SYNC_INTERVAL_MS) {
+          token.roles_checked_at = Date.now(); // évite de retenter en boucle si Discord est en panne
+          let access = token.discord_access as string | undefined;
+          if (token.discord_refresh && (!access || Date.now() > ((token.discord_expires as number) || 0) - 60_000)) {
+            const fresh = await refreshDiscordToken(token.discord_refresh as string);
+            if (fresh) {
+              access = fresh.access_token;
+              token.discord_access = fresh.access_token;
+              token.discord_refresh = fresh.refresh_token;
+              token.discord_expires = Date.now() + fresh.expires_in * 1000;
+            } else {
+              access = undefined; // refresh impossible : on garde les rôles actuels
+            }
+          }
+          if (access) {
+            const m = await fetchGuildMembership(access);
+            if (m.inGuild) { token.discord_roles = m.roles; token.in_guild = true; }
+            else if (m.failReason === "not_member") { token.discord_roles = []; token.in_guild = false; }
+            // missing_scope / api_error : on ne touche à rien
+          }
+        }
       }
       if (token.discord_id) {
+        token.site_role =
+          token.discord_id === ADMIN_DISCORD_ID
+            ? "Associé / Patron"
+            // Garde-fou : plus membre du serveur -> plus de rôle (donc plus d'accès).
+            : (token.in_guild ? getHighestRole((token.discord_roles as string[]) || []) : null);
         const override = await getRoleOverride(token.discord_id as string);
         if (override) token.site_role = override;
       }

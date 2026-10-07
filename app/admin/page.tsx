@@ -385,185 +385,109 @@ export default function AdminPage() {
         <div style={{ color:"var(--text-dim)" }}>Chargement…</div>
       ) : activeTab === "membres" ? (
         <div>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
-            <div className="section-title">Overrides de rôle ({overrides.length})</div>
-            <button className="btn btn-gold btn-sm" onClick={() => { setOverrideForm({ nom:"", discord_id:"", role:"" }); setCreateError(""); setShowCreateOverride(true); }}>
-              + Forcer un rôle
-            </button>
-          </div>
+          {(() => {
+            // Une seule liste : chaque personne vue au moins une fois OU avec un rôle forcé.
+            const ovById = new Map(overrides.map(o => [o.discord_id, o]));
+            const rows: SiteLogin[] = [
+              ...logins,
+              ...overrides.filter(o => !logins.some(l => l.discord_id === o.discord_id)).map(o => ({ discord_id: o.discord_id, discord_name: o.nom, site_role: o.role } as SiteLogin)),
+            ];
+            const q = loginSearch.toLowerCase().trim();
+            const filtered = rows
+              .filter(l => !q || (l.discord_name||"").toLowerCase().includes(q) || l.discord_id.includes(q) || (l.site_role||"").toLowerCase().includes(q))
+              .sort((a, b) => Number(isOnline(b)) - Number(isOnline(a)) || (b.last_login || "").localeCompare(a.last_login || ""));
+            const onlineCount = logins.filter(isOnline).length;
 
-          <p style={{ fontSize:"0.8rem", color:"var(--text-dim)", marginBottom:"1rem" }}>
-            Les rôles sont normalement calculés depuis Discord. Un override ici prend le dessus, pour un membre en particulier, jusqu'à suppression.
-          </p>
-
-          {overrides.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">🎭</div><div className="empty-title">Aucun override actif</div></div>
-          ) : (
-            <div style={{ display:"flex", flexDirection:"column", gap:"0.75rem" }}>
-              {overrides.map(o => {
-                const roleData = roles.find(r => r.nom === o.role);
-                const couleur = roleData?.couleur || "#c9a84c";
-                return (
-                  <div key={o.discord_id} className="card">
-                    <div style={{ display:"flex", alignItems:"center", gap:"1rem", flexWrap:"wrap" }}>
-                      <div style={{ width:44,height:44,borderRadius:"50%",flexShrink:0, background:couleur+"20",border:`2px solid ${couleur}40`, display:"flex",alignItems:"center",justifyContent:"center", fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"1.1rem",color:couleur }}>
-                        {(o.nom || o.discord_id).charAt(0).toUpperCase()}
-                      </div>
-                      <div style={{ flex:1, minWidth:120 }}>
-                        <div style={{ fontWeight:600, marginBottom:"0.2rem" }}>{o.nom || "(sans nom)"}</div>
-                        <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
-                          <span style={{ fontSize:"0.75rem",padding:"0.15rem 0.55rem",borderRadius:999, background:couleur+"18",color:couleur,border:`1px solid ${couleur}30`,fontWeight:600 }}>{o.role}</span>
-                          <span style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily: "var(--font-mono)" }}>{o.discord_id}</span>
-                        </div>
-                      </div>
-                      <button className="btn btn-ghost btn-sm" style={{color:"var(--danger)"}} onClick={()=>deleteOverride(o.discord_id)}>🗑️ Retirer</button>
+            return (
+              <>
+                <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", marginBottom:"1rem" }}>
+                  {[
+                    { n: rows.length, l: "Membres", c: "var(--text)" },
+                    { n: onlineCount, l: "En ligne", c: "var(--success)" },
+                    { n: overrides.length, l: "Rôles forcés", c: "var(--gold)" },
+                    { n: bans.length, l: "Bannis", c: bans.length ? "var(--danger)" : "var(--text-dim)" },
+                  ].map(s => (
+                    <div key={s.l} className="card" style={{ padding:"0.5rem 1rem", minWidth:90, textAlign:"center" }}>
+                      <div style={{ fontSize:"1.25rem", fontWeight:700, color:s.c }}>{s.n}</div>
+                      <div style={{ fontSize:"0.68rem", color:"var(--text-dim)", textTransform:"uppercase", letterSpacing:"0.05em" }}>{s.l}</div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  ))}
+                </div>
 
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", margin:"2rem 0 1rem", flexWrap:"wrap", gap:"0.5rem" }}>
-            <div className="section-title">
-              Membres connectés ({logins.length})
-              {" · "}
-              <span style={{ color:"var(--success)", fontWeight:600 }}>🟢 {logins.filter(isOnline).length} en ligne</span>
-            </div>
-            <div style={{ display:"flex", gap:"0.5rem" }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowBansList(v => !v)} style={bans.length ? { color:"var(--danger)" } : {}}>
-                🚫 Bannis ({bans.length})
-              </button>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => setGroupByRole(v => !v)}
-                style={groupByRole ? { color:"var(--gold)", borderColor:"rgba(var(--gold-rgb),0.4)" } : {}}
-              >
-                {groupByRole ? "📋 Grouper par rôle" : "📄 Liste à plat"}
-              </button>
-              <input
-                value={loginSearch}
-                onChange={(e) => setLoginSearch(e.target.value)}
-                placeholder="Rechercher un nom, un ID, un rôle..."
-                style={{ maxWidth: 260 }}
-              />
-            </div>
-          </div>
-          {showBansList && (
-            <div style={{ marginBottom:"1.25rem" }}>
-              {bans.length === 0 ? (
-                <div style={{ fontSize:"0.8rem", color:"var(--text-dim)" }}>Aucun membre banni.</div>
-              ) : (
-                <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
-                  {bans.map(b => (
-                    <div key={b.discord_id} className="card" style={{ padding:"0.6rem 0.875rem", borderColor:"rgba(239,68,68,0.3)" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", flexWrap:"wrap" }}>
+                <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap", marginBottom:"0.5rem" }}>
+                  <input value={loginSearch} onChange={(e) => setLoginSearch(e.target.value)} placeholder="Rechercher un nom, un ID, un rôle..." style={{ flex:1, minWidth:180 }} />
+                  <button className="btn btn-ghost btn-sm" onClick={() => setShowBansList(v => !v)} style={bans.length ? { color:"var(--danger)" } : {}}>🚫 Bannis ({bans.length})</button>
+                  <button className="btn btn-gold btn-sm" onClick={() => { setOverrideForm({ nom:"", discord_id:"", role:"" }); setCreateError(""); setShowCreateOverride(true); }}>+ Forcer un rôle</button>
+                </div>
+                <p style={{ fontSize:"0.75rem", color:"var(--text-dim)", marginBottom:"1rem" }}>
+                  Les rôles suivent Discord automatiquement (mise à jour ≈ 5 min). Un rôle <b>🔒 forcé</b> prend le dessus jusqu'à ce que tu le retires.
+                </p>
+
+                {showBansList && (
+                  <div style={{ marginBottom:"1.25rem", display:"flex", flexDirection:"column", gap:"0.5rem" }}>
+                    {bans.length === 0 ? (
+                      <div style={{ fontSize:"0.8rem", color:"var(--text-dim)" }}>Aucun membre banni.</div>
+                    ) : bans.map(b => (
+                      <div key={b.discord_id} className="card" style={{ padding:"0.6rem 0.875rem", borderColor:"rgba(239,68,68,0.3)", display:"flex", alignItems:"center", gap:"0.75rem", flexWrap:"wrap" }}>
                         <div style={{ flex:1, minWidth:140 }}>
                           <div style={{ fontWeight:600, fontSize:"0.85rem" }}>🚫 {b.nom || b.discord_id}</div>
                           {b.motif && <div style={{ fontSize:"0.72rem", color:"var(--text-dim)" }}>Motif : {b.motif}</div>}
-                          <div style={{ fontSize:"0.65rem", color:"var(--text-dim)" }}>
-                            {b.banned_at ? timeAgo(b.banned_at) : ""}{b.banned_by ? ` — par ${b.banned_by}` : ""}
-                          </div>
+                          <div style={{ fontSize:"0.65rem", color:"var(--text-dim)" }}>{b.banned_at ? timeAgo(b.banned_at) : ""}{b.banned_by ? ` — par ${b.banned_by}` : ""}</div>
                         </div>
                         <button className="btn btn-outline btn-sm" disabled={banningId === b.discord_id} onClick={() => unbanUser(b.discord_id, b.nom || "")}>
                           {banningId === b.discord_id ? "…" : "✅ Débannir"}
                         </button>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <p style={{ fontSize:"0.8rem", color:"var(--text-dim)", marginBottom:"1rem" }}>
-            Chaque personne qui s'est déjà connectée au site, avec le rôle détecté, sa dernière connexion et si elle est
-            actuellement en ligne — utile pour vérifier si quelqu'un qui dit ne pas avoir accès s'est réellement connecté ou non.
-          </p>
-          {logins.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">👥</div><div className="empty-title">Personne ne s'est encore connecté</div></div>
-          ) : (() => {
-            const filtered = logins.filter(l => {
-              const q = loginSearch.toLowerCase().trim();
-              if (!q) return true;
-              return (l.discord_name||"").toLowerCase().includes(q) || l.discord_id.includes(q) || (l.site_role||"").toLowerCase().includes(q);
-            });
-
-            const memberCard = (l: SiteLogin) => {
-              const roleData = roles.find(r => r.nom === l.site_role);
-              const couleur = roleData?.couleur || "#8A93A6";
-              const online = isOnline(l);
-              const banned = bannedInfo(l.discord_id);
-              return (
-                <div key={l.discord_id} className="card" style={{ padding: "0.75rem 1rem", borderColor: banned ? "rgba(239,68,68,0.35)" : undefined }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:"0.875rem", flexWrap:"wrap" }}>
-                    <div style={{ position:"relative", flexShrink:0 }}>
-                      <div style={{ width:36,height:36,borderRadius:"50%", background:couleur+"20",border:`2px solid ${couleur}40`, display:"flex",alignItems:"center",justifyContent:"center", fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"0.9rem",color:couleur }}>
-                        {(l.discord_name || l.discord_id).charAt(0).toUpperCase()}
-                      </div>
-                      <span title={online ? "En ligne" : "Hors ligne"} style={{ position:"absolute", bottom:-1, right:-1, width:10, height:10, borderRadius:"50%", background: online ? "var(--success)" : "var(--text-dim)", border:"2px solid var(--card)", boxShadow: online ? "0 0 6px var(--success)" : "none" }} />
-                    </div>
-                    <div style={{ flex:1, minWidth:140 }}>
-                      <div style={{ fontWeight:600, fontSize:"0.88rem", marginBottom:"0.15rem" }}>{l.discord_name || "(sans nom)"}{banned && <span style={{ marginLeft:6 }} title={`Banni : ${banned.motif || ""}`}>🚫</span>}</div>
-                      <div style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily: "var(--font-mono)" }}>{l.discord_id}</div>
-                    </div>
-                    {!groupByRole && (
-                      <span style={{ fontSize:"0.72rem", padding:"0.15rem 0.55rem", borderRadius:999, background:couleur+"18", color:couleur, border:`1px solid ${couleur}30`, fontWeight:600, flexShrink:0 }}>
-                        {l.site_role || "(aucun rôle)"}
-                      </span>
-                    )}
-                    <span style={{ fontSize:"0.72rem", color:online?"var(--success)":"var(--text-dim)", flexShrink:0, minWidth: 90, textAlign: "right", fontWeight: online?600:400 }}>
-                      {online ? "🟢 en ligne" : (l.last_login ? timeAgo(l.last_login) : "—")}
-                    </span>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => { setOverrideForm({ nom: l.discord_name || "", discord_id: l.discord_id, role: l.site_role || "" }); setCreateError(""); setShowCreateOverride(true); }}
-                    >
-                      🎭 Forcer un rôle
-                    </button>
-                    {banned ? (
-                      <button className="btn btn-outline btn-sm" disabled={banningId === l.discord_id} onClick={() => unbanUser(l.discord_id, l.discord_name)}>
-                        {banningId === l.discord_id ? "…" : "✅ Débannir"}
-                      </button>
-                    ) : (
-                      <button className="btn btn-ghost btn-sm" style={{ color:"var(--danger)" }} onClick={() => { setBanForm({ discord_id: l.discord_id, nom: l.discord_name || "", motif: "" }); setShowBanForm(true); }}>
-                        🚫 Bannir
-                      </button>
-                    )}
+                    ))}
                   </div>
-                </div>
-              );
-            };
+                )}
 
-            if (!groupByRole) {
-              return <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>{filtered.map(memberCard)}</div>;
-            }
-
-            const groups: Record<string, SiteLogin[]> = {};
-            filtered.forEach(l => { const key = l.site_role || "(aucun rôle)"; (groups[key] ??= []).push(l); });
-            // Ordonné selon l'ordre des rôles déclarés dans Admin > Rôles, groupe "aucun rôle" en dernier
-            const orderedKeys = [...roles.map(r => r.nom).filter(n => groups[n]), ...Object.keys(groups).filter(k => !roles.some(r => r.nom === k))];
-
-            return (
-              <div style={{ display:"flex", flexDirection:"column", gap:"1.25rem" }}>
-                {orderedKeys.map(roleName => {
-                  const roleData = roles.find(r => r.nom === roleName);
-                  const couleur = roleData?.couleur || "#8A93A6";
-                  const members = groups[roleName];
-                  return (
-                    <div key={roleName}>
-                      <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.5rem" }}>
-                        <span style={{ width:8,height:8,borderRadius:"50%",background:couleur,flexShrink:0 }} />
-                        <span style={{ fontSize:"0.8rem", fontWeight:700, color:couleur }}>{roleName}</span>
-                        <span style={{ fontSize:"0.68rem", color:"var(--text-dim)", fontFamily:"var(--font-mono)", background:"var(--surface)", borderRadius:999, padding:"0.05rem 0.5rem" }}>{members.length}</span>
-                      </div>
-                      <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
-                        {members.map(memberCard)}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                {filtered.length === 0 ? (
+                  <div className="empty-state"><div className="empty-icon">👥</div><div className="empty-title">Aucun membre</div></div>
+                ) : (
+                  <div style={{ display:"flex", flexDirection:"column", gap:"0.4rem" }}>
+                    {filtered.map(l => {
+                      const ov = ovById.get(l.discord_id);
+                      const role = ov?.role || l.site_role;
+                      const couleur = roles.find(r => r.nom === role)?.couleur || "#8A93A6";
+                      const online = isOnline(l);
+                      const banned = bannedInfo(l.discord_id);
+                      return (
+                        <div key={l.discord_id} className="card" style={{ padding:"0.6rem 0.9rem", borderColor: banned ? "rgba(239,68,68,0.35)" : undefined }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", flexWrap:"wrap" }}>
+                            <div style={{ position:"relative", flexShrink:0 }}>
+                              <div style={{ width:34,height:34,borderRadius:"50%", background:couleur+"20",border:`2px solid ${couleur}40`, display:"flex",alignItems:"center",justifyContent:"center", fontWeight:700,fontSize:"0.85rem",color:couleur }}>
+                                {(l.discord_name || l.discord_id).charAt(0).toUpperCase()}
+                              </div>
+                              <span title={online ? "En ligne" : "Hors ligne"} style={{ position:"absolute", bottom:-1, right:-1, width:10, height:10, borderRadius:"50%", background: online ? "var(--success)" : "var(--text-dim)", border:"2px solid var(--card)" }} />
+                            </div>
+                            <div style={{ flex:1, minWidth:130 }}>
+                              <div style={{ fontWeight:600, fontSize:"0.86rem" }}>{l.discord_name || "(sans nom)"}{banned && " 🚫"}</div>
+                              <div style={{ fontSize:"0.66rem", color:"var(--text-dim)", fontFamily:"var(--font-mono)" }}>{l.discord_id}</div>
+                            </div>
+                            <span style={{ fontSize:"0.72rem", padding:"0.15rem 0.55rem", borderRadius:999, background:couleur+"18", color:couleur, border:`1px solid ${couleur}30`, fontWeight:600 }}>
+                              {ov && "🔒 "}{role || "(aucun rôle)"}
+                            </span>
+                            <span style={{ fontSize:"0.72rem", color: online ? "var(--success)" : "var(--text-dim)", minWidth:80, textAlign:"right", fontWeight: online ? 600 : 400 }}>
+                              {online ? "en ligne" : (l.last_login ? timeAgo(l.last_login) : "jamais connecté")}
+                            </span>
+                            {ov ? (
+                              <button className="btn btn-ghost btn-sm" title="Revenir au rôle Discord" onClick={() => deleteOverride(l.discord_id)}>🔓 Retirer</button>
+                            ) : (
+                              <button className="btn btn-ghost btn-sm" title="Forcer un rôle" onClick={() => { setOverrideForm({ nom: l.discord_name || "", discord_id: l.discord_id, role: l.site_role || "" }); setCreateError(""); setShowCreateOverride(true); }}>🎭</button>
+                            )}
+                            {banned ? (
+                              <button className="btn btn-outline btn-sm" disabled={banningId === l.discord_id} onClick={() => unbanUser(l.discord_id, l.discord_name)}>{banningId === l.discord_id ? "…" : "✅"}</button>
+                            ) : (
+                              <button className="btn btn-ghost btn-sm" title="Bannir" style={{ color:"var(--danger)" }} onClick={() => { setBanForm({ discord_id: l.discord_id, nom: l.discord_name || "", motif: "" }); setShowBanForm(true); }}>🚫</button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             );
           })()}
         </div>
