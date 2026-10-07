@@ -130,6 +130,14 @@ export const authOptions: NextAuthOptions = {
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID!,
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+      // ⚠️ Discord renvoie désormais un paramètre `iss` au callback (RFC 9207).
+      // next-auth v4 (openid-client) le vérifie, mais le provider Discord intégré
+      // n'a aucun `issuer` configuré → erreur "issuer must be configured on the
+      // issuer" (OAuthCallback) AVANT d'exécuter signIn()/jwt(). Même symptôme que
+      // celui rapporté pour GitHub avec RFC 9207. Fix : déclarer l'issuer Discord.
+      // Si les logs Vercel affichent ensuite "unexpected iss value, expected X, got Y",
+      // remplacer cette valeur par le "got Y" exact.
+      issuer: "https://discord.com",
       authorization: { params: { scope: "identify guilds guilds.members.read" } },
     }),
   ],
