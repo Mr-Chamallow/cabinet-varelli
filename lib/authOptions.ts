@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import { DISCORD_SERVER_ID, getHighestRole } from "@/lib/discord-config";
 import { supabase } from "@/lib/supabase";
+import { sendSecurityAlert } from "@/lib/discordAlert";
 
 const ADMIN_DISCORD_ID = process.env.ADMIN_DISCORD_ID || "";
 
@@ -58,6 +59,25 @@ async function refreshDiscordToken(refreshToken: string): Promise<{ access_token
   }
 }
 
+// Resynchro demandée par un admin (bouton 🔄 dans Admin > Membres).
+async function consumeForceResync(discordId: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { data } = await supabase.from("site_logins").select("force_resync").eq("discord_id", discordId).maybeSingle();
+    return !!data?.force_resync;
+  } catch {
+    return false;
+  }
+}
+
+// Met à jour la liste Admin > Membres après une synchro (rôle site + rôle Discord, flag remis à zéro).
+async function saveSyncState(discordId: string, siteRole: string, discordRole: string) {
+  if (!supabase) return;
+  try {
+    await supabase.from("site_logins").update({ site_role: siteRole, discord_role: discordRole, force_resync: false }).eq("discord_id", discordId);
+  } catch {}
+}
+
 // Journalise une connexion REFUSÉE (avant création de session) avec la vraie raison,
 // pour ne plus avoir à deviner quand quelqu'un dit "je n'arrive pas à me connecter".
 // Ne doit jamais faire planter la connexion si la table n'existe pas encore.
@@ -68,6 +88,7 @@ async function logFailedLogin(discordId: string, discordName: string, reason: st
   } catch {
     // Table pas encore créée (migration non exécutée) — ne bloque jamais la connexion pour ça.
   }
+  await sendSecurityAlert("🚫 Connexion refusée", `**${discordName}** (\`${discordId}\`)\nRaison : \`${reason}\``);
 }
 
 async function getRoleOverride(discordId: string): Promise<string | null> {
@@ -117,7 +138,7 @@ async function logSession(discordId: string, discordName: string, event: "connec
 // avoir une vraie liste des membres qui utilisent le site (Admin > Membres) — et
 // pouvoir vérifier si quelqu'un qui dit "je n'arrive pas à accéder au site" s'est
 // réellement connecté ou non. Ne doit jamais faire planter la connexion en cas d'échec.
-async function recordLogin(discordId: string, discordName: string, role: string) {
+async function recordLogin(discordId: string, discordName: string, role: string, discordRole: string) {
   if (!supabase) return;
   try {
     const { data: existing } = await supabase
@@ -126,9 +147,9 @@ async function recordLogin(discordId: string, discordName: string, role: string)
       .eq("discord_id", discordId)
       .maybeSingle();
     if (existing) {
-      await supabase.from("site_logins").update({ discord_name: discordName, site_role: role, last_login: new Date().toISOString() }).eq("discord_id", discordId);
+      await supabase.from("site_logins").update({ discord_name: discordName, site_role: role, discord_role: discordRole, last_login: new Date().toISOString(), force_resync: false }).eq("discord_id", discordId);
     } else {
-      await supabase.from("site_logins").insert([{ discord_id: discordId, discord_name: discordName, site_role: role }]);
+      await supabase.from("site_logins").insert([{ discord_id: discordId, discord_name: discordName, site_role: role, discord_role: discordRole }]);
     }
   } catch {
     // La table n'existe peut-être pas encore (script SQL non exécuté) — ne bloque jamais la connexion pour ça.
@@ -185,6 +206,7 @@ export const authOptions: NextAuthOptions = {
       }
     },
     async jwt({ token, account, profile }) {
+      let syncedNow = false;
       // 1) Connexion : on mémorise l'identité + les tokens Discord (pour la synchro auto).
       if (account?.access_token) {
         const { inGuild, roles } = await fetchGuildMembership(account.access_token);
@@ -199,7 +221,9 @@ export const authOptions: NextAuthOptions = {
       } else if (token.discord_id && token.discord_id !== ADMIN_DISCORD_ID) {
         // 2) Sessions suivantes : re-lit les rôles Discord toutes les 5 min.
         const last = (token.roles_checked_at as number) || 0;
-        if (Date.now() - last > ROLE_SYNC_INTERVAL_MS) {
+        const forced = Date.now() - last > 20_000 && (await consumeForceResync(token.discord_id as string));
+        if (forced || Date.now() - last > ROLE_SYNC_INTERVAL_MS) {
+          syncedNow = true;
           token.roles_checked_at = Date.now(); // évite de retenter en boucle si Discord est en panne
           let access = token.discord_access as string | undefined;
           if (token.discord_refresh && (!access || Date.now() > ((token.discord_expires as number) || 0) - 60_000)) {
@@ -227,6 +251,7 @@ export const authOptions: NextAuthOptions = {
             ? "Associé / Patron"
             // Garde-fou : plus membre du serveur -> plus de rôle (donc plus d'accès).
             : (token.in_guild ? getHighestRole((token.discord_roles as string[]) || []) : null);
+        token.discord_role = token.site_role;
         const override = await getRoleOverride(token.discord_id as string);
         if (override) token.site_role = override;
       }
@@ -235,8 +260,11 @@ export const authOptions: NextAuthOptions = {
         token.permissions = perms;
       }
       if (account?.access_token && token.discord_id) {
-        await recordLogin(token.discord_id as string, (token.discord_name as string) || "Membre", (token.site_role as string) || "");
+        await recordLogin(token.discord_id as string, (token.discord_name as string) || "Membre", (token.site_role as string) || "", (token.discord_role as string) || "");
         await logSession(token.discord_id as string, (token.discord_name as string) || "Membre", "connect");
+      }
+      if (syncedNow && token.discord_id) {
+        await saveSyncState(token.discord_id as string, (token.site_role as string) || "", (token.discord_role as string) || "");
       }
       if (token.discord_id) {
         const ban = await checkBan(token.discord_id as string);

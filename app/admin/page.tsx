@@ -28,6 +28,7 @@ interface SiteLogin {
   discord_id: string;
   discord_name: string;
   site_role: string;
+  discord_role?: string;
   first_login?: string;
   last_login?: string;
   last_seen?: string;
@@ -85,7 +86,7 @@ export default function AdminPage() {
   const [overrides, setOverrides] = useState<RoleOverride[]>([]);
   const [logins, setLogins] = useState<SiteLogin[]>([]);
   const [loginSearch, setLoginSearch] = useState("");
-  const [groupByRole, setGroupByRole] = useState(true);
+  const [resyncMsg, setResyncMsg] = useState("");
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string>("");
@@ -301,6 +302,12 @@ export default function AdminPage() {
     setBanningId(null);
   }
 
+  async function requestResync(discordId: string, nom: string) {
+    const r = await apiRequest("/api/admin/resync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
+    setResyncMsg(r.ok ? `🔄 Resynchro demandée pour ${nom || discordId} — appliquée à sa prochaine action sur le site.` : `❌ ${r.error}`);
+    setTimeout(() => setResyncMsg(""), 6000);
+  }
+
   function bannedInfo(discordId: string) { return bans.find(b => b.discord_id === discordId) || null; }
 
   const uniqueActMembers = [...new Set(activity.map(a => a.by))].filter(Boolean).sort();
@@ -419,6 +426,7 @@ export default function AdminPage() {
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowBansList(v => !v)} style={bans.length ? { color:"var(--danger)" } : {}}>🚫 Bannis ({bans.length})</button>
                   <button className="btn btn-gold btn-sm" onClick={() => { setOverrideForm({ nom:"", discord_id:"", role:"" }); setCreateError(""); setShowCreateOverride(true); }}>+ Forcer un rôle</button>
                 </div>
+                {resyncMsg && <div className="card" style={{ padding:"0.5rem 0.9rem", marginBottom:"0.75rem", fontSize:"0.8rem" }}>{resyncMsg}</div>}
                 <p style={{ fontSize:"0.75rem", color:"var(--text-dim)", marginBottom:"1rem" }}>
                   Les rôles suivent Discord automatiquement (mise à jour ≈ 5 min). Un rôle <b>🔒 forcé</b> prend le dessus jusqu'à ce que tu le retires.
                 </p>
@@ -464,6 +472,7 @@ export default function AdminPage() {
                             <div style={{ flex:1, minWidth:130 }}>
                               <div style={{ fontWeight:600, fontSize:"0.86rem" }}>{l.discord_name || "(sans nom)"}{banned && " 🚫"}</div>
                               <div style={{ fontSize:"0.66rem", color:"var(--text-dim)", fontFamily:"var(--font-mono)" }}>{l.discord_id}</div>
+                              {l.discord_role && <div style={{ fontSize:"0.66rem", color: ov && ov.role !== l.discord_role ? "var(--gold)" : "var(--text-dim)" }}>Discord : {l.discord_role}</div>}
                             </div>
                             <span style={{ fontSize:"0.72rem", padding:"0.15rem 0.55rem", borderRadius:999, background:couleur+"18", color:couleur, border:`1px solid ${couleur}30`, fontWeight:600 }}>
                               {ov && "🔒 "}{role || "(aucun rôle)"}
@@ -471,6 +480,7 @@ export default function AdminPage() {
                             <span style={{ fontSize:"0.72rem", color: online ? "var(--success)" : "var(--text-dim)", minWidth:80, textAlign:"right", fontWeight: online ? 600 : 400 }}>
                               {online ? "en ligne" : (l.last_login ? timeAgo(l.last_login) : "jamais connecté")}
                             </span>
+                            {l.last_login && <button className="btn btn-ghost btn-sm" title="Resynchroniser le rôle depuis Discord" onClick={() => requestResync(l.discord_id, l.discord_name)}>🔄</button>}
                             {ov ? (
                               <button className="btn btn-ghost btn-sm" title="Revenir au rôle Discord" onClick={() => deleteOverride(l.discord_id)}>🔓 Retirer</button>
                             ) : (

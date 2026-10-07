@@ -11,7 +11,15 @@ function LoginContent() {
   const params = useSearchParams();
   const { status } = useSession();
   const discordError = params?.get("error");
+  const [invite, setInvite] = useState("");
+  const inviteLink = invite ? (
+    <a href={invite} target="_blank" rel="noreferrer" style={{ color: "var(--gold)", display: "block", marginTop: "0.5rem" }}>Rejoindre le serveur Discord →</a>
+  ) : null;
   const [identity, setIdentity] = useState<Identity>({ logoUrl: DEFAULT_LOGO_URL, appNom: DEFAULT_APP_NOM });
+
+  useEffect(() => {
+    fetch("/api/invite").then(r => r.json()).then(d => setInvite(d?.url || "")).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (status === "authenticated") router.push("/");
@@ -54,13 +62,13 @@ function LoginContent() {
           Accès réservé
         </div>
         {discordError === "NotMember" ? (
-          <p style={{ color: "#ef4444", marginBottom: "1rem", maxWidth: 320 }}>Tu dois être membre du serveur Discord pour accéder au site.</p>
+          <p style={{ color: "#ef4444", marginBottom: "1rem", maxWidth: 320 }}>Tu dois être membre du serveur Discord pour accéder au site.{inviteLink}</p>
         ) : discordError === "MissingScope" ? (
           <p style={{ color: "#ef4444", marginBottom: "1rem", maxWidth: 320 }}>
             Discord n'a pas transmis tes rôles de serveur. Reconnecte-toi et accepte <b>toutes</b> les autorisations demandées (pas juste "identifier").
           </p>
         ) : discordError === "AccessDenied" ? (
-          <p style={{ color: "#ef4444", marginBottom: "1rem", maxWidth: 320 }}>Tu dois être membre du serveur Discord pour accéder au site.</p>
+          <p style={{ color: "#ef4444", marginBottom: "1rem", maxWidth: 320 }}>Tu dois être membre du serveur Discord pour accéder au site.{inviteLink}</p>
         ) : discordError ? (
           <p style={{ color: "#ef4444", marginBottom: "1rem" }}>Connexion refusée. Réessaie.</p>
         ) : null}

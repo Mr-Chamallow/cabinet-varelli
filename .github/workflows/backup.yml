@@ -1,0 +1,30 @@
+name: Sauvegarde Supabase
+
+on:
+  schedule:
+    - cron: "0 3 * * 0" # chaque dimanche 03:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Installer pg_dump 17
+        run: |
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Dump + chiffrement
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" --schema=public --no-owner --no-privileges \
+            | gzip \
+            | gpg --symmetric --batch --yes --passphrase "$BACKUP_PASSPHRASE" -o backup-$(date +%F).sql.gz.gpg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup
+          path: backup-*.sql.gz.gpg
+          retention-days: 60

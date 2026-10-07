@@ -98,3 +98,20 @@ export async function editDiscordMessage(kind: DiscordWebhookKind, messageId: st
     return { ok: false, error: e?.message || String(e) };
   }
 }
+
+// Alerte sécurité/connexions (ex: connexion refusée). Webhook dédié via la variable
+// Vercel DISCORD_WEBHOOK_CONNEXIONS. Ne throw jamais.
+export async function sendSecurityAlert(title: string, description: string, color = 0xef4444) {
+  try {
+    const url = process.env.DISCORD_WEBHOOK_CONNEXIONS;
+    if (!url) return { ok: false, error: "DISCORD_WEBHOOK_CONNEXIONS non configurée" };
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ embeds: [{ title, description, color, timestamp: new Date().toISOString() }] }),
+    });
+    return res.ok ? { ok: true } : { ok: false, error: `Discord a répondu ${res.status}` };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || String(e) };
+  }
+}
