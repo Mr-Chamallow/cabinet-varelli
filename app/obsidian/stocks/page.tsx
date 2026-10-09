@@ -9,6 +9,7 @@ import { useUndoAction } from "@/lib/useUndoAction";
 import { Modal } from "@/components/ui/Modal";
 import { hasPermission } from "@/lib/auth";
 import { useRealtimeTable } from "@/lib/useRealtimeTable";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
 const CATS=["drogue","arme","accessoire","composant","objet_rare","autre"];
 const fmtN=(n:number)=>n.toLocaleString("fr-FR",{maximumFractionDigits:2});
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
@@ -93,7 +94,7 @@ export default function StocksPage(){
         <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem",flexWrap:"wrap"}}>
           <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{width:"auto",minWidth:140}}><option value="">Toutes catégories</option>{CATS.map(c=><option key={c}>{c}</option>)}</select>
         </div>
-        {loading?<div style={{color:"var(--text-dim)"}}>Chargement…</div>:
+        {loading?<LoadingBlock />:
         <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
           {filtered.map(s=>{const col=CAT_COL[s.categorie]||"var(--text-muted)";const low=s.seuil_alerte>0&&s.quantite<=s.seuil_alerte;return(
             <div key={s.id} style={{background:"var(--card)",border:`1px solid ${low?"rgba(239,68,68,0.3)":"var(--border)"}`,borderRadius:"var(--radius-lg)",padding:"0.875rem 1.125rem",display:"flex",alignItems:"center",gap:"1rem"}}>

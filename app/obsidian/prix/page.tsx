@@ -5,6 +5,7 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 import { hasPermission } from "@/lib/auth";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
 
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 
@@ -132,7 +133,7 @@ export default function PrixPage() {
         )}
       </div>
 
-      {loading ? <div style={{color:"var(--text-dim)"}}>Chargement…</div> : <>
+      {loading ? <LoadingBlock /> : <>
 
       {/* ── DROGUES ── */}
       {tab==="drogues" && (

@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { hasPermission } from "@/lib/auth";
 import { notifyDiscordCreate, notifyDiscordUpdate, notifyDiscordDelete } from "@/lib/notifyDiscord";
 import { buildContratEmbed } from "@/lib/discordEmbeds";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
 const TYPES=["Livraison","Surveillance","Intimidation","Récupération","Braquage","Autre"];
 const DIFFS=["Facile","Normale","Difficile","Extrême"];
 const STATUTS=["En attente","En cours","Terminé","Échoué","Annulé"];
@@ -43,7 +44,7 @@ export default function ContratsPage(){
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem",flexWrap:"wrap"}}>
         {["","En attente","En cours","Terminé","Échoué","Annulé"].map(s=><button key={s||"all"} onClick={()=>setFilterStatut(s)} style={{padding:"0.25rem 0.75rem",borderRadius:999,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.75rem",fontWeight:filterStatut===s?700:400,background:filterStatut===s?"var(--gold-muted)":"var(--surface)",border:`1px solid ${filterStatut===s?"rgba(var(--gold-rgb), 0.4)":"var(--border)"}`,color:filterStatut===s?"var(--gold)":"var(--text-muted)"}}>{s||"Tous"}</button>)}
       </div>
-      {loading?<div style={{color:"var(--text-dim)"}}>Chargement…</div>:
+      {loading?<LoadingBlock />:
       <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
         {filtered.map(c=>{const scol=SCOL[c.statut]||"var(--text-dim)";const dcol=DCOL[c.difficulte]||"var(--text-dim)";return(
           <div key={c.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:"var(--radius-lg)",padding:"0.875rem 1.125rem",borderLeft:`4px solid ${scol}`}}>

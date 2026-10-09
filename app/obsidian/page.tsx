@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
 const fmt = (n:number) => n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 export default function ObsidianDashboard() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -48,7 +49,7 @@ export default function ObsidianDashboard() {
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1.25rem"}}>
         <div className="card"><div className="section-title" style={{marginBottom:"0.875rem"}}>📅 Prochains événements</div>
-          {loading?<div style={{color:"var(--text-dim)"}}>Chargement…</div>:events.length===0?<div style={{color:"var(--text-dim)",textAlign:"center",padding:"1rem",fontSize:"0.82rem"}}>Aucun événement</div>:
+          {loading?<LoadingBlock />:events.length===0?<div style={{color:"var(--text-dim)",textAlign:"center",padding:"1rem",fontSize:"0.82rem"}}>Aucun événement</div>:
           <div style={{display:"flex",flexDirection:"column",gap:"0.375rem"}}>{events.slice(0,6).map((e:any)=><div key={e.id} style={{display:"flex",alignItems:"center",gap:"0.75rem",padding:"0.5rem 0.75rem",background:"var(--surface)",borderRadius:"var(--radius)",borderLeft:"3px solid "+(e._type==="RDV"?"var(--info)":"var(--warning)")}}>
             <div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:"0.82rem",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.titre}</div><div style={{fontSize:"0.65rem",color:"var(--text-dim)"}}>{e._type}{e.date?" · "+new Date(e.date+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"short"}):""}</div></div>
             <span style={{fontSize:"0.6rem",padding:"0.08rem 0.4rem",borderRadius:999,background:"var(--surface)",color:"var(--text-dim)",border:"1px solid var(--border)",flexShrink:0}}>{e.statut}</span>

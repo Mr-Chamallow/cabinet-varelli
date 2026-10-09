@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 export default function StatsPage(){
   const { user, loading: userLoading } = useCurrentUser();
@@ -39,7 +40,7 @@ export default function StatsPage(){
     <div className="page-container">
       <a className="back-link" href="/obsidian">← Dashboard Obsidian</a>
       <div className="page-header"><div><h1 className="page-title">📊 Statistiques</h1><p className="page-subtitle">Classements · Graphiques · Performance</p><div className="gold-line"/></div><button className="btn btn-outline" onClick={load}>↻ Actualiser</button></div>
-      {loading?<div style={{color:"var(--text-dim)"}}>Chargement…</div>:<>
+      {loading?<LoadingBlock />:<>
         <div className="stat-grid" style={{marginBottom:"1.5rem"}}>
           {[{l:"Recettes totales",v:fmt(stats.totalR),c:"var(--success)",i:"↑"},{l:"Dépenses totales",v:fmt(stats.totalD),c:"var(--danger)",i:"↓"},{l:"Solde net",v:fmt(stats.solde),c:stats.solde>=0?"var(--success)":"var(--danger)",i:"⚖️"},{l:"Missions terminées",v:stats.contratStats.termines+"/"+stats.contratStats.total,c:"var(--gold)",i:"📋"},{l:"Revenus missions",v:fmt(stats.contratStats.revenus),c:"var(--warning)",i:"💎"},{l:"Taux succès",v:stats.contratStats.total>0?Math.round(stats.contratStats.termines/stats.contratStats.total*100)+"%":"—",c:"var(--info)",i:"🎯"}].map(s=><div key={s.l} className="stat-card"><div className="stat-icon">{s.i}</div><div className="stat-value" style={{color:s.c,fontSize:"1.1rem"}}>{s.v}</div><div className="stat-label">{s.l}</div></div>)}
         </div>

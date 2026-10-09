@@ -6,6 +6,7 @@ import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { hasPermission } from "@/lib/auth";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
 const STATUTS=["Disponible","Sortie","Fourrière","Endommagé","Détruit"];
 const SCOL:Record<string,string>={Disponible:"var(--success)",Sortie:"var(--warning)",Fourrière:"var(--danger)",Endommagé:"#f97316",Détruit:"var(--text-dim)"};
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
@@ -34,7 +35,7 @@ export default function GaragePage(){
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem",flexWrap:"wrap"}}>
         {["","Disponible","Sortie","Fourrière","Endommagé","Détruit"].map(s=><button key={s||"all"} onClick={()=>setFilterStatut(s)} style={{padding:"0.25rem 0.75rem",borderRadius:999,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.75rem",fontWeight:filterStatut===s?700:400,background:filterStatut===s?"var(--gold-muted)":"var(--surface)",border:`1px solid ${filterStatut===s?"rgba(var(--gold-rgb), 0.4)":"var(--border)"}`,color:filterStatut===s?"var(--gold)":"var(--text-muted)"}}>{s||"Tous"}</button>)}
       </div>
-      {loading?<div style={{color:"var(--text-dim)"}}>Chargement…</div>:
+      {loading?<LoadingBlock />:
       <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
         {filtered.map(v=>{const col=SCOL[v.statut]||"var(--text-dim)";return<div key={v.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:"var(--radius-lg)",padding:"0.875rem 1.125rem",display:"flex",alignItems:"center",gap:"1rem"}}>
           <div style={{width:44,height:44,borderRadius:"50%",flexShrink:0,background:col+"15",border:`2px solid ${col}30`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.25rem"}}>🚗</div>

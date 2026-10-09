@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
+
   --bg:           #0f0f1a; /* Background */
   --surface:      #222244; /* Muted */
   --card:         #1a1a2e; /* Card / Popover */
@@ -954,11 +955,79 @@ tr:hover td { background: rgba(255,255,255,0.012); }
 }
 
 .divider { height: 1px; background: var(--border); margin: 1rem 0; }
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOTION v2 — compléments (cartes, tableaux, boutons, sidebar, modales)
+   Fill-mode "backwards" (et non "both") : pas de transform résiduel après
+   l'animation, donc le hover et les éléments position:fixed ne sont pas cassés.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.page-container .card:not(.stagger-item):nth-child(-n+8) {
+  animation: staggerIn var(--t-slow) var(--ease) backwards;
+}
+.page-container .card:not(.stagger-item):nth-child(1) { animation-delay: 0.02s; }
+.page-container .card:not(.stagger-item):nth-child(2) { animation-delay: 0.06s; }
+.page-container .card:not(.stagger-item):nth-child(3) { animation-delay: 0.10s; }
+.page-container .card:not(.stagger-item):nth-child(4) { animation-delay: 0.14s; }
+.page-container .card:not(.stagger-item):nth-child(5) { animation-delay: 0.18s; }
+.page-container .card:not(.stagger-item):nth-child(6) { animation-delay: 0.22s; }
+.page-container .card:not(.stagger-item):nth-child(7) { animation-delay: 0.26s; }
+.page-container .card:not(.stagger-item):nth-child(8) { animation-delay: 0.30s; }
 
-/* Vignettes de carte hors-zone (Cayo Perico, Roxwood...) sur la Carte enquêteur */
-.map-extension-overlay {
-  border-radius: 10px;
-  outline: 2px solid var(--gold);
-  outline-offset: -1px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
+/* Lignes de tableau : fondu en cascade (12 premières lignes) */
+tbody tr:nth-child(-n+12) { animation: fadeIn var(--t-slow) var(--ease) backwards; }
+tbody tr:nth-child(1)  { animation-delay: 0.02s; } tbody tr:nth-child(2)  { animation-delay: 0.05s; }
+tbody tr:nth-child(3)  { animation-delay: 0.08s; } tbody tr:nth-child(4)  { animation-delay: 0.11s; }
+tbody tr:nth-child(5)  { animation-delay: 0.14s; } tbody tr:nth-child(6)  { animation-delay: 0.17s; }
+tbody tr:nth-child(7)  { animation-delay: 0.20s; } tbody tr:nth-child(8)  { animation-delay: 0.23s; }
+tbody tr:nth-child(9)  { animation-delay: 0.26s; } tbody tr:nth-child(10) { animation-delay: 0.29s; }
+tbody tr:nth-child(11) { animation-delay: 0.32s; } tbody tr:nth-child(12) { animation-delay: 0.35s; }
+
+/* Cartes cliquables (dans un lien ou un bouton) : léger soulèvement */
+a > .card, button.card { cursor: pointer; }
+a:hover > .card, button.card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(var(--gold-rgb), 0.22);
+  box-shadow: 0 14px 36px rgba(2,4,12,0.45), 0 0 0 1px rgba(var(--gold-rgb), 0.08);
+}
+a:active > .card, button.card:active { transform: translateY(-1px) scale(0.99); }
+
+/* Bouton principal : reflet qui traverse au survol */
+.btn-gold { overflow: hidden; }
+.btn-gold::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.35), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+.btn-gold:hover:not(:disabled)::after { animation: btnShine 0.7s var(--ease); }
+@keyframes btnShine { from { left: -60%; } to { left: 130%; } }
+
+/* Sidebar : l'icône réagit au survol */
+.sidebar-link-icon { transition: transform var(--t-base) var(--ease); }
+.sidebar-link:hover .sidebar-link-icon { transform: translateX(2px) scale(1.12); }
+
+/* Modale : la croix pivote */
+.modal-close:hover { transform: rotate(90deg); }
+
+/* Barre de progression : léger reflet animé */
+.progress-bar-fill { position: relative; overflow: hidden; }
+.progress-bar-fill::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2.2s ease-in-out infinite;
+}
+
+/* Accessibilité : si l'appareil demande moins d'animations, on coupe tout. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .wandering-cat { display: none; }
 }

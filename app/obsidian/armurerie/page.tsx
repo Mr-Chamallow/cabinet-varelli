@@ -6,6 +6,7 @@ import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { hasPermission } from "@/lib/auth";
+import { LoadingBlock } from "@/components/ui/LoadingBlock";
 const CATS=["arme","munition","accessoire","explosif","gilet","radio","autre"];
 const CAT_ICONS:Record<string,string>={arme:"🔫",munition:"🔴",accessoire:"🔧",explosif:"💣",gilet:"🦺",radio:"📻",autre:"📦"};
 export default function ArmureriePage(){
@@ -72,7 +73,7 @@ export default function ArmureriePage(){
         <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem",flexWrap:"wrap"}}>
           {["","arme","munition","accessoire","explosif","gilet","radio"].map(c=><button key={c||"all"} onClick={()=>setFilterCat(c)} style={{padding:"0.25rem 0.75rem",borderRadius:999,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.75rem",fontWeight:filterCat===c?700:400,background:filterCat===c?"var(--gold-muted)":"var(--surface)",border:`1px solid ${filterCat===c?"rgba(139,92,246,0.4)":"var(--border)"}`,color:filterCat===c?"var(--gold)":"var(--text-muted)"}}>{c?(CAT_ICONS[c]+" "+c):"Tout"}</button>)}
         </div>
-        {loading?<div style={{color:"var(--text-dim)"}}>Chargement…</div>:
+        {loading?<LoadingBlock />:
         <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
           {filtered.map((s:any)=><div key={s.id} style={{background:"var(--card)",border:`1px solid ${s.seuil_alerte>0&&s.quantite<=s.seuil_alerte?"rgba(239,68,68,0.3)":"var(--border)"}`,borderRadius:"var(--radius-lg)",padding:"0.875rem 1.125rem",display:"flex",alignItems:"center",gap:"1rem"}}>
             <span style={{fontSize:"1.4rem",flexShrink:0}}>{s.emoji||CAT_ICONS[s.categorie]||"📦"}</span>

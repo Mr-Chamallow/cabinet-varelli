@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission, firstAccessiblePath } from "@/lib/auth";
+import { CountUp } from "@/components/ui/CountUp";
 
 const fmt = (n:number) => n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 
@@ -108,10 +109,10 @@ export default function ObsidianDashboard() {
           {/* Stats principales */}
           <div className="stat-grid">
             {[
-              { label: "Solde", value: fmt(solde), icon: "⚖️", href: "/obsidian/comptabilite", color: solde>=0?"var(--success)":"var(--danger)" },
-              { label: "Argent sale", value: fmt(s.argSale), icon: "💰", href: "/obsidian/comptabilite", color: "var(--warning)" },
-              { label: "Stock armes", value: s.nbArmes+"u.", icon: "🔫", href: "/obsidian/armurerie", color: "var(--danger)" },
-              { label: "Stock drogues", value: s.nbDrogues+"u.", icon: "💊", href: "/obsidian/stocks", color: "#8b5cf6" },
+              { label: "Solde", value: <CountUp value={solde} format={fmt} />, icon: "⚖️", href: "/obsidian/comptabilite", color: solde>=0?"var(--success)":"var(--danger)" },
+              { label: "Argent sale", value: <CountUp value={s.argSale} format={fmt} />, icon: "💰", href: "/obsidian/comptabilite", color: "var(--warning)" },
+              { label: "Stock armes", value: <CountUp value={s.nbArmes} format={(n)=>Math.round(n)+"u."} />, icon: "🔫", href: "/obsidian/armurerie", color: "var(--danger)" },
+              { label: "Stock drogues", value: <CountUp value={s.nbDrogues} format={(n)=>Math.round(n)+"u."} />, icon: "💊", href: "/obsidian/stocks", color: "#8b5cf6" },
             ].map((st) => (
               <a key={st.label} href={st.href} style={{ textDecoration: "none" }} className="stagger-item">
                 <div className="stat-card">
@@ -127,11 +128,11 @@ export default function ObsidianDashboard() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem", marginBottom: "1.75rem" }}>
             <div className="card stagger-item" style={{ borderColor: "rgba(34,197,94,0.18)" }}>
               <div className="stat-label" style={{ marginBottom: "0.5rem" }}>Recettes cumulées</div>
-              <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--success)" }}>{fmt(s.recettes)}</div>
+              <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--success)" }}><CountUp value={s.recettes} format={fmt} /></div>
             </div>
             <div className="card stagger-item" style={{ borderColor: "rgba(239,68,68,0.18)" }}>
               <div className="stat-label" style={{ marginBottom: "0.5rem" }}>Dépenses cumulées</div>
-              <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--danger)" }}>{fmt(s.depenses)}</div>
+              <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--danger)" }}><CountUp value={s.depenses} format={fmt} /></div>
             </div>
           </div>
 
