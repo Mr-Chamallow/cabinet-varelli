@@ -4,7 +4,7 @@ import { PhotoPicker } from "@/components/PhotoPicker";
 export { fileToPhoto } from "@/components/PhotoPicker";
 
 // Carte pro d'employé Obsidian Logistics : recto/verso, tilt 3D, reflet holographique, anneaux animés, puce, scan.
-export interface CardEmploye { id: string; nom: string; role?: string | null; discord?: string | null; telephone?: string | null; created_at?: string; photo_url?: string | null; actif?: boolean; genre?: string | null; email?: string | null; notes?: string | null }
+export interface CardEmploye { id: string; nom: string; role?: string | null; discord?: string | null; telephone?: string | null; created_at?: string; photo_url?: string | null; actif?: boolean; genre?: string | null; email?: string | null; notes?: string | null; rib?: string | null; histoire_url?: string | null }
 
 export interface RoleStyle { key: string; nom: string; color: string; color2: string; niveau: string; emblem: string; stars: number; finish: string; titre: string; hab: number; fn: string; acces: string[] }
 // Une identité visuelle par rôle / grade : couleurs, emblème, étoiles, finition.

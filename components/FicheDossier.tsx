@@ -1,4 +1,6 @@
 "use client";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { ObsLogo } from "@/components/ObsLogo";
 import { Stamp } from "@/components/Stamp";
 import { metierInfo } from "@/lib/fichesMetiers";
@@ -8,6 +10,8 @@ const PCOL: Record<string, string> = { Basse: "#5b6b7a", Normale: "#2f6fb0", Hau
 const ref = (id: string) => "OBS-F-" + (parseInt((id || "0").replace(/[^0-9a-f]/gi, "").slice(0, 6) || "0", 16) % 100000).toString().padStart(5, "0");
 
 export function FicheDossier({ f, showPrivate = true }: { f: any; showPrivate?: boolean }) {
+  const [journal, setJournal] = useState<any[]>([]);
+  useEffect(() => { if (!supabase || !f?.id || !showPrivate) return; supabase.from("obsidian_journal").select("*").eq("fiche_id", f.id).order("created_at", { ascending: false }).limit(8).then(({ data }) => setJournal(data || [])); }, [f?.id, showPrivate]);
   const m = metierInfo(f.metier); const col = PCOL[f.priorite] || PCOL.Normale;
   const st = String(f.statut || ""); const bigStamp = /captur|arr[êe]t/i.test(st) ? { t: "Capturé", c: "green" as const } : /class|clos|neutralis/i.test(st) ? { t: "Classé", c: "blue" as const } : null;
   const rows: [string, any][] = [["Âge", f.age ? `${f.age} ans` : ""], ["Origine", f.origine], ["Occupation", f.occupation], ["Téléphone", f.telephone], ["Groupe", f.organisation], ["Statut", f.statut], ["Type", f.type]];
@@ -41,6 +45,7 @@ export function FicheDossier({ f, showPrivate = true }: { f: any; showPrivate?: 
         </div>
         {blocks.filter(b => b[1]).map(([k, v]) => <div className="fd-block" key={k}><b>{k}</b><p>{v}</p></div>)}
         {showPrivate && f.notes_privees && <div className="fd-block fd-secret"><b>🔒 Notes privées — ne pas diffuser</b><p>{f.notes_privees}</p></div>}
+        {showPrivate && journal.length > 0 && <div className="fd-block"><b>Journal d'activité</b><div className="appar">{journal.map(j => <div key={j.id} className="appar-row"><small>{new Date(j.created_at).toLocaleString("fr-FR")}</small><span>{j.action}</span><small>{j.par}</small></div>)}</div></div>}
         <div className="fd-foot">Document interne — Consortium Obsidian · Mis à jour le {f.updated_at ? new Date(f.updated_at).toLocaleDateString("fr-FR") : "—"}</div>
       </div>
     </div>

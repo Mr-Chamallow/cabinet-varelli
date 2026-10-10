@@ -15,13 +15,13 @@ import {
 } from './supabase-carte';
 
 const colors = {
-  bg: '#0F1420',
-  panel: '#111826',
-  border: '#1e293b',
-  borderLight: '#334155',
-  text: '#e2e8f0',
-  textDim: '#94a3b8',
-  textDimmer: '#64748b',
+  bg: 'var(--card)',
+  panel: 'var(--card)',
+  border: 'var(--border)',
+  borderLight: 'var(--border)',
+  text: 'var(--text)',
+  textDim: 'var(--text-muted)',
+  textDimmer: 'var(--text-dim)',
   amber: '#f59e0b',
   red: '#ef4444',
 };

@@ -58,7 +58,7 @@ export function buildRdvEmbed(r: any): NotifyEmbed {
     title: `📅 ${r.titre}`,
     color: 0xa48fff,
     fields: [
-      { name: "Client", value: v(r.client), inline: true },
+      { name: "Employé", value: v(r.client), inline: true },
       { name: "Date", value: v(r.date), inline: true },
       { name: "Heure", value: v(r.heure), inline: true },
       { name: "Lieu", value: v(r.lieu), inline: true },

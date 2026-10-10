@@ -94,6 +94,14 @@ export async function lookupPeople(db: Db, query: string): Promise<{ candidates:
     out.push({ key: "pl" + pl.id, source: "San Andreas", label: cp ? `${fullNom(cp)} (plaque ${pl.plaque})` : `Plaque ${pl.plaque}`, detail: pl.notes || "", personne: cp ? { nom: cp.nom, prenom: cp.prenom, notes_publiques: cp.notes || "" } : undefined, vehicules: [{ plaque: pl.plaque }], plaque: pl.plaque });
   }
   for (const cp of cpers.data || []) if (match(cp) && !out.some(c => c.key === "cp" + cp.id)) out.push({ key: "cp" + cp.id, source: "San Andreas", label: fullNom(cp), detail: cp.notes || "", personne: { nom: cp.nom, prenom: cp.prenom, notes_publiques: cp.notes || "" }, vehicules: [] });
+  // Alerte : la personne (ou la plaque) correspond à une fiche recherchée / avec prime.
+  try {
+    const { data: wf } = await db.from("obsidian_fiches").select("id,nom,personne_id,statut,prime,vehicules").is("deleted_at", null).or("prime.gt.0,statut.ilike.%recherch%");
+    for (const c of out) {
+      const hit = (wf || []).find((w: any) => (c.personne?.id && w.personne_id === c.personne.id) || (c.personne && fullNom(c.personne).toLowerCase() === String(w.nom || "").toLowerCase()) || (c.plaque && String(w.vehicules || "").toLowerCase().includes(c.plaque.toLowerCase())));
+      if (hit) { c.label = "🚨 RECHERCHÉ — " + c.label; c.detail = [hit.statut, Number(hit.prime) > 0 ? `prime ${Number(hit.prime).toLocaleString("fr-FR")} $` : ""].filter(Boolean).join(" · ") + (c.detail ? " · " + c.detail : ""); }
+    }
+  } catch { /* alerte best-effort */ }
   return { candidates: out.slice(0, 12), fiches: fiches.data || [] };
 }
 

@@ -15,10 +15,10 @@ import { EmployeeDossier } from "@/components/EmployeeDossier";
 
 interface Employe {
   id: string; nom: string; role: string; telephone: string; discord: string;
-  email: string; notes: string; actif: boolean; created_at: string; photo_url?: string | null; genre?: string | null;
+  email: string; notes: string; rib?: string | null; histoire_url?: string | null; actif: boolean; created_at: string; photo_url?: string | null; genre?: string | null;
 }
 
-const EMPTY = { nom: "", role: "", genre: "m", telephone: "", discord: "", email: "", notes: "", actif: true };
+const EMPTY = { nom: "", role: "", genre: "m", telephone: "", discord: "", email: "", notes: "", rib: "", actif: true };
 const GROUPS: { titre: string; keys: string[] }[] = [
   { titre: "👑 Directoire exécutif", keys: ["patron", "ceo", "coo"] }, { titre: "⚖️ Pôle Juridique", keys: ["rj", "aj", "avocat"] }, { titre: "📦 Pôle Logistique", keys: ["rl", "al"] }, { titre: "🛡️ Pôle Sécurité", keys: ["rs", "as"] }, { titre: "🧑‍💼 Membres", keys: ["op", "st"] }, { titre: "🤝 Partenaires externes", keys: ["legal"] },
 ];
@@ -50,6 +50,30 @@ export default function EmployesObsidianPage() {
     showToast(url ? "Photo enregistrée" : "Photo retirée");
   }
 
+  const canPromote = /^(CEO|COO|Associé)/.test((user as any)?.role || "");
+  const [dTab, setDTab] = useState<"dossier" | "histoire">("dossier");
+  const [promoRole, setPromoRole] = useState("");
+  const [promo, setPromo] = useState<{ nom: string; from: string; to: string; step: number } | null>(null);
+  const [histUrl, setHistUrl] = useState("");
+  useEffect(() => { setHistUrl(cardEmp?.histoire_url || ""); setPromoRole(""); setDTab("dossier"); }, [cardId]); // eslint-disable-line
+  async function saveHistoire() {
+    if (!cardEmp) return;
+    const r = await fetch("/api/obsidian/employes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: cardEmp.id, histoire_url: histUrl.trim() || null }) });
+    if (!r.ok) { const d = await r.json(); alert("❌ " + d.error); return; }
+    setEmployes(l => l.map(x => x.id === cardEmp.id ? { ...x, histoire_url: histUrl.trim() || null } : x));
+    showToast("Histoire enregistrée");
+  }
+  async function promouvoir() {
+    if (!cardEmp || !promoRole || promoRole === cardEmp.role) return;
+    const from = cardEmp.role || "—", nom = cardEmp.nom, id = cardEmp.id, to = promoRole;
+    const r = await fetch("/api/obsidian/employes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, role: to }) });
+    if (!r.ok) { const d = await r.json(); alert("❌ " + d.error); return; }
+    setPromo({ nom, from, to, step: 0 });
+    setTimeout(() => setPromo(p => p && { ...p, step: 1 }), 900);
+    setTimeout(() => setPromo(null), 3800);
+    setEmployes(l => l.map(x => x.id === id ? { ...x, role: to } : x));
+    setPromoRole("");
+  }
   const isPatron = ["CEO - Directeur général","Associé / Patron"].includes((user as any)?.role);
   useEffect(() => { load(); }, []);
   useRealtimeTable("obsidian_employes", load);
@@ -71,7 +95,7 @@ export default function EmployesObsidianPage() {
 
   function openNew() { setForm({ ...EMPTY }); setEditId(null); setShowForm(true); }
   function openEdit(e: Employe) {
-    setForm({ nom: e.nom, role: e.role || "", genre: e.genre || "m", telephone: e.telephone || "", discord: e.discord || "", email: e.email || "", notes: e.notes || "", actif: e.actif !== false });
+    setForm({ nom: e.nom, role: e.role || "", genre: e.genre || "m", telephone: e.telephone || "", discord: e.discord || "", email: e.email || "", notes: e.notes || "", rib: e.rib || "", actif: e.actif !== false });
     setEditId(e.id); setShowForm(true);
   }
 
@@ -160,13 +184,18 @@ export default function EmployesObsidianPage() {
               <div className="form-group"><label>Nom *</label><input autoFocus value={form.nom} disabled={!!editId && !isPatron} title={!!editId && !isPatron ? "Seul le Patron peut renommer" : ""} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} />{!!editId && !isPatron && <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: 4 }}>Seul le Patron peut renommer un employé.</div>}</div>
               <div className="form-group">
                 <label>Rôle</label>
-                <input list="roles-list" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} placeholder="Ex: Agent logistique" />
-                <datalist id="roles-list">{ROLES_LOGISTIQUE.map(r => <option key={r} value={r} />)}</datalist>
+                <select value={form.role} disabled={!!editId && !canPromote} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
+                  <option value="">— Choisir un rôle —</option>
+                  {form.role && !ROLES_LOGISTIQUE.includes(form.role) && <option value={form.role}>{form.role}</option>}
+                  {ROLES_LOGISTIQUE.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+                {!!editId && !canPromote && <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: 4 }}>Seuls le CEO et le COO peuvent changer le rôle (promotion).</div>}
               </div>
               <div className="form-group"><label>Genre (pour « Directeur / Directrice », « Agent / Agente »…)</label><select value={form.genre} onChange={e => setForm(f => ({ ...f, genre: e.target.value }))}><option value="m">Masculin</option><option value="f">Féminin</option></select></div>
               <div className="form-grid">
                 <div className="form-group"><label>Téléphone</label><input value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} /></div>
               </div>
+              <div className="form-group"><label>RIB</label><input value={form.rib} onChange={e => setForm(f => ({ ...f, rib: e.target.value }))} placeholder="Ex: FR76 …" /></div>
               <div className="form-group"><label>Email</label><input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
               <div className="form-group"><label>Notes</label><textarea rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
               <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
@@ -185,10 +214,45 @@ export default function EmployesObsidianPage() {
                 {isPatron && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => { if (window.confirm(`Supprimer ${cardEmp.nom} ?`)) { const id = cardEmp.id; setCardId(null); remove(id); } }}>🗑️ Supprimer</button>}
               </div>
               <div style={{ marginTop: "0.9rem" }}><PhotoPicker value={cardEmp.photo_url} onChange={savePhoto} /></div>
+              {canPromote && (
+                <div className="card" style={{ marginTop: "0.9rem", padding: "0.8rem" }}>
+                  <div style={{ fontSize: "0.72rem", fontWeight: 700, marginBottom: 6 }}>⬆️ Promotion (CEO / COO)</div>
+                  <select value={promoRole} onChange={e => setPromoRole(e.target.value)}>
+                    <option value="">— Nouveau rôle —</option>
+                    {ROLES_LOGISTIQUE.filter(r => r !== cardEmp.role).map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                  <button className="btn btn-gold btn-sm" style={{ width: "100%", marginTop: 6 }} disabled={!promoRole} onClick={promouvoir}>Promouvoir</button>
+                </div>
+              )}
             </div>
-            <EmployeeDossier e={cardEmp} />
+            <div>
+              <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                {(["dossier", "histoire"] as const).map(t => <button key={t} className={`btn btn-sm ${dTab === t ? "btn-gold" : "btn-outline"}`} onClick={() => setDTab(t)}>{t === "dossier" ? "🗂️ Dossier" : "📖 Histoire"}</button>)}
+              </div>
+              {dTab === "dossier" ? <EmployeeDossier e={cardEmp} /> : (
+                <div className="card">
+                  <div className="section-title" style={{ marginBottom: 8 }}>Histoire du personnage</div>
+                  <div className="form-group"><label>Lien Google Doc</label><input value={histUrl} onChange={e => setHistUrl(e.target.value)} placeholder="https://docs.google.com/document/d/…" /></div>
+                  <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                    <button className="btn btn-gold btn-sm" onClick={saveHistoire}>Enregistrer</button>
+                    {cardEmp.histoire_url && <a className="btn btn-outline btn-sm" href={cardEmp.histoire_url} target="_blank" rel="noreferrer">Ouvrir ↗</a>}
+                  </div>
+                  {cardEmp.histoire_url ? <iframe src={cardEmp.histoire_url.replace(/\/edit.*$/, "/preview")} style={{ width: "100%", height: 420, border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--surface)" }} /> : <div style={{ color: "var(--text-dim)", fontSize: "0.82rem" }}>Aucun lien enregistré.</div>}
+                </div>
+              )}
+            </div>
           </div>
         </Modal>
+      )}
+
+      {promo && (
+        <div className="promo-overlay">
+          <div className={`promo-stage ${promo.step ? "promo-new" : ""}`}>
+            <div className="promo-title">⬆️ PROMOTION</div>
+            <EmployeeCard e={{ ...(employes.find(x => x.nom === promo.nom) as any), role: promo.step ? promo.to : promo.from }} flippable={false} />
+            <div className="promo-sub">{promo.nom} · {promo.from} → <b>{promo.to}</b></div>
+          </div>
+        </div>
       )}
 
       <UndoToast pending={pendingUndo} onUndo={undoDelete} />

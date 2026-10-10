@@ -11,7 +11,7 @@ export function EmployeeDossier({ e }: { e: CardEmploye }) {
   const [arr, setArr] = useState<any[]>([]);
   useEffect(() => { if (!supabase) return; supabase.from("arrestations").select("id,created_at,amende,argent_perdu,notes,membre").eq("membre", e.nom).order("created_at", { ascending: false }).limit(12).then(({ data }) => setArr(data || [])); }, [e.nom]);
   const since = e.created_at ? new Date(e.created_at).toLocaleDateString("fr-FR") : "—";
-  const rows: [string, any][] = [["Poste", roleLabel(e.role, e.genre)], ["Service", p.nom], ["Fonction", genderize(p.titre, e.genre)], ["Habilitation", `${p.hab} / 5 — niveau ${p.niveau}`], ["Matricule", matricule(e.id)], ["Entrée", since], ["Téléphone", e.telephone], ["Email", e.email]];
+  const rows: [string, any][] = [["Poste", roleLabel(e.role, e.genre)], ["Service", p.nom], ["Fonction", genderize(p.titre, e.genre)], ["Habilitation", `${p.hab} / 5 — niveau ${p.niveau}`], ["Matricule", matricule(e.id)], ["Entrée", since], ["Téléphone", e.telephone], ["Email", e.email], ["RIB", e.rib]];
   return (
     <div className="fd">
       <div className="fd-tab">PERSONNEL N° {matricule(e.id)}</div>

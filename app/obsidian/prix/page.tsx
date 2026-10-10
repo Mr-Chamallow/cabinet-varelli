@@ -24,7 +24,7 @@ function sortDrogues(list:any[]){
   });
 }
 
-const ACCS=[{nom:"Chargeurs Pistolets",prix:225000},{nom:"Chargeurs Auto",prix:500000},{nom:"Chargeurs Lourdes",prix:750000},{nom:"Silencieux Pistolets",prix:17500},{nom:"Silencieux Auto",prix:25000},{nom:"Silencieux Lourdes",prix:30000},{nom:"Viseurs Pistolets",prix:17500},{nom:"Viseurs Auto",prix:25000},{nom:"Viseurs Lourdes",prix:30000},{nom:"Poignées Lourdes",prix:30000},{nom:"Lampes Pistolets",prix:17500},{nom:"Lampes Lourdes",prix:30000},{nom:"Compensateurs Pistolets",prix:17500},{nom:"Freins Auto",prix:25000},{nom:"Freins Lourdes",prix:30000},{nom:"Canons Auto",prix:25000},{nom:"Canons Lourdes",prix:30000}];
+import { ACCS } from "@/lib/priceRef";
 
 export default function PrixPage() {
   const { user, loading: userLoading } = useCurrentUser();

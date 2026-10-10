@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { requirePermission, requirePatron } from "@/lib/serverAuth";
-import { logAudit } from "@/lib/alerts";
+import { logAudit, postAlert, GREEN } from "@/lib/alerts";
+
+const PROMO_ROLES = ["CEO - Directeur général", "Associé / Patron", "COO - Directrice opérationnel", "COO - Directeur opérationnel"];
+const isPromoter = (u: any) => PROMO_ROLES.some(r => r === u?.site_role) || String(u?.site_role || "").startsWith("COO") || String(u?.site_role || "").startsWith("CEO") || (!!process.env.ADMIN_DISCORD_ID && u?.discord_id === process.env.ADMIN_DISCORD_ID);
 
 // [table, colonne du nom] — toutes pointent vers l'employé par employe_id (rempli automatiquement en base).
 const TABLES_NOM: [string, string][] = [["actions_illegales", "membre"], ["arrestations", "membre"], ["obsidian_comptabilite", "membre"], ["obsidian_mouvements", "membre"], ["obsidian_paiements", "employe"], ["cahier_transactions", "created_by"]];
@@ -25,7 +28,9 @@ export async function PATCH(req: Request) {
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
 
     const { id, ...patch } = await req.json();
-    const { data: old } = await supabaseAdmin.from("obsidian_employes").select("nom,discord_id").eq("id", id).maybeSingle();
+    const { data: old } = await supabaseAdmin.from("obsidian_employes").select("nom,discord_id,role").eq("id", id).maybeSingle();
+    const promoted = !!old && patch.role !== undefined && String(patch.role || "") !== String(old.role || "");
+    if (promoted && !isPromoter(user)) return NextResponse.json({ error: "Seuls le CEO et le COO peuvent changer le rôle / promouvoir" }, { status: 403 });
     const renamed = !!old && patch.nom !== undefined && String(patch.nom).trim() !== old.nom;
     if (renamed) {
       const p = await requirePatron();
@@ -43,6 +48,11 @@ export async function PATCH(req: Request) {
       if (old!.discord_id) await supabaseAdmin.from("site_logins").update({ nom_perso: patch.nom }).eq("discord_id", old!.discord_id);
     }
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
+    if (promoted && old) {
+      const who = (user as any)?.nom_perso || (user as any)?.discord_name;
+      await logAudit(supabaseAdmin, who, "Promotion / changement de rôle", old.nom, `${old.role || "—"} → ${patch.role}`);
+      await postAlert("compta", `⬆️ Promotion — ${old.nom}`, `${old.role || "—"} → **${patch.role}**\nPar **${who || "?"}**`, GREEN);
+    }
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

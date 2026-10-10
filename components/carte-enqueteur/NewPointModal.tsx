@@ -4,12 +4,12 @@ import { useState } from 'react';
 import type { Preset } from './types';
 
 const colors = {
-  panel: '#111826',
-  border: '#1e293b',
-  borderLight: '#334155',
-  text: '#e2e8f0',
-  textDim: '#94a3b8',
-  textDimmer: '#64748b',
+  panel: 'var(--card)',
+  border: 'var(--border)',
+  borderLight: 'var(--border)',
+  text: 'var(--text)',
+  textDim: 'var(--text-muted)',
+  textDimmer: 'var(--text-dim)',
   amber: '#f59e0b',
 };
 
@@ -237,7 +237,7 @@ export default function NewPointModal({ presets, onCancel, onConfirm }: Props) {
                 onClick={confirm}
                 disabled={!title.trim()}
                 style={{
-                  borderRadius: 6, background: colors.amber, color: '#1a1206', border: 'none',
+                  borderRadius: 6, background: colors.amber, color: 'var(--card)', border: 'none',
                   padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                   opacity: title.trim() ? 1 : 0.5,
                 }}

@@ -51,10 +51,10 @@ export default function TagsModal({
           width: '100%',
           maxWidth: 480,
           borderRadius: 8,
-          border: '1px solid #334155',
-          background: '#111826',
+          border: '1px solid var(--border)',
+          background: 'var(--card)',
           padding: 16,
-          color: '#e2e8f0',
+          color: 'var(--text)',
           boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
         }}
       >
@@ -62,7 +62,7 @@ export default function TagsModal({
           <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Gestion des Catégories</h2>
           <button
             onClick={onClose}
-            style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 16 }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 16 }}
           >
             ✕
           </button>
@@ -84,11 +84,11 @@ export default function TagsModal({
             style={{
               flex: 1,
               borderRadius: 6,
-              border: '1px solid #334155',
+              border: '1px solid var(--border)',
               background: 'rgba(15,23,42,0.7)',
               padding: '6px 10px',
               fontSize: 14,
-              color: '#e2e8f0',
+              color: 'var(--text)',
               outline: 'none',
             }}
           />
@@ -98,7 +98,7 @@ export default function TagsModal({
             style={{
               borderRadius: 6,
               background: '#f59e0b',
-              color: '#1a1206',
+              color: 'var(--card)',
               fontWeight: 600,
               fontSize: 13,
               padding: '6px 12px',
@@ -123,7 +123,7 @@ export default function TagsModal({
                 padding: '6px 8px',
                 borderRadius: 6,
                 background: 'rgba(15,23,42,0.5)',
-                border: '1px solid #1e293b',
+                border: '1px solid var(--border)',
               }}
             >
               <input
@@ -140,7 +140,7 @@ export default function TagsModal({
                   flex: 1,
                   background: 'transparent',
                   border: 'none',
-                  color: '#e2e8f0',
+                  color: 'var(--text)',
                   fontSize: 14,
                   outline: 'none',
                 }}
@@ -154,7 +154,7 @@ export default function TagsModal({
             </div>
           ))}
           {categories.length === 0 && (
-            <div style={{ textAlign: 'center', color: '#64748b', fontSize: 13, padding: 12 }}>
+            <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: 13, padding: 12 }}>
               Aucune catégorie enregistrée.
             </div>
           )}

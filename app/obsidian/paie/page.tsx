@@ -40,7 +40,7 @@ export default function PaieObsidianPage() {
   const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_paie"))) { window.location.href = "/"; } }, [user, userLoading]);
 
-  const [tab, setTab] = useState<"apercu" | "historique" | "reglages">("apercu");
+  const [tab, setTab] = useState<"apercu" | "reglages">("apercu");
   const [weekOffset, setWeekOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [mouvements, setMouvements] = useState<any[]>([]);
@@ -183,9 +183,9 @@ export default function PaieObsidianPage() {
       </div>
 
       <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1.25rem" }}>
-        {(["apercu", "historique", "reglages"] as const).map(t => (
+        {(["apercu", "reglages"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{ padding: "0.4rem 0.875rem", borderRadius: "var(--radius)", cursor: "pointer", fontFamily: "'Inter',sans-serif", fontSize: "0.8rem", fontWeight: tab === t ? 700 : 400, background: tab === t ? "var(--gold-muted)" : "var(--surface)", border: `1px solid ${tab === t ? "rgba(var(--gold-rgb), 0.4)" : "var(--border)"}`, color: tab === t ? "var(--gold)" : "var(--text-muted)" }}>
-            {t === "apercu" ? "📊 Aperçu" : t === "historique" ? "📜 Historique des paiements" : "⚙️ Réglages"}
+            {t === "apercu" ? "📊 Aperçu" : "⚙️ Réglages"}
           </button>
         ))}
       </div>
@@ -258,24 +258,6 @@ export default function PaieObsidianPage() {
             </div>
           )}
         </>
-      )}
-
-      {tab === "historique" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          {paiements.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">📜</div><div className="empty-title">Aucun paiement enregistré</div></div>
-          ) : paiements.map(p => (
-            <div key={p.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ fontWeight: 600 }}>{p.employe}</div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
-                  Semaine du {new Date(p.semaine).toLocaleDateString("fr-FR")} · payé par {p.paid_by} le {new Date(p.created_at).toLocaleDateString("fr-FR")}
-                </div>
-              </div>
-              <div style={{ fontWeight: 700, color: "var(--gold)" }}>{fmt(p.montant)}</div>
-            </div>
-          ))}
-        </div>
       )}
 
       {tab === "reglages" && (

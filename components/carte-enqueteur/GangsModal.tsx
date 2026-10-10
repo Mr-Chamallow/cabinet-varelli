@@ -4,12 +4,12 @@ import { useState } from 'react';
 import type { Gang } from './types';
 
 const colors = {
-  panel: '#111826',
-  border: '#1e293b',
-  borderLight: '#334155',
-  text: '#e2e8f0',
-  textDim: '#94a3b8',
-  textDimmer: '#64748b',
+  panel: 'var(--card)',
+  border: 'var(--border)',
+  borderLight: 'var(--border)',
+  text: 'var(--text)',
+  textDim: 'var(--text-muted)',
+  textDimmer: 'var(--text-dim)',
   amber: '#f59e0b',
 };
 
@@ -122,7 +122,7 @@ export default function GangsModal({ gangs, onClose, onAdd, onRename, onRetype, 
               onAdd(newNom.trim(), newType);
               setNewNom('');
             }}
-            style={{ borderRadius: 6, background: colors.amber, color: '#1a1206', border: 'none', padding: '0 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            style={{ borderRadius: 6, background: colors.amber, color: 'var(--card)', border: 'none', padding: '0 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
           >
             Ajouter
           </button>

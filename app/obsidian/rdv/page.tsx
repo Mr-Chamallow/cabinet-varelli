@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
 import { notifyDiscordCreate, notifyDiscordUpdate, notifyDiscordDelete } from "@/lib/notifyDiscord";
+import { CalendrierGlobal } from "@/components/CalendrierGlobal";
 import { buildRdvEmbed } from "@/lib/discordEmbeds";
 
 interface Operation {
@@ -117,17 +118,18 @@ export default function PlanningOperationsPage() {
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [weekRef, setWeekRef] = useState(today);
-  const [viewMode, setViewMode] = useState<"mois" | "semaine">("mois");
+  const [viewMode, setViewMode] = useState<"mois" | "semaine" | "global">("mois");
   const [editOperation, setEditOperation] = useState<Operation | null>(null);
   const [filterMember, setFilterMember] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [fiches, setFiches] = useState<string[]>([]);
+  const [siteMembers, setSiteMembers] = useState<string[]>([]);
   const [detailOperation, setDetailOperation] = useState<Operation | null>(null);
   const [contratsList, setContratsList] = useState<{ titre: string }[]>([]);
 
   useEffect(() => { if (!userLoading && user) { fetchOperations(); fetchFiches(); fetchContrats(); } }, [user, userLoading]);
 
-  const membersList = [...new Set(operations.map(a => a.created_by))].filter(Boolean).sort();
+  const membersList = [...new Set([...siteMembers, ...operations.map(a => a.created_by)])].filter(Boolean).sort((a, b) => a.localeCompare(b));
   const memberColors: Record<string, string> = {};
   membersList.forEach(m => { memberColors[m] = getMemberColor(m); });
 
@@ -148,8 +150,10 @@ export default function PlanningOperationsPage() {
 
   async function fetchFiches() {
     if (!supabase) return;
-    const { data } = await supabase.from("obsidian_fiches").select("nom").order("nom");
-    setFiches((data || []).map((c: any) => c.nom));
+    const { data } = await supabase.from("obsidian_employes").select("nom,actif").order("nom");
+    setFiches((data || []).filter((c: any) => c.actif !== false).map((c: any) => c.nom));
+    const { data: lg } = await supabase.from("site_logins").select("discord_name");
+    setSiteMembers((lg || []).map((x: any) => x.discord_name).filter(Boolean));
   }
 
   async function fetchContrats() {
@@ -287,7 +291,7 @@ async function saveOperation() {
       "BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT",
       `SUMMARY:${a.titre}`,
       `DTSTART:${dtStart}`,
-      `DESCRIPTION:${a.client ? `Contact: ${a.client}. ` : ""}${a.notes || ""}`,
+      `DESCRIPTION:${a.client ? `Employé: ${a.client}. ` : ""}${a.notes || ""}`,
       `LOCATION:${a.lieu || ""}`,
       "END:VEVENT", "END:VCALENDAR",
     ].join("\r\n");
@@ -434,23 +438,24 @@ async function saveOperation() {
       <div className="toolbar">
         <div className="search-bar">
           <span className="search-icon">🔍</span>
-          <input placeholder="Rechercher une opération, un contact…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input placeholder="Rechercher une opération, un employé…" value={search} onChange={e => setSearch(e.target.value)} />
           {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "1rem" }}>×</button>}
         </div>
         <div style={{ display: "flex", gap: "0.4rem" }}>
-          {(["mois", "semaine"] as const).map(m => (
+          {(["mois", "semaine", "global"] as const).map(m => (
             <button key={m} onClick={() => setViewMode(m)} style={{
               padding: "0.5rem 1rem", borderRadius: "var(--radius)", cursor: "pointer",
               fontFamily: "'Inter',sans-serif", fontSize: "0.8rem", fontWeight: viewMode === m ? 700 : 400,
               background: viewMode === m ? "var(--gold-muted)" : "var(--surface)",
               border: `1px solid ${viewMode === m ? "rgba(139,92,246,0.4)" : "var(--border)"}`,
               color: viewMode === m ? "var(--gold)" : "var(--text-muted)", transition: "all var(--t-fast) var(--ease)",
-            }}>{m === "mois" ? "📅 Mois" : "🗂 Semaine"}</button>
+            }}>{m === "mois" ? "📅 Mois" : m === "semaine" ? "🗂 Semaine" : "🌐 Tout (convois, enchères…)"}</button>
           ))}
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "1.5rem" }}>
+      {viewMode === "global" && <CalendrierGlobal />}
+      <div style={{ display: viewMode === "global" ? "none" : "grid", gridTemplateColumns: "1fr 360px", gap: "1.5rem" }}>
 
         <div className="card" style={{ overflow: "hidden", position: "relative" }}>
           {viewMode === "mois" ? (
@@ -781,7 +786,7 @@ async function saveOperation() {
               <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
                 {[
                   { label: "Type", value: detailOperation.type },
-                  { label: "Contact", value: detailOperation.client || "—" },
+                  { label: "Employé", value: detailOperation.client || "—" },
                   { label: "Lieu", value: detailOperation.lieu || "—" },
                 ].map(r => (
                   <div key={r.label} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", paddingBottom: "0.5rem", borderBottom: "1px solid var(--border)" }}>
@@ -828,11 +833,12 @@ async function saveOperation() {
                   <input type="time" value={form.heure} onChange={e => setForm(f => ({ ...f, heure: e.target.value }))} />
                 </div>
                 <div className="form-group">
-                  <label>Contact / Fiche liée</label>
-                  <input list="fiches-list" placeholder="Nom" value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} />
-                  <datalist id="fiches-list">
-                    {fiches.map(c => <option key={c} value={c} />)}
-                  </datalist>
+                  <label>Employé</label>
+                  <select value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))}>
+                    <option value="">— Aucun —</option>
+                    {form.client && !fiches.includes(form.client) && <option value={form.client}>{form.client} (hors annuaire)</option>}
+                    {fiches.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label>Lieu</label>

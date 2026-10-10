@@ -18,7 +18,6 @@ const NAV_SECTIONS = [
     { href: "/obsidian/garage",        label: "Garage",          icon: "🚗", permission: "obsidian_garage" },
     { href: "/obsidian/comptabilite",  label: "Comptabilité",    icon: "🧾", permission: "obsidian_comptabilite" },
     { href: "/obsidian/rdv",           label: "Rendez-vous",     icon: "🗓️", permission: "obsidian_rdv" },
-    { href: "/obsidian/calendrier",    label: "Calendrier",      icon: "📅", permission: "obsidian_rdv" },
     { href: "/obsidian/contrats",      label: "Contrats",        icon: "📜", permission: "obsidian_contrats" },
     { href: "/obsidian/actions-illegales", label: "Actions illégales", icon: "🕶️", permission: "obsidian_actions" },
     { href: "/obsidian/arrestations", label: "Arrestations", icon: "🚔", permission: "obsidian_arrestations" },
