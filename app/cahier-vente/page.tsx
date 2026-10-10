@@ -52,6 +52,7 @@ interface FormState {
 type TabType = "apercu" | "historique" | "saisie" | "produits" | "blanchiment" | "equivalent";
 
 const CATEGORIES = ["drogue", "arme", "munition"];
+const CATEGORIES_ACHAT = [...CATEGORIES, "autre"];
 const TYPES_ARGENT = ["propre", "sale", "mixte"];
 
 const weekStartISO = () => weekStartOf();
@@ -59,6 +60,21 @@ const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", curren
 const fmtDate = (s: string) => new Date(s).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 const EMPTY_FORM: FormState = { type: "entrée", montant: 0, categorie: "drogue", motif: "", produit_nom: "", quantite: 0, type_argent: "propre" };
+
+// Saisie libre des produits : normalisation + détection de noms proches du stock (suggestions).
+const normNom = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+function lev(a: string, b: string) {
+  const d: number[][] = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+const nomProche = (saisie: string, nom: string) => {
+  const a = normNom(saisie), b = normNom(nom);
+  if (a.length < 3 || !b || a === b) return false;
+  return b.includes(a) || a.includes(b) || lev(a, b) <= (b.length > 6 ? 2 : 1);
+};
+
 
 export default function CahierVentePage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -83,6 +99,7 @@ export default function CahierVentePage() {
 
   // Formulaire saisie
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM });
+  const [horsStock, setHorsStock] = useState(false); // achat d'un produit absent du stock (saisie libre)
   const [saving, setSaving] = useState(false);
   const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
 
@@ -156,7 +173,7 @@ export default function CahierVentePage() {
   async function saveTransaction() {
     if (!supabase || !user || !form.produit_nom || form.quantite <= 0 || form.montant <= 0) return;
     setSaving(true);
-    const prod = produits.find(p => p.nom === form.produit_nom && p.type === form.categorie);
+    const prod = produits.find(p => normNom(p.nom) === normNom(form.produit_nom) && p.type === form.categorie);
     if (form.type === "entrée" && prod && (prod.quantite || 0) < form.quantite) { showToast(`Stock insuffisant (${prod.quantite || 0})`); setSaving(false); return; }
     const motif = form.motif.trim() || `${form.type === "entrée" ? "Vente" : "Achat"} ${form.quantite} x ${form.produit_nom}`;
     const { data } = await supabase.from("cahier_transactions").insert([{
@@ -176,7 +193,7 @@ export default function CahierVentePage() {
       setTransactions(ts => [data, ...ts]); 
       showToast(record ? "🏆 Record de vente battu !" : "Transaction enregistrée");
       if (record) goldRain();
-      setForm({ ...EMPTY_FORM }); 
+      setHorsStock(false); setForm({ ...EMPTY_FORM }); 
       setTab("apercu"); 
     }
     setSaving(false);
@@ -457,7 +474,7 @@ export default function CahierVentePage() {
               <label>Type d'opération</label>
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 {(["entrée", "sortie"] as const).map(t => (
-                  <button key={t} onClick={() => setForm(f => ({ ...f, type: t, categorie: f.categorie, produit_nom: "" }))} style={{
+                  <button key={t} onClick={() => { setHorsStock(false); setForm(f => ({ ...f, type: t, categorie: t === "entrée" && !CATEGORIES.includes(f.categorie) ? "drogue" : f.categorie, produit_nom: "" })); }} style={{
                     flex: 1, padding: "0.625rem", borderRadius: "var(--radius)", cursor: "pointer",
                     fontFamily: "'Inter',sans-serif", fontWeight: form.type === t ? 700 : 400, fontSize: "0.875rem",
                     background: form.type === t ? (t === "entrée" ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)") : "var(--surface)",
@@ -479,8 +496,8 @@ export default function CahierVentePage() {
 
             <div className="form-group">
               <label>Catégorie</label>
-              <select value={form.categorie} onChange={e => setForm(f => ({ ...f, categorie: e.target.value, produit_nom: "" }))}>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              <select value={form.categorie} onChange={e => { setHorsStock(e.target.value === "autre"); setForm(f => ({ ...f, categorie: e.target.value, produit_nom: "" })); }}>
+                {(form.type === "sortie" ? CATEGORIES_ACHAT : CATEGORIES).map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
@@ -492,11 +509,24 @@ export default function CahierVentePage() {
 
             <div className="form-grid">
               <div className="form-group">
-                <label>Produit (stock {form.categorie}) *</label>
-                <select value={form.produit_nom} onChange={e => { const pr = produits.find(x => x.nom === e.target.value); setForm(f => ({ ...f, produit_nom: e.target.value, ...(pr && !f.montant ? { montant: pr.prix_propre * (f.quantite || 1) } : {}) })); }}>
-                  <option value=""> -  Choisir  - </option>
-                  {produits.filter(p => p.type === form.categorie).map(p => <option key={p.id} value={p.nom}>{p.emoji} {p.nom} (stock : {p.quantite}{p.unite ? " " + p.unite : ""})</option>)}
-                </select>
+                <label>Produit *</label>
+                <input list="produits-stock" value={form.produit_nom} placeholder="Écris librement (ex : Matériel, Véhicule, Cocaïne 50%...)" autoComplete="off"
+                  onChange={e => { const v = e.target.value; const pr = produits.find(x => x.type === form.categorie && normNom(x.nom) === normNom(v)); setForm(f => ({ ...f, produit_nom: pr ? pr.nom : v, ...(pr && !f.montant ? { montant: pr.prix_propre * (f.quantite || 1) } : {}) })); }}/>
+                <datalist id="produits-stock">
+                  {produits.filter(p => form.categorie === "autre" || p.type === form.categorie).map(p => <option key={p.id} value={p.nom}>{p.emoji} stock : {p.quantite}{p.unite ? " " + p.unite : ""}</option>)}
+                </datalist>
+                {(() => {
+                  const exact = produits.find(x => x.type === form.categorie && normNom(x.nom) === normNom(form.produit_nom));
+                  if (exact) return <div style={{ fontSize: "0.72rem", color: "var(--green, #22c55e)", marginTop: "0.3rem" }}>Produit du stock : le stock sera mis à jour ({exact.quantite || 0} en stock).</div>;
+                  const proches = produits.filter(x => (form.categorie === "autre" || x.type === form.categorie) && nomProche(form.produit_nom, x.nom)).slice(0, 3);
+                  return <>
+                    {proches.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center", marginTop: "0.35rem", fontSize: "0.72rem", color: "var(--text-dim)" }}>
+                      Voulais-tu dire :
+                      {proches.map(x => <button key={x.id} type="button" className="btn btn-outline btn-sm" onClick={() => setForm(f => ({ ...f, produit_nom: x.nom, categorie: x.type, ...(!f.montant ? { montant: x.prix_propre * (f.quantite || 1) } : {}) }))}>{x.emoji} {x.nom} (stock : {x.quantite || 0})</button>)}
+                    </div>}
+                    {form.produit_nom.trim() && <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: "0.3rem" }}>Hors stock : enregistré en compta sans modifier les stocks.</div>}
+                  </>;
+                })()}
               </div>
               <div className="form-group">
                 <label>Quantité</label>
@@ -521,7 +551,7 @@ export default function CahierVentePage() {
             </div>
 
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button className="btn btn-outline" onClick={() => setForm({ ...EMPTY_FORM })}>Réinitialiser</button>
+              <button className="btn btn-outline" onClick={() => { setHorsStock(false); setForm({ ...EMPTY_FORM }); }}>Réinitialiser</button>
               <button className="btn btn-gold" onClick={saveTransaction}
                 disabled={saving || !form.produit_nom || form.quantite <= 0 || form.montant <= 0}
                 style={{ flex: 1, justifyContent: "center", opacity: saving ? 0.7 : 1 }}>
