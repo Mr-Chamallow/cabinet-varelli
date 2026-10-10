@@ -1,4 +1,5 @@
 "use client";
+import { palierOf } from "@/lib/rolesRP";
 import { Pdf, clean, fdate, fday, fusd } from "@/lib/pdf";
 import { metierInfo } from "@/lib/fichesMetiers";
 import { scoreOf, scoreLabel } from "@/lib/gmApi";
@@ -137,4 +138,16 @@ export async function pdfEnquete(items: EnqueteItem[], links: { a: string; b: st
   const notes = items.filter(i => i.kind === "note" && i.img);
   if (notes.length) { p.section(`Pieces libres (${notes.length})`); for (let n = 0; n < notes.length; n += 3) p.photos(notes.slice(n, n + 3).map((x, j) => ({ url: x.img, label: `Piece ${n + j + 1}`, w: 50, h: 38 }))); }
   p.save(`tableau-enquete-${day()}`);
+}
+
+export async function pdfConvocation(c: { organisation: string; destinataire: string; lieu: string; date: string; heure: string; objet: string; consignes?: string; score?: number; par?: string }) {
+  const p = await Pdf.create({ kind: "convocation", title: "Convocation officielle", subtitle: `${c.organisation} - ${c.objet || "Convocation"}`, classification: "Convocation", signers: [`Le Directoire|${c.par || "Obsidian Logistics"}`, `Le convoque|${c.destinataire || ""}`] });
+  p.section("Notification");
+  p.para(`Par la presente, le Consortium de Regulation Obsidian Logistics convoque ${c.destinataire || "le representant"} de l'organisation ${c.organisation}. Cette convocation est personnelle et ne peut etre cedee.`);
+  p.section("Details de la convocation");
+  p.kv([["Convoque", c.destinataire], ["Organisation", c.organisation], ["Objet", c.objet], ["Date", c.date ? fday(c.date) : "—"], ["Heure", c.heure], ["Lieu", c.lieu], ["Statut de reputation", c.score !== undefined ? `${palierOf(c.score).label} (${c.score}/100)` : ""]]);
+  if (c.consignes) { p.section("Consignes"); p.para(c.consignes); }
+  p.section("Rappel");
+  p.list(["Obsidian Logistics est neutre : elle ne prend jamais parti, sauf si un contrat ou un pacte est viole.", "Toute absence non justifiee sera consignee au dossier de reputation de l'organisation.", "Le contenu de cette convocation est confidentiel."]);
+  p.save(`convocation-${c.organisation}-${day()}`);
 }

@@ -1,3 +1,4 @@
+import { palierOf } from "@/lib/rolesRP";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { hasWriteAccess } from "@/lib/auth";
@@ -133,7 +134,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ table: string 
     if (table === "gm_organisations" && !payload.nom) return NextResponse.json({ error: "Nom requis" }, { status: 400 });
     const { data, error } = await a.db.from(table).insert([payload]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    if (table === "gm_reputation_log") await postAlert("gm", `⭐ Réputation — ${data.organisation}`, `${data.delta > 0 ? "+" : ""}${data.delta} · ${data.motif || "ajustement manuel"}`, data.delta >= 0 ? GREEN : RED);
+    if (table === "gm_reputation_log") {
+      const { data: all } = await a.db.from("gm_reputation_log").select("delta").eq("organisation", data.organisation);
+      const after = Math.max(0, Math.min(100, 50 + (all || []).reduce((t: number, r: any) => t + Number(r.delta || 0), 0))), before = Math.max(0, Math.min(100, after - Number(data.delta || 0)));
+      const pa = palierOf(after), pb = palierOf(before);
+      await postAlert("gm", `⭐ Réputation — ${data.organisation}`, `${data.delta > 0 ? "+" : ""}${data.delta} · ${data.motif || "ajustement manuel"}\nScore : ${after}/100 — **${pa.label}**${pa.label !== pb.label ? `\n${data.delta > 0 ? "⬆️" : "⬇️"} Changement de palier : ${pb.label} → **${pa.label}**\n_${pa.effet}_` : ""}`, data.delta >= 0 ? GREEN : RED);
+    }
     else await afterCreate(a.db, table, data, a.who);
     return NextResponse.json(data);
   } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }

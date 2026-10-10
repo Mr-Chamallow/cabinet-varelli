@@ -1,4 +1,5 @@
 "use client";
+import { roleRP } from "@/lib/rolesRP";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PhotoPicker } from "@/components/PhotoPicker";
 export { fileToPhoto } from "@/components/PhotoPicker";
@@ -103,6 +104,7 @@ export function EmployeeCard({ e, flippable = true, onZoom, onOpen, strike = fal
                 <div className="idc-info">
                   <div className="idc-name">{e.nom}</div>
                   <div className="idc-role">{roleLabel(e.role, e.genre)}</div>
+                  {roleRP(e.role) && <div className="idc-nick">« {roleRP(e.role)!.surnom} »</div>}
                   <div className="idc-pole">{p.nom} · {genderize(p.titre, e.genre)}</div>
                   <div className="idc-fn">{p.fn}</div>
                   <div className="idc-stars" aria-label={`Grade ${p.stars}/5`}>{Array.from({ length: 5 }).map((_, i) => <b key={i} className={i < p.stars ? "on" : ""}>★</b>)}</div>

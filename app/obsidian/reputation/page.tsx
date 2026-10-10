@@ -9,7 +9,9 @@ import { Modal } from "@/components/ui/Modal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { CountUp } from "@/components/ui/CountUp";
 import { gmWrite, scoreOf, scoreLabel } from "@/lib/gmApi";
-import { pdfOrganisation } from "@/lib/pdfDocs";
+import { pdfOrganisation, pdfConvocation } from "@/lib/pdfDocs";
+import { PALIERS } from "@/lib/rolesRP";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useGmAccess, Badge, fmtDT } from "@/components/gm/bits";
 
 
@@ -20,6 +22,8 @@ export default function ReputationPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<string | null>(null);
+  const { user } = useCurrentUser();
+  const [conv, setConv] = useState<{ org: string; destinataire: string; lieu: string; date: string; heure: string; objet: string; consignes: string; noms: string[]; score: number } | null>(null);
   const [adj, setAdj] = useState<{ org: string; delta: string; motif: string } | null>(null);
 
   useEffect(() => { load(); }, []);
@@ -55,6 +59,16 @@ export default function ReputationPage() {
     ]);
     await pdfOrganisation({ ...o, categorie: gangTypeLabel(o.type) }, { pactes: pactes || [], audits: audits || [], dossiers: dossiers || [], evenements: evenements || [], history: o.history, fiches: fiches || [] });
   }
+  async function openConv(o: any) {
+    const { data } = supabase ? await supabase.from("obsidian_fiches").select("nom").eq("organisation", o.nom) : { data: [] as any[] };
+    const d = new Date(Date.now() + 86400_000).toISOString().slice(0, 10);
+    setConv({ org: o.nom, destinataire: "", lieu: "Hangar du désert de Blaine County", date: d, heure: "22:00", objet: "Audit de conformité", consignes: "Présence personnelle et obligatoire. Aucune arme, aucun enregistrement. Venir seul ou avec un seul second.", noms: (data || []).map((f: any) => f.nom), score: o.score });
+  }
+  async function genConv() {
+    if (!conv) return;
+    await pdfConvocation({ organisation: conv.org, destinataire: conv.destinataire, lieu: conv.lieu, date: conv.date, heure: conv.heure, objet: conv.objet, consignes: conv.consignes, score: conv.score, par: (user as any)?.nom || "" });
+    setConv(null);
+  }
   async function delLog(id: string) {
     const r = await gmWrite("gm_reputation_log", "DELETE", { id });
     if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else load();
@@ -69,9 +83,15 @@ export default function ReputationPage() {
     <div className="page-container">
       <a className="back-link" href="/">← Dashboard</a>
       <div className="page-header">
-        <div><h1 className="page-title">⭐ Réputation des groupes</h1><p className="page-subtitle">Score 0–100 · alimenté par audits, pactes, tribunal et convois</p><div className="gold-line" /></div>
+        <div><h1 className="page-title">⭐ Réputation des groupes</h1><p className="page-subtitle">Échelle nommée (de « Banni » à « Partenaire du Directoire ») · alimentée par audits, pactes, tribunal et convois</p><div className="gold-line" /></div>
         <a className="btn btn-outline" href="/base-de-donnees">🗄️ Gérer les groupes</a>
       </div>
+      <details className="card" style={{ marginBottom: "0.8rem", padding: "0.6rem 1rem" }}>
+        <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: "0.82rem" }}>📊 Échelle de réputation du Consortium</summary>
+        <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+          {PALIERS.map(p => <div key={p.label} style={{ display: "flex", gap: 10, alignItems: "baseline", fontSize: "0.78rem" }}><b style={{ color: p.color, minWidth: 190 }}>{p.label}</b><span style={{ color: "var(--text-dim)", minWidth: 46 }}>≥ {p.min}</span><span style={{ flex: 1 }}>{p.effet}</span></div>)}
+        </div>
+      </details>
       {loading ? <LoadingBlock /> : rows.length === 0 ? <div className="empty-state"><div className="empty-icon">⭐</div><div className="empty-title">Aucune organisation</div><div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>Les groupes se créent dans Base de données → Groupes.</div></div> : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
           {rows.map(o => {
@@ -91,8 +111,10 @@ export default function ReputationPage() {
                 </div>
                 {isOpen && (
                   <div style={{ marginTop: "0.8rem" }}>
+                    <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginBottom: "0.6rem", borderLeft: `3px solid ${lab.color}`, paddingLeft: 8 }}><b style={{ color: lab.color }}>{lab.label}</b> — {lab.effet}</div>
                     <div style={{ display: "flex", gap: "0.4rem", marginBottom: "0.6rem" }}>
                       <button className="btn btn-outline btn-sm" onClick={() => dossierPdf(o)}>📄 Dossier complet (PDF)</button>
+                      <button className="btn btn-outline btn-sm" onClick={() => openConv(o)}>📜 Convocation officielle</button>
                       {canWrite && <><button className="btn btn-outline btn-sm" onClick={() => setAdj({ org: o.nom, delta: "5", motif: "" })}>± Ajuster</button>
                       <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => delOrg(o.nom)}>🧹 Remettre à zéro</button></>}
                     </div>
@@ -116,6 +138,15 @@ export default function ReputationPage() {
         <Modal title={`Ajuster — ${adj.org}`} onClose={() => setAdj(null)} footer={<><button className="btn btn-outline" onClick={() => setAdj(null)}>Annuler</button><button className="btn btn-gold" onClick={saveAdj}>Appliquer</button></>}>
           <div><label>Points (ex : 5 ou -10)</label><input type="number" value={adj.delta} onChange={e => setAdj({ ...adj, delta: e.target.value })} /></div>
           <div><label>Motif</label><input value={adj.motif} onChange={e => setAdj({ ...adj, motif: e.target.value })} placeholder="Ex : a aidé lors du convoi" /></div>
+        </Modal>
+      )}
+      {conv && (
+        <Modal title={`📜 Convocation officielle — ${conv.org}`} onClose={() => setConv(null)} footer={<><button className="btn btn-outline" onClick={() => setConv(null)}>Annuler</button><button className="btn btn-gold" onClick={genConv} disabled={!conv.destinataire.trim()}>Générer le PDF</button></>}>
+          <div className="form-group"><label>Convoqué (chef / représentant) *</label><input list="conv-noms" value={conv.destinataire} onChange={e => setConv({ ...conv, destinataire: e.target.value })} /><datalist id="conv-noms">{conv.noms.map(n => <option key={n} value={n} />)}</datalist></div>
+          <div className="form-group"><label>Objet</label><input value={conv.objet} onChange={e => setConv({ ...conv, objet: e.target.value })} /></div>
+          <div className="form-grid"><div className="form-group"><label>Date</label><input type="date" value={conv.date} onChange={e => setConv({ ...conv, date: e.target.value })} /></div><div className="form-group"><label>Heure</label><input type="time" value={conv.heure} onChange={e => setConv({ ...conv, heure: e.target.value })} /></div></div>
+          <div className="form-group"><label>Lieu</label><input value={conv.lieu} onChange={e => setConv({ ...conv, lieu: e.target.value })} /></div>
+          <div className="form-group"><label>Consignes</label><textarea rows={3} value={conv.consignes} onChange={e => setConv({ ...conv, consignes: e.target.value })} /></div>
         </Modal>
       )}
       <Toast toast={toast} />

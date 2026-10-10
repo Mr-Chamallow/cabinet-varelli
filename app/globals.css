@@ -1366,3 +1366,4 @@ html[data-theme="light"] .sidebar-overlay { background: rgba(60,40,10,.35); }
 @keyframes promoFade{from{opacity:0}to{opacity:1}}
 @keyframes promoFlash{0%{filter:brightness(3) saturate(0);transform:scale(.94) rotateY(90deg)}60%{filter:brightness(1.6);transform:scale(1.05) rotateY(0)}100%{filter:none;transform:scale(1)}}
 .pin .pin-x { position: absolute; top: -9px; right: -9px; width: 20px; height: 20px; border-radius: 50%; border: none; background: #7a1c1c; color: #fff; font-size: 13px; line-height: 20px; cursor: pointer; opacity: 0; transition: opacity .15s; z-index: 5; padding: 0; } .pin:hover .pin-x { opacity: 1; }
+.idc-nick { font-size: .66rem; font-style: italic; letter-spacing: .04em; color: var(--c); opacity: .85; margin: -1px 0 2px; }

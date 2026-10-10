@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ALL_PERMISSIONS, PERMISSION_LABELS, loadRolesFromSupabase } from "@/lib/auth";
+import { roleRP } from "@/lib/rolesRP";
 import { PERMISSION_GUIDE } from "@/lib/permissionsInfo";
 import { setPreviewRole } from "@/lib/previewRole";
 import { apiRequest } from "@/lib/apiRequest";
@@ -181,6 +182,7 @@ export function RolesTab() {
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                   <div style={{ width: 12, height: 12, borderRadius: "50%", background: currentCouleur, flexShrink: 0 }} />
                   <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: "1.05rem", color: currentCouleur }}>{r.nom}</div>
+                  {roleRP(r.nom) && <span style={{ fontSize: "0.72rem", fontStyle: "italic", color: "var(--text-dim)" }}>« {roleRP(r.nom)!.surnom} »</span>}
                   <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>{ALL_PERMISSIONS.filter(p => getPermLvl(currentPerms, p) !== "none").length}/{ALL_PERMISSIONS.length} permissions</span>
                 </div>
                 <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>

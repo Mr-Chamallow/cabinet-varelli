@@ -11,7 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { getCachedIdentity, cacheIdentity, DEFAULT_LOGO_URL, DEFAULT_APP_NOM, Identity } from "@/lib/theme";
 
 const NAV_SECTIONS = [
-  { label: "Obsidian Logistique", items: [
+  { label: "Obsidian Logistics", items: [
     { href: "/",                       label: "Dashboard",       icon: "🏠", permission: "obsidian_dashboard" },
     { href: "/obsidian/prix",          label: "Tableau des prix", icon: "🏷️", permission: "obsidian_prix" },
     { href: "/obsidian/stocks",        label: "Stocks",          icon: "📦", permission: "obsidian_stocks" },
@@ -32,11 +32,11 @@ const NAV_SECTIONS = [
     { href: "/carte-enqueteur", label: "San Andreas",  icon: "🗺️", permission: "carte-enqueteur" },
     { href: "/base-de-donnees", label: "Base de données",  icon: "🗄️", permission: "base_donnees" },
   ]},
-  { label: "Consortium", items: [
+  { label: "Consortium de Régulation", items: [
     { href: "/obsidian/organigramme", label: "Organigramme",     icon: "🏛️", permission: "organigramme" },
     { href: "/obsidian/tribunal",     label: "Tribunal de l'Ombre", icon: "⚖️", permission: "gm_tribunal" },
-    { href: "/obsidian/pactes",       label: "Pactes",           icon: "🤝", permission: "gm_pactes" },
-    { href: "/obsidian/audits",       label: "Audits",           icon: "🔎", permission: "gm_audits" },
+    { href: "/obsidian/pactes",       label: "Pactes d'Obsidienne", icon: "🤝", permission: "gm_pactes" },
+    { href: "/obsidian/audits",       label: "Audits de conformité", icon: "🔎", permission: "gm_audits" },
     { href: "/obsidian/evenements",   label: "Convois & Enchères", icon: "🚚", permission: "gm_evenements" },
     { href: "/obsidian/reputation",   label: "Réputation",       icon: "⭐", permission: "gm_reputation" },
     { href: "/obsidian/consortium",   label: "Stats Consortium", icon: "📈", permission: "gm_stats" },
