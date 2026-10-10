@@ -6,7 +6,7 @@ const ITEMS = [
   { href: "/", icon: "🏠", label: "Accueil" },
   { href: "/obsidian/fiches", icon: "🗂️", label: "Fiches" },
   { href: "/obsidian/arrestations", icon: "🚔", label: "Arrests" },
-  { href: "/cahier-vente", icon: "🧮", label: "Ventes" },
+  { href: "/cahier-vente", icon: "🧮", label: "Transaction" },
 ];
 // Barre du bas (mobile) : 4 raccourcis + menu.
 export function BottomBar({ onMenu }: { onMenu: () => void }) {

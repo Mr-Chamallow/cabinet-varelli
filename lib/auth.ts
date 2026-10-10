@@ -25,7 +25,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   obsidian_armurerie: "Armurerie", obsidian_garage: "Garage",
   obsidian_comptabilite: "Comptabilité", obsidian_rdv: "Planning opérations",
   obsidian_contrats: "Contrats", obsidian_planification: "Planification",
-  obsidian_stats: "Statistiques", cahier_vente: "Cahier de vente",
+  obsidian_stats: "Statistiques", cahier_vente: "Transaction",
   obsidian_paie: "Paie & Commissions", obsidian_employes: "Employés",
   h47: "H-47", admin: "Administration", supervision: "Supervision",
   delete_all: "Suppression globale", edit_all: "Édition globale",

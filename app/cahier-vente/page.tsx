@@ -257,7 +257,7 @@ export default function CahierVentePage() {
       <a className="back-link" href="/">← Tableau de bord</a>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Cahier de vente</h1>
+          <h1 className="page-title">Transaction</h1>
           <p className="page-subtitle">Livre de compte · Entrées & Sorties · Suivi économique du groupe</p>
           <div className="gold-line"/>
         </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import { useReferentiel } from "@/lib/referentiel";
 import { getMemberColor, hasPermission } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Modal } from "@/components/ui/Modal";
@@ -112,6 +113,7 @@ export default function PlanningOperationsPage() {
   const [operations, setOperations] = useState<Operation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const ref = useReferentiel();
   const [form, setForm] = useState({ ...EMPTY });
   const [saving, setSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -842,7 +844,7 @@ async function saveOperation() {
                 </div>
                 <div className="form-group">
                   <label>Lieu</label>
-                  <input placeholder="Ex: Port, Entrepôt, Garage..." value={form.lieu} onChange={e => setForm(f => ({ ...f, lieu: e.target.value }))} />
+                  <input list="ref-lieux-rdv" placeholder="Ex: Port, Entrepôt, Garage..." value={form.lieu} onChange={e => setForm(f => ({ ...f, lieu: e.target.value }))} /><datalist id="ref-lieux-rdv">{ref.lieux.map(m => <option key={m} value={m} />)}</datalist>
                 </div>
                 <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                   <label>Type</label>

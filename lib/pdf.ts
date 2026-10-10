@@ -19,17 +19,45 @@ export const fdate = (s?: string | null) => (s ? new Date(s).toLocaleString("fr-
 export const fday = (s?: string | null) => (s ? new Date(s).toLocaleDateString("fr-FR") : "—");
 export const fusd = (n: number) => clean((n || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 }));
 
+// Logo du Consortium (celui des réglages d'identité) en data-URL ; null si indisponible (CORS) -> emblème vectoriel.
+async function loadLogo(): Promise<string | null> {
+  try {
+    const { DEFAULT_LOGO_URL, getCachedIdentity } = await import("@/lib/theme");
+    const src = getCachedIdentity()?.logoUrl || DEFAULT_LOGO_URL;
+    if (src.startsWith("data:")) return src;
+    return await new Promise<string | null>(res => {
+      const img = new Image(); img.crossOrigin = "anonymous";
+      const t = setTimeout(() => res(null), 2500);
+      img.onload = () => { clearTimeout(t); try { const c = document.createElement("canvas"); c.width = 128; c.height = 128; c.getContext("2d")!.drawImage(img, 0, 0, 128, 128); res(c.toDataURL("image/png")); } catch { res(null); } };
+      img.onerror = () => { clearTimeout(t); res(null); };
+      img.src = src;
+    });
+  } catch { return null; }
+}
+
 export interface PdfOpts { title: string; subtitle?: string; classification?: string; org?: string; }
 
 export class Pdf {
-  doc: any; y = 0; W = 210; H = 297; M = 18;
+  doc: any; y = 0; logo: string | null = null; W = 210; H = 297; M = 18;
   private constructor(doc: any, private opts: PdfOpts) { this.doc = doc; }
 
   static async create(opts: PdfOpts) {
     const { jsPDF } = await import("jspdf");
     const p = new Pdf(new jsPDF({ unit: "mm", format: "a4" }), opts);
+    p.logo = await loadLogo();
     p.cover();
     return p;
+  }
+
+  // Logo (image si dispo, sinon hexagone doré) à la position donnée.
+  private drawLogo(x: number, y: number, size: number) {
+    const d = this.doc;
+    if (this.logo) { try { d.addImage(this.logo, "PNG", x, y, size, size); return; } catch { /* repli vectoriel */ } }
+    const cx = x + size / 2, cy = y + size / 2, r = size / 2;
+    const pts = Array.from({ length: 6 }, (_, i) => [cx + r * Math.cos((Math.PI / 3) * i + Math.PI / 6), cy + r * Math.sin((Math.PI / 3) * i + Math.PI / 6)]);
+    d.setDrawColor(...GOLD); d.setLineWidth(0.5);
+    pts.forEach((pt, i) => { const q = pts[(i + 1) % 6]; d.line(pt[0], pt[1], q[0], q[1]); });
+    d.setFont("times", "bold"); d.setFontSize(size * 1.5); d.setTextColor(...GOLD); d.text("O", cx, cy + size * 0.19, { align: "center" });
   }
 
   private cover() {
@@ -37,9 +65,10 @@ export class Pdf {
     d.setFillColor(11, 11, 14); d.rect(0, 0, this.W, 30, "F");
     d.setFillColor(...GOLD); d.rect(0, 30, this.W, 0.9, "F");
     d.setFont("times", "bold"); d.setFontSize(17); d.setTextColor(...GOLD);
-    d.text("OBSIDIAN LOGISTICS", this.M, 17, { charSpace: 1.2 });
+    this.drawLogo(this.M, 6, 18);
+    d.text("OBSIDIAN LOGISTICS", this.M + 22, 17, { charSpace: 1.2 });
     d.setFont("helvetica", "normal"); d.setFontSize(7.5); d.setTextColor(170, 170, 180);
-    d.text(clean(this.opts.org || "Consortium de regulation"), this.M, 23);
+    d.text(clean(this.opts.org || "Consortium de regulation"), this.M + 22, 23);
     d.setFont("helvetica", "bold"); d.setFontSize(8); d.setTextColor(...SCARLET);
     d.text(clean((this.opts.classification || "CONFIDENTIEL").toUpperCase()), this.W - this.M, 17, { align: "right" });
     d.setFont("helvetica", "normal"); d.setFontSize(7); d.setTextColor(170, 170, 180);
@@ -57,7 +86,7 @@ export class Pdf {
   }
 
   private ensure(h: number) {
-    if (this.y + h > this.H - 20) { this.doc.addPage(); this.y = 20; }
+    if (this.y + h > this.H - 20) { this.doc.addPage(); this.y = 22; }
   }
 
   // Photos intégrées (data-URL uniquement ; un lien externe ne peut pas être embarqué).
@@ -150,9 +179,16 @@ export class Pdf {
     const stamp = `Genere le ${new Date().toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}`;
     for (let i = 1; i <= n; i++) {
       d.setPage(i);
+      if (i > 1) { // bandeau fin sur les pages suivantes
+        d.setFillColor(11, 11, 14); d.rect(0, 0, this.W, 11, "F"); d.setFillColor(...GOLD); d.rect(0, 11, this.W, 0.5, "F");
+        this.drawLogo(this.M, 1.8, 7.4);
+        d.setFont("times", "bold"); d.setFontSize(9); d.setTextColor(...GOLD); d.text("OBSIDIAN LOGISTICS", this.M + 10, 7, { charSpace: 0.8 });
+        d.setFont("helvetica", "normal"); d.setFontSize(7); d.setTextColor(170, 170, 180); d.text(clean(this.opts.title).slice(0, 60), this.W - this.M, 7, { align: "right" });
+      }
       d.setDrawColor(220, 220, 226); d.setLineWidth(0.2); d.line(this.M, this.H - 14, this.W - this.M, this.H - 14);
       d.setFont("helvetica", "normal"); d.setFontSize(7.5); d.setTextColor(...MUTED);
-      d.text("Document confidentiel - Obsidian Logistics - ne pas diffuser en dehors du Consortium", this.M, this.H - 9);
+      this.drawLogo(this.M, this.H - 12.5, 5);
+      d.text("Document confidentiel - Obsidian Logistics - ne pas diffuser en dehors du Consortium", this.M + 7, this.H - 9);
       d.text(`${stamp}   -   Page ${i}/${n}`, this.W - this.M, this.H - 9, { align: "right" });
     }
     const name = `${filename.replace(/[^a-zA-Z0-9_-]+/g, "_")}.pdf`;

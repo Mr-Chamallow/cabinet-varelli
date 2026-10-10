@@ -66,7 +66,7 @@ export default function PaieObsidianPage() {
       supabase.from("cahier_transactions").select("*"),
       supabase.from("obsidian_paiements").select("*").order("created_at", { ascending: false }),
       supabase.from("obsidian_settings").select("*").eq("id", "default").maybeSingle(),
-      supabase.from("arrestations").select("membre,argent_perdu,type_argent,created_at"),
+      supabase.from("arrestations").select("membre,amende,argent_perdu,type_argent,created_at"),
     ]);
     setArrests(ar || []);
     setMouvements(m || []);
@@ -119,12 +119,11 @@ export default function PaieObsidianPage() {
       else bump(t.created_by, 0, t.montant || 0);
     });
 
-    // Primes d'arrestation : l'argent perdu est remboursé en prime sur la paie (sale / propre).
+    // Primes d'arrestation : seule l'amende est remboursée en prime sur la paie.
     const primes: Record<string, { sale: number; propre: number; mixte: number }> = {};
     arrests.forEach(a => {
-      if (!inWeek(a.created_at, weekStart) || !a.membre || !(Number(a.argent_perdu) > 0)) return;
-      const k = a.type_argent === "propre" ? "propre" : a.type_argent === "mixte" ? "mixte" : "sale";
-      (primes[a.membre] ??= { sale: 0, propre: 0, mixte: 0 })[k] += Number(a.argent_perdu);
+      if (!inWeek(a.created_at, weekStart) || !a.membre || !(Number(a.amende) > 0)) return;
+      (primes[a.membre] ??= { sale: 0, propre: 0, mixte: 0 }).propre += Number(a.amende);
       if (!map[a.membre]) map[a.membre] = { revenus: 0, depenses: 0 };
     });
 
