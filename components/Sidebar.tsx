@@ -19,6 +19,7 @@ const NAV_SECTIONS = [
     { href: "/obsidian/comptabilite",  label: "Comptabilité",    icon: "🧾", permission: "obsidian_comptabilite" },
     { href: "/obsidian/rdv",           label: "Rendez-vous",     icon: "🗓️", permission: "obsidian_rdv" },
     { href: "/obsidian/contrats",      label: "Contrats",        icon: "📜", permission: "obsidian_contrats" },
+    { href: "/obsidian/actions-illegales", label: "Actions illégales", icon: "🕶️", permission: "obsidian_actions" },
     { href: "/obsidian/stats",         label: "Statistiques",    icon: "📊", permission: "obsidian_stats" },
     { href: "/obsidian/fiches",        label: "Fiches",          icon: "🗂️", permission: "obsidian_stats" },
     { href: "/cahier-vente",           label: "Cahier de vente", icon: "🧮", permission: "cahier_vente" },

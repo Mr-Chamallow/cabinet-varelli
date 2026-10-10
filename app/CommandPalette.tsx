@@ -35,6 +35,7 @@ const ALL_PAGES: PageEntry[] = [
   { title: "Comptabilité", subtitle: "Recettes & dépenses", href: "/obsidian/comptabilite", icon: "🧾", permission: "obsidian_comptabilite" },
   { title: "Rendez-vous", subtitle: "Planning opérations", href: "/obsidian/rdv", icon: "🗓️", permission: "obsidian_rdv" },
   { title: "Contrats", subtitle: "Missions", href: "/obsidian/contrats", icon: "📜", permission: "obsidian_contrats" },
+  { title: "Actions illégales", subtitle: "Gains, pertes, délais", href: "/obsidian/actions-illegales", icon: "🕶️", permission: "obsidian_actions" },
   { title: "Statistiques", subtitle: "Chiffres clés", href: "/obsidian/stats", icon: "📊", permission: "obsidian_stats" },
   { title: "Fiches", subtitle: "Personnes / organisations", href: "/obsidian/fiches", icon: "🗂️", permission: "obsidian_stats" },
   { title: "Cahier de vente", subtitle: "Transactions", href: "/cahier-vente", icon: "🧮", permission: "cahier_vente" },

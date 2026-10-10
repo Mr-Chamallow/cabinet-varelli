@@ -15,7 +15,7 @@ export const ALL_PERMISSIONS = [
   "obsidian_dashboard", "obsidian_prix", "obsidian_stocks", "obsidian_armurerie",
   "obsidian_garage", "obsidian_comptabilite", "obsidian_rdv", "obsidian_contrats", "obsidian_stats", "cahier_vente", "obsidian_paie",
   "obsidian_employes", "h47", "admin", "supervision", "delete_all", "edit_all",
-  "juridique", "calculatrice", "carte-enqueteur", "utile_samp", "base_donnees",
+  "juridique", "calculatrice", "carte-enqueteur", "utile_samp", "base_donnees", "obsidian_actions",
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
@@ -30,6 +30,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   delete_all: "Suppression globale", edit_all: "Édition globale",
   juridique: "Code pénal", calculatrice: "Calculatrice", "carte-enqueteur": "Carte enquêteur",
   utile_samp: "Utile SAMP", base_donnees: "Base de données",
+  obsidian_actions: "Actions illégales",
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
@@ -38,11 +39,11 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   "COO - Directrice opérationnel":  ALL_PERMISSIONS.filter(p => p !== "delete_all"),
   "Responsable juridique":          ["obsidian_dashboard","obsidian_rdv","obsidian_contrats","obsidian_stats","juridique","utile_samp","carte-enqueteur"],
   "Agent juridique":                ["obsidian_dashboard","obsidian_rdv","juridique","utile_samp","carte-enqueteur"],
-  "Responsable logistique":         ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_planification","obsidian_stats","cahier_vente","h47","obsidian_paie","obsidian_employes","calculatrice","carte-enqueteur"],
-  "Agent logistique":               ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_rdv","cahier_vente","h47","carte-enqueteur"],
+  "Responsable logistique":         ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_planification","obsidian_stats","cahier_vente","h47","obsidian_paie","obsidian_employes","calculatrice","carte-enqueteur","obsidian_actions"],
+  "Agent logistique":               ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_rdv","cahier_vente","h47","carte-enqueteur","obsidian_actions"],
   "Responsable sécurité":           ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","obsidian_planification","carte-enqueteur","juridique","utile_samp"],
   "Agent de sécurité":              ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","carte-enqueteur"],
-  "Opérateur":                      ["obsidian_dashboard","obsidian_rdv","carte-enqueteur"],
+  "Opérateur":                      ["obsidian_dashboard","obsidian_rdv","carte-enqueteur","obsidian_actions"],
   "Opérateur stagiaire":            ["obsidian_dashboard"],
   // Rôle externe (site "Légal Service") — accès à la carte enquêteur uniquement, en lecture seule.
   "Légal Service":                  ["carte-enqueteur"],
