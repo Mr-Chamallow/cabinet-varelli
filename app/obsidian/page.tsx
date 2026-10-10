@@ -57,7 +57,7 @@ export default function ObsidianDashboard() {
         </div>
         <div className="card"><div className="section-title" style={{marginBottom:"0.875rem"}}>🚀 Accès rapide</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
-            {[["/obsidian/prix","💲 Prix","var(--gold)"],["/obsidian/stocks","📦 Stocks","var(--info)"],["/obsidian/armurerie","🔫 Armurerie","var(--danger)"],["/obsidian/comptabilite","💳 Compta","var(--success)"],["/obsidian/rdv","📅 RDV","var(--warning)"],["/obsidian/contrats","📋 Contrats","#7c3aed"],["/obsidian/garage","🚗 Garage","var(--text-muted)"],["/obsidian/fiches","👤 Fiches","#f97316"]].map(([h,l,c])=>(
+            {[["/obsidian/prix","💲 Prix","var(--gold)"],["/obsidian/stocks","📦 Stocks","var(--info)"],["/obsidian/stocks?cat=armurerie","🔫 Armurerie","var(--danger)"],["/obsidian/comptabilite","💳 Compta","var(--success)"],["/obsidian/rdv","📅 RDV","var(--warning)"],["/obsidian/contrats","📋 Contrats","#7c3aed"],["/obsidian/garage","🚗 Garage","var(--text-muted)"],["/obsidian/fiches","👤 Fiches","#f97316"]].map(([h,l,c])=>(
               <a key={h as string} href={h as string} style={{textDecoration:"none",padding:"0.625rem 0.875rem",background:"var(--surface)",borderRadius:"var(--radius)",border:"1px solid var(--border)",fontSize:"0.82rem",fontWeight:500,color:c as string,display:"block"}}>{l as string}</a>
             ))}
           </div>

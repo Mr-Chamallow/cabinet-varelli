@@ -657,10 +657,10 @@ export default function AdminPage() {
                 <div className="card">
                   <div className="section-title" style={{ marginBottom:"0.5rem" }}>🔔 Alertes Discord</div>
                   <p style={{ fontSize:"0.7rem", color:"var(--text-dim)", marginBottom:"0.875rem" }}>
-                    Chaque module a son propre webhook, configuré via variable d'environnement sur Vercel (DISCORD_WEBHOOK_STOCKS, _RDV, _CONTRATS, _FICHES, _BASE_DONNEES, _ARRESTATIONS, _ACTIONS, _COMPTA, _DELAIS, _MEMBRES, _ADMIN, _RAPPORT, _CONNEXIONS). Teste ici que chacun est bien branché.
+                    Chaque module a son propre webhook, configuré via variable d'environnement sur Vercel (DISCORD_WEBHOOK_STOCKS, _RDV, _CONTRATS, _FICHES, _BASE_DONNEES, _ARRESTATIONS, _ACTIONS, _COMPTA, _DELAIS, _MEMBRES, _ADMIN, _RAPPORT, _GM (repli : _ADMIN), _CONNEXIONS). Teste ici que chacun est bien branché.
                   </p>
                   <div style={{ display:"flex", flexDirection:"column", gap:"0.6rem" }}>
-                    {["stocks","rdv","contrats","fiches","base_donnees","arrestations","actions","compta","delais","membres","admin","rapport"].map(kind => (
+                    {["stocks","rdv","contrats","fiches","base_donnees","arrestations","actions","compta","delais","membres","admin","rapport","gm"].map(kind => (
                       <div key={kind} style={{ display:"flex", alignItems:"center", gap:"0.6rem" }}>
                         <span style={{ flex:1, fontSize:"0.8rem", textTransform:"capitalize" }}>{kind}</span>
                         {discordTestMsg[kind] && <span style={{ fontSize:"0.68rem", color:"var(--text-dim)" }}>{discordTestMsg[kind]}</span>}

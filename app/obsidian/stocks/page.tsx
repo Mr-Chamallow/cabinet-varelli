@@ -10,7 +10,8 @@ import { Modal } from "@/components/ui/Modal";
 import { hasPermission } from "@/lib/auth";
 import { useRealtimeTable } from "@/lib/useRealtimeTable";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
-const CATS=["drogue","arme","accessoire","composant","objet_rare","autre"];
+const CATS=["drogue","arme","munition","accessoire","explosif","gilet","radio","composant","objet_rare","autre"];
+const ARMU=["arme","munition","accessoire","explosif","gilet","radio"]; // = ancienne page Armurerie
 const fmtN=(n:number)=>n.toLocaleString("fr-FR",{maximumFractionDigits:2});
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 interface Stock{id:string;nom:string;categorie:string;emoji:string;quantite:number;seuil_alerte:number;unite:string;prix_unitaire:number;notes:string;}
@@ -19,7 +20,7 @@ export default function StocksPage(){
   const { user, loading: userLoading } = useCurrentUser();
   const { toast, showToast } = useToast();
   const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
-  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_stocks"))) { window.location.href = "/"; } }, [user, userLoading]);
+  useEffect(() => { if (!userLoading && (!user || !(hasPermission(user, "obsidian_stocks") || hasPermission(user, "obsidian_armurerie")))) { window.location.href = "/"; } }, [user, userLoading]);
   const [stocks,setStocks]=useState<Stock[]>([]);
   const [mouvements,setMouvements]=useState<Mouvement[]>([]);
   const [loading,setLoading]=useState(true);
@@ -30,6 +31,7 @@ export default function StocksPage(){
   const [showMvt,setShowMvt]=useState<Stock|null>(null);
   const [saving,setSaving]=useState(false);
   useEffect(()=>{load();},[]);
+  useEffect(()=>{ try{ if(new URLSearchParams(window.location.search).get("cat")==="armurerie") setFilterCat("__armurerie"); }catch{} },[]);
   useRealtimeTable(["obsidian_stocks","obsidian_mouvements"], load);
   async function load(){if(!supabase){setLoading(false);return;}
     const[{data:s},{data:m}]=await Promise.all([supabase.from("obsidian_stocks").select("*").order("categorie").order("nom"),supabase.from("obsidian_mouvements").select("*").order("created_at",{ascending:false}).limit(100)]);
@@ -79,20 +81,20 @@ export default function StocksPage(){
       if (r.ok) { const recreated = await r.json(); setStocks(s=>[...s, recreated]); }
     });
   }
-  const filtered=stocks.filter(s=>!filterCat||s.categorie===filterCat);
+  const filtered=stocks.filter(s=>!filterCat||(filterCat==="__armurerie"?ARMU.includes(s.categorie):s.categorie===filterCat));
   const alerts=stocks.filter(s=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte);
-  const CAT_COL:Record<string,string>={drogue:"#7c3aed",arme:"var(--danger)",accessoire:"var(--warning)",composant:"var(--info)",objet_rare:"var(--gold)",autre:"var(--text-muted)"};
+  const CAT_COL:Record<string,string>={drogue:"#7c3aed",arme:"var(--danger)",munition:"#f97316",explosif:"#ef4444",gilet:"#64b5f6",radio:"#4db6ac",accessoire:"var(--warning)",composant:"var(--info)",objet_rare:"var(--gold)",autre:"var(--text-muted)"};
   return(
     <div className="page-container">
       <a className="back-link" href="/obsidian">← Dashboard Obsidian</a>
-      <div className="page-header"><div><h1 className="page-title">📦 Stocks</h1><p className="page-subtitle">Inventaire général · Entrées & Sorties · Historique</p><div className="gold-line"/></div><button className="btn btn-gold" onClick={()=>setTab("ajouter")}>+ Nouveau stock</button></div>
+      <div className="page-header"><div><h1 className="page-title">📦 Stocks</h1><p className="page-subtitle">Inventaire central (armurerie incluse) · Entrées & Sorties · Historique</p><div className="gold-line"/></div><button className="btn btn-gold" onClick={()=>setTab("ajouter")}>+ Nouveau stock</button></div>
       {alerts.length>0&&<div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:"var(--radius-lg)",padding:"0.75rem 1rem",marginBottom:"1rem",display:"flex",gap:"0.5rem",flexWrap:"wrap",alignItems:"center"}}><span style={{fontSize:"0.72rem",fontWeight:700,color:"var(--danger)"}}>⚠️ Stocks bas :</span>{alerts.map(a=><span key={a.id} style={{fontSize:"0.72rem",padding:"0.15rem 0.5rem",borderRadius:999,background:"rgba(239,68,68,0.1)",color:"var(--danger)",border:"1px solid rgba(239,68,68,0.2)",fontWeight:600}}>{a.emoji} {a.nom} : {fmtN(a.quantite)} {a.unite}</span>)}</div>}
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem"}}>
         {[["stocks","📦 Inventaire"],["historique","📋 Historique"],["ajouter","➕ Ajouter"]].map(([k,l])=><button key={k} onClick={()=>setTab(k as any)} style={{padding:"0.5rem 1rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.82rem",fontWeight:tab===k?700:400,background:tab===k?"var(--gold-muted)":"var(--surface)",border:`1px solid ${tab===k?"rgba(var(--gold-rgb), 0.4)":"var(--border)"}`,color:tab===k?"var(--gold)":"var(--text-muted)"}}>{l}</button>)}
       </div>
       {tab==="stocks"&&<>
         <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem",flexWrap:"wrap"}}>
-          <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{width:"auto",minWidth:140}}><option value="">Toutes catégories</option>{CATS.map(c=><option key={c}>{c}</option>)}</select>
+          <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{width:"auto",minWidth:140}}><option value="">Toutes catégories</option><option value="__armurerie">🔫 Armurerie (armes, munitions…)</option>{CATS.map(c=><option key={c}>{c}</option>)}</select>
         </div>
         {loading?<LoadingBlock />:
         <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>

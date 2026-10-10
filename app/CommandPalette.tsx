@@ -30,14 +30,20 @@ const ALL_PAGES: PageEntry[] = [
   { title: "Dashboard", subtitle: "Accueil", href: "/", icon: "🏠", permission: "obsidian_dashboard" },
   { title: "Tableau des prix", subtitle: "Drogues, armes, accessoires", href: "/obsidian/prix", icon: "🏷️", permission: "obsidian_prix" },
   { title: "Stocks", subtitle: "Inventaire", href: "/obsidian/stocks", icon: "📦", permission: "obsidian_stocks" },
-  { title: "Armurerie", subtitle: "Armes & munitions", href: "/obsidian/armurerie", icon: "🔫", permission: "obsidian_armurerie" },
   { title: "Garage", subtitle: "Véhicules", href: "/obsidian/garage", icon: "🚗", permission: "obsidian_garage" },
   { title: "Comptabilité", subtitle: "Recettes & dépenses", href: "/obsidian/comptabilite", icon: "🧾", permission: "obsidian_comptabilite" },
   { title: "Rendez-vous", subtitle: "Planning opérations", href: "/obsidian/rdv", icon: "🗓️", permission: "obsidian_rdv" },
   { title: "Contrats", subtitle: "Missions", href: "/obsidian/contrats", icon: "📜", permission: "obsidian_contrats" },
   { title: "Actions illégales", subtitle: "Gains, pertes, délais", href: "/obsidian/actions-illegales", icon: "🕶️", permission: "obsidian_actions" },
+  { title: "Arrestations", subtitle: "Pertes, amendes", href: "/obsidian/arrestations", icon: "🚔", permission: "obsidian_arrestations" },
+  { title: "Organigramme", subtitle: "Pôles et rôles", href: "/obsidian/organigramme", icon: "🏛️", permission: "organigramme" },
+  { title: "Tribunal de l'Ombre", subtitle: "Procès, preuves, verdicts", href: "/obsidian/tribunal", icon: "⚖️", permission: "gm_tribunal" },
+  { title: "Pactes d'Obsidienne", subtitle: "Groupes signataires", href: "/obsidian/pactes", icon: "🤝", permission: "gm_pactes" },
+  { title: "Audits de conformité", subtitle: "Notes et sanctions", href: "/obsidian/audits", icon: "🔎", permission: "gm_audits" },
+  { title: "Convois / Enchères / Alertes", subtitle: "Événements GM", href: "/obsidian/evenements", icon: "🚚", permission: "gm_evenements" },
+  { title: "Réputation des groupes", subtitle: "Scores et historique", href: "/obsidian/reputation", icon: "⭐", permission: "gm_reputation" },
   { title: "Statistiques", subtitle: "Chiffres clés", href: "/obsidian/stats", icon: "📊", permission: "obsidian_stats" },
-  { title: "Fiches", subtitle: "Personnes / organisations", href: "/obsidian/fiches", icon: "🗂️", permission: "obsidian_stats" },
+  { title: "Fiches", subtitle: "Personnes / organisations", href: "/obsidian/fiches", icon: "🗂️", permission: "obsidian_fiches" },
   { title: "Cahier de vente", subtitle: "Transactions", href: "/cahier-vente", icon: "🧮", permission: "cahier_vente" },
   { title: "Paie & Commissions", subtitle: "Salaires", href: "/obsidian/paie", icon: "💰", permission: "obsidian_paie" },
   { title: "Employés", subtitle: "Membres du personnel", href: "/obsidian/employes", icon: "🧑‍💼", permission: "obsidian_employes" },
@@ -104,7 +110,7 @@ export default function CommandPalette() {
     const queries: any[] = [];
     const sources: string[] = [];
 
-    if (supabase && hasPermission(user, "obsidian_stats")) {
+    if (supabase && hasPermission(user, "obsidian_fiches")) {
       queries.push(supabase.from("obsidian_fiches").select("id,nom,organisation").ilike("nom", like).limit(5));
       sources.push("client");
     }

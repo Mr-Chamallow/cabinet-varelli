@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
 
   const { kind } = await req.json();
-  const kinds: DiscordWebhookKind[] = ["stocks", "armurerie", "rdv", "contrats", "fiches", "base_donnees", "arrestations", "actions", "compta", "delais", "membres", "admin", "rapport"];
+  const kinds: DiscordWebhookKind[] = ["stocks", "armurerie", "rdv", "contrats", "fiches", "base_donnees", "arrestations", "actions", "compta", "delais", "membres", "admin", "rapport", "gm"];
   if (!kinds.includes(kind)) return NextResponse.json({ error: "kind invalide" }, { status: 400 });
 
   const result = await sendDiscordAlert(kind, `Test du webhook **${kind}** depuis Obsidian Logistique. Si tu vois ce message, c'est branché ✅`, {

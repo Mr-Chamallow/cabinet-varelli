@@ -8,9 +8,9 @@ const PERM_MAP: Record<DiscordWebhookKind, string[]> = {
   armurerie: ["obsidian_armurerie"],
   rdv: ["obsidian_rdv"],
   contrats: ["obsidian_contrats"],
-  fiches: ["obsidian_stats"],
+  fiches: ["obsidian_fiches", "obsidian_stats"],
   base_donnees: ["base_donnees"],
-  arrestations: ["admin"], actions: ["admin"], compta: ["admin"], delais: ["admin"], membres: ["admin"], admin: ["admin"], rapport: ["admin"],
+  arrestations: ["admin"], actions: ["admin"], compta: ["admin"], delais: ["admin"], membres: ["admin"], admin: ["admin"], rapport: ["admin"], gm: ["admin"],
 };
 
 export async function POST(req: Request) {

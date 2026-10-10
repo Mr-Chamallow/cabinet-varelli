@@ -1,7 +1,7 @@
 // Envoie une alerte vers le webhook Discord du module concerné.
 // Chaque module a son propre webhook, configuré via variable d'environnement Vercel
 // (jamais en base : ces URLs sont secrètes, la table app_settings est lisible publiquement).
-export type DiscordWebhookKind = "stocks" | "armurerie" | "rdv" | "contrats" | "fiches" | "base_donnees" | "arrestations" | "actions" | "compta" | "delais" | "membres" | "admin" | "rapport";
+export type DiscordWebhookKind = "stocks" | "armurerie" | "rdv" | "contrats" | "fiches" | "base_donnees" | "arrestations" | "actions" | "compta" | "delais" | "membres" | "admin" | "rapport" | "gm";
 
 const ENV_KEYS: Record<DiscordWebhookKind, string> = {
   stocks: "DISCORD_WEBHOOK_STOCKS",
@@ -17,6 +17,7 @@ const ENV_KEYS: Record<DiscordWebhookKind, string> = {
   membres: "DISCORD_WEBHOOK_MEMBRES",
   admin: "DISCORD_WEBHOOK_ADMIN",
   rapport: "DISCORD_WEBHOOK_RAPPORT",
+  gm: "DISCORD_WEBHOOK_GM", // repli : DISCORD_WEBHOOK_ADMIN si absent
 };
 
 // Catégories obsidian_stocks considérées comme "armurerie" (voir app/obsidian/armurerie/page.tsx).
@@ -71,7 +72,7 @@ function buildEmbed(opts: DiscordEmbedInput) {
 // (?wait=true), pour pouvoir l'éditer plus tard quand la fiche/contrat/rdv change.
 export async function sendDiscordMessage(kind: DiscordWebhookKind, opts: DiscordEmbedInput): Promise<{ ok: boolean; messageId?: string; error?: string }> {
   try {
-    const url = process.env[ENV_KEYS[kind]];
+    const url = process.env[ENV_KEYS[kind]] || (kind === "gm" ? process.env.DISCORD_WEBHOOK_ADMIN : undefined);
     if (!url) return { ok: false, error: `Webhook "${kind}" non configuré (variable ${ENV_KEYS[kind]} manquante sur Vercel)` };
 
     const res = await fetch(`${url}?wait=true`, {

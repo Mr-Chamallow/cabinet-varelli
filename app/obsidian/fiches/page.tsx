@@ -16,7 +16,7 @@ const EMPTY={nom:"",metier:"civil",sous_tags:[] as string[],type:"personne",prio
 export default function FichesPage(){
   const { user, loading: userLoading } = useCurrentUser();
   const { toast, showToast } = useToast();
-  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_stats"))) { window.location.href = "/"; } }, [user, userLoading]);
+  useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_fiches"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [fiches,setFiches]=useState<any[]>([]);
   const [selected,setSelected]=useState<any>(null);
   const [loading,setLoading]=useState(true);

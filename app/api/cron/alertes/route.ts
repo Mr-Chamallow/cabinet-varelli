@@ -79,5 +79,15 @@ export async function GET(req: Request) {
     out.rappels = n;
   } catch (e: any) { out.rappels = `erreur: ${e?.message || e}`; }
 
+  // 4) Sanctions d'audit terminées
+  try {
+    const { data: aud } = await db.from("gm_audits").select("id,organisation,sanction,sanction_fin").eq("sanction_alerte", false).not("sanction_fin", "is", null).lte("sanction_fin", new Date(now).toISOString());
+    for (const a of aud || []) {
+      await postAlert("gm", `✅ Sanction levée — ${a.organisation}`, `« ${a.sanction || "Sanction"} » est terminée.`, GREEN);
+      await db.from("gm_audits").update({ sanction_alerte: true }).eq("id", a.id);
+    }
+    out.sanctions = (aud || []).length;
+  } catch (e: any) { out.sanctions = `erreur: ${e?.message || e}`; }
+
   return NextResponse.json({ ok: true, ...out });
 }
