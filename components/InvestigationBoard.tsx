@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { fileToPhoto } from "@/components/PhotoPicker";
+import { pdfEnquete } from "@/lib/pdfDocs";
 
 // Tableau d'enquête (vide au départ, sauvegardé en base et partagé).
 // Choisir une personne l'ajoute avec tous ses liens : même organisation, noms cités dans « Relations » (dans les deux sens) et véhicules qui lui sont assignés.
@@ -102,6 +103,11 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
     else if (it.kind === "vehicule") { await supabase?.from("obsidian_garage").update({ photo_url: url }).eq("id", it.ref!); setVehicles(l => l.map(v => v.id === it.ref ? { ...v, photo_url: url } : v)); }
   }
 
+  async function exportPdf() {
+    const list = shown.map(i => { const f = i.kind === "fiche" ? fById.get(i.ref!) : null, v = i.kind === "vehicule" ? vById.get(i.ref!) : null;
+      return { id: i.id, kind: i.kind, x: i.x, y: i.y, label: f ? f.nom : v ? v.modele : "Piece", sub: f ? (f.organisation || "") : v ? [v.plaque, v.assigne_a ? "-> " + v.assigne_a : ""].filter(Boolean).join(" ") : "", img: i.kind === "note" ? i.img : (f?.photo_url || v?.photo_url), prime: Number(f?.prime) || 0 }; });
+    await pdfEnquete(list, links, user);
+  }
   const candidates = fiches.filter(f => !onBoard("fiche", f.id) || true);
   function submitPick() { const f = fiches.find(x => x.nom.toLowerCase() === pick.trim().toLowerCase()); if (!f) { setErr("Personne introuvable : choisis dans la liste."); return; } setErr(""); addPerson(f.id); setPick(""); }
 
@@ -111,6 +117,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
         <input list="board-people" value={pick} onChange={e => setPick(e.target.value)} onKeyDown={e => e.key === "Enter" && submitPick()} placeholder="🔎 Ajouter une personne (nom)…" style={{ flex: 1, minWidth: 220 }} />
         <datalist id="board-people">{candidates.map(f => <option key={f.id} value={f.nom}>{f.organisation || ""}</option>)}</datalist>
         <button className="btn btn-gold btn-sm" onClick={submitPick} disabled={!pick.trim()}>➕ Ajouter + ses liens</button>
+        {items.length > 0 && <button className="btn btn-outline btn-sm" onClick={exportPdf}>📄 Export PDF</button>}
         {items.length > 0 && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={clearAll}>🧹 Vider</button>}
       </div>
       {err && <div style={{ color: "var(--danger)", fontSize: "0.78rem", marginBottom: 6 }}>{err}</div>}

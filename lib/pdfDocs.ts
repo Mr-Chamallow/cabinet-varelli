@@ -100,3 +100,41 @@ export async function pdfContrat(c: any) {
   if (c.rapport) { p.section("Rapport de mission"); p.para(c.rapport); }
   p.save(`contrat-${c.titre || "contrat"}-${day()}`);
 }
+
+export interface EnqueteItem { id: string; kind: "fiche" | "vehicule" | "note"; x: number; y: number; label: string; sub?: string; img?: string | null; prime?: number }
+export async function pdfEnquete(items: EnqueteItem[], links: { a: string; b: string; car?: boolean }[], auteur?: string) {
+  const p = await Pdf.create({ kind: "enquete", title: "Tableau d'enquete", subtitle: `${items.filter(i => i.kind === "fiche").length} personne(s) - ${items.filter(i => i.kind === "vehicule").length} vehicule(s) - ${links.length} lien(s)`, classification: "Enquete", signers: [`L'enqueteur|${auteur || ""}`, "Le responsable de dossier|"] });
+  const BW = 1500, BH = 920, PW = 124, PH = 150;
+  const k = (p.W - 2 * p.M) / BW, H = BH * k;
+  const byId = new Map(items.map(i => [i.id, i]));
+  p.section("Vue d'ensemble du tableau");
+  p.canvas(H, (x0, y0) => {
+    const d = p.doc;
+    d.setFillColor(58, 42, 28); d.rect(x0, y0, BW * k, H, "F"); d.setDrawColor(110, 80, 50); d.setLineWidth(0.8); d.rect(x0, y0, BW * k, H);
+    links.forEach(l => { const a = byId.get(l.a), b = byId.get(l.b); if (!a || !b) return; d.setLineWidth(0.35); if (l.car) { d.setDrawColor(232, 176, 74); d.setLineDashPattern([1.2, 0.8], 0); } else { d.setDrawColor(210, 50, 50); d.setLineDashPattern([], 0); } d.line(x0 + (a.x + PW / 2) * k, y0 + (a.y + 6) * k, x0 + (b.x + PW / 2) * k, y0 + (b.y + 6) * k); });
+    d.setLineDashPattern([], 0);
+    items.forEach(i => {
+      const x = x0 + i.x * k, y = y0 + i.y * k, w = PW * k, h = PH * k;
+      d.setFillColor(246, 239, 217); d.rect(x, y, w, h, "F");
+      const ix = x + 0.8, iy = y + 0.8, iw = w - 1.6, ih = h * 0.72;
+      let ok = false; if (i.img && String(i.img).startsWith("data:image")) { try { d.addImage(i.img, "JPEG", ix, iy, iw, ih); ok = true; } catch { /* ignoré */ } }
+      if (!ok) { d.setFillColor(217, 207, 176); d.rect(ix, iy, iw, ih, "F"); d.setFont("helvetica", "bold"); d.setFontSize(9); d.setTextColor(138, 122, 85); d.text(i.kind === "vehicule" ? "V" : "?", ix + iw / 2, iy + ih / 2 + 1.5, { align: "center" }); }
+      d.setFont("helvetica", "bold"); d.setFontSize(4.2); d.setTextColor(43, 29, 14);
+      const lab = String(i.label || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().slice(0, 22);
+      d.text(lab, x + w / 2, y + h - 3.2, { align: "center" });
+      if (i.prime && i.prime > 0) { d.setFillColor(176, 36, 48); d.circle(x + w - 1.5, y + 1.5, 1.2, "F"); }
+      d.setFillColor(190, 30, 30); d.circle(x + w / 2, y, 0.9, "F");
+    });
+  });
+  const name = (id: string) => byId.get(id)?.label || "?";
+  const people = items.filter(i => i.kind === "fiche");
+  if (people.length) {
+    p.section(`Personnes (${people.length})`);
+    p.table(["Nom", "Organisation", "Liens"], people.map(i => [i.label, i.sub || "—", links.filter(l => (l.a === i.id || l.b === i.id)).map(l => (l.car ? "[veh] " : "") + name(l.a === i.id ? l.b : l.a)).join(", ") || "—"]), [48, 44, 82]);
+  }
+  const cars = items.filter(i => i.kind === "vehicule");
+  if (cars.length) { p.section(`Vehicules (${cars.length})`); p.table(["Modele", "Plaque / details", "Assigne a"], cars.map(i => [i.label, i.sub || "—", links.filter(l => l.car && l.b === i.id || l.car && l.a === i.id).map(l => name(l.a === i.id ? l.b : l.a)).join(", ") || "—"]), [60, 54, 60]); }
+  const notes = items.filter(i => i.kind === "note" && i.img);
+  if (notes.length) { p.section(`Pieces libres (${notes.length})`); for (let n = 0; n < notes.length; n += 3) p.photos(notes.slice(n, n + 3).map((x, j) => ({ url: x.img, label: `Piece ${n + j + 1}`, w: 50, h: 38 }))); }
+  p.save(`tableau-enquete-${day()}`);
+}

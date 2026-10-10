@@ -35,7 +35,7 @@ async function loadLogo(): Promise<string | null> {
   } catch { return null; }
 }
 
-export type PdfKind = "fiche" | "tribunal" | "pacte" | "audit" | "evenement" | "organisation" | "contrat";
+export type PdfKind = "fiche" | "tribunal" | "pacte" | "audit" | "evenement" | "organisation" | "contrat" | "enquete";
 export interface PdfOpts { title: string; subtitle?: string; classification?: string; org?: string; signers?: [string, string]; kind?: PdfKind; }
 type RGB = [number, number, number];
 // Un style par catégorie : couleur d'accent, bandeau, emblème, tampon, signataires, numérotation des sections.
@@ -46,6 +46,7 @@ const THEMES: Record<PdfKind, { accent: RGB; band: RGB; emblem: string; stamp: s
   audit:        { accent: [112, 84, 196],  band: [18, 14, 36], emblem: "magnifier", stamp: "Audit realise", label: "Conformite & controle", footer: "Rapport d'audit", signers: ["L'auditeur", "La Direction"], num: "none" },
   evenement:    { accent: [226, 128, 32],  band: [32, 18, 6],  emblem: "chevrons", stamp: "Operation", label: "Operations de terrain", footer: "Compte rendu d'operation", signers: ["Le chef d'operation", "La Direction"], num: "none" },
   organisation: { accent: [201, 162, 77],  band: [11, 11, 14], emblem: "shield",   stamp: "Dossier complet", label: "Dossier d'organisation", footer: "Dossier confidentiel", signers: ["La Direction", "Le responsable du pole"], num: "none" },
+  enquete:      { accent: [176, 36, 48],   band: [30, 20, 12], emblem: "magnifier", stamp: "Enquete", label: "Tableau d'enquete", footer: "Tableau d'enquete", signers: ["L'enqueteur", "Le responsable de dossier"], num: "none" },
   contrat:      { accent: [24, 150, 162],  band: [6, 24, 28],  emblem: "doc",      stamp: "Contrat", label: "Contrat de mission", footer: "Contrat de mission", signers: ["Le donneur d'ordre", "Le prestataire"], num: "article" },
 };
 
@@ -196,6 +197,9 @@ export class Pdf {
     }
     this.y += hmax + 9;
   }
+
+  // Zone libre de hauteur h (mm) pour un dessin personnalisé : fn reçoit (x0, y0).
+  canvas(h: number, fn: (x0: number, y0: number) => void) { this.ensure(h + 4); fn(this.M, this.y); this.y += h + 6; }
 
   section(title: string) {
     this.ensure(16);
