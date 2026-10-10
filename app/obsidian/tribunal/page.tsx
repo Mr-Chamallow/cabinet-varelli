@@ -8,6 +8,8 @@ import { Modal } from "@/components/ui/Modal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { gmWrite } from "@/lib/gmApi";
 import { pdfDossier } from "@/lib/pdfDocs";
+import { PersonPicker, EmployeePicker } from "@/components/PersonPicker";
+import { Stamp } from "@/components/Stamp";
 import { OrgLinks } from "@/components/gm/OrgLinks";
 import { useGmAccess, useGroupes, GroupeSelect, Chip, Badge, fmtDT, toLocalInput, fromLocalInput } from "@/components/gm/bits";
 
@@ -94,15 +96,14 @@ export default function TribunalPage() {
           {visible.map(d => {
             const st = STATUTS.find(s => s.k === d.statut) || STATUTS[0]; const v = VERDICTS[d.verdict] || VERDICTS.en_cours; const isOpen = open === d.id;
             return (
-              <div key={d.id} data-tilt className="card" style={{ padding: "0.85rem 1rem", borderLeft: `3px solid ${st.color}`, position: "relative" }}>
-                {d.verdict !== "en_cours" && <span className={`seal ${d.verdict}`} aria-hidden="true">{d.verdict === "coupable" ? "COUPABLE" : "INNOCENT"}</span>}
+              <div key={d.id} className="card" style={{ padding: "0.85rem 1rem", borderLeft: `3px solid ${st.color}`, position: "relative" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", cursor: "pointer" }} onClick={() => setOpen(isOpen ? null : d.id)}>
                   <div style={{ flex: 1, minWidth: 180 }}>
                     <div style={{ fontWeight: 700 }}>{d.titre}</div>
                     <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>Accusé : {d.accuse || d.organisation || "—"} · Audience : {fmtDT(d.date_audience)} · {(d.preuves || []).length} preuve(s)</div>
                   </div>
                   <Badge color={st.color}>{st.label}</Badge>
-                  {d.verdict !== "en_cours" && <Badge color={v.color}>{v.label}</Badge>}
+                  {d.verdict !== "en_cours" && <Stamp style={{ flexShrink: 0, marginLeft: "0.4rem" }} color={d.verdict === "coupable" ? "red" : "green"} size="sm" rotate={-6}>{d.verdict === "coupable" ? "Coupable" : "Innocent"}</Stamp>}
                 </div>
                 {isOpen && (
                   <div style={{ marginTop: "0.85rem", display: "flex", flexDirection: "column", gap: "0.7rem", fontSize: "0.82rem" }}>
@@ -153,11 +154,11 @@ export default function TribunalPage() {
             <div className="form-grid">
               <div><label>Titre *</label><input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} placeholder="Ex : Trahison du Pacte — Les Vagos" /></div>
               <div><label>Statut</label><select value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>{STATUTS.map(s => <option key={s.k} value={s.k}>{s.label}</option>)}</select></div>
-              <div><label>Accusé (personne)</label><input value={form.accuse} onChange={e => setForm({ ...form, accuse: e.target.value })} /></div>
+              <div><label>Accusé (personne)</label><PersonPicker value={form.accuse} onChange={v => setForm({ ...form, accuse: v })} /></div>
               <div><label>Organisation</label><GroupeSelect value={form.organisation} groupes={groupes} onChange={v => setForm({ ...form, organisation: v })} placeholder="— Aucun / personne seule —" /></div>
-              <div><label>Juge</label><input value={form.juge} onChange={e => setForm({ ...form, juge: e.target.value })} /></div>
-              <div><label>Procureur</label><input value={form.procureur} onChange={e => setForm({ ...form, procureur: e.target.value })} /></div>
-              <div><label>Avocat commis d'office</label><input value={form.avocat} onChange={e => setForm({ ...form, avocat: e.target.value })} /></div>
+              <div><label>Juge</label><EmployeePicker value={form.juge} onChange={v => setForm({ ...form, juge: v })} /></div>
+              <div><label>Procureur</label><EmployeePicker value={form.procureur} onChange={v => setForm({ ...form, procureur: v })} /></div>
+              <div><label>Avocat commis d'office</label><EmployeePicker value={form.avocat} onChange={v => setForm({ ...form, avocat: v })} /></div>
               <div><label>Date d'audience</label><input type="datetime-local" value={form.date_audience} onChange={e => setForm({ ...form, date_audience: e.target.value })} /></div>
             </div>
             <div><label>Acte d'accusation</label><textarea rows={3} value={form.acte_accusation} onChange={e => setForm({ ...form, acte_accusation: e.target.value })} /></div>

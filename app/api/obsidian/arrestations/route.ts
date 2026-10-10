@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { weekStartOf } from "@/lib/weekStart";
-import { postAlert, logAudit, usd, ORANGE, RED, GREY } from "@/lib/alerts";
+import { postAlert, syncAlert, logAudit, usd, ORANGE, RED, GREY } from "@/lib/alerts";
 
 function arrestFields(row: any) {
   const items = (row.items || []).map((i: any) => `${i.emoji || ""} ${i.nom} × ${i.quantite}`).join("\n");
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
     if ("error" in p) return NextResponse.json({ error: p.error }, { status: 400 });
     const r = await createArrest(supabaseAdmin, p);
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
-    await postAlert("arrestations", `🚔 Arrestation — ${r.row.membre}`, r.row.notes || "Nouvelle arrestation enregistrée.", RED, arrestFields(r.row), ["RS"]);
+    await syncAlert(supabaseAdmin, "arrestations", r.row, "arrestations", `🚔 Arrestation — ${r.row.membre}`, r.row.notes || "Nouvelle arrestation enregistrée.", RED, arrestFields(r.row));
     return NextResponse.json(r.row);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
@@ -118,7 +118,8 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: r.error || "Échec de la modification" }, { status: 400 });
     }
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
-    await postAlert("arrestations", `✏️ Arrestation modifiée — ${r.row.membre}`, r.row.notes || "Saisie corrigée (stock et prime recalculés).", ORANGE, arrestFields(r.row));
+    if (old.discord_message_id) { r.row.discord_message_id = old.discord_message_id; await supabaseAdmin.from("arrestations").update({ discord_message_id: old.discord_message_id }).eq("id", r.row.id); }
+    await syncAlert(supabaseAdmin, "arrestations", r.row, "arrestations", `🚔 Arrestation — ${r.row.membre} (modifiée)`, r.row.notes || "Saisie corrigée (stock et prime recalculés).", ORANGE, arrestFields(r.row));
     return NextResponse.json(r.row);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
@@ -136,7 +137,7 @@ export async function DELETE(req: Request) {
     const { error: e } = await revertArrest(supabaseAdmin, row, ((user as any)?.nom_perso || (user as any)?.discord_name || ""));
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
     await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Arrestation annulée", row.membre, `amende ${row.amende} $ · argent perdu ${row.argent_perdu} $`);
-    await postAlert("arrestations", `🗑️ Arrestation annulée — ${row.membre}`, "Stock remis, prime de paie retirée.", GREY, arrestFields(row));
+    await syncAlert(supabaseAdmin, "arrestations", row, "arrestations", `🗑️ Arrestation annulée — ${row.membre}`, "Stock remis, prime de paie retirée.", GREY, arrestFields(row));
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

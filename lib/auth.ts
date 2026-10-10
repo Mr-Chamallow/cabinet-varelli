@@ -29,7 +29,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   obsidian_paie: "Paie & Commissions", obsidian_employes: "Employés",
   h47: "H-47", admin: "Administration", supervision: "Supervision",
   delete_all: "Suppression globale", edit_all: "Édition globale",
-  juridique: "Code pénal", calculatrice: "Calculatrice", "carte-enqueteur": "Carte enquêteur",
+  juridique: "Code pénal", calculatrice: "Calculatrice", "carte-enqueteur": "San Andreas",
   utile_samp: "Utile SAMP", base_donnees: "Base de données",
   obsidian_actions: "Actions illégales", obsidian_arrestations: "Arrestations",
   obsidian_fiches: "Fiches", gm_tribunal: "Tribunal de l'Ombre", gm_pactes: "Pactes d'Obsidienne", gm_audits: "Audits de conformité",

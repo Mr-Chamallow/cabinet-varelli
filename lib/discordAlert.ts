@@ -99,7 +99,7 @@ export async function sendDiscordMessage(kind: DiscordWebhookKind, opts: Discord
 // reposter un nouveau, à chaque modification de la fiche/contrat/rdv d'origine).
 export async function editDiscordMessage(kind: DiscordWebhookKind, messageId: string, opts: DiscordEmbedInput): Promise<{ ok: boolean; error?: string }> {
   try {
-    const url = process.env[ENV_KEYS[kind]];
+    const url = process.env[ENV_KEYS[kind]] || (kind === "gm" ? process.env.DISCORD_WEBHOOK_ADMIN : undefined);
     if (!url) return { ok: false, error: `Webhook "${kind}" non configuré (variable ${ENV_KEYS[kind]} manquante sur Vercel)` };
 
     const res = await fetch(`${url}/messages/${messageId}`, {

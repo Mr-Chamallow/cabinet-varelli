@@ -91,9 +91,9 @@ export async function lookupPeople(db: Db, query: string): Promise<{ candidates:
   // Carte enquêteur : plaque → personne ; personnes du registre
   for (const pl of pla.data || []) {
     const { data: cp } = pl.personne_id ? await db.from("carte_personnes").select("*").eq("id", pl.personne_id).maybeSingle() : { data: null };
-    out.push({ key: "pl" + pl.id, source: "Carte enquêteur", label: cp ? `${fullNom(cp)} (plaque ${pl.plaque})` : `Plaque ${pl.plaque}`, detail: pl.notes || "", personne: cp ? { nom: cp.nom, prenom: cp.prenom, notes_publiques: cp.notes || "" } : undefined, vehicules: [{ plaque: pl.plaque }], plaque: pl.plaque });
+    out.push({ key: "pl" + pl.id, source: "San Andreas", label: cp ? `${fullNom(cp)} (plaque ${pl.plaque})` : `Plaque ${pl.plaque}`, detail: pl.notes || "", personne: cp ? { nom: cp.nom, prenom: cp.prenom, notes_publiques: cp.notes || "" } : undefined, vehicules: [{ plaque: pl.plaque }], plaque: pl.plaque });
   }
-  for (const cp of cpers.data || []) if (match(cp) && !out.some(c => c.key === "cp" + cp.id)) out.push({ key: "cp" + cp.id, source: "Carte enquêteur", label: fullNom(cp), detail: cp.notes || "", personne: { nom: cp.nom, prenom: cp.prenom, notes_publiques: cp.notes || "" }, vehicules: [] });
+  for (const cp of cpers.data || []) if (match(cp) && !out.some(c => c.key === "cp" + cp.id)) out.push({ key: "cp" + cp.id, source: "San Andreas", label: fullNom(cp), detail: cp.notes || "", personne: { nom: cp.nom, prenom: cp.prenom, notes_publiques: cp.notes || "" }, vehicules: [] });
   return { candidates: out.slice(0, 12), fiches: fiches.data || [] };
 }
 

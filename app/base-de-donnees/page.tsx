@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { useDeepLink } from "@/lib/deeplink";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useToast } from "@/lib/useToast";
@@ -36,6 +37,7 @@ export default function BaseDeDonneesPage() {
   const [points, setPoints] = useState<CartePoint[]>([]);
 
   const [selectedPersonneId, setSelectedPersonneId] = useState<string | null>(null);
+  useDeepLink("personne", personnes.length > 0, (v) => { const p = personnes.find(x => x.id === v || `${(x as any).prenom || ""} ${x.nom}`.trim().toLowerCase() === v.toLowerCase()); if (p) { setTab("personnes"); setSelectedPersonneId(p.id); } });
   const [selectedVehiculeId, setSelectedVehiculeId] = useState<string | null>(null);
   const [selectedGroupeId, setSelectedGroupeId] = useState<string | null>(null);
 

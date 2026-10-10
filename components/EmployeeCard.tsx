@@ -4,7 +4,7 @@ import { PhotoPicker } from "@/components/PhotoPicker";
 export { fileToPhoto } from "@/components/PhotoPicker";
 
 // Carte pro d'employé Obsidian Logistics : recto/verso, tilt 3D, reflet holographique, anneaux animés, puce, scan.
-export interface CardEmploye { id: string; nom: string; role?: string | null; discord?: string | null; telephone?: string | null; created_at?: string; photo_url?: string | null; actif?: boolean }
+export interface CardEmploye { id: string; nom: string; role?: string | null; discord?: string | null; telephone?: string | null; created_at?: string; photo_url?: string | null; actif?: boolean; genre?: string | null; email?: string | null; notes?: string | null }
 
 export interface RoleStyle { key: string; nom: string; color: string; color2: string; niveau: string; emblem: string; stars: number; finish: string; titre: string; hab: number; fn: string; acces: string[] }
 // Une identité visuelle par rôle / grade : couleurs, emblème, étoiles, finition.
@@ -37,6 +37,16 @@ export function roleKey(role?: string | null): string {
   return "op";
 }
 export const roleStyle = (role?: string | null) => ROLE_STYLES[roleKey(role)];
+// Féminin / masculin des intitulés (le nom du rôle reste la clé interne, seul l'affichage change).
+const FEM: [RegExp, string][] = [[/\bDirecteur\b/g, "Directrice"], [/\bDirectrice\b/g, "Directrice"], [/\bAgent\b/g, "Agente"], [/\bAvocat\b/g, "Avocate"], [/\bOpérateur\b/g, "Opératrice"], [/\bAssocié\b/g, "Associée"], [/\bPatron\b/g, "Patronne"], [/\bFONDATEUR\b/g, "FONDATRICE"], [/\bAGENT\b/g, "AGENTE"], [/\bAVOCAT\b/g, "AVOCATE"], [/\bOPÉRATEUR\b/g, "OPÉRATRICE"], [/\bDIRECTEUR\b/g, "DIRECTRICE"], [/\bopérationnel\b/g, "opérationnelle"], [/\bOPÉRATIONNEL\b/g, "OPÉRATIONNELLE"], [/\bDirecteur\b/g, "Directrice"]];
+const MASC: [RegExp, string][] = [[/\bDirectrice\b/g, "Directeur"], [/\bDIRECTRICE\b/g, "DIRECTEUR"], [/\bopérationnelle\b/g, "opérationnel"], [/\bOPÉRATIONNELLE\b/g, "OPÉRATIONNEL"]];
+export const isFem = (g?: string | null) => /^(f|fem|femme|féminin)/i.test((g || "").trim());
+export function genderize(txt: string, genre?: string | null): string {
+  if (!txt) return txt;
+  return (isFem(genre) ? FEM : MASC).reduce((t, [re, to]) => t.replace(re, to), txt);
+}
+export const roleLabel = (role?: string | null, genre?: string | null) => genderize(role || "Employé", genre);
+
 // Importance des rôles (0 = le plus haut) : sert au tri automatique des employés.
 export const ROLE_ORDER = ["patron","ceo","coo","rj","aj","avocat","rl","al","rs","as","op","st","legal"];
 export const roleRank = (role?: string | null) => ROLE_ORDER.indexOf(roleKey(role));
@@ -44,10 +54,10 @@ export const sortByRole = <T extends { role?: string | null; nom?: string }>(l: 
 // Compat (accueil, etc.)
 export function poleOf(role?: string | null) { const r = roleStyle(role); return { nom: r.nom, color: r.color, niveau: r.niveau }; }
 
-const matricule = (id: string) => "OBS-" + (parseInt(id.replace(/[^0-9a-f]/gi, "").slice(0, 6) || "0", 16) % 10000).toString().padStart(4, "0");
+export const matricule = (id: string) => "OBS-" + (parseInt(id.replace(/[^0-9a-f]/gi, "").slice(0, 6) || "0", 16) % 10000).toString().padStart(4, "0");
 const BASE = 440;
 
-export function EmployeeCard({ e, flippable = true, onZoom }: { e: CardEmploye; flippable?: boolean; onZoom?: () => void }) {
+export function EmployeeCard({ e, flippable = true, onZoom, onOpen, strike = false }: { e: CardEmploye; flippable?: boolean; onZoom?: () => void; onOpen?: () => void; strike?: boolean }) {
   const wrap = useRef<HTMLDivElement>(null); const tilt = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1); const [back, setBack] = useState(false); const [flash, setFlash] = useState(false);
   const p = roleStyle(e.role);
@@ -57,6 +67,10 @@ export function EmployeeCard({ e, flippable = true, onZoom }: { e: CardEmploye; 
     f(); const ro = new ResizeObserver(f); ro.observe(el); return () => ro.disconnect();
   }, []);
   // « Cérémonie » : flash quand le rôle change.
+  // « Frappe » à la création : flash + la carte tombe et claque.
+  useEffect(() => { if (strike) { setFlash(true); setTimeout(() => setFlash(false), 1600); } }, [strike]);
+  // Balayage horizontal (mobile) = retourne la carte.
+  const sx = useRef<number | null>(null);
   const prevRole = useRef(e.role);
   useEffect(() => { if (prevRole.current !== e.role) { prevRole.current = e.role; setFlash(true); setBack(true); setTimeout(() => setBack(false), 900); setTimeout(() => setFlash(false), 1600); } }, [e.role]);
   function move(ev: React.MouseEvent) {
@@ -69,8 +83,8 @@ export function EmployeeCard({ e, flippable = true, onZoom }: { e: CardEmploye; 
   const since = e.created_at ? new Date(e.created_at).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" }) : "—";
   const h = (BASE / 1.586) * scale;
   return (
-    <div className="idc-wrap">
-      <div className="idc-scaler" ref={wrap} style={{ height: h }} onMouseMove={move} onMouseLeave={leave}>
+    <div className={`idc-wrap${strike ? " idc-strike" : ""}`}>
+      <div className="idc-scaler" ref={wrap} style={{ height: h, cursor: onOpen ? "pointer" : undefined }} onMouseMove={move} onMouseLeave={leave} onClick={onOpen ? (ev) => { if (!(ev.target as HTMLElement).closest("button")) onOpen(); } : undefined} onTouchStart={ev => { sx.current = ev.touches[0].clientX; }} onTouchEnd={ev => { if (sx.current !== null && flippable && Math.abs(ev.changedTouches[0].clientX - sx.current) > 60) setBack(b => !b); sx.current = null; }}>
         <div className="idc-tilt" ref={tilt} style={{ transform: `scale(${scale})`, ["--c" as any]: p.color, ["--c2" as any]: p.color2 }}>
           <div className={`idc-flip${back ? " back" : ""}`}>
             {/* RECTO */}
@@ -88,8 +102,8 @@ export function EmployeeCard({ e, flippable = true, onZoom }: { e: CardEmploye; 
                 </div>
                 <div className="idc-info">
                   <div className="idc-name">{e.nom}</div>
-                  <div className="idc-role">{e.role || "Employé"}</div>
-                  <div className="idc-pole">{p.nom} · {p.titre}</div>
+                  <div className="idc-role">{roleLabel(e.role, e.genre)}</div>
+                  <div className="idc-pole">{p.nom} · {genderize(p.titre, e.genre)}</div>
                   <div className="idc-fn">{p.fn}</div>
                   <div className="idc-stars" aria-label={`Grade ${p.stars}/5`}>{Array.from({ length: 5 }).map((_, i) => <b key={i} className={i < p.stars ? "on" : ""}>★</b>)}</div>
                   <div className="idc-meta"><div><small>MATRICULE</small>{matricule(e.id)}</div><div><small>DEPUIS</small>{since}</div></div>
@@ -116,7 +130,7 @@ export function EmployeeCard({ e, flippable = true, onZoom }: { e: CardEmploye; 
       {(flippable || onZoom) && (
         <div style={{ display: "flex", gap: "0.4rem", justifyContent: "center", marginTop: "0.5rem" }}>
           {flippable && <button type="button" className="btn btn-outline btn-sm" onClick={() => setBack(b => !b)}>↻ {back ? "Recto" : "Verso"}</button>}
-          {onZoom && <button type="button" className="btn btn-gold btn-sm" onClick={onZoom}>🔍 Voir en grand</button>}
+          {onZoom && <button type="button" className="btn btn-gold btn-sm" onClick={onZoom}>🗂️ Ouvrir le dossier</button>}
         </div>
       )}
     </div>

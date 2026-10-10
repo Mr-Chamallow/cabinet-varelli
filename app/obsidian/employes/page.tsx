@@ -9,14 +9,19 @@ import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
 import { hasPermission, DEFAULT_PERMISSIONS, getMemberColor } from "@/lib/auth";
 import { useRealtimeTable } from "@/lib/useRealtimeTable";
-import { EmployeeCard, EmployeeCardModalBody, sortByRole } from "@/components/EmployeeCard";
+import { EmployeeCard, EmployeeCardModalBody, sortByRole, roleKey, roleLabel } from "@/components/EmployeeCard";
+import { PhotoPicker } from "@/components/PhotoPicker";
+import { EmployeeDossier } from "@/components/EmployeeDossier";
 
 interface Employe {
   id: string; nom: string; role: string; telephone: string; discord: string;
-  email: string; notes: string; actif: boolean; created_at: string; photo_url?: string | null;
+  email: string; notes: string; actif: boolean; created_at: string; photo_url?: string | null; genre?: string | null;
 }
 
-const EMPTY = { nom: "", role: "", telephone: "", discord: "", email: "", notes: "", actif: true };
+const EMPTY = { nom: "", role: "", genre: "m", telephone: "", discord: "", email: "", notes: "", actif: true };
+const GROUPS: { titre: string; keys: string[] }[] = [
+  { titre: "👑 Directoire exécutif", keys: ["patron", "ceo", "coo"] }, { titre: "⚖️ Pôle Juridique", keys: ["rj", "aj", "avocat"] }, { titre: "📦 Pôle Logistique", keys: ["rl", "al"] }, { titre: "🛡️ Pôle Sécurité", keys: ["rs", "as"] }, { titre: "🧑‍💼 Membres", keys: ["op", "st"] }, { titre: "🤝 Partenaires externes", keys: ["legal"] },
+];
 const ROLES_LOGISTIQUE = Object.keys(DEFAULT_PERMISSIONS).filter(r =>
   DEFAULT_PERMISSIONS[r].some(p => p.startsWith("obsidian_") || p === "cahier_vente" || p === "h47")
 );
@@ -35,6 +40,7 @@ export default function EmployesObsidianPage() {
   const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
   const [showInactifs, setShowInactifs] = useState(false);
   const [cardId, setCardId] = useState<string | null>(null);
+  const [strikeId, setStrikeId] = useState<string | null>(null);
   const cardEmp = employes.find(x => x.id === cardId) || null;
   async function savePhoto(url: string | null) {
     if (!cardEmp) return;
@@ -65,7 +71,7 @@ export default function EmployesObsidianPage() {
 
   function openNew() { setForm({ ...EMPTY }); setEditId(null); setShowForm(true); }
   function openEdit(e: Employe) {
-    setForm({ nom: e.nom, role: e.role || "", telephone: e.telephone || "", discord: e.discord || "", email: e.email || "", notes: e.notes || "", actif: e.actif !== false });
+    setForm({ nom: e.nom, role: e.role || "", genre: e.genre || "m", telephone: e.telephone || "", discord: e.discord || "", email: e.email || "", notes: e.notes || "", actif: e.actif !== false });
     setEditId(e.id); setShowForm(true);
   }
 
@@ -77,6 +83,7 @@ export default function EmployesObsidianPage() {
       : await fetch("/api/obsidian/employes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, created_by: user.nom, created_by_id: user.id }) });
     if (!res.ok) { const data = await res.json(); alert("❌ "+data.error); setSaving(false); return; }
     showToast(editId ? "Fiche mise à jour" : "Employé ajouté");
+    if (!editId) { try { const created = await res.json(); if (created?.id) { setStrikeId(created.id); setTimeout(() => setStrikeId(null), 2500); } } catch {} }
     setShowForm(false);
     setSaving(false);
     load();
@@ -131,36 +138,18 @@ export default function EmployesObsidianPage() {
       ) : visibles.length === 0 ? (
         <div className="empty-state"><div className="empty-icon">🧑‍💼</div><div className="empty-title">Aucun employé enregistré</div></div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "0.875rem" }}>
-          {visibles.map(e => {
-            const couleur = getMemberColor(e.role);
-            return (
-              <div key={e.id} className="card" style={{ opacity: e.actif === false ? 0.55 : 1 }}>
-                <div style={{ marginBottom: "0.9rem" }}><EmployeeCard e={e} onZoom={() => setCardId(e.id)} /></div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: couleur + "20", border: `2px solid ${couleur}40`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display',serif", fontWeight: 700, color: couleur }}>
-                    {e.photo_url ? <img src={e.photo_url} alt="" referrerPolicy="no-referrer" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} /> : e.nom.charAt(0).toUpperCase()}
+        <div>
+          {GROUPS.map(g => { const list = visibles.filter(e => g.keys.includes(roleKey(e.role))); if (!list.length) return null; return (
+            <div key={g.titre} style={{ marginBottom: "1.6rem" }}>
+              <div className="section-title" style={{ marginBottom: "0.7rem" }}>{g.titre} <span style={{ opacity: 0.5, fontWeight: 400 }}>({list.length})</span></div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(330px, 1fr))", gap: "1rem" }}>
+                {list.map(e => (
+                  <div key={e.id} style={{ opacity: e.actif === false ? 0.55 : 1 }}>
+                    <EmployeeCard e={e} strike={strikeId === e.id} onOpen={() => setCardId(e.id)} onZoom={() => setCardId(e.id)} />
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.nom}</div>
-                    {e.role && <span style={{ fontSize: "0.68rem", padding: "0.1rem 0.5rem", borderRadius: 999, background: couleur + "18", color: couleur, border: `1px solid ${couleur}30`, fontWeight: 600 }}>{e.role}</span>}
-                  </div>
-                  {e.actif === false && <span style={{ fontSize: "0.6rem", color: "var(--text-dim)" }}>Inactif</span>}
-                </div>
-                <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: "0.25rem", marginBottom: "0.75rem" }}>
-                  {e.telephone && <span>📞 {e.telephone}</span>}
-                  {e.email && <span>✉️ {e.email}</span>}
-                  {!e.telephone && !e.email && <span style={{ color: "var(--text-dim)", fontStyle: "italic" }}>Aucun contact renseigné</span>}
-                </div>
-                {e.notes && <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginBottom: "0.75rem", fontStyle: "italic" }}>{e.notes}</div>}
-                <div style={{ display: "flex", gap: "0.4rem" }}>
-                  <button className="btn btn-outline btn-sm" title="Changer la photo" onClick={() => setCardId(e.id)}>📷 Photo</button>
-                  <button className="btn btn-outline btn-sm" style={{ flex: 1 }} onClick={() => openEdit(e)}>✏️ Modifier</button>
-                  {isPatron && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} title="Supprimer (Patron)" onClick={() => window.confirm(`Supprimer ${e.nom} ?`) && remove(e.id)}>🗑️</button>}
-                </div>
+                ))}
               </div>
-            );
-          })}
+            </div>); })}
         </div>
       )}
 
@@ -174,6 +163,7 @@ export default function EmployesObsidianPage() {
                 <input list="roles-list" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} placeholder="Ex: Agent logistique" />
                 <datalist id="roles-list">{ROLES_LOGISTIQUE.map(r => <option key={r} value={r} />)}</datalist>
               </div>
+              <div className="form-group"><label>Genre (pour « Directeur / Directrice », « Agent / Agente »…)</label><select value={form.genre} onChange={e => setForm(f => ({ ...f, genre: e.target.value }))}><option value="m">Masculin</option><option value="f">Féminin</option></select></div>
               <div className="form-grid">
                 <div className="form-group"><label>Téléphone</label><input value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} /></div>
               </div>
@@ -186,8 +176,18 @@ export default function EmployesObsidianPage() {
       )}
 
       {cardEmp && (
-        <Modal size="lg" title="🪪 Carte d'employé" onClose={() => setCardId(null)}>
-          <EmployeeCardModalBody e={cardEmp} canEdit onPhoto={savePhoto} />
+        <Modal size="xl" title={`🗂️ Dossier — ${cardEmp.nom}`} onClose={() => setCardId(null)}>
+          <div className="fd-emp" style={{ maxHeight: "74vh", overflowY: "auto", padding: "0.4rem" }}>
+            <div>
+              <EmployeeCard e={cardEmp} />
+              <div className="fd-actions">
+                <button className="btn btn-outline btn-sm" style={{ flex: 1 }} onClick={() => { const e = cardEmp; setCardId(null); openEdit(e); }}>✏️ Modifier</button>
+                {isPatron && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => { if (window.confirm(`Supprimer ${cardEmp.nom} ?`)) { const id = cardEmp.id; setCardId(null); remove(id); } }}>🗑️ Supprimer</button>}
+              </div>
+              <div style={{ marginTop: "0.9rem" }}><PhotoPicker value={cardEmp.photo_url} onChange={savePhoto} /></div>
+            </div>
+            <EmployeeDossier e={cardEmp} />
+          </div>
         </Modal>
       )}
 

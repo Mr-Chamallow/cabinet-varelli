@@ -29,6 +29,12 @@ const TYPES: Record<string, { label: string; icon: string; montantLabel: string;
   alerte: { label: "Lanceur d'alerte", icon: "🚨", montantLabel: "Prime ($)", partenaireLabel: "Groupe en tête de la traque", statuts: [
     { k: "ouverte", label: "Ouverte", color: "var(--danger)" }, { k: "traquee", label: "Traquée", color: "var(--warning)" }, { k: "resolue", label: "Résolue", color: "var(--success)" }, { k: "annulee", label: "Annulée", color: "var(--text-dim)" }] },
 };
+// Statut automatique selon l'avancement de la checklist (jamais écrasé si annulé / échec).
+const AUTO: Record<string, [string, string, string]> = { convoi: ["planifie", "en_route", "livre"], enchere: ["annoncee", "ouverte", "cloturee"], capture: ["a_faire", "en_cours", "capturee"], alerte: ["ouverte", "traquee", "resolue"] };
+function autoStatut(type: string, cl: Check[], cur: string): string {
+  const a = AUTO[type]; if (!a || !cl?.length || /annul|echec/.test(cur)) return cur;
+  const n = cl.filter(c => c.done).length; return n === 0 ? (cur === a[2] || cur === a[1] ? a[0] : cur) : n === cl.length ? a[2] : a[1];
+}
 const empty = (type: string) => ({ type, titre: "", statut: TYPES[type].statuts[0].k, partenaire: "", date_event: "", montant: 0, lots: [] as Lot[], notes: "", checklist: [] as Check[] });
 
 export default function EvenementsPage() {
@@ -57,14 +63,30 @@ export default function EvenementsPage() {
     if (!form.titre.trim()) return;
     setSaving(true);
     const total = form.type === "enchere" && form.lots.length ? form.lots.reduce((s: number, l: Lot) => s + (Number(l.mise_finale) || 0), 0) : Number(form.montant) || 0;
-    const body = { ...form, montant: total, date_event: fromLocalInput(form.date_event) };
+    const norm = (x: string) => (x || "").trim().toLowerCase();
+    if (!editId && list.some(x => x.type === form.type && norm(x.titre) === norm(form.titre) && !/livre|cloturee|capturee|resolue|annul|echec/.test(x.statut))) { setSaving(false); showToast("Doublon : un événement actif porte déjà ce titre", "danger"); return; }
+    const manual = form.statut !== (editId ? (list.find(x => x.id === editId)?.statut) : TYPES[form.type].statuts[0].k);
+    const checklist = manual ? checklistFor(form.type, form.checklist, form.statut) : form.checklist;
+    const body = { ...form, checklist, statut: manual ? form.statut : autoStatut(form.type, checklist, form.statut), montant: total, date_event: fromLocalInput(form.date_event) };
     const r = await gmWrite("gm_evenements", editId ? "PATCH" : "POST", editId ? { ...body, id: editId } : body);
     setSaving(false);
     if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); return; }
     setShow(false); showToast("Enregistré"); load();
   }
+  // Le statut choisi à la main met aussi la checklist à jour (et inversement via autoStatut) : plus d'incohérence.
+  function checklistFor(type: string, cl: Check[], statut: string): Check[] {
+    const a = AUTO[type]; if (!a || !cl?.length || /annul|echec/.test(statut)) return cl;
+    const n = cl.filter(c => c.done).length;
+    if (statut === a[0]) return cl.map(c => ({ ...c, done: false }));
+    if (statut === a[2]) return cl.map(c => ({ ...c, done: true }));
+    if (n === 0) return cl.map((c, i) => ({ ...c, done: i < Math.ceil(cl.length / 2) }));
+    if (n === cl.length) return cl.map((c, i) => ({ ...c, done: i < cl.length - 1 }));
+    return cl;
+  }
   async function setStatut(e: any, statut: string) {
-    const r = await gmWrite("gm_evenements", "PATCH", { id: e.id, statut });
+    const checklist = checklistFor(e.type, e.checklist || [], statut);
+    setList(l => l.map(x => (x.id === e.id ? { ...x, statut, checklist } : x)));
+    const r = await gmWrite("gm_evenements", "PATCH", { id: e.id, statut, checklist });
     if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else load();
   }
   async function del(e: any) {
@@ -77,7 +99,9 @@ export default function EvenementsPage() {
     const checklist = (e.checklist || []).map((c: Check, j: number) => (j === i ? { ...c, done: !c.done } : c));
     setList(l => l.map(x => (x.id === e.id ? { ...x, checklist } : x)));
     if (checklist.length > 0 && checklist.every((c: Check) => c.done) && !(e.checklist || []).every((c: Check) => c.done)) fireConfetti();
-    const r = await gmWrite("gm_evenements", "PATCH", { id: e.id, checklist });
+    const statut = autoStatut(e.type, checklist, e.statut);
+    if (statut !== e.statut) { setList(l => l.map(x => (x.id === e.id ? { ...x, statut } : x))); showToast(`Statut → ${(TYPES[e.type].statuts.find(s => s.k === statut) || { label: statut }).label}`); }
+    const r = await gmWrite("gm_evenements", "PATCH", { id: e.id, checklist, statut });
     if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); load(); }
   }
   const setLot = (i: number, p: Partial<Lot>) => setForm((f: any) => ({ ...f, lots: f.lots.map((l: Lot, j: number) => (j === i ? { ...l, ...p } : l)) }));

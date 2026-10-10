@@ -18,6 +18,7 @@ const NAV_SECTIONS = [
     { href: "/obsidian/garage",        label: "Garage",          icon: "🚗", permission: "obsidian_garage" },
     { href: "/obsidian/comptabilite",  label: "Comptabilité",    icon: "🧾", permission: "obsidian_comptabilite" },
     { href: "/obsidian/rdv",           label: "Rendez-vous",     icon: "🗓️", permission: "obsidian_rdv" },
+    { href: "/obsidian/calendrier",    label: "Calendrier",      icon: "📅", permission: "obsidian_rdv" },
     { href: "/obsidian/contrats",      label: "Contrats",        icon: "📜", permission: "obsidian_contrats" },
     { href: "/obsidian/actions-illegales", label: "Actions illégales", icon: "🕶️", permission: "obsidian_actions" },
     { href: "/obsidian/arrestations", label: "Arrestations", icon: "🚔", permission: "obsidian_arrestations" },
@@ -29,7 +30,7 @@ const NAV_SECTIONS = [
     { href: "/juridique",       label: "Code pénal",       icon: "📖", permission: "juridique" },
     { href: "/calculatrice",    label: "Calculatrice",     icon: "🧮", permission: "calculatrice" },
     { href: "/utile-samp",      label: "Utile SAMP",       icon: "🐈", permission: "utile_samp" },
-    { href: "/carte-enqueteur", label: "Carte enquêteur",  icon: "🗺️", permission: "carte-enqueteur" },
+    { href: "/carte-enqueteur", label: "San Andreas",  icon: "🗺️", permission: "carte-enqueteur" },
     { href: "/base-de-donnees", label: "Base de données",  icon: "🗄️", permission: "base_donnees" },
   ]},
   { label: "Consortium", items: [

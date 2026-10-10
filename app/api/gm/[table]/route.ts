@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { hasWriteAccess } from "@/lib/auth";
-import { postAlert, logAudit, GOLD, GREEN, RED, ORANGE, BLUE, GREY } from "@/lib/alerts";
+import { postAlert, syncAlert, logAudit, GOLD, GREEN, RED, ORANGE, BLUE, GREY } from "@/lib/alerts";
 import { GROUPS } from "@/lib/discordRoles";
 
 // Écriture générique des tables du Consortium. Chaque table a SA permission (niveau écriture requis).
@@ -59,28 +59,30 @@ async function rep(db: any, organisation: string, delta: number, motif: string, 
 const clearRep = (db: any, source: string, id: string) => db.from("gm_reputation_log").delete().eq("source", source).eq("source_id", id);
 
 // Qui prévenir selon le type d'événement
-function pingEvent(type: string) {
-  if (type === "convoi") return [...GROUPS.LOGISTIQUE, ...GROUPS.SECURITE];
-  if (type === "enchere") return ["COO", "RL"] as any;
-  if (type === "capture") return GROUPS.SECURITE;
-  return ["RS", "AJ"] as any; // lanceur d'alerte
+// Qui prévenir (seulement si l'alerte est urgente : échec / attaque / capture à faire)
+const evColor = (st: string) => (/echec|attaq/.test(st) ? RED : /livre|cloturee|capturee|resolue/.test(st) ? GREEN : /annul/.test(st) ? GREY : BLUE);
+function pingEvent(type: string, statut = "") {
+  if (type === "convoi") return /echec|attaq/.test(statut) ? [...GROUPS.LOGISTIQUE, ...GROUPS.SECURITE] : [];
+  if (type === "capture") return statut === "a_faire" ? GROUPS.SECURITE : [];
+  if (type === "alerte") return statut === "ouverte" ? (["RS", "AJ"] as any) : [];
+  return [] as any;
 }
 
 async function afterCreate(db: any, table: string, row: any, who: string) {
   if (table === "gm_audits") {
     await rep(db, row.organisation, Math.round((Number(row.note) - 5) * 4), `Audit : ${row.note}/10`, "audit", row.id, who);
-    await postAlert("gm", `🔎 Audit — ${row.organisation}`, `Note **${row.note}/10**${row.appreciation ? `\n${row.appreciation}` : ""}${row.sanction ? `\n⛔ Sanction : **${row.sanction}**` : ""}`, Number(row.note) >= 5 ? GREEN : RED, undefined, Number(row.note) < 5 ? [...GROUPS.JURIDIQUE, "COO"] : ["RJ", "AJ"]);
+    await syncAlert(db, table, row, "gm", `🔎 Audit — ${row.organisation}`, `Note **${row.note}/10**${row.appreciation ? `\n${row.appreciation}` : ""}${row.sanction ? `\n⛔ Sanction : **${row.sanction}**` : ""}`, Number(row.note) >= 5 ? GREEN : RED, undefined, Number(row.note) < 5 ? [...GROUPS.JURIDIQUE, "COO"] : ["RJ", "AJ"]);
   } else if (table === "gm_pactes") {
     await ensureOrg(db, row.organisation);
     if (row.statut === "actif") await rep(db, row.organisation, 5, "Pacte signé", "pacte", row.id, who);
-    await postAlert("gm", `🤝 Pacte — ${row.organisation}`, `Statut : **${row.statut}**${row.clauses ? `\n${String(row.clauses).slice(0, 300)}` : ""}`, GOLD, undefined, ["RJ"]);
+    await syncAlert(db, table, row, "gm", `🤝 Pacte — ${row.organisation}`, `Statut : **${row.statut}**${row.clauses ? `\n${String(row.clauses).slice(0, 300)}` : ""}`, GOLD);
   } else if (table === "tribunal_dossiers") {
     await ensureOrg(db, row.organisation);
-    await postAlert("gm", `⚖️ Nouveau dossier — ${row.titre}`, `Accusé : **${row.accuse || row.organisation || "?"}**\nStatut : ${row.statut}`, GOLD, undefined, GROUPS.JURIDIQUE);
+    await syncAlert(db, table, row, "gm", `⚖️ Dossier — ${row.titre}`, `Accusé : **${row.accuse || row.organisation || "?"}**\nStatut : ${row.statut}`, GOLD);
   } else if (table === "gm_evenements") {
     await ensureOrg(db, row.partenaire);
     const ic: any = { convoi: "🚚", enchere: "🔨", alerte: "🚨", capture: "🎯" };
-    await postAlert("gm", `${ic[row.type] || "📌"} ${row.titre}`, `Statut : **${row.statut}**${row.partenaire ? `\nPartenaire : ${row.partenaire}` : ""}`, BLUE, undefined, pingEvent(row.type));
+    await syncAlert(db, table, row, "gm", `${ic[row.type] || "📌"} ${row.titre}`, `Statut : **${row.statut}**${row.partenaire ? `\nPartenaire : ${row.partenaire}` : ""}`, evColor(row.statut), undefined, pingEvent(row.type, row.statut));
   }
 }
 
@@ -97,17 +99,18 @@ async function afterUpdate(db: any, table: string, old: any, row: any, who: stri
     }
     if (row.statut !== old.statut) {
       if (row.statut === "rompu") await rep(db, row.organisation, -20, "Pacte rompu", "pacte_rompu", row.id, who);
-      await postAlert("gm", `🤝 Pacte ${row.statut} — ${row.organisation}`, `Ancien statut : ${old.statut}`, row.statut === "rompu" ? RED : GOLD, undefined, row.statut === "rompu" ? [...GROUPS.JURIDIQUE, ...GROUPS.DIRECTION] : ["RJ"]);
+      await syncAlert(db, table, row, "gm", `🤝 Pacte — ${row.organisation}`, `Statut : **${row.statut}** _(avant : ${old.statut})_`, row.statut === "rompu" ? RED : GOLD, undefined, row.statut === "rompu" ? [...GROUPS.JURIDIQUE, ...GROUPS.DIRECTION] : undefined);
     }
   } else if (table === "tribunal_dossiers") {
     if (row.verdict !== old.verdict && row.verdict !== "en_cours") {
       if (row.verdict === "coupable") {
-        await db.from("gm_evenements").insert([{ type: "capture", titre: `Capture : ${row.accuse || row.organisation || row.titre}`, statut: "a_faire", partenaire: row.organisation || null, dossier_id: row.id, notes: `Condamné par le Tribunal de l'Ombre — dossier « ${row.titre} ».${row.sentence ? `\nSentence : ${row.sentence}` : ""}`, created_by: who }]);
+        const { data: dupC } = await db.from("gm_evenements").select("id").eq("type", "capture").eq("dossier_id", row.id).limit(1).maybeSingle();
+        if (!dupC) await db.from("gm_evenements").insert([{ type: "capture", titre: `Capture : ${row.accuse || row.organisation || row.titre}`, statut: "a_faire", partenaire: row.organisation || null, dossier_id: row.id, notes: `Condamné par le Tribunal de l'Ombre — dossier « ${row.titre} ».${row.sentence ? `\nSentence : ${row.sentence}` : ""}`, created_by: who }]);
       }
       if (row.verdict === "coupable" && row.organisation) await rep(db, row.organisation, -15, `Condamné : ${row.titre}`, "tribunal", row.id, who);
       await postAlert("gm", `⚖️ Verdict — ${row.titre}`, `**${row.verdict === "coupable" ? "COUPABLE" : "INNOCENT"}**${row.sentence ? `\nSentence : ${row.sentence}` : ""}\nAccusé : ${row.accuse || row.organisation || "?"}`, row.verdict === "coupable" ? RED : GREEN, undefined, row.verdict === "coupable" ? [...GROUPS.SECURITE, "CEO", "RJ"] : GROUPS.JURIDIQUE);
     } else if (row.statut !== old.statut) {
-      await postAlert("gm", `⚖️ Dossier — ${row.titre}`, `${old.statut} → **${row.statut}**`, GOLD, undefined, ["RJ"]);
+      await syncAlert(db, table, row, "gm", `⚖️ Dossier — ${row.titre}`, `Accusé : **${row.accuse || row.organisation || "?"}**\nStatut : **${row.statut}**`, GOLD);
     }
   } else if (table === "gm_evenements" && row.statut !== old.statut) {
     await clearRep(db, "evenement", row.id);
@@ -115,7 +118,8 @@ async function afterUpdate(db: any, table: string, old: any, row: any, who: stri
       if (row.statut === "livre") await rep(db, row.partenaire, 5, `Convoi livré : ${row.titre}`, "evenement", row.id, who);
       if (row.statut === "echec") await rep(db, row.partenaire, -5, `Convoi échoué : ${row.titre}`, "evenement", row.id, who);
     }
-    await postAlert("gm", `📌 ${row.titre}`, `${old.statut} → **${row.statut}**`, BLUE, undefined, pingEvent(row.type));
+    const ic: any = { convoi: "🚚", enchere: "🔨", alerte: "🚨", capture: "🎯" };
+    await syncAlert(db, table, row, "gm", `${ic[row.type] || "📌"} ${row.titre}`, `Statut : **${row.statut}**${row.partenaire ? `\nPartenaire : ${row.partenaire}` : ""}\n_(avant : ${old.statut})_`, evColor(row.statut), undefined, pingEvent(row.type, row.statut));
   }
 }
 

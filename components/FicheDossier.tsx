@@ -1,5 +1,6 @@
 "use client";
 import { ObsLogo } from "@/components/ObsLogo";
+import { Stamp } from "@/components/Stamp";
 import { metierInfo } from "@/lib/fichesMetiers";
 
 // Fiche sous forme de dossier papier (chemise kraft, photos agrafées, tampon de priorité, texte à la machine).
@@ -8,12 +9,14 @@ const ref = (id: string) => "OBS-F-" + (parseInt((id || "0").replace(/[^0-9a-f]/
 
 export function FicheDossier({ f, showPrivate = true }: { f: any; showPrivate?: boolean }) {
   const m = metierInfo(f.metier); const col = PCOL[f.priorite] || PCOL.Normale;
+  const st = String(f.statut || ""); const bigStamp = /captur|arr[êe]t/i.test(st) ? { t: "Capturé", c: "green" as const } : /class|clos|neutralis/i.test(st) ? { t: "Classé", c: "blue" as const } : null;
   const rows: [string, any][] = [["Âge", f.age ? `${f.age} ans` : ""], ["Origine", f.origine], ["Occupation", f.occupation], ["Téléphone", f.telephone], ["Groupe", f.organisation], ["Statut", f.statut], ["Type", f.type]];
   const blocks: [string, string][] = [["Adresses connues", f.adresses], ["Véhicules", f.vehicules], ["Comptes bancaires", f.comptes_bancaires], ["Relations", f.relations], ["Observations", f.notes_publiques]];
   return (
     <div className="fd">
       <div className="fd-tab">DOSSIER N° {ref(f.id)}</div>
       <div className="fd-paper">
+        {bigStamp && <div className="fd-bigstamp"><Stamp color={bigStamp.c} size="lg" rotate={-14}>{bigStamp.t}</Stamp></div>}
         <div className="fd-head"><span style={{ display: "flex", alignItems: "center", gap: 8 }}><ObsLogo size={26} />OBSIDIAN LOGISTICS — SERVICE RENSEIGNEMENT</span><span>{m.icon} {m.label}{(f.sous_tags || []).length ? " · " + f.sous_tags.join(", ") : ""}</span></div>
         <div className="fd-grid">
           <div className="fd-photos">
@@ -29,6 +32,7 @@ export function FicheDossier({ f, showPrivate = true }: { f: any; showPrivate?: 
           </div>
           <div className="fd-body">
             <div className="fd-name">{f.nom}</div>
+            {f.surveille && <div className="fd-watch">👁 SOUS SURVEILLANCE</div>}
             <span className="fd-stamp" style={{ color: col, borderColor: col }}>{(f.priorite || "Normale").toUpperCase()}</span>
             <div className="fd-rows">{rows.filter(r => r[1]).map(([k, v]) => <div key={k}><b>{k}</b><i /><span>{v}</span></div>)}</div>
             {(f.tags || []).length > 0 && <div className="fd-tags">{f.tags.map((t: string) => <span key={t}>{t}</span>)}</div>}

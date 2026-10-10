@@ -56,13 +56,13 @@ export default function ConsortiumStatsPage() {
   ] : [];
 
   return (
-    <div className="page-container">
+    <div className="page-container no-fx">
       <a className="back-link" href="/">← Dashboard</a>
       <div className="page-header"><div><h1 className="page-title">📈 Stats du Consortium</h1><p className="page-subtitle">Réputation · Pactes · Audits · Tribunal · Événements</p><div className="gold-line" /></div></div>
       {!k ? <LoadingBlock /> : (
         <>
           <div className="stat-grid" style={{ marginBottom: "1.5rem" }}>
-            {tiles.map(t => <div key={t.l} className="stat-card"><div className="stat-icon">{t.i}</div><div className="stat-value" style={{ color: t.c, fontSize: "1.3rem" }}><CountUp value={t.v as number} />{(t as any).suf || ""}</div><div className="stat-label">{t.l}</div></div>)}
+            {tiles.map(t => <div key={t.l} className="stat-card no-fx"><div className="stat-icon">{t.i}</div><div className="stat-value" style={{ color: t.c, fontSize: "1.3rem" }}><CountUp value={t.v as number} />{(t as any).suf || ""}</div><div className="stat-label">{t.l}</div></div>)}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: "1.1rem" }}>
             <div className="card"><div className="section-title" style={{ marginBottom: "0.8rem" }}>⭐ Classement réputation</div>

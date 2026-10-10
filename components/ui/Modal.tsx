@@ -7,7 +7,7 @@ interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  size?: "default" | "lg";
+  size?: "default" | "lg" | "xl";
   style?: React.CSSProperties;
   headerStyle?: React.CSSProperties;
 }
@@ -23,7 +23,7 @@ export function Modal({ title, onClose, children, footer, size = "default", styl
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={size === "lg" ? "modal modal-lg" : "modal"} style={style}>
+      <div className={size === "xl" ? "modal modal-xl" : size === "lg" ? "modal modal-lg" : "modal"} style={style}>
         <div className="modal-header" style={headerStyle}>
           <h2 className="modal-title">{title}</h2>
           <button className="modal-close" onClick={onClose}>×</button>
