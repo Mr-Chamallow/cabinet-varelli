@@ -14,6 +14,7 @@ import {
   fetchPoints,
   updatePoint,
 } from "@/components/carte-enqueteur/supabase-carte";
+import { WantedPoster } from "@/components/WantedPoster";
 import { gangTypeLabel } from "@/components/carte-enqueteur/types";
 import type { Gang, CartePoint } from "@/components/carte-enqueteur/types";
 import { PhotoSlot } from "@/components/base-de-donnees/PhotoSlot";
@@ -53,6 +54,7 @@ export default function BaseDeDonneesPage() {
 
   const [showGroupeForm, setShowGroupeForm] = useState(false);
   const [groupeNom, setGroupeNom] = useState("");
+  const [wantedP, setWantedP] = useState<any>(null);
   const [groupeType, setGroupeType] = useState<Gang["type"]>("orga");
   const [formPointId, setFormPointId] = useState<string>("");
 
@@ -198,7 +200,7 @@ export default function BaseDeDonneesPage() {
     setSavingPersonne(true);
     const tags = tagsInput.split(",").map(s => s.trim()).filter(Boolean);
     const before = editPersonneId ? personnes.find(x => x.id === editPersonneId) : null;
-    const payload = { ...personneForm, tags, updated_at: new Date().toISOString() };
+    const payload = { ...personneForm, organisation: gangOf(personneForm.groupe_id)?.nom || "", tags, updated_at: new Date().toISOString() };
     let savedId = editPersonneId;
     if (editPersonneId) {
       const { data, error } = await supabase.from("bdd_personnes").update(payload).eq("id", editPersonneId).select().single();
@@ -430,6 +432,7 @@ export default function BaseDeDonneesPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "0.35rem" }}>
+                  <button className="btn btn-outline btn-sm" title="Avis de recherche du Consortium" onClick={() => setWantedP(selectedPersonne)}>🧾 Recherché</button>
                   {canWrite && <button className="btn btn-outline btn-sm" onClick={() => openEditPersonne(selectedPersonne)}>✏️</button>}
                   {canWrite && <button className="btn btn-ghost btn-sm" onClick={() => deletePersonne(selectedPersonne.id)} style={{ color: "var(--danger)" }}>🗑️</button>}
                 </div>
@@ -438,7 +441,7 @@ export default function BaseDeDonneesPage() {
               {selectedPersonne.tags && selectedPersonne.tags.length > 0 && <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: "0.875rem" }}>{selectedPersonne.tags.map(t => <span key={t} style={{ fontSize: "0.65rem", padding: "0.08rem 0.5rem", borderRadius: 999, background: "var(--gold-muted)", color: "var(--gold)", border: "1px solid rgba(var(--gold-rgb), 0.3)" }}>{t}</span>)}</div>}
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem" }}>
-                {([["📞 Téléphone", selectedPersonne.telephone], ["💬 Discord", selectedPersonne.discord], ["🏢 Organisation", selectedPersonne.organisation], ["💼 Occupation", selectedPersonne.occupation], ["🌍 Origine", selectedPersonne.origine], ["🎂 Âge", selectedPersonne.age ? selectedPersonne.age + " ans" : ""]] as [string, string | undefined][]).map(([l, v]) => v ? <div key={l}><div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.15rem" }}>{l}</div><div style={{ fontSize: "0.82rem" }}>{v}</div></div> : null)}
+                {([["📞 Téléphone", selectedPersonne.telephone], ["💬 Discord", selectedPersonne.discord], ["🏢 Organisation", gangOf(selectedPersonne.groupe_id)?.nom || selectedPersonne.organisation], ["💼 Occupation", selectedPersonne.occupation], ["🌍 Origine", selectedPersonne.origine], ["🎂 Âge", selectedPersonne.age ? selectedPersonne.age + " ans" : ""]] as [string, string | undefined][]).map(([l, v]) => v ? <div key={l}><div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.15rem" }}>{l}</div><div style={{ fontSize: "0.82rem" }}>{v}</div></div> : null)}
               </div>
 
               {selectedPersonne.adresses && <div style={{ marginTop: "0.75rem" }}><div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.2rem" }}>📍 Adresses</div><div style={{ fontSize: "0.78rem", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>{selectedPersonne.adresses}</div></div>}
@@ -645,13 +648,13 @@ export default function BaseDeDonneesPage() {
               <div className="form-group"><label>Téléphone</label><input value={personneForm.telephone} onChange={e => setPersonneForm(f => ({ ...f, telephone: e.target.value }))} /></div>
               <div className="form-group"><label>Priorité</label><select value={personneForm.priorite} onChange={e => setPersonneForm(f => ({ ...f, priorite: e.target.value }))}>{PRIOS.map(p => <option key={p}>{p}</option>)}</select></div>
               <div className="form-group"><label>Statut</label><input value={personneForm.statut} onChange={e => setPersonneForm(f => ({ ...f, statut: e.target.value }))} /></div>
-              <div className="form-group"><label>Groupe</label><select value={personneForm.groupe_id || ""} onChange={e => setPersonneForm(f => ({ ...f, groupe_id: e.target.value || null }))}><option value="">Aucun</option>{gangs.map(g => <option key={g.id} value={g.id}>{g.nom}</option>)}</select></div>
+              <div className="form-group"><label>Groupe / Organisation</label><select value={personneForm.groupe_id || ""} onChange={e => setPersonneForm(f => ({ ...f, groupe_id: e.target.value || null }))}><option value="">Aucun</option>{gangs.map(g => <option key={g.id} value={g.id}>{g.nom}</option>)}</select></div>
               <div className="form-group"><label>📍 Point chaud (recensement)</label><select value={formPointId} onChange={e => setFormPointId(e.target.value)}><option value="">Aucun</option>{[...points].sort((a, b) => a.title.localeCompare(b.title)).map(pt => <option key={pt.id} value={pt.id}>{pt.title}</option>)}</select></div>
               <div className="form-group"><label>Discord</label><input value={personneForm.discord} onChange={e => setPersonneForm(f => ({ ...f, discord: e.target.value }))} /></div>
-              <div className="form-group"><label>Organisation</label><input value={personneForm.organisation} onChange={e => setPersonneForm(f => ({ ...f, organisation: e.target.value }))} /></div>
               <div className="form-group"><label>Occupation</label><input value={personneForm.occupation} onChange={e => setPersonneForm(f => ({ ...f, occupation: e.target.value }))} /></div>
               <div className="form-group"><label>Origine</label><input value={personneForm.origine} onChange={e => setPersonneForm(f => ({ ...f, origine: e.target.value }))} /></div>
               <div className="form-group"><label>Âge</label><input type="number" value={personneForm.age || ""} onChange={e => setPersonneForm(f => ({ ...f, age: +e.target.value }))} /></div>
+              <div className="form-group"><label>Récompense (avis de recherche, $)</label><input type="number" min={0} value={(personneForm as any).prime || ""} onChange={e => setPersonneForm(f => ({ ...f, prime: +e.target.value } as any))} /></div>
               <div className="form-group"><label>Tags (virgule)</label><input value={tagsInput} onChange={e => setTagsInput(e.target.value)} placeholder="suspect,fournisseur,ennemi" /></div>
             </div>
             <div className="form-group"><label>Adresses</label><textarea rows={2} value={personneForm.adresses} onChange={e => setPersonneForm(f => ({ ...f, adresses: e.target.value }))} /></div>
@@ -725,11 +728,17 @@ export default function BaseDeDonneesPage() {
         </Modal>
       )}
 
+      {wantedP && (
+        <Modal title="🧾 Avis de recherche" size="lg" onClose={() => setWantedP(null)}>
+          <WantedPoster d={{ nom: fullName(wantedP), alias: wantedP.surnom, organisation: gangOf(wantedP.groupe_id)?.nom || wantedP.organisation, priorite: wantedP.priorite, prime: (wantedP as any).prime, photo_url: wantedP.photo_police || wantedP.photo_identite, motif: (wantedP.notes_publiques || "").split("\n")[0].slice(0, 140), age: wantedP.age, origine: wantedP.origine, occupation: wantedP.occupation, vehicules: undefined, tags: wantedP.tags }} />
+        </Modal>
+      )}
+
       {/* ─── Modale Groupe ────────────────────────────────────────────── */}
       {showGroupeForm && (
         <Modal title="Nouveau groupe" onClose={() => setShowGroupeForm(false)} footer={<><button className="btn btn-outline" onClick={() => setShowGroupeForm(false)}>Annuler</button><button className="btn btn-gold" onClick={addGroupe} disabled={!groupeNom.trim()}>Créer</button></>}>
           <div className="form-group"><label>Nom</label><input autoFocus value={groupeNom} onChange={e => setGroupeNom(e.target.value)} /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label>Type</label><select value={groupeType} onChange={e => setGroupeType(e.target.value as Gang["type"])}><option value="orga">Orga</option><option value="pf">PF</option><option value="inde">Indé</option></select></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label>Type</label><select value={groupeType} onChange={e => setGroupeType(e.target.value as Gang["type"])}><option value="orga">Orga</option><option value="gang">Gang</option><option value="pf">PF</option><option value="inde">Indé</option></select></div>
         </Modal>
       )}
 

@@ -1025,13 +1025,22 @@ a:active > .card, button.card:active { transform: translateY(-1px) scale(0.99); 
 }
 
 /* ─── CARTE PRO EMPLOYÉ ──────────────────────────────────────────────────────── */
-.idc-wrap { perspective: 900px; display: flex; justify-content: center; }
-.idc { --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; position: relative; width: 100%; max-width: 440px; aspect-ratio: 1.586; border-radius: 18px; overflow: hidden; color: #f4efe2;
+.idc-wrap { perspective: 1100px; width: 100%; }
+.idc-scaler { position: relative; width: 100%; }
+.idc-tilt { --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; width: 440px; transform-origin: 0 0; transform-style: preserve-3d; }
+.idc-flip { position: relative; width: 440px; aspect-ratio: 1.586; transform-style: preserve-3d; transition: transform .75s cubic-bezier(.3,.8,.2,1); transform: rotateX(var(--rx)) rotateY(calc(var(--ry) + var(--flip, 0deg))); animation: idcIn .8s cubic-bezier(.2,.8,.2,1) backwards; }
+.idc-flip.back { --flip: 180deg; }
+.idc { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 18px; overflow: hidden; color: #f4efe2;
   background: radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--c) 28%, #0b0b0e) 0%, #0b0b0e 55%, #050507 100%);
-  border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); box-shadow: 0 18px 50px rgba(0,0,0,.6), 0 0 40px color-mix(in srgb, var(--c) 18%, transparent), inset 0 0 0 1px rgba(255,255,255,.04);
-  transform: rotateX(var(--rx)) rotateY(var(--ry)); transition: transform .15s ease-out; animation: idcIn .8s cubic-bezier(.2,.8,.2,1) both, idcFloat 6s ease-in-out 1s infinite; font-family: 'Inter', sans-serif; }
+  border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); box-shadow: 0 18px 50px rgba(0,0,0,.6), 0 0 40px color-mix(in srgb, var(--c) 18%, transparent), inset 0 0 0 1px rgba(255,255,255,.04); font-family: 'Inter', sans-serif; }
+.idc.verso { transform: rotateY(180deg); }
+.idc-mag { height: 44px; background: #000; margin-top: 26px; box-shadow: 0 0 0 1px rgba(255,255,255,.05); }
+.idc-vtext { padding: 14px 20px 0; font-size: .64rem; line-height: 1.5; opacity: .75; position: relative; }
+.idc-sign { margin: 12px 20px 0; padding: 6px 10px; background: rgba(255,255,255,.92); color: #222; border-radius: 4px; font-family: 'Brush Script MT', 'Segoe Script', cursive; font-size: 1.15rem; display: flex; justify-content: space-between; align-items: center; position: relative; }
+.idc-sign small { font-family: 'Inter', sans-serif; font-size: .5rem; letter-spacing: .12em; color: #777; }
+.idc-vfoot { position: absolute; left: 20px; right: 20px; bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end; font-size: .55rem; letter-spacing: .12em; opacity: .6; }
+.idc-hint { font-size: .62rem; color: var(--text-dim); text-align: center; margin-top: .4rem; }
 @keyframes idcIn { from { opacity: 0; transform: translateY(24px) rotateX(18deg) scale(.92); } to { opacity: 1; } }
-@keyframes idcFloat { 0%,100% { translate: 0 0; } 50% { translate: 0 -5px; } }
 .idc-rings i { position: absolute; right: -60px; top: -60px; width: 220px; height: 220px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); animation: idcRing 7s linear infinite; }
 .idc-rings i:nth-child(2) { width: 300px; height: 300px; right: -100px; top: -100px; animation-duration: 11s; animation-direction: reverse; border-style: dashed; opacity: .6; }
 .idc-rings i:nth-child(3) { width: 140px; height: 140px; right: -20px; top: -20px; animation-duration: 5s; opacity: .8; }
@@ -1064,3 +1073,70 @@ a:active > .card, button.card:active { transform: translateY(-1px) scale(0.99); 
 .idc-bars { display: flex; gap: 2px; align-items: stretch; height: 22px; opacity: .7; }
 .idc-bars u { background: #f4efe2; display: block; }
 @media (prefers-reduced-motion: reduce) { .idc, .idc * { animation: none !important; } }
+@keyframes idcFlash { from { opacity: 1; } to { opacity: 0; } }
+
+/* ─── AVIS DE RECHERCHE ──────────────────────────────────────────────────────── */
+.wp-flip { position: relative; transform-style: preserve-3d; animation: wpSway 7s ease-in-out infinite; }
+.wp-flip > .wp { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transition: transform .8s cubic-bezier(.3,.8,.2,1); }
+.wp-flip .wp-verso { transform: rotateY(180deg); } .wp-flip.back .wp-front { transform: rotateY(-180deg); } .wp-flip.back .wp-verso { transform: rotateY(0deg); }
+@keyframes wpSway { 0%,100% { rotate: -.6deg; } 50% { rotate: .6deg; } }
+.wp { color: #2b1d0e; text-align: center; padding: 24px 26px; font-family: 'Playfair Display', Georgia, serif; border-radius: 4px; box-shadow: 0 16px 40px rgba(0,0,0,.55);
+  background: radial-gradient(circle at 20% 15%, rgba(255,255,255,.35), transparent 45%), radial-gradient(circle at 85% 90%, rgba(120,70,20,.35), transparent 50%), linear-gradient(160deg, #e9d8ab, #cdb27a); }
+.wp::after { content: ""; position: absolute; inset: 8px; border: 2px solid rgba(60,35,10,.55); outline: 1px solid rgba(60,35,10,.35); outline-offset: 3px; pointer-events: none; }
+.wp-tape { position: absolute; top: -8px; width: 70px; height: 22px; background: rgba(255,255,255,.55); transform: rotate(-8deg); left: 22px; box-shadow: 0 1px 3px rgba(0,0,0,.3); z-index: 3; } .wp-tape.r { left: auto; right: 22px; transform: rotate(7deg); }
+.wp-top { font-weight: 900; letter-spacing: .28em; font-size: .78rem; } .wp-top small { display: block; font-size: .5rem; letter-spacing: .22em; font-weight: 600; opacity: .7; margin-top: 2px; }
+.wp-title { font-size: 3.2rem; font-weight: 900; letter-spacing: .06em; line-height: 1; margin: 10px 0 12px; color: #6b1010; text-shadow: 1px 1px 0 rgba(255,255,255,.4); }
+.wp-photo { position: relative; width: 170px; height: 212px; margin: 0 auto 12px; background: #3a2a18; border: 5px solid #fff8e6; box-shadow: 0 2px 8px rgba(0,0,0,.45), 0 0 0 1px rgba(60,35,10,.5); display: flex; align-items: center; justify-content: center; font-size: 3rem; color: #cdb27a; }
+.wp-photo img { width: 100%; height: 100%; object-fit: cover; filter: sepia(.65) contrast(1.1) grayscale(.2); }
+.wp-stamp { position: absolute; right: -34px; bottom: 14px; padding: 3px 10px; border: 3px solid #b3121c; color: #b3121c; font: 900 .8rem 'Inter', sans-serif; letter-spacing: .18em; background: rgba(255,248,230,.55); transform: rotate(-14deg); animation: wpStamp .6s cubic-bezier(.2,1.6,.4,1) .5s backwards; }
+@keyframes wpStamp { from { opacity: 0; transform: rotate(-14deg) scale(2.6); } to { opacity: 1; transform: rotate(-14deg) scale(1); } }
+.wp-name { font-size: 1.5rem; font-weight: 800; line-height: 1.1; } .wp-alias { font-style: italic; font-size: .9rem; opacity: .8; } .wp-org { font: 700 .7rem 'Inter', sans-serif; letter-spacing: .1em; text-transform: uppercase; margin-top: 3px; }
+.wp-motif { font-size: .78rem; font-style: italic; margin: 8px 6px; min-height: 2.4em; opacity: .85; }
+.wp-reward { font-weight: 900; font-size: 1.7rem; color: #6b1010; line-height: 1; } .wp-reward small { display: block; font: 700 .55rem 'Inter', sans-serif; letter-spacing: .3em; color: #2b1d0e; margin-bottom: 3px; }
+.wp-foot { position: absolute; left: 20px; right: 20px; bottom: 16px; font: 600 .56rem 'Inter', sans-serif; letter-spacing: .08em; opacity: .75; }
+.wp-rows { text-align: left; margin-top: 18px; display: flex; flex-direction: column; gap: 10px; font-family: 'Inter', sans-serif; }
+.wp-rows div { border-bottom: 1px dashed rgba(60,35,10,.4); padding-bottom: 5px; } .wp-rows small { display: block; font-size: .55rem; letter-spacing: .18em; text-transform: uppercase; opacity: .6; } .wp-rows span { font-size: .85rem; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .wp-flip, .wp-stamp { animation: none; } }
+
+/* ─── MOTION DESIGN ──────────────────────────────────────────────────────────── */
+/* 1. Balayage doré à chaque changement de page */
+.route-sweep { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 9998; pointer-events: none; background: linear-gradient(90deg, transparent, var(--gold), #fff8, var(--gold), transparent); transform: translateX(-100%); animation: routeSweep .8s cubic-bezier(.6,0,.2,1) forwards; filter: drop-shadow(0 0 6px var(--gold)); }
+@keyframes routeSweep { 0% { transform: translateX(-100%); opacity: 1; } 80% { opacity: 1; } 100% { transform: translateX(100%); opacity: 0; } }
+/* 2. Compteurs : flash vert / rouge quand la valeur change */
+.count-flash { display: inline-block; animation: countFlashUp 1s ease-out; } .count-flash.down { animation-name: countFlashDown; }
+@keyframes countFlashUp { 0% { color: var(--success); text-shadow: 0 0 14px var(--success); transform: scale(1.12); } 100% { text-shadow: 0 0 0 transparent; transform: scale(1); } }
+@keyframes countFlashDown { 0% { color: var(--danger); text-shadow: 0 0 14px var(--danger); transform: scale(1.12); } 100% { text-shadow: 0 0 0 transparent; transform: scale(1); } }
+/* 3. Sceau de verdict */
+.seal { position: absolute; right: 18px; top: 50%; margin-top: -16px; z-index: 2; padding: 3px 12px; border: 3px double currentColor; border-radius: 6px; font: 900 .78rem 'Inter', sans-serif; letter-spacing: .22em; transform: rotate(-9deg); opacity: .8; pointer-events: none; animation: sealSlam .55s cubic-bezier(.2,1.7,.4,1) both; }
+.seal.coupable { color: var(--danger); } .seal.innocent { color: var(--success); }
+@keyframes sealSlam { 0% { opacity: 0; transform: rotate(-9deg) scale(3); } 60% { transform: rotate(-9deg) scale(.94); } 75% { transform: rotate(-9deg) translate(2px,-2px) scale(1); } 100% { opacity: .8; transform: rotate(-9deg) scale(1); } }
+@media (max-width: 720px) { .seal { top: 8px; margin-top: 0; right: 8px; font-size: .62rem; } }
+/* 5. Confettis */
+.confetti-host { position: fixed; inset: 0; pointer-events: none; z-index: 10000; overflow: hidden; }
+.confetti-host i { position: absolute; width: 8px; height: 12px; border-radius: 2px; animation: confettiFly 1.8s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes confettiFly { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(var(--dx), calc(var(--dy) + 340px)) rotate(var(--r)); opacity: 0; } }
+/* 6. Sidebar : icônes vivantes */
+.sidebar-link-icon { transition: transform .25s cubic-bezier(.3,1.6,.5,1), filter .25s; }
+.sidebar-link:hover .sidebar-link-icon { transform: scale(1.25) rotate(-8deg); filter: drop-shadow(0 0 6px rgba(var(--gold-rgb), .7)); }
+.sidebar-link.active .sidebar-link-icon { animation: iconBreath 3.2s ease-in-out infinite; }
+@keyframes iconBreath { 50% { transform: scale(1.12); filter: drop-shadow(0 0 5px rgba(var(--gold-rgb), .6)); } }
+/* 7. Cartes en profondeur (inclinaison + reflet) */
+.stat-card, [data-tilt] { transform: perspective(900px) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg)); transition: transform .18s ease-out, box-shadow .25s; will-change: transform; }
+[data-tilt]:hover { box-shadow: 0 10px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(var(--gold-rgb), .18); }
+[data-tilt]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .25s; background: radial-gradient(260px circle at var(--gx, 50%) var(--gy, 50%), rgba(var(--gold-rgb), .10), transparent 60%); }
+[data-tilt]:hover::after { opacity: 1; }
+/* 8. Organigramme : liaison animée */
+.org-link { position: relative; height: 34px; display: flex; justify-content: center; }
+.org-link::before { content: ""; width: 1px; height: 100%; background: linear-gradient(var(--border), rgba(var(--gold-rgb), .5)); }
+.org-link i { position: absolute; top: 0; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); animation: orgPulse 2.2s ease-in infinite; margin-left: -2px; }
+@keyframes orgPulse { 0% { top: 0; opacity: 0; } 15% { opacity: 1; } 100% { top: calc(100% - 5px); opacity: 0; } }
+/* 9. Alerte critique : bord qui pulse */
+.pulse-danger { animation: pulseDanger 2.4s ease-in-out infinite; }
+@keyframes pulseDanger { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } 50% { box-shadow: 0 0 0 4px rgba(239,68,68,.18), 0 0 18px rgba(239,68,68,.25); } }
+/* 10. Logo de login : révélation */
+.logo-reveal { animation: logoReveal 1.6s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes logoReveal { 0% { opacity: 0; filter: blur(14px) drop-shadow(0 0 0 transparent); clip-path: inset(0 100% 0 0); } 60% { clip-path: inset(0 0 0 0); } 100% { opacity: 1; filter: blur(0) drop-shadow(0 0 18px rgba(var(--gold-rgb), .45)); clip-path: inset(0 0 0 0); } }
+/* 12. Squelettes : reflet doré */
+.skeleton { background: linear-gradient(90deg, var(--card) 25%, rgba(var(--gold-rgb), .14) 50%, var(--card) 75%); background-size: 200% 100%; }
+@media (prefers-reduced-motion: reduce) { .route-sweep, .count-flash, .seal, .pulse-danger, .org-link i, .logo-reveal, .sidebar-link.active .sidebar-link-icon { animation: none !important; } .stat-card, [data-tilt] { transform: none !important; } }
+[data-tilt] { position: relative; }

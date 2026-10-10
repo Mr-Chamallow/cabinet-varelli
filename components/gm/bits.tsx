@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { gangTypeLabel } from "@/components/carte-enqueteur/types";
 import { hasPermission, hasWriteAccess } from "@/lib/auth";
 
 // Garde d'accès + droit d'écriture pour une page du Consortium.
@@ -31,7 +32,7 @@ export function GroupeSelect({ value, onChange, groupes, placeholder = "— Choi
       <select value={value} onChange={e => onChange(e.target.value)}>
         <option value="">{placeholder}</option>
         {!known && <option value={value}>{value} (hors référentiel)</option>}
-        {groupes.map(g => <option key={g.id} value={g.nom}>{g.nom} · {g.type === "pf" ? "PF" : g.type === "inde" ? "Indé" : "Orga"}</option>)}
+        {groupes.map(g => <option key={g.id} value={g.nom}>{g.nom} · {gangTypeLabel(g.type)}</option>)}
       </select>
       <div style={{ fontSize: "0.65rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>Absent ? Crée-le dans <a href="/base-de-donnees" style={{ color: "var(--gold)" }}>Base de données → Groupes</a>.</div>
     </div>

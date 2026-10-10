@@ -59,7 +59,7 @@ export async function DELETE(req: Request) {
     await supabaseAdmin.from("obsidian_comptabilite").delete().eq("source", "action").eq("source_id", id);
     const { error: e } = await supabaseAdmin.from("actions_illegales").delete().eq("id", id);
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
-    if (old) await logAudit(supabaseAdmin, (user as any)?.discord_name, "Action supprimée", `${old.action} — ${old.membre}`, `${Number(old.montant) || 0} $`);
+    if (old) await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Action supprimée", `${old.action} — ${old.membre}`, `${Number(old.montant) || 0} $`);
     if (old) await postAlert("actions", `🗑️ Action supprimée — ${old.action}`, `**${old.membre}** · ${usd(Number(old.montant) || 0)}`, GREY);
     return NextResponse.json({ ok: true });
   } catch (e: any) {

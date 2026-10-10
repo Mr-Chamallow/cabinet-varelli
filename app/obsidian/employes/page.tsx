@@ -9,7 +9,7 @@ import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
 import { hasPermission, DEFAULT_PERMISSIONS, getMemberColor } from "@/lib/auth";
 import { useRealtimeTable } from "@/lib/useRealtimeTable";
-import { EmployeeCardModalBody } from "@/components/EmployeeCard";
+import { EmployeeCard, EmployeeCardModalBody } from "@/components/EmployeeCard";
 
 interface Employe {
   id: string; nom: string; role: string; telephone: string; discord: string;
@@ -131,11 +131,12 @@ export default function EmployesObsidianPage() {
       ) : visibles.length === 0 ? (
         <div className="empty-state"><div className="empty-icon">🧑‍💼</div><div className="empty-title">Aucun employé enregistré</div></div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "0.875rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "0.875rem" }}>
           {visibles.map(e => {
             const couleur = getMemberColor(e.role);
             return (
               <div key={e.id} className="card" style={{ opacity: e.actif === false ? 0.55 : 1 }}>
+                <div style={{ marginBottom: "0.9rem" }}><EmployeeCard e={e} onZoom={() => setCardId(e.id)} /></div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
                   <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: couleur + "20", border: `2px solid ${couleur}40`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display',serif", fontWeight: 700, color: couleur }}>
                     {e.photo_url ? <img src={e.photo_url} alt="" referrerPolicy="no-referrer" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} /> : e.nom.charAt(0).toUpperCase()}
@@ -154,7 +155,7 @@ export default function EmployesObsidianPage() {
                 </div>
                 {e.notes && <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginBottom: "0.75rem", fontStyle: "italic" }}>{e.notes}</div>}
                 <div style={{ display: "flex", gap: "0.4rem" }}>
-                  <button className="btn btn-gold btn-sm" title="Carte pro" onClick={() => setCardId(e.id)}>🪪 Carte</button>
+                  <button className="btn btn-outline btn-sm" title="Changer la photo" onClick={() => setCardId(e.id)}>📷 Photo</button>
                   <button className="btn btn-outline btn-sm" style={{ flex: 1 }} onClick={() => openEdit(e)}>✏️ Modifier</button>
                   {isPatron && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} title="Supprimer (Patron)" onClick={() => window.confirm(`Supprimer ${e.nom} ?`) && remove(e.id)}>🗑️</button>}
                 </div>

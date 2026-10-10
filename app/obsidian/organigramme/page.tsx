@@ -28,9 +28,14 @@ export default function OrganigrammePage() {
   const [members, setMembers] = useState<Record<string, string[]>>({});
   useEffect(() => {
     if (!supabase) return;
-    supabase.from("site_logins").select("discord_name,site_role").then(({ data }) => {
+    Promise.all([
+      supabase.from("site_logins").select("discord_id,discord_name,nom_perso,site_role"),
+      supabase.from("obsidian_employes").select("discord_id,nom"),
+    ]).then(([{ data }, { data: emps }]) => {
+      const byId: Record<string, string> = {}; (emps || []).forEach((e: any) => { if (e.discord_id) byId[e.discord_id] = e.nom; });
       const m: Record<string, string[]> = {};
-      (data || []).forEach((r: any) => { if (r.site_role) (m[r.site_role] ??= []).push(r.discord_name); });
+      // Toujours Prénom Nom (jamais le pseudo Discord si on connaît le personnage).
+      (data || []).forEach((r: any) => { if (r.site_role) (m[r.site_role] ??= []).push(r.nom_perso || byId[r.discord_id] || r.discord_name); });
       setMembers(m);
     });
   }, []);
@@ -54,7 +59,8 @@ export default function OrganigrammePage() {
       <div className="page-header"><div><h1 className="page-title">🏛️ Organigramme</h1><p className="page-subtitle">Direction & gouvernance · Obsidian Logistics</p><div className="gold-line" /></div></div>
       <div className="section-title" style={{ marginBottom: "0.6rem" }}>👑 Directoire exécutif</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}><Node k="dg" /><Node k="do" /></div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+      <div className="org-link" aria-hidden="true"><i /></div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "1rem", marginBottom: "0" }}>
         {POLES.map(p => (
           <div key={p.titre}>
             <div className="section-title" style={{ marginBottom: "0.6rem", color: p.color }}>{p.titre}</div>
@@ -62,6 +68,7 @@ export default function OrganigrammePage() {
           </div>
         ))}
       </div>
+      <div className="org-link" aria-hidden="true"><i /></div>
       <div className="section-title" style={{ marginBottom: "0.6rem" }}>🧑‍💼 Membres</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "0.75rem" }}><Node k="op" color="var(--info)" /><Node k="st" color="var(--text-dim)" /></div>
     </div>

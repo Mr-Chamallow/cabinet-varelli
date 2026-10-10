@@ -96,7 +96,7 @@ export default function ObsidianDashboard() {
       ) : (
         <>
           {alerts.length > 0 && (
-            <div style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "var(--radius-lg)", padding: "0.875rem 1.125rem", marginBottom: "1.25rem" }}>
+            <div className="pulse-danger" style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "var(--radius-lg)", padding: "0.875rem 1.125rem", marginBottom: "1.25rem" }}>
               <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--danger)", marginBottom: "0.4rem" }}>⚠️ Stock bas</div>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 {alerts.map((a:any) => (

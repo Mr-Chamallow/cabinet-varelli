@@ -5,7 +5,7 @@ export type Personne = {
   groupe_id?: string | null; photo_identite?: string | null; photo_police?: string | null;
   statut?: string; priorite?: string; tags?: string[]; adresses?: string;
   comptes_bancaires?: string; relations?: string; notes_publiques?: string; notes_privees?: string;
-  discord?: string; created_at?: string; liens_ids?: string[];
+  discord?: string; created_at?: string; liens_ids?: string[]; prime?: number | null;
 };
 
 export type Vehicule = {

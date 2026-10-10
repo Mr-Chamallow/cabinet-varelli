@@ -24,7 +24,7 @@ async function auth(table: string) {
     if (r.authorized) {
       const u: any = r.user;
       const ok = hasWriteAccess({ id: u.discord_id, nom: u.discord_name, role: u.site_role, permissions: u.permissions } as any, p);
-      if (ok) return { db: r.supabaseAdmin, who: u.discord_name || "", cfg };
+      if (ok) return { db: r.supabaseAdmin, who: u.nom_perso || u.discord_name || "", cfg };
     }
   }
   return { err: NextResponse.json({ error: last?.error || "Écriture non autorisée sur cet onglet" }, { status: 403 }) } as any;

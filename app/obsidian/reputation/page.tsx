@@ -1,4 +1,5 @@
 "use client";
+import { gangTypeLabel } from "@/components/carte-enqueteur/types";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/lib/useToast";
@@ -52,7 +53,7 @@ export default function ReputationPage() {
       supabase.from("gm_evenements").select("*").eq("partenaire", o.nom).order("created_at", { ascending: false }),
       supabase.from("obsidian_fiches").select("nom,metier,priorite,statut").eq("organisation", o.nom),
     ]);
-    await pdfOrganisation(o, { pactes: pactes || [], audits: audits || [], dossiers: dossiers || [], evenements: evenements || [], history: o.history, fiches: fiches || [] });
+    await pdfOrganisation({ ...o, categorie: gangTypeLabel(o.type) }, { pactes: pactes || [], audits: audits || [], dossiers: dossiers || [], evenements: evenements || [], history: o.history, fiches: fiches || [] });
   }
   async function delLog(id: string) {
     const r = await gmWrite("gm_reputation_log", "DELETE", { id });
@@ -79,10 +80,13 @@ export default function ReputationPage() {
               <div key={o.nom} className="card" style={{ padding: "0.8rem 1rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.9rem", flexWrap: "wrap", cursor: "pointer" }} onClick={() => setOpen(isOpen ? null : o.nom)}>
                   <div style={{ flex: 1, minWidth: 170 }}>
-                    <div style={{ fontWeight: 700 }}>{o.nom} <span style={{ fontSize: "0.65rem", color: "var(--text-dim)", fontWeight: 400 }}>· {o.type === "pf" ? "PF" : o.type === "inde" ? "Indé" : "Orga"}</span></div>
+                    <div style={{ fontWeight: 700 }}>{o.nom} <span style={{ fontSize: "0.65rem", color: "var(--text-dim)", fontWeight: 400 }}>· {gangTypeLabel(o.type)}</span></div>
                     <div style={{ height: 6, borderRadius: 3, background: "var(--surface)", marginTop: 6, overflow: "hidden" }}><div style={{ width: `${o.score}%`, height: "100%", background: lab.color, transition: "width .6s var(--ease, ease)" }} /></div>
                   </div>
-                  <div style={{ fontWeight: 800, fontSize: "1.3rem", color: lab.color, minWidth: 48, textAlign: "right" }}><CountUp value={o.score} /></div>
+                  <div style={{ position: "relative", width: 64, height: 40 }}>
+                    <svg viewBox="0 0 64 40" width="64" height="40"><path d="M6 36 A26 26 0 0 1 58 36" fill="none" stroke="var(--surface)" strokeWidth="6" strokeLinecap="round" /><path d="M6 36 A26 26 0 0 1 58 36" fill="none" stroke={lab.color} strokeWidth="6" strokeLinecap="round" pathLength={100} strokeDasharray="100" strokeDashoffset={100 - o.score} style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1), stroke .6s" }} /></svg>
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", fontWeight: 800, fontSize: "1rem", color: lab.color }}><CountUp value={o.score} /></div>
+                  </div>
                   <Badge color={lab.color}>{lab.label}</Badge>
                 </div>
                 {isOpen && (

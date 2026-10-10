@@ -13,6 +13,8 @@ export async function syncEmployes(db: any): Promise<{ crees: number; lies: numb
     if (!nom) continue;
     const byId = list.find(e => e.discord_id === l.discord_id);
     if (byId) {
+      // Nom du personnage = nom affiché partout : on le recopie sur le membre s'il est vide.
+      if (!l.nom_perso && byId.nom) await db.from("site_logins").update({ nom_perso: byId.nom }).eq("discord_id", l.discord_id);
       if (byId.role !== l.site_role) { await db.from("obsidian_employes").update({ role: l.site_role }).eq("id", byId.id); byId.role = l.site_role; }
       continue;
     }

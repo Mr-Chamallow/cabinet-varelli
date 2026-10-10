@@ -33,7 +33,7 @@ export function useCurrentUser(): {
   const s = session?.user as any;
 
   const discordId = s?.discord_id;
-  const discordName = s?.discord_name;
+  const discordName = s?.nom_perso || s?.discord_name;
   const role = s?.site_role;
   const permsKey = s?.permissions ? JSON.stringify(s.permissions) : "";
 

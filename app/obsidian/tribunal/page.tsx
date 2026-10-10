@@ -94,7 +94,8 @@ export default function TribunalPage() {
           {visible.map(d => {
             const st = STATUTS.find(s => s.k === d.statut) || STATUTS[0]; const v = VERDICTS[d.verdict] || VERDICTS.en_cours; const isOpen = open === d.id;
             return (
-              <div key={d.id} className="card" style={{ padding: "0.85rem 1rem", borderLeft: `3px solid ${st.color}` }}>
+              <div key={d.id} data-tilt className="card" style={{ padding: "0.85rem 1rem", borderLeft: `3px solid ${st.color}`, position: "relative" }}>
+                {d.verdict !== "en_cours" && <span className={`seal ${d.verdict}`} aria-hidden="true">{d.verdict === "coupable" ? "COUPABLE" : "INNOCENT"}</span>}
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", cursor: "pointer" }} onClick={() => setOpen(isOpen ? null : d.id)}>
                   <div style={{ flex: 1, minWidth: 180 }}>
                     <div style={{ fontWeight: 700 }}>{d.titre}</div>

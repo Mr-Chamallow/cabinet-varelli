@@ -4,6 +4,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
+import { LoginParticles } from "@/components/LoginParticles";
 import { getCachedIdentity, cacheIdentity, applyCachedThemeIfAny, applyThemeToDocument, DEFAULT_LOGO_URL, DEFAULT_APP_NOM, DEFAULT_GOLD, isValidHex, Identity } from "@/lib/theme";
 
 function LoginContent() {
@@ -46,9 +47,11 @@ function LoginContent() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", position: "relative", overflow: "hidden" }}>
+      <LoginParticles />
       <div className="ambient-glow" style={{ top: "20%", left: "50%", transform: "translateX(-50%)" }} />
       <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
         <img
+          className="logo-reveal"
           src={identity.logoUrl}
           alt=""
           style={{ width: 56, height: 56, objectFit: "contain", borderRadius: 12, marginBottom: "1rem", boxShadow: "var(--shadow-gold)" }}

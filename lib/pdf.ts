@@ -140,6 +140,10 @@ export class Pdf {
       d.text("Document confidentiel - Obsidian Logistics - ne pas diffuser en dehors du Consortium", this.M, this.H - 9);
       d.text(`${stamp}   -   Page ${i}/${n}`, this.W - this.M, this.H - 9, { align: "right" });
     }
-    d.save(`${filename.replace(/[^a-zA-Z0-9_-]+/g, "_")}.pdf`);
+    const name = `${filename.replace(/[^a-zA-Z0-9_-]+/g, "_")}.pdf`;
+    // Aperçu d'abord (PdfPreviewHost) ; le téléchargement se fait depuis l'aperçu.
+    const url = URL.createObjectURL(d.output("blob"));
+    if (typeof window !== "undefined" && window.dispatchEvent(new CustomEvent("pdf-preview", { detail: { url, name }, cancelable: true }))) return;
+    d.save(name);
   }
 }

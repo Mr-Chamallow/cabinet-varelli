@@ -6,6 +6,7 @@ import { useRealtimeTable } from "@/lib/useRealtimeTable";
 import { Toast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { fireConfetti } from "@/lib/confetti";
 import { gmWrite } from "@/lib/gmApi";
 import { pdfEvenement } from "@/lib/pdfDocs";
 import { useGmAccess, useGroupes, GroupeSelect, Chip, Badge, fmtDT, toLocalInput, fromLocalInput, usd } from "@/components/gm/bits";
@@ -75,6 +76,7 @@ export default function EvenementsPage() {
     if (!canWrite) return;
     const checklist = (e.checklist || []).map((c: Check, j: number) => (j === i ? { ...c, done: !c.done } : c));
     setList(l => l.map(x => (x.id === e.id ? { ...x, checklist } : x)));
+    if (checklist.length > 0 && checklist.every((c: Check) => c.done) && !(e.checklist || []).every((c: Check) => c.done)) fireConfetti();
     const r = await gmWrite("gm_evenements", "PATCH", { id: e.id, checklist });
     if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); load(); }
   }

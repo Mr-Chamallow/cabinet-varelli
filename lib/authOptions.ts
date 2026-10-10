@@ -120,6 +120,12 @@ async function getRolePermissions(roleName: string): Promise<string[] | null> {
 
 // Vérifie si ce Discord ID est banni du site. Ne doit jamais faire planter la
 // connexion si la table n'existe pas encore (migration pas encore exécutée).
+// Nom RP (prénom + nom) défini dans Admin → Membres ; sinon on retombe sur le pseudo Discord.
+async function getNomPerso(discordId: string): Promise<string> {
+  if (!supabase) return "";
+  try { const { data } = await supabase.from("site_logins").select("nom_perso").eq("discord_id", discordId).maybeSingle(); return data?.nom_perso || ""; } catch { return ""; }
+}
+
 async function checkBan(discordId: string): Promise<{ banned: boolean; motif: string }> {
   if (!supabase) return { banned: false, motif: "" };
   try {
@@ -278,6 +284,7 @@ export const authOptions: NextAuthOptions = {
         const ban = await checkBan(token.discord_id as string);
         token.banned = ban.banned;
         token.ban_reason = ban.motif;
+        token.nom_perso = await getNomPerso(token.discord_id as string);
       }
       return token;
     },
@@ -285,6 +292,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).site_role = token.site_role;
         (session.user as any).discord_name = token.discord_name;
+        (session.user as any).nom_perso = token.nom_perso || "";
         (session.user as any).discord_id = token.discord_id;
         (session.user as any).permissions = token.permissions || null;
         (session.user as any).banned = !!token.banned;

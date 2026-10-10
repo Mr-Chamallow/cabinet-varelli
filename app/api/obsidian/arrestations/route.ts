@@ -105,7 +105,7 @@ export async function PATCH(req: Request) {
     if (!old) return NextResponse.json({ error: "Arrestation introuvable" }, { status: 404 });
 
     p.createdBy = old.created_by || p.createdBy; // on garde l'auteur de la saisie d'origine
-    await revertArrest(supabaseAdmin, old, (user as any)?.discord_name || "");
+    await revertArrest(supabaseAdmin, old, ((user as any)?.nom_perso || (user as any)?.discord_name || ""));
     const r = await createArrest(supabaseAdmin, p);
     if (!r.row) {
       // Échec : on restaure l'ancienne version pour ne rien perdre.
@@ -132,9 +132,9 @@ export async function DELETE(req: Request) {
     if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
     const { data: row } = await supabaseAdmin.from("arrestations").select("*").eq("id", id).single();
     if (!row) return NextResponse.json({ error: "Arrestation introuvable" }, { status: 404 });
-    const { error: e } = await revertArrest(supabaseAdmin, row, (user as any)?.discord_name || "");
+    const { error: e } = await revertArrest(supabaseAdmin, row, ((user as any)?.nom_perso || (user as any)?.discord_name || ""));
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
-    await logAudit(supabaseAdmin, (user as any)?.discord_name, "Arrestation annulée", row.membre, `amende ${row.amende} $ · argent perdu ${row.argent_perdu} $`);
+    await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Arrestation annulée", row.membre, `amende ${row.amende} $ · argent perdu ${row.argent_perdu} $`);
     await postAlert("arrestations", `🗑️ Arrestation annulée — ${row.membre}`, "Stock remis, prime de paie retirée.", GREY, arrestFields(row));
     return NextResponse.json({ ok: true });
   } catch (e: any) {

@@ -24,12 +24,12 @@ export interface CartePoint {
 export interface Gang {
   id: string;
   nom: string;
-  type: 'orga' | 'pf' | 'inde';
+  type: 'orga' | 'gang' | 'pf' | 'inde';
   sort_order?: number;
 }
 
 export function gangTypeLabel(type: string): string {
-  return type === 'pf' ? 'PF' : type === 'inde' ? 'Indé' : 'Orga';
+  return type === 'pf' ? 'PF' : type === 'inde' ? 'Indé' : type === 'gang' ? 'Gang' : 'Orga';
 }
 
 // Parse le format Vector3 du jeu, ex :

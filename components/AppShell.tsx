@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { PreviewBanner } from "@/components/PreviewBanner";
 import { QuickEntry } from "@/components/QuickEntry";
+import { PdfPreviewHost } from "@/components/PdfPreviewHost";
+import { MotionFX } from "@/components/MotionFX";
 
 // Gère l'ouverture/fermeture du menu mobile (hamburger + tiroir + overlay).
 // Remplace l'ancienne structure du layout qui n'offrait aucune adaptation mobile :
@@ -35,6 +37,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <QuickEntry />
+      <PdfPreviewHost />
+      <MotionFX />
     </>
   );
 }

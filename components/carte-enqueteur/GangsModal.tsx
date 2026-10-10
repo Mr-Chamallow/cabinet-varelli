@@ -81,9 +81,10 @@ export default function GangsModal({ gangs, onClose, onAdd, onRename, onRetype, 
               <select
                 value={g.type}
                 onChange={(e) => onRetype(g.id, e.target.value as Gang['type'])}
-                style={{ ...inputStyle, width: 80 }}
+                style={{ ...inputStyle, width: 90 }}
               >
                 <option value="orga">Orga</option>
+                <option value="gang">Gang</option>
                 <option value="pf">PF</option>
                 <option value="inde">Indé</option>
               </select>
@@ -109,8 +110,9 @@ export default function GangsModal({ gangs, onClose, onAdd, onRename, onRetype, 
             placeholder="Nom du groupe"
             style={{ ...inputStyle, flex: 1 }}
           />
-          <select value={newType} onChange={(e) => setNewType(e.target.value as Gang['type'])} style={{ ...inputStyle, width: 80 }}>
+          <select value={newType} onChange={(e) => setNewType(e.target.value as Gang['type'])} style={{ ...inputStyle, width: 90 }}>
             <option value="orga">Orga</option>
+                <option value="gang">Gang</option>
             <option value="pf">PF</option>
             <option value="inde">Indé</option>
           </select>

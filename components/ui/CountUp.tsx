@@ -29,5 +29,13 @@ export function CountUp({ value, format, duration = 900 }: { value: number; form
     return () => cancelAnimationFrame(raf);
   }, [value, duration]);
 
-  return <>{format ? format(shown) : Math.round(shown).toLocaleString("fr-FR")}</>;
+  const [dir, setDir] = useState<"" | "up" | "down">("");
+  const prev = useRef(value);
+  useEffect(() => {
+    if (prev.current === value) return;
+    setDir(value > prev.current ? "up" : "down"); prev.current = value;
+    const t = setTimeout(() => setDir(""), 1100); return () => clearTimeout(t);
+  }, [value]);
+  const txt = format ? format(shown) : Math.round(shown).toLocaleString("fr-FR");
+  return dir ? <span className={`count-flash ${dir}`}>{txt}</span> : <>{txt}</>;
 }
