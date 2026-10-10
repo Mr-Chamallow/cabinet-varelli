@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { goldRain } from "@/lib/confetti";
 import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 import { UndoToast } from "@/components/ui/UndoToast";
@@ -156,8 +157,10 @@ export default function CahierVentePage() {
       ...form, created_by: user.nom,
     }]).select().single();
     if (data) { 
+      const record = data.type === "entrée" && transactions.some(t => t.type === "entrée") && Number(data.montant) > Math.max(...transactions.filter(t => t.type === "entrée").map(t => Number(t.montant) || 0));
       setTransactions(ts => [data, ...ts]); 
-      showToast("Transaction enregistrée"); 
+      showToast(record ? "🏆 Record de vente battu !" : "Transaction enregistrée");
+      if (record) goldRain();
       setForm({ ...EMPTY_FORM }); 
       setTab("apercu"); 
     }

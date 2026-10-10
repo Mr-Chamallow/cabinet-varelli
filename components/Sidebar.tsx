@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { ThemeToggle } from "@/components/ThemeToggle";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -121,6 +122,7 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
       <SidebarPillTracker navRef={navRef} linkRefs={linkRefs} pathname={pathname} setPill={setPill} />
 
       <div className="sidebar-footer">
+        <ThemeToggle />
         <div className="sb-signal" aria-hidden="true">
           <span className="sb-beam" />
           <span className="sb-status"><i className="sb-dot" /><i className="sb-ping" />Système en ligne</span>

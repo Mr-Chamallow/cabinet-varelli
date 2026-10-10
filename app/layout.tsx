@@ -30,7 +30,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className="h-full">
+    <html lang="fr" className="h-full" suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem("obs-mode")==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}` }} /></head>
       <body>
         <PwaRegister />
         <Providers>

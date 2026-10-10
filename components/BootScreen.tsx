@@ -1,152 +1,110 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import { ObsLogo } from "@/components/ObsLogo";
 
-// Astuces livrées par le chat en fin de séquence — une piochée au hasard à chaque
-// démarrage, pour que ça reste "utile" et pas juste décoratif à la longue.
-const CAT_TIPS = [
+const TIPS = [
   "Ctrl+K ouvre la recherche rapide depuis n'importe quelle page.",
-  "Dans la carte enquêteur, clique sur 🔍 Filtres pour combiner catégorie, groupe et dates.",
-  "Un clic droit sur un rôle Discord te donne son ID pour un override dans Admin.",
-  "La couleur du site se change en un clic depuis Personnalisation — sans redéploiement.",
-  "Dans une fiche de la carte, utilise la checklist pour suivre les recensements pas à pas.",
-  "Copie le lien direct d'un point de la carte pour le partager sur Discord.",
+  "Dans Fiches, saisis une plaque ou un téléphone : la fiche se pré-remplit.",
+  "Colle une photo avec Ctrl+V directement dans une fiche ou une arrestation.",
+  "Le bouton ↻ retourne les cartes et les avis de recherche.",
+  "Tout export PDF s'ouvre en aperçu : tu télécharges seulement si tu veux.",
 ];
-
-type LogTag = "NET" | "SEC" | "PROXY" | "DB" | "SYS" | "";
-interface LogLine { tag: LogTag; text: string; variant?: "ok" | "warn"; }
-
-const LOG: LogLine[] = [
-  { tag: "NET",   text: "Scan des nœuds relais... 14 trouvés" },
-  { tag: "NET",   text: "Connexion à 185.24.61.203:8422" },
-  { tag: "SEC",   text: "Détection IDS locale... aucune alerte" },
-  { tag: "SEC",   text: "Injection tunnel chiffré AES-256" },
-  { tag: "SEC",   text: "Clé de session : 7f3a9c..e91c" },
-  { tag: "PROXY", text: "Rotation d'adresse IP (x3)" },
-  { tag: "PROXY", text: "Masquage adresse MAC" },
-  { tag: "DB",    text: 'Authentification base "obsidian_core"' },
-  { tag: "DB",    text: "Contournement du logging SAMP" },
-  { tag: "DB",    text: "Accès base de données illégale confirmé", variant: "ok" },
-  { tag: "SYS",   text: "Désactivation traçage réseau" },
-  { tag: "SYS",   text: "Chargement du profil opérateur" },
-  { tag: "",      text: "Session : OBSIDIAN LOGISTIQUE", variant: "warn" },
+type Tag = "NET" | "SEC" | "AUTH" | "DB" | "SYS";
+interface L { at: number; tag: Tag; text: string; ok?: boolean }
+const END = 9200;
+// Chronologie (ms) — chaque ligne apparaît à son heure.
+const LINES: L[] = [
+  { at: 300, tag: "SYS", text: "Initialisation du noyau Obsidian v7.2.1" },
+  { at: 750, tag: "NET", text: "Résolution du relais sécurisé…" },
+  { at: 1250, tag: "NET", text: "Liaison TLS 1.3 établie — latence 38 ms", ok: true },
+  { at: 1750, tag: "SEC", text: "Échange de clés (X25519 / AES-256-GCM)" },
+  { at: 2250, tag: "SEC", text: "Empreinte du serveur vérifiée", ok: true },
+  // 2700 → boîte « demande d'accès »
+  { at: 6000, tag: "AUTH", text: "Jeton de session émis — validité 12 h", ok: true },
+  { at: 6400, tag: "DB", text: 'Montage de la base "obsidian_core"' },
+  { at: 6800, tag: "DB", text: "Synchronisation temps réel active", ok: true },
+  { at: 7200, tag: "SYS", text: "Chargement du profil opérateur" },
 ];
-
-const BARS: { label: string; durationMs: number }[] = [
-  { label: "Réseau", durationMs: 1600 },
-  { label: "Chiffrement", durationMs: 2300 },
-  { label: "Base de données", durationMs: 2900 },
-  { label: "Proxy", durationMs: 1950 },
+const MODULES = [
+  { label: "Réseau", from: 600, dur: 1800 },
+  { label: "Chiffrement", from: 1500, dur: 2600 },
+  { label: "Permissions", from: 4300, dur: 2000 },
+  { label: "Base de données", from: 5600, dur: 2200 },
+  { label: "Interface", from: 6400, dur: 2300 },
 ];
+const hex = (n: number) => Array.from({ length: n }, () => "0123456789ABCDEF"[Math.floor(Math.random() * 16)]).join("");
 
-// Se relance à chaque VRAI chargement de page (refresh, connexion) car monté au
-// niveau racine sans aucune mémoire persistante (pas de localStorage/sessionStorage) :
-// la navigation interne (clic Sidebar) ne remonte jamais ce composant dans le
-// App Router de Next.js — seul un rechargement complet le fait.
 export function BootScreen() {
   const pathname = usePathname();
   const [visible, setVisible] = useState(pathname !== "/login");
   const [leaving, setLeaving] = useState(false);
-  const [step, setStep] = useState(0);
-  const [percents, setPercents] = useState<number[]>(() => BARS.map(() => 0));
-  const [tip] = useState(() => CAT_TIPS[Math.floor(Math.random() * CAT_TIPS.length)]);
-  const startedRef = useRef(false);
-
-  // Logs qui s'affichent ligne par ligne, façon terminal
-  useEffect(() => {
-    if (!visible || step >= LOG.length) return;
-    const t = setTimeout(() => setStep((s) => s + 1), 170);
-    return () => clearTimeout(t);
-  }, [visible, step]);
-
-  // 4 barres de progression indépendantes, façon "sous-systèmes" en parallèle
-  useEffect(() => {
-    if (!visible || startedRef.current) return;
-    startedRef.current = true;
-    const rafs: number[] = [];
-    BARS.forEach((bar, i) => {
-      const start = performance.now();
-      const tick = (now: number) => {
-        const pct = Math.min((now - start) / bar.durationMs, 1);
-        setPercents((prev) => { const next = [...prev]; next[i] = pct; return next; });
-        if (pct < 1) rafs[i] = requestAnimationFrame(tick);
-      };
-      rafs[i] = requestAnimationFrame(tick);
-    });
-    return () => rafs.forEach((id) => cancelAnimationFrame(id));
-  }, [visible]);
+  const [t, setT] = useState(0);
+  const tip = useMemo(() => TIPS[Math.floor(Math.random() * TIPS.length)], []);
+  const fp = useMemo(() => `${hex(4)}:${hex(4)}:${hex(4)}:${hex(4)}`, []);
+  const req = useMemo(() => "REQ-" + hex(8), []);
 
   useEffect(() => {
     if (!visible) return;
-    const end = setTimeout(() => close(), 4200);
-    return () => clearTimeout(end);
+    const t0 = performance.now(); const id = setInterval(() => setT(performance.now() - t0), 50);
+    return () => clearInterval(id);
   }, [visible]);
-
-  function close() {
-    setLeaving(true);
-    setTimeout(() => setVisible(false), 350);
-  }
-
+  useEffect(() => { if (visible && t >= END) close(); }, [t, visible]);
+  useEffect(() => { if (!visible) return; const k = (e: KeyboardEvent) => { if (e.key === "Escape" || e.key === "Enter") close(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [visible]);
+  function close() { setLeaving(true); setTimeout(() => setVisible(false), 500); }
   if (!visible) return null;
 
+  // Boîte « demande d'accès » : 2700→6000
+  const boxAt = 2700; const showBox = t >= boxAt;
+  const phase = t < 3700 ? 0 : t < 4400 ? 1 : t < 5200 ? 2 : 3;
+  const status = ["TRANSMISSION DE LA DEMANDE…", "ATTENTE DU CONTRÔLEUR D'ACCÈS…", "VÉRIFICATION DU CERTIFICAT OPÉRATEUR…", "ACCÈS ACCORDÉ"][phase];
+  const granted = phase === 3;
+  const logoAt = 7600; const showLogo = t >= logoAt; const stamped = t >= 8300;
+  const total = Math.min(1, t / (END - 600));
+
   return (
-    <div
-      onClick={close}
-      style={{
-        position: "fixed", inset: 0, zIndex: 9999,
-        background: "var(--bg)",
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-        cursor: "pointer",
-        opacity: leaving ? 0 : 1,
-        transition: "opacity 0.35s ease",
-        pointerEvents: leaving ? "none" : "auto",
-        padding: "1rem",
-      }}
-    >
-      <div style={{
-        fontFamily: "'Cinzel', serif", fontSize: "clamp(1.1rem, 4vw, 1.4rem)", color: "var(--gold)",
-        letterSpacing: "0.16em", marginBottom: "1.75rem", textTransform: "uppercase", textAlign: "center",
-      }}>
-        Obsidian Logistique
-      </div>
+    <div className={`boot${leaving ? " leaving" : ""}`} onClick={close}>
+      <div className="boot-scan" />
+      <div className="boot-wrap">
+        <div className="boot-title">Obsidian Logistique</div>
+        <div className="boot-sub">TERMINAL SÉCURISÉ · CONSORTIUM</div>
 
-      <div style={{ width: "min(92vw, 560px)", fontFamily: "var(--font-mono)", fontSize: "0.72rem", lineHeight: 1.9, height: "min(40vh, 250px)", overflow: "hidden" }}>
-        {LOG.map((line, i) => (
-          <div key={i} style={{
-            opacity: i < step ? 1 : 0,
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            color: line.variant === "ok" ? "var(--success)" : line.variant === "warn" ? "var(--gold)" : "var(--text-muted)",
-            fontWeight: line.variant ? 600 : 400,
-          }}>
-            <span style={{ display: "inline-block", width: 52, color: "var(--text-dim)" }}>{line.tag && `[${line.tag}]`}</span>
-            {line.variant === "ok" && "✓ "}
-            {line.variant === "warn" && "→ "}
-            {line.text}
-          </div>
-        ))}
-      </div>
-
-      <div style={{ width: "min(92vw, 560px)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem 1.2rem", marginTop: "0.75rem" }}>
-        {BARS.map((bar, i) => (
-          <div key={bar.label} style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              <span>{bar.label}</span>
-              <span style={{ fontFamily: "var(--font-mono)" }}>{Math.round(percents[i] * 100)}%</span>
+        <div className="boot-log">
+          {LINES.filter(l => t >= l.at).map((l, i) => (
+            <div key={i} className={l.ok ? "ok" : ""}>
+              <span className="tg">[{l.tag}]</span>{l.ok ? "✓ " : ""}{l.text}
             </div>
-            <div style={{ height: 4, background: "var(--card)", borderRadius: 2, overflow: "hidden", border: "1px solid var(--surface)" }}>
-              <div style={{ height: "100%", width: `${percents[i] * 100}%`, background: "linear-gradient(90deg, var(--gold), var(--chart-2))" }} />
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      <div style={{
-        marginTop: "1.5rem", fontSize: "0.72rem", color: "var(--text-dim)", fontFamily: "var(--font-mono)",
-        opacity: step >= LOG.length ? 1 : 0, transition: "opacity 0.4s ease",
-        display: "flex", alignItems: "center", gap: "0.5rem", maxWidth: "min(92vw, 560px)", textAlign: "center",
-      }}>
-        <span>🐈</span><span>{tip}</span>
+        {showBox && (
+          <div className={`boot-req${granted ? " granted" : ""}`}>
+            <div className="br-head"><span>⚿ DEMANDE D'ACCÈS — PROTOCOLE OBS-SECURE/7</span><span>{req}</span></div>
+            <div className="br-grid">
+              <span>ORIGINE</span><b>{fp}</b>
+              <span>ENTITÉ</span><b>Obsidian Logistics</b>
+              <span>NIVEAU REQUIS</span><b>HABILITATION 2 / 5</b>
+              <span>CANAL</span><b>Chiffré · bout à bout</b>
+            </div>
+            <div className="br-status"><i className={granted ? "on" : "wait"} />{status}</div>
+            <div className="br-bar"><u style={{ width: `${Math.min(100, ((t - boxAt) / 2500) * 100)}%` }} /></div>
+          </div>
+        )}
+
+        <div className="boot-mods">
+          {MODULES.map(m => { const p = Math.max(0, Math.min(1, (t - m.from) / m.dur)); return (
+            <div key={m.label}><div className="bm-h"><span>{m.label}</span><span>{p >= 1 ? "OK" : Math.round(p * 100) + "%"}</span></div><div className="bm-bar"><u style={{ width: `${p * 100}%` }} /></div></div>); })}
+        </div>
+
+        {showLogo && (
+          <div className="boot-final">
+            <ObsLogo size={64} className="boot-logo" />
+            <div className="boot-welcome">{stamped ? "ACCÈS AUTORISÉ" : "Initialisation de l'interface…"}</div>
+          </div>
+        )}
+        <div className="boot-total"><u style={{ width: `${total * 100}%` }} /></div>
+        <div className="boot-tip">🐈 {tip} <em>· clic ou Entrée pour passer</em></div>
       </div>
     </div>
   );

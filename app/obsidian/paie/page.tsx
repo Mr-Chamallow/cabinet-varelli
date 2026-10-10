@@ -1,4 +1,5 @@
 "use client";
+import { Stamp } from "@/components/Stamp";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -240,7 +241,7 @@ export default function PaieObsidianPage() {
                     {r.dejaPaye > 0 && (
                       <div style={{ textAlign: "right" }}>
                         <div style={{ fontWeight: 600, color: "var(--success)", fontSize: "0.85rem" }}>{fmt(r.dejaPaye)}</div>
-                        <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>déjà payé</div>
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>{r.restant <= 0 ? <Stamp color="green" size="sm" rotate={-6}>Payé</Stamp> : "déjà payé"}</div>
                       </div>
                     )}
                     {r.restant > 0 ? (

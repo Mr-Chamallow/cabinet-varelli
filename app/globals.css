@@ -1210,3 +1210,98 @@ a:active > .card, button.card:active { transform: translateY(-1px) scale(0.99); 
 .idc-fn { display: inline-block; margin-top: 3px; padding: 1px 7px; border: 1px solid var(--c); color: var(--c); border-radius: 3px; font: 800 .5rem 'Inter', sans-serif; letter-spacing: .14em; }
 .idc-acces { position: relative; z-index: 2; margin: 8px 20px 0; display: flex; flex-wrap: wrap; gap: 4px; } .idc-acces small { width: 100%; font: 700 .45rem 'Inter', sans-serif; letter-spacing: .16em; color: var(--c); opacity: .9; }
 .idc-acces span { padding: 1px 6px; border-radius: 3px; background: color-mix(in srgb, var(--c) 18%, transparent); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); font: 600 .55rem 'Inter', sans-serif; color: #eee; }
+
+/* ═══════════ LOT 9 : fond, boot, mode clair, états vides, télex, mobile ═══════════ */
+/* — Fond d'ambiance — */
+.ambient { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.main-content { position: relative; z-index: 1; }
+.amb-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(var(--gold-rgb), .045) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--gold-rgb), .045) 1px, transparent 1px); background-size: 56px 56px; -webkit-mask-image: radial-gradient(ellipse at 60% 40%, #000 0, transparent 75%); mask-image: radial-gradient(ellipse at 60% 40%, #000 0, transparent 75%); }
+.amb-orb { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .5; }
+.amb-orb.a { width: 520px; height: 520px; left: 18%; top: -160px; background: rgba(var(--gold-rgb), .13); animation: ambA 26s ease-in-out infinite alternate; }
+.amb-orb.b { width: 460px; height: 460px; right: -120px; bottom: 5%; background: rgba(121,134,203,.10); animation: ambB 32s ease-in-out infinite alternate; }
+.amb-orb.c { width: 380px; height: 380px; left: 40%; bottom: -160px; background: rgba(var(--gold-rgb), .08); animation: ambA 38s ease-in-out infinite alternate-reverse; }
+@keyframes ambA { to { transform: translate(120px, 90px) scale(1.15); } } @keyframes ambB { to { transform: translate(-140px, -80px) scale(1.2); } }
+.amb-logo { position: absolute !important; right: 3%; bottom: 4%; opacity: .045; filter: grayscale(1) contrast(1.1); animation: ambLogo 9s ease-in-out infinite alternate; }
+@keyframes ambLogo { to { opacity: .075; transform: translateY(-10px) rotate(-2deg); } }
+.amb-vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.35)); }
+@media (max-width: 768px) { .amb-logo { width: 320px !important; height: 320px !important; } .amb-orb { opacity: .35; } }
+
+/* — Mode clair — */
+html[data-theme="light"] { --bg: #f3efe6; --surface: #e8e2d3; --card: #fffdf8; --card-hover: #f4eedf; --border: #d8cfba; --border-light: #c6bba0; --gold: #a77c1f; --gold-light: #b88f33; --gold-dark: #7d5c12; --gold-muted: rgba(167,124,31,.09); --gold-glow: rgba(167,124,31,.16); --gold-rgb: 167,124,31; --text: #231d12; --text-muted: #5c5340; --text-dim: #8d836c; --info: #1d6fb8; --shadow-sm: 0 1px 4px rgba(60,40,10,.12); --shadow: 0 4px 24px rgba(60,40,10,.14); --shadow-lg: 0 16px 56px rgba(60,40,10,.2); color-scheme: light; }
+html[data-theme="light"] .amb-vignette { background: radial-gradient(ellipse at center, transparent 60%, rgba(120,90,30,.10)); }
+html[data-theme="light"] .amb-logo { filter: grayscale(1) invert(1); opacity: .05; }
+html[data-theme="light"] .sidebar-overlay { background: rgba(60,40,10,.35); }
+.theme-toggle { width: 100%; display: flex; align-items: center; gap: .5rem; padding: .45rem .7rem; margin-bottom: .6rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-muted); font: 600 .74rem 'Inter', sans-serif; cursor: pointer; transition: all .2s; }
+.theme-toggle:hover { border-color: rgba(var(--gold-rgb), .5); color: var(--gold); }
+
+/* — États vides illustrés — */
+.empty-state.es-ill { color: var(--text-dim); padding: 2.5rem 1rem; }
+.es-svg { color: rgba(var(--gold-rgb), .75); margin-bottom: .6rem; filter: drop-shadow(0 0 14px rgba(var(--gold-rgb), .25)); animation: esFloat 4.5s ease-in-out infinite; }
+.es-svg * { stroke-dasharray: 260; stroke-dashoffset: 260; animation: esDraw 1.6s ease-out .1s forwards; }
+@keyframes esDraw { to { stroke-dashoffset: 0; } } @keyframes esFloat { 50% { transform: translateY(-6px); } }
+.empty-state:not(.es-ill) .empty-icon { animation: esFloat 4.5s ease-in-out infinite; }
+
+/* — Skeleton aux couleurs du pôle — */
+.skeleton.sk-pole { background: linear-gradient(90deg, var(--card) 25%, color-mix(in srgb, var(--pole, var(--gold)) 20%, transparent) 50%, var(--card) 75%); background-size: 200% 100%; border: 1px solid color-mix(in srgb, var(--pole, var(--gold)) 18%, transparent); }
+
+/* — Fil d'Ariane + en-têtes collants — */
+.crumbs { padding: .55rem 2rem 0; font: 500 .7rem 'Inter', sans-serif; color: var(--text-dim); display: flex; flex-wrap: wrap; gap: .25rem; }
+.crumbs a { color: var(--text-muted); text-decoration: none; } .crumbs a:hover { color: var(--gold); } .crumbs b { margin: 0 .35rem; opacity: .5; font-weight: 400; } .crumbs .cur { color: var(--gold); font-weight: 600; }
+@media (max-width: 768px) { .crumbs { padding: .5rem 1rem 0; } .page-header { position: sticky; top: 56px; z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); padding: .5rem 0; margin-bottom: 1rem; border-bottom: 1px solid var(--border); } }
+
+/* — Barre du bas (mobile) — */
+.bottombar { display: none; }
+@media (max-width: 768px) {
+  .bottombar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(10px); border-top: 1px solid var(--border); padding: .3rem .4rem calc(.3rem + env(safe-area-inset-bottom)); }
+  .bottombar a, .bottombar button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: .3rem 0; background: none; border: 0; color: var(--text-dim); text-decoration: none; cursor: pointer; border-radius: 10px; font-family: 'Inter', sans-serif; }
+  .bottombar span { font-size: 1.2rem; } .bottombar small { font-size: .58rem; font-weight: 600; letter-spacing: .04em; }
+  .bottombar .on { color: var(--gold); background: var(--gold-muted); }
+  .main-content { padding-bottom: 68px; }
+}
+.ptr { position: fixed; top: 0; left: 50%; z-index: 9000; width: 36px; height: 36px; border-radius: 50%; background: var(--card); border: 1px solid var(--border); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: var(--shadow); } .ptr.ready { background: var(--gold); color: #111; }
+
+/* — Notification télex — */
+.toast.telex { font-family: 'JetBrains Mono', monospace; background: #efe6cc; color: #2b1d0e; border: 0; border-radius: 2px; padding: .55rem .9rem .7rem; min-width: 220px; max-width: 340px; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: telexIn .35s steps(8) both, toastFadeOut .3s var(--ease) 2.7s forwards; }
+.toast.telex::after { content: ""; position: absolute; left: 0; right: 0; bottom: -5px; height: 6px; background: radial-gradient(circle at 5px 0, transparent 4px, #efe6cc 4.5px) 0 0/10px 6px repeat-x; }
+.toast.telex.toast-danger { background: #f3d4d1; color: #5b1010; } .toast.telex.toast-danger::after { background: radial-gradient(circle at 5px 0, transparent 4px, #f3d4d1 4.5px) 0 0/10px 6px repeat-x; }
+.tx-h { display: block; font-size: .56rem; letter-spacing: .2em; font-weight: 700; opacity: .65; border-bottom: 1px dashed currentColor; padding-bottom: 2px; margin-bottom: 4px; } .tx-b { font-size: .78rem; font-weight: 600; }
+.tx-c { display: inline-block; width: 7px; height: .9em; margin-left: 2px; background: currentColor; vertical-align: -2px; animation: txBlink .6s steps(2) infinite; }
+@keyframes telexIn { from { transform: translateY(-30px); opacity: 0; } } @keyframes txBlink { 50% { opacity: 0; } }
+
+/* — Tampon qui claque — */
+.obs-stamp { display: inline-block; align-self: flex-start; width: fit-content; border: 3px double; border-radius: 6px; font: 900 .8rem 'Inter', sans-serif; letter-spacing: .2em; padding: 3px 12px; text-transform: uppercase; transform: rotate(var(--rot, -8deg)); opacity: .88; mix-blend-mode: normal; animation: stampSlam .55s cubic-bezier(.2,1.6,.4,1) both; }
+.obs-stamp.sm { font-size: .6rem; padding: 1px 8px; } .obs-stamp.lg { font-size: 1.3rem; padding: 6px 20px; border-width: 4px; }
+@keyframes stampSlam { from { opacity: 0; transform: rotate(var(--rot, -8deg)) scale(2.8); } 60% { transform: rotate(var(--rot, -8deg)) scale(.94); } to { opacity: .88; transform: rotate(var(--rot, -8deg)) scale(1); } }
+
+/* — Pluie dorée (record) — */
+.goldrain-host { position: fixed; inset: 0; z-index: 9000; pointer-events: none; overflow: hidden; }
+.goldrain-host i { position: absolute; top: -20px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #fff3c4, #e8c766 55%, #9a7a2c); box-shadow: 0 0 8px rgba(232,199,102,.8); animation: goldFall linear forwards; }
+@keyframes goldFall { to { transform: translate(var(--sw), 108vh) rotate(540deg); opacity: .2; } }
+
+/* — Alerte rouge — */
+.alert-red { position: relative; animation: alertRed 1.4s ease-in-out infinite; } @keyframes alertRed { 50% { box-shadow: 0 0 0 3px rgba(229,72,77,.55), 0 0 26px rgba(229,72,77,.5); } }
+
+/* — Le tableau de bord « s'allume » — */
+.stat-card, .dash-tile, .stats-grid > * { animation: litUp .6s var(--ease) both; }
+.stat-card:nth-child(2), .stats-grid > *:nth-child(2) { animation-delay: .07s; } .stat-card:nth-child(3), .stats-grid > *:nth-child(3) { animation-delay: .14s; } .stat-card:nth-child(4), .stats-grid > *:nth-child(4) { animation-delay: .21s; } .stat-card:nth-child(5), .stats-grid > *:nth-child(5) { animation-delay: .28s; } .stat-card:nth-child(n+6) { animation-delay: .35s; }
+@keyframes litUp { 0% { opacity: 0; transform: translateY(14px) scale(.97); filter: brightness(2.2) saturate(.6); } 60% { filter: brightness(1.4); } 100% { opacity: 1; filter: none; } }
+
+/* — Écran de démarrage pro — */
+.boot { position: fixed; inset: 0; z-index: 9999; background: radial-gradient(ellipse at 50% 30%, #17140f, #070708 70%); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 1rem; transition: opacity .5s ease, transform .5s ease; color: #cfc8b6; font-family: 'JetBrains Mono', monospace; overflow: hidden; }
+.boot.leaving { opacity: 0; transform: scale(1.04); pointer-events: none; }
+.boot-scan { position: absolute; inset: 0; background: repeating-linear-gradient(transparent 0 3px, rgba(255,255,255,.025) 3px 4px); pointer-events: none; } .boot-scan::after { content: ""; position: absolute; left: 0; right: 0; height: 120px; background: linear-gradient(transparent, rgba(var(--gold-rgb), .07), transparent); animation: bootScan 4s linear infinite; } @keyframes bootScan { from { top: -120px; } to { top: 100%; } }
+.boot-wrap { position: relative; width: min(94vw, 600px); min-height: 560px; }
+.boot-title { font: 700 clamp(1.1rem, 4vw, 1.5rem) 'Cinzel', serif; color: var(--gold); letter-spacing: .18em; text-transform: uppercase; text-align: center; } .boot-sub { text-align: center; font-size: .6rem; letter-spacing: .3em; opacity: .5; margin: 4px 0 14px; }
+.boot-log { height: 172px; overflow: hidden; font-size: .7rem; line-height: 1.75; } .boot-log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: bootLine .25s steps(6) both; opacity: .8; } .boot-log .ok { color: #4ade80; opacity: 1; } .boot-log .tg { display: inline-block; width: 58px; color: #6b6a72; }
+@keyframes bootLine { from { opacity: 0; transform: translateX(-8px); } }
+.boot-req { margin: 10px 0; border: 1px solid rgba(var(--gold-rgb), .5); background: rgba(var(--gold-rgb), .05); border-radius: 6px; padding: 10px 12px; font-size: .66rem; animation: bootReq .4s ease both; box-shadow: 0 0 22px rgba(var(--gold-rgb), .12); } .boot-req.granted { border-color: #4ade80; background: rgba(74,222,128,.06); box-shadow: 0 0 26px rgba(74,222,128,.18); }
+@keyframes bootReq { from { opacity: 0; transform: scale(.96); } }
+.br-head { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; letter-spacing: .08em; color: var(--gold); margin-bottom: 8px; font-size: .62rem; } .boot-req.granted .br-head { color: #4ade80; }
+.br-grid { display: grid; grid-template-columns: 110px 1fr; gap: 2px 10px; } .br-grid span { opacity: .5; } .br-grid b { font-weight: 600; color: #e6e0cd; }
+.br-status { display: flex; align-items: center; gap: 8px; margin-top: 9px; font-weight: 700; letter-spacing: .1em; } .br-status i { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); animation: pulseDot .8s ease-in-out infinite; } .br-status i.on { background: #4ade80; animation: none; box-shadow: 0 0 10px #4ade80; } @keyframes pulseDot { 50% { opacity: .25; } }
+.br-bar { height: 3px; margin-top: 7px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; } .br-bar u, .bm-bar u, .boot-total u { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), #7986cb); } .boot-req.granted .br-bar u { background: #4ade80; }
+.boot-mods { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-top: 8px; } .bm-h { display: flex; justify-content: space-between; font-size: .58rem; text-transform: uppercase; letter-spacing: .06em; opacity: .65; margin-bottom: 2px; } .bm-bar { height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+.boot-final { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 14px; animation: bootReq .5s ease both; } .boot-logo { filter: drop-shadow(0 0 14px rgba(var(--gold-rgb), .6)); animation: logoPulse 1.6s ease-in-out infinite alternate; } @keyframes logoPulse { to { transform: scale(1.08); } }
+.boot-welcome { font: 800 1rem 'Inter', sans-serif; letter-spacing: .24em; color: #4ade80; }
+.boot-total { height: 2px; margin-top: 14px; background: rgba(255,255,255,.07); } .boot-tip { margin-top: 10px; font-size: .62rem; opacity: .55; text-align: center; } .boot-tip em { opacity: .6; }
+@media (prefers-reduced-motion: reduce) { .amb-orb, .amb-logo, .es-svg, .es-svg *, .stat-card, .dash-tile, .alert-red, .boot-scan::after { animation: none !important; } .es-svg * { stroke-dashoffset: 0; } }

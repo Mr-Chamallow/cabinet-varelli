@@ -10,3 +10,15 @@ export function fireConfetti(x = window.innerWidth / 2, y = window.innerHeight /
   }
   setTimeout(() => host.remove(), 2200);
 }
+
+// Pluie de particules dorées (record de vente).
+export function goldRain(n = 70) {
+  if (typeof document === "undefined" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+  const host = document.createElement("div"); host.className = "goldrain-host"; document.body.appendChild(host);
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement("i"); const s = 4 + Math.random() * 7;
+    p.style.cssText = `left:${Math.random() * 100}vw;width:${s}px;height:${s}px;animation-delay:${Math.random() * 1.2}s;animation-duration:${2 + Math.random() * 1.6}s;--sw:${(Math.random() - 0.5) * 80}px`;
+    host.appendChild(p);
+  }
+  setTimeout(() => host.remove(), 4800);
+}
