@@ -6,22 +6,22 @@ export { fileToPhoto } from "@/components/PhotoPicker";
 // Carte pro d'employé Obsidian Logistics : recto/verso, tilt 3D, reflet holographique, anneaux animés, puce, scan.
 export interface CardEmploye { id: string; nom: string; role?: string | null; discord?: string | null; telephone?: string | null; created_at?: string; photo_url?: string | null; actif?: boolean }
 
-export interface RoleStyle { key: string; nom: string; color: string; color2: string; niveau: string; emblem: string; stars: number; finish: string; titre: string }
+export interface RoleStyle { key: string; nom: string; color: string; color2: string; niveau: string; emblem: string; stars: number; finish: string; titre: string; hab: number; fn: string; acces: string[] }
 // Une identité visuelle par rôle / grade : couleurs, emblème, étoiles, finition.
 export const ROLE_STYLES: Record<string, RoleStyle> = {
-  patron:  { key: "patron", nom: "Direction", color: "#f2d27a", color2: "#9a7a2c", niveau: "OMÉGA", emblem: "♛", stars: 5, finish: "foil", titre: "FONDATEUR" },
-  ceo:     { key: "ceo", nom: "Direction", color: "#e8c766", color2: "#8a6a24", niveau: "ALPHA", emblem: "♛", stars: 5, finish: "foil", titre: "DIRECTION GÉNÉRALE" },
-  coo:     { key: "coo", nom: "Direction", color: "#d8dde6", color2: "#7d8594", niveau: "ALPHA", emblem: "◆", stars: 4, finish: "foil", titre: "DIRECTION OPÉRATIONNELLE" },
-  rj:      { key: "rj", nom: "Pôle Juridique", color: "#a78bfa", color2: "#5b3fb0", niveau: "BRAVO", emblem: "⚖", stars: 4, finish: "guilloche", titre: "RESPONSABLE" },
-  aj:      { key: "aj", nom: "Pôle Juridique", color: "#c4b5fd", color2: "#7357d6", niveau: "CHARLIE", emblem: "⚖", stars: 3, finish: "guilloche", titre: "AGENT" },
-  avocat:  { key: "avocat", nom: "Pôle Juridique", color: "#d8a7e8", color2: "#8b3fa8", niveau: "CHARLIE", emblem: "§", stars: 3, finish: "guilloche", titre: "AVOCAT" },
-  rl:      { key: "rl", nom: "Pôle Logistique", color: "#f0a73a", color2: "#9a5a0c", niveau: "BRAVO", emblem: "⬢", stars: 4, finish: "hex", titre: "RESPONSABLE" },
-  al:      { key: "al", nom: "Pôle Logistique", color: "#f7c873", color2: "#b8741a", niveau: "CHARLIE", emblem: "⬢", stars: 3, finish: "hex", titre: "AGENT" },
-  rs:      { key: "rs", nom: "Pôle Sécurité", color: "#f0555c", color2: "#8c1219", niveau: "BRAVO", emblem: "⛨", stars: 4, finish: "stripes", titre: "RESPONSABLE" },
-  as:      { key: "as", nom: "Pôle Sécurité", color: "#ff8a8f", color2: "#b32028", niveau: "CHARLIE", emblem: "⛨", stars: 3, finish: "stripes", titre: "AGENT" },
-  op:      { key: "op", nom: "Opérations", color: "#4cc2ff", color2: "#1d6a99", niveau: "DELTA", emblem: "◈", stars: 2, finish: "plain", titre: "OPÉRATEUR" },
-  st:      { key: "st", nom: "Stagiaire", color: "#9aa3b5", color2: "#565e70", niveau: "ÉCHO", emblem: "◇", stars: 1, finish: "intern", titre: "STAGIAIRE" },
-  legal:   { key: "legal", nom: "Partenaire externe", color: "#4fd1b5", color2: "#1f7a69", niveau: "LECTURE", emblem: "◎", stars: 1, finish: "plain", titre: "LÉGAL SERVICE" },
+  patron:  { key: "patron", nom: "Direction", color: "#f2d27a", color2: "#9a7a2c", niveau: "OMÉGA", emblem: "♛", stars: 5, finish: "foil", titre: "FONDATEUR", hab: 5, fn: "AUTORITÉ TOTALE", acces: ["Tous les pôles", "Coffres & comptes", "Décisions finales"] },
+  ceo:     { key: "ceo", nom: "Direction", color: "#e8c766", color2: "#8a6a24", niveau: "ALPHA", emblem: "♛", stars: 5, finish: "foil", titre: "DIRECTION GÉNÉRALE", hab: 5, fn: "AUTORITÉ TOTALE", acces: ["Tous les pôles", "Coffres & comptes", "Signature des pactes"] },
+  coo:     { key: "coo", nom: "Direction", color: "#d8dde6", color2: "#7d8594", niveau: "ALPHA", emblem: "◆", stars: 4, finish: "foil", titre: "DIRECTION OPÉRATIONNELLE", hab: 4, fn: "PILOTAGE OPÉRATIONNEL", acces: ["Tous les pôles", "Contrats & convois", "Validation des transits"] },
+  rj:      { key: "rj", nom: "Pôle Juridique", color: "#a78bfa", color2: "#5b3fb0", niveau: "BRAVO", emblem: "⚖", stars: 4, finish: "guilloche", titre: "RESPONSABLE", hab: 4, fn: "HABILITÉ CONFIDENTIEL", acces: ["Dossiers juridiques", "Pactes & procès", "Fiches (notes privées)"] },
+  aj:      { key: "aj", nom: "Pôle Juridique", color: "#c4b5fd", color2: "#7357d6", niveau: "CHARLIE", emblem: "⚖", stars: 3, finish: "guilloche", titre: "AGENT", hab: 3, fn: "HABILITÉ DOSSIERS", acces: ["Dossiers juridiques", "Rédaction d'actes", "Fiches"] },
+  avocat:  { key: "avocat", nom: "Pôle Juridique", color: "#d8a7e8", color2: "#8b3fa8", niveau: "CHARLIE", emblem: "§", stars: 3, finish: "guilloche", titre: "AVOCAT", hab: 3, fn: "AU BARREAU", acces: ["Défense & procès", "Pactes", "Fiches"] },
+  rl:      { key: "rl", nom: "Pôle Logistique", color: "#f0a73a", color2: "#9a5a0c", niveau: "BRAVO", emblem: "⬢", stars: 4, finish: "hex", titre: "RESPONSABLE", hab: 4, fn: "ACCÈS ENTREPÔTS", acces: ["Entrepôts & stocks", "Convois", "Cahier de vente"] },
+  al:      { key: "al", nom: "Pôle Logistique", color: "#f7c873", color2: "#b8741a", niveau: "CHARLIE", emblem: "⬢", stars: 3, finish: "hex", titre: "AGENT", hab: 3, fn: "ACCÈS ENTREPÔTS", acces: ["Stocks", "Convois", "Cahier de vente"] },
+  rs:      { key: "rs", nom: "Pôle Sécurité", color: "#f0555c", color2: "#8c1219", niveau: "BRAVO", emblem: "⛨", stars: 4, finish: "stripes", titre: "RESPONSABLE", hab: 4, fn: "PORT D'ARME AUTORISÉ", acces: ["Armurerie", "Arrestations", "Fiches & recherchés"] },
+  as:      { key: "as", nom: "Pôle Sécurité", color: "#ff8a8f", color2: "#b32028", niveau: "CHARLIE", emblem: "⛨", stars: 3, finish: "stripes", titre: "AGENT", hab: 3, fn: "PORT D'ARME AUTORISÉ", acces: ["Patrouilles", "Arrestations", "Fiches"] },
+  op:      { key: "op", nom: "Opérations", color: "#4cc2ff", color2: "#1d6a99", niveau: "DELTA", emblem: "◈", stars: 2, finish: "plain", titre: "OPÉRATEUR", hab: 2, fn: "ACCÈS OPÉRATIONS", acces: ["Stocks (lecture)", "Cahier de vente", "Convois"] },
+  st:      { key: "st", nom: "Stagiaire", color: "#9aa3b5", color2: "#565e70", niveau: "ÉCHO", emblem: "◇", stars: 1, finish: "intern", titre: "STAGIAIRE", hab: 1, fn: "SOUS SUPERVISION", acces: ["Accès limité", "Lecture seule"] },
+  legal:   { key: "legal", nom: "Partenaire externe", color: "#4fd1b5", color2: "#1f7a69", niveau: "LECTURE", emblem: "◎", stars: 1, finish: "plain", titre: "LÉGAL SERVICE", hab: 1, fn: "PARTENAIRE EXTERNE", acces: ["Consultation uniquement"] },
 };
 export function roleKey(role?: string | null): string {
   const r = (role || "").toLowerCase();
@@ -37,6 +37,10 @@ export function roleKey(role?: string | null): string {
   return "op";
 }
 export const roleStyle = (role?: string | null) => ROLE_STYLES[roleKey(role)];
+// Importance des rôles (0 = le plus haut) : sert au tri automatique des employés.
+export const ROLE_ORDER = ["patron","ceo","coo","rj","aj","avocat","rl","al","rs","as","op","st","legal"];
+export const roleRank = (role?: string | null) => ROLE_ORDER.indexOf(roleKey(role));
+export const sortByRole = <T extends { role?: string | null; nom?: string }>(l: T[]) => [...l].sort((a, b) => roleRank(a.role) - roleRank(b.role) || (a.nom || "").localeCompare(b.nom || ""));
 // Compat (accueil, etc.)
 export function poleOf(role?: string | null) { const r = roleStyle(role); return { nom: r.nom, color: r.color, niveau: r.niveau }; }
 
@@ -76,7 +80,7 @@ export function EmployeeCard({ e, flippable = true, onZoom }: { e: CardEmploye; 
               <div className="idc-rings"><i /><i /><i /></div>
               <div className="idc-grid" /><div className="idc-scan" /><div className="idc-shine" />
               {flash && <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle,#fff8,transparent 60%)", animation: "idcFlash 1.4s ease-out forwards", zIndex: 5 }} />}
-              <div className="idc-head"><div className="idc-brand"><span className="idc-hex">◆</span> OBSIDIAN LOGISTICS</div><div className="idc-lvl">{p.emblem} NIVEAU {p.niveau}</div></div>
+              <div className="idc-head"><div className="idc-brand"><span className="idc-hex">◆</span> OBSIDIAN LOGISTICS</div><div className="idc-lvl">{p.emblem} HAB. {p.hab}/5 · {p.niveau}</div></div>
               <div className="idc-body">
                 <div className="idc-photo">
                   {e.photo_url ? <img src={e.photo_url} alt="" referrerPolicy="no-referrer" /> : <span>{(e.nom || "?").charAt(0).toUpperCase()}</span>}
@@ -86,6 +90,7 @@ export function EmployeeCard({ e, flippable = true, onZoom }: { e: CardEmploye; 
                   <div className="idc-name">{e.nom}</div>
                   <div className="idc-role">{e.role || "Employé"}</div>
                   <div className="idc-pole">{p.nom} · {p.titre}</div>
+                  <div className="idc-fn">{p.fn}</div>
                   <div className="idc-stars" aria-label={`Grade ${p.stars}/5`}>{Array.from({ length: 5 }).map((_, i) => <b key={i} className={i < p.stars ? "on" : ""}>★</b>)}</div>
                   <div className="idc-meta"><div><small>MATRICULE</small>{matricule(e.id)}</div><div><small>DEPUIS</small>{since}</div></div>
                 </div>
@@ -101,6 +106,7 @@ export function EmployeeCard({ e, flippable = true, onZoom }: { e: CardEmploye; 
               <div className="idc-grid" /><div className="idc-shine" />
               <div className="idc-mag" />
               <div className="idc-vtext">Cette carte est strictement personnelle et reste la propriété d'Obsidian Logistics. Elle atteste l'appartenance de son porteur au Consortium. En cas de perte ou de vol, prévenir immédiatement la Direction. Toute utilisation frauduleuse sera portée devant le Tribunal de l'Ombre.</div>
+              <div className="idc-acces"><small>HABILITATION {p.hab}/5 — ACCÈS AUTORISÉS</small>{p.acces.map(a => <span key={a}>{a}</span>)}</div>
               <div className="idc-sign"><span>{e.nom}</span><small>SIGNATURE</small></div>
               <div className="idc-vfoot"><span>{matricule(e.id)} · {p.nom.toUpperCase()}</span><span style={{ color: p.color }}>◆ OBSIDIAN</span></div>
             </div>

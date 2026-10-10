@@ -2,10 +2,6 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
-// S'abonne aux changements Postgres (insert/update/delete) d'une ou plusieurs tables Supabase
-// et relance `onChange` à chaque évènement — la page se resynchronise seule, sans F5.
-// Nécessite que la réplication Realtime soit activée sur la table côté Supabase
-// (voir sql-realtime.sql).
 export function useRealtimeTable(tables: string | string[], onChange: () => void) {
   const list = Array.isArray(tables) ? tables : [tables];
   const key = list.join(",");

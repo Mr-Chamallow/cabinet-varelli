@@ -9,11 +9,6 @@ interface PendingUndo {
 
 const UNDO_WINDOW_MS = 5000;
 
-// "Corbeille" légère façon Gmail : au lieu d'une vraie corbeille parcourable (qui
-// demanderait de changer la structure de plusieurs tables), on retarde simplement
-// la suppression réelle de quelques secondes après l'avoir déjà retirée de l'écran,
-// avec un bouton "Annuler" pour revenir en arrière pendant ce court délai. Couvre le
-// vrai cas qui fait mal (clic malheureux) sans chantier de base de données.
 export function useUndoAction() {
   const [pending, setPending] = useState<PendingUndo | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

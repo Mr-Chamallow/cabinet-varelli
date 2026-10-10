@@ -1206,3 +1206,7 @@ a:active > .card, button.card:active { transform: translateY(-1px) scale(0.99); 
 /* Opérateur : sobre ; Stagiaire : ruban + bordure pointillée */
 .idc-f-intern { border-style: dashed; }
 .idc-ribbon { position: absolute; top: 22px; right: -34px; width: 150px; text-align: center; padding: 3px 0; transform: rotate(38deg); background: var(--c); color: #0b0b0e; font: 900 .55rem 'Inter', sans-serif; letter-spacing: .24em; z-index: 6; }
+
+.idc-fn { display: inline-block; margin-top: 3px; padding: 1px 7px; border: 1px solid var(--c); color: var(--c); border-radius: 3px; font: 800 .5rem 'Inter', sans-serif; letter-spacing: .14em; }
+.idc-acces { position: relative; z-index: 2; margin: 8px 20px 0; display: flex; flex-wrap: wrap; gap: 4px; } .idc-acces small { width: 100%; font: 700 .45rem 'Inter', sans-serif; letter-spacing: .16em; color: var(--c); opacity: .9; }
+.idc-acces span { padding: 1px 6px; border-radius: 3px; background: color-mix(in srgb, var(--c) 18%, transparent); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); font: 600 .55rem 'Inter', sans-serif; color: #eee; }

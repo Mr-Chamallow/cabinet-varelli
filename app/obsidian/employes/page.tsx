@@ -9,7 +9,7 @@ import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
 import { hasPermission, DEFAULT_PERMISSIONS, getMemberColor } from "@/lib/auth";
 import { useRealtimeTable } from "@/lib/useRealtimeTable";
-import { EmployeeCard, EmployeeCardModalBody } from "@/components/EmployeeCard";
+import { EmployeeCard, EmployeeCardModalBody, sortByRole } from "@/components/EmployeeCard";
 
 interface Employe {
   id: string; nom: string; role: string; telephone: string; discord: string;
@@ -106,7 +106,7 @@ export default function EmployesObsidianPage() {
     });
   }
 
-  const visibles = employes.filter(e => showInactifs ? true : e.actif !== false);
+  const visibles = sortByRole(employes.filter(e => showInactifs ? true : e.actif !== false));
 
   return (
     <div className="page-container">
