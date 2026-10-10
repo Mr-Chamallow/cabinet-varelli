@@ -32,7 +32,7 @@ export default function SettingsPage() {
     if (!supabase) { setLoading(false); return; }
     const { data, error } = await supabase.from("app_settings").select("cle,valeur");
     if (error) {
-      showToast(`Table app_settings introuvable (${error.message}) — voir le script SQL fourni.`, "danger");
+      showToast(`Table app_settings introuvable (${error.message}) - voir le script SQL fourni.`, "danger");
       setLoading(false);
       return;
     }
@@ -75,26 +75,26 @@ export default function SettingsPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Tableau de bord</a>
+      <a className="back-link" href="/">Tableau de bord</a>
 
       <div className="page-header">
         <div>
           <h1 className="page-title">⚙️ Personnalisation</h1>
-          <p className="page-subtitle">Thème, couleurs et identité du site — appliqué instantanément, sans toucher au code</p>
+          <p className="page-subtitle">Thème, couleurs et identité du site - appliqué instantanément, sans toucher au code</p>
           <div className="gold-line" />
         </div>
       </div>
 
       {loading ? (
-        <div style={{ color: "var(--text-dim)" }}>Chargement…</div>
+        <div style={{ color: "var(--text-dim)" }}>Chargement...</div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "1.5rem", alignItems: "start" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            {/* ── Couleur du site ── */}
+            {/* -- Couleur du site -- */}
             <div className="card">
               <div className="section-title" style={{ marginBottom: "1rem" }}>🎨 Couleur du site</div>
               <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "1rem" }}>
-                Une seule couleur suffit — les variantes claires, foncées et translucides sont calculées automatiquement
+                Une seule couleur suffit - les variantes claires, foncées et translucides sont calculées automatiquement
                 et appliquées partout (boutons, liens, bordures, badges) dès que tu cliques.
               </p>
 
@@ -129,11 +129,11 @@ export default function SettingsPage() {
                   placeholder="#c9a24d"
                   style={{ flex: 1, fontFamily: "var(--font-mono)" }}
                 />
-                {saving && <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>…</span>}
+                {saving && <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>...</span>}
               </div>
             </div>
 
-            {/* ── Identité du site ── */}
+            {/* -- Identité du site -- */}
             <div className="card">
               <div className="section-title" style={{ marginBottom: "1.25rem" }}>Identité</div>
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -150,7 +150,7 @@ export default function SettingsPage() {
                         style={{ flex: 1 }}
                       />
                       <button className="btn btn-gold btn-sm" onClick={() => save(key, settings[key] || "")} disabled={saving}>
-                        {saving ? "…" : "✓"}
+                        {saving ? "..." : "OK"}
                       </button>
                     </div>
                   </div>
@@ -159,7 +159,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* ── Aperçu ── */}
+          {/* -- Aperçu -- */}
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div className="card" style={{ border: `2px solid ${palette.goldMuted}` }}>
               <div style={{ fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-dim)", marginBottom: "0.875rem" }}>

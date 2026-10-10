@@ -1,4 +1,4 @@
-// Remplace les "Chargement…" bruts par des squelettes qui brillent (classe .skeleton existante).
+// Remplace les "Chargement..." bruts par des squelettes qui brillent (classe .skeleton existante).
 export function LoadingBlock({ rows = 4 }: { rows?: number }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }} aria-busy="true" aria-label="Chargement">

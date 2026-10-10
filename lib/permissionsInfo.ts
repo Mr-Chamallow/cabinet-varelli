@@ -44,7 +44,7 @@ export const PERMISSION_GUIDE: PermGroup[] = [
   { titre: "Administration", icon: "🛡️", perms: [
     { key: "admin", read: "Voir l'admin (utilisateurs, rôles, logs).", write: "Gérer rôles, permissions, overrides utilisateurs. À réserver à la direction." },
     { key: "supervision", read: "Voir la supervision (activité de tous).", write: "Idem." },
-    { key: "edit_all", read: "—", write: "Droit d'édition sur TOUTES les entrées, même celles des autres." },
-    { key: "delete_all", read: "—", write: "Droit de suppression sur TOUT (même les entrées des autres). Très sensible." },
+    { key: "edit_all", read: " - ", write: "Droit d'édition sur TOUTES les entrées, même celles des autres." },
+    { key: "delete_all", read: " - ", write: "Droit de suppression sur TOUT (même les entrées des autres). Très sensible." },
   ]},
 ];

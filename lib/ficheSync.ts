@@ -1,4 +1,4 @@
-// Fiches (obsidian_fiches) ↔ Base de données (bdd_personnes) : recherche, pré-remplissage et synchronisation.
+// Fiches (obsidian_fiches) <-> Base de données (bdd_personnes) : recherche, pré-remplissage et synchronisation.
 type Db = any;
 
 export const splitNom = (full: string) => { const t = (full || "").trim().split(/\s+/); return t.length < 2 ? { prenom: "", nom: t[0] || "" } : { prenom: t[0], nom: t.slice(1).join(" ") }; };
@@ -13,7 +13,7 @@ export function ficheToPersonne(f: any, groupes: { id: string; nom: string }[]) 
     tags: f.tags || [], adresses: f.adresses || "", comptes_bancaires: f.comptes_bancaires || "", relations: f.relations || "",
     notes_publiques: f.notes_publiques || "", notes_privees: f.notes_privees || "", prime: Number(f.prime) || 0, fiche_id: f.id,
   };
-  // Photo de la personne ↔ photo « Police » ; carte d'identité ↔ « Carte ID » (Base de données).
+  // Photo de la personne <-> photo « Police » ; carte d'identité <-> « Carte ID » (Base de données).
   if (f.photo_url) o.photo_police = f.photo_url;
   if (f.photo_id) o.photo_identite = f.photo_id;
   return o;
@@ -35,7 +35,7 @@ export async function syncFicheToBdd(db: Db, fiche: any, groupes: { id: string; 
   const body = ficheToPersonne(fiche, groupes);
   let pid: string | null = fiche.personne_id || null;
   if (!pid) {
-    // Doublon ? (même nom + prénom) → on relie au lieu de recréer.
+    // Doublon ? (même nom + prénom) -> on relie au lieu de recréer.
     const { data: dup } = await db.from("bdd_personnes").select("id").ilike("nom", body.nom).ilike("prenom", body.prenom || "").limit(1).maybeSingle();
     if (dup) pid = dup.id;
   }
@@ -83,12 +83,12 @@ export async function lookupPeople(db: Db, query: string): Promise<{ candidates:
     byId[p.id] = c; out.push(c);
   };
   for (const p of (pers.data || []).filter(match)) await add(p);
-  // Plaque → véhicule → propriétaire
+  // Plaque -> véhicule -> propriétaire
   for (const v of veh.data || []) {
     if (v.proprietaire_id) { const { data: p } = await db.from("bdd_personnes").select("*").eq("id", v.proprietaire_id).maybeSingle(); if (p) await add(p, [v], v.plaque); }
     else out.push({ key: "v" + v.id, source: "Véhicule", label: `Plaque ${v.plaque}`, detail: [v.marque_modele, v.couleur, "propriétaire inconnu"].filter(Boolean).join(" · "), vehicules: [v], plaque: v.plaque });
   }
-  // Carte enquêteur : plaque → personne ; personnes du registre
+  // Carte enquêteur : plaque -> personne ; personnes du registre
   for (const pl of pla.data || []) {
     const { data: cp } = pl.personne_id ? await db.from("carte_personnes").select("*").eq("id", pl.personne_id).maybeSingle() : { data: null };
     out.push({ key: "pl" + pl.id, source: "San Andreas", label: cp ? `${fullNom(cp)} (plaque ${pl.plaque})` : `Plaque ${pl.plaque}`, detail: pl.notes || "", personne: cp ? { nom: cp.nom, prenom: cp.prenom, notes_publiques: cp.notes || "" } : undefined, vehicules: [{ plaque: pl.plaque }], plaque: pl.plaque });
@@ -99,7 +99,7 @@ export async function lookupPeople(db: Db, query: string): Promise<{ candidates:
     const { data: wf } = await db.from("obsidian_fiches").select("id,nom,personne_id,statut,prime,vehicules").is("deleted_at", null).or("prime.gt.0,statut.ilike.%recherch%");
     for (const c of out) {
       const hit = (wf || []).find((w: any) => (c.personne?.id && w.personne_id === c.personne.id) || (c.personne && fullNom(c.personne).toLowerCase() === String(w.nom || "").toLowerCase()) || (c.plaque && String(w.vehicules || "").toLowerCase().includes(c.plaque.toLowerCase())));
-      if (hit) { c.label = "🚨 RECHERCHÉ — " + c.label; c.detail = [hit.statut, Number(hit.prime) > 0 ? `prime ${Number(hit.prime).toLocaleString("fr-FR")} $` : ""].filter(Boolean).join(" · ") + (c.detail ? " · " + c.detail : ""); }
+      if (hit) { c.label = "🚨 RECHERCHÉ - " + c.label; c.detail = [hit.statut, Number(hit.prime) > 0 ? `prime ${Number(hit.prime).toLocaleString("fr-FR")} $` : ""].filter(Boolean).join(" · ") + (c.detail ? " · " + c.detail : ""); }
     }
   } catch { /* alerte best-effort */ }
   return { candidates: out.slice(0, 12), fiches: fiches.data || [] };

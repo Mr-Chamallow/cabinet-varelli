@@ -400,7 +400,7 @@ async function saveOperation() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Tableau de bord</a>
+      <a className="back-link" href="/">Tableau de bord</a>
 
       <div className="page-header">
         <div>
@@ -440,8 +440,8 @@ async function saveOperation() {
       <div className="toolbar">
         <div className="search-bar">
           <span className="search-icon">🔍</span>
-          <input placeholder="Rechercher une opération, un employé…" value={search} onChange={e => setSearch(e.target.value)} />
-          {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "1rem" }}>×</button>}
+          <input placeholder="Rechercher une opération, un employé..." value={search} onChange={e => setSearch(e.target.value)} />
+          {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "1rem" }}>x</button>}
         </div>
         <div style={{ display: "flex", gap: "0.4rem" }}>
           {(["global", "mois", "semaine"] as const).map(m => (
@@ -451,7 +451,7 @@ async function saveOperation() {
               background: viewMode === m ? "var(--gold-muted)" : "var(--surface)",
               border: `1px solid ${viewMode === m ? "rgba(139,92,246,0.4)" : "var(--border)"}`,
               color: viewMode === m ? "var(--gold)" : "var(--text-muted)", transition: "all var(--t-fast) var(--ease)",
-            }}>{m === "mois" ? "📅 Mois" : m === "semaine" ? "🗂 Semaine" : "🌐 Tout (convois, enchères…)"}</button>
+            }}>{m === "mois" ? "📅 Mois" : m === "semaine" ? "🗂 Semaine" : "🌐 Tout (convois, enchères...)"}</button>
           ))}
         </div>
       </div>
@@ -463,11 +463,11 @@ async function saveOperation() {
           {viewMode === "mois" ? (
             <>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => navMonth(-1)}>←</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => navMonth(-1)}>{'<-'}</button>
                 <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.1rem", fontWeight: 700, color: "var(--gold)" }}>
                   {MOIS[viewMonth]} {viewYear}
                 </div>
-                <button className="btn btn-ghost btn-sm" onClick={() => navMonth(1)}>→</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => navMonth(1)}>{'->'}</button>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 4 }}>
@@ -511,7 +511,7 @@ async function saveOperation() {
                       }}>{day}</div>
 
                       {ops.slice(0, 3).map((a, idx) => (
-                        <div key={idx} title={`${a.titre} — ${a.type}`} style={{
+                        <div key={idx} title={`${a.titre} - ${a.type}`} style={{
                           height: 4, borderRadius: 2,
                           background: getColor(a.created_by),
                           marginBottom: 2,
@@ -528,11 +528,11 @@ async function saveOperation() {
           ) : (
             <>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => navWeek(-1)}>←</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => navWeek(-1)}>{'<-'}</button>
                 <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "1rem", fontWeight: 700, color: "var(--gold)" }}>
-                  {weekDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} — {weekDates[6].toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                  {weekDates[0].toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} - {weekDates[6].toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
                 </div>
-                <button className="btn btn-ghost btn-sm" onClick={() => navWeek(1)}>→</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => navWeek(1)}>{'->'}</button>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -580,7 +580,7 @@ async function saveOperation() {
                               >
                                 <div style={{ flexShrink: 0, textAlign: "center", minWidth: 42 }}>
                                   <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: "0.95rem", color: "var(--text)", lineHeight: 1 }}>
-                                    {a.heure || "—"}
+                                    {a.heure || "-"}
                                   </div>
                                 </div>
                                 <div style={{ width: 3, height: 28, borderRadius: 2, background: col, flexShrink: 0 }} />
@@ -685,7 +685,7 @@ async function saveOperation() {
                 </div>
                 <div style={{ display: "flex", gap: "0.3rem" }}>
                   <button className="btn btn-ghost btn-sm" onClick={() => openCreate(selectedDate)} style={{ fontSize: "0.72rem" }}>+ Ajouter</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setSelectedDate(null)} style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>×</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setSelectedDate(null)} style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>x</button>
                 </div>
               </div>
               {selectedOperations.length === 0 ? (
@@ -782,8 +782,8 @@ async function saveOperation() {
               <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
                 {[
                   { label: "Type", value: detailOperation.type },
-                  { label: "Employé", value: detailOperation.client || "—" },
-                  { label: "Lieu", value: detailOperation.lieu || "—" },
+                  { label: "Employé", value: detailOperation.client || "-" },
+                  { label: "Lieu", value: detailOperation.lieu || "-" },
                 ].map(r => (
                   <div key={r.label} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", paddingBottom: "0.5rem", borderBottom: "1px solid var(--border)" }}>
                     <span style={{ color: "var(--text-dim)" }}>{r.label}</span>
@@ -814,7 +814,7 @@ async function saveOperation() {
                 className="btn btn-gold"
                 onClick={saveOperation}
                 disabled={saving || !form.titre.trim() || !form.date}
-              >{saving ? "Sauvegarde…" : editOperation ? "Modifier" : "Créer l'opération"}</button></>}>
+              >{saving ? "Sauvegarde..." : editOperation ? "Modifier" : "Créer l'opération"}</button></>}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                 <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                   <label>Titre *</label>
@@ -831,7 +831,7 @@ async function saveOperation() {
                 <div className="form-group">
                   <label>Employé</label>
                   <select value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))}>
-                    <option value="">— Aucun —</option>
+                    <option value=""> -  Aucun  - </option>
                     {form.client && !fiches.includes(form.client) && <option value={form.client}>{form.client} (hors annuaire)</option>}
                     {fiches.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -864,7 +864,7 @@ async function saveOperation() {
                 </div>
                 <div className="form-group">
                   <label>Contrat lié (optionnel)</label>
-                  <input list="op-contrats" placeholder="Référence contrat…"
+                  <input list="op-contrats" placeholder="Référence contrat..."
                     value={form.contrat_ref || ""}
                     onChange={e => setForm(f => ({ ...f, contrat_ref: e.target.value }))} />
                   <datalist id="op-contrats">{contratsList.map(c => <option key={c.titre} value={c.titre} />)}</datalist>
@@ -877,7 +877,7 @@ async function saveOperation() {
                 </div>
                 <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                   <label>Notes</label>
-                  <textarea rows={3} placeholder="Informations complémentaires…" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+                  <textarea rows={3} placeholder="Informations complémentaires..." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
                 </div>
 
                 <div className="form-group" style={{ gridColumn: "1 / -1" }}>
@@ -931,7 +931,7 @@ async function saveOperation() {
                               color: active ? col : "var(--text-muted)",
                               transition: "all var(--t-fast) var(--ease)",
                             }}>
-                              {active && "✓"} {m}
+                              {active && "OK"} {m}
                             </button>
                           );
                         })}

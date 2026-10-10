@@ -81,7 +81,7 @@ export default function ReputationPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Dashboard</a>
+      <a className="back-link" href="/">Dashboard</a>
       <div className="page-header">
         <div><h1 className="page-title">⭐ Réputation des groupes</h1><p className="page-subtitle">Échelle nommée (de « Banni » à « Partenaire du Directoire ») · alimentée par audits, pactes, tribunal et convois</p><div className="gold-line" /></div>
         <a className="btn btn-outline" href="/base-de-donnees">🗄️ Gérer les groupes</a>
@@ -92,7 +92,7 @@ export default function ReputationPage() {
           {PALIERS.map(p => <div key={p.label} style={{ display: "flex", gap: 10, alignItems: "baseline", fontSize: "0.78rem" }}><b style={{ color: p.color, minWidth: 190 }}>{p.label}</b><span style={{ color: "var(--text-dim)", minWidth: 46 }}>≥ {p.min}</span><span style={{ flex: 1 }}>{p.effet}</span></div>)}
         </div>
       </details>
-      {loading ? <LoadingBlock /> : rows.length === 0 ? <div className="empty-state"><div className="empty-icon">⭐</div><div className="empty-title">Aucune organisation</div><div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>Les groupes se créent dans Base de données → Groupes.</div></div> : (
+      {loading ? <LoadingBlock /> : rows.length === 0 ? <div className="empty-state"><div className="empty-icon">⭐</div><div className="empty-title">Aucune organisation</div><div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>Les groupes se créent dans Base de données {'->'} Groupes.</div></div> : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
           {rows.map(o => {
             const lab = scoreLabel(o.score); const isOpen = open === o.nom;
@@ -111,7 +111,7 @@ export default function ReputationPage() {
                 </div>
                 {isOpen && (
                   <div style={{ marginTop: "0.8rem" }}>
-                    <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginBottom: "0.6rem", borderLeft: `3px solid ${lab.color}`, paddingLeft: 8 }}><b style={{ color: lab.color }}>{lab.label}</b> — {lab.effet}</div>
+                    <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginBottom: "0.6rem", borderLeft: `3px solid ${lab.color}`, paddingLeft: 8 }}><b style={{ color: lab.color }}>{lab.label}</b> - {lab.effet}</div>
                     <div style={{ display: "flex", gap: "0.4rem", marginBottom: "0.6rem" }}>
                       <button className="btn btn-outline btn-sm" onClick={() => dossierPdf(o)}>📄 Dossier complet (PDF)</button>
                       <button className="btn btn-outline btn-sm" onClick={() => openConv(o)}>📜 Convocation officielle</button>
@@ -122,7 +122,7 @@ export default function ReputationPage() {
                       o.history.slice(0, 30).map((h: any) => (
                         <div key={h.id} style={{ display: "flex", gap: "0.6rem", fontSize: "0.78rem", padding: "0.2rem 0", alignItems: "baseline" }}>
                           <b style={{ color: h.delta >= 0 ? "var(--success)" : "var(--danger)", minWidth: 36 }}>{h.delta > 0 ? "+" : ""}{h.delta}</b>
-                          <span style={{ flex: 1 }}>{h.motif || "—"}</span>
+                          <span style={{ flex: 1 }}>{h.motif || " - "}</span>
                           <span style={{ color: "var(--text-dim)", fontSize: "0.66rem" }}>{h.source || "manuel"} · {fmtDT(h.created_at)}</span>
                           {canWrite && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => delLog(h.id)}>✕</button>}
                         </div>
@@ -135,13 +135,13 @@ export default function ReputationPage() {
         </div>
       )}
       {adj && (
-        <Modal title={`Ajuster — ${adj.org}`} onClose={() => setAdj(null)} footer={<><button className="btn btn-outline" onClick={() => setAdj(null)}>Annuler</button><button className="btn btn-gold" onClick={saveAdj}>Appliquer</button></>}>
+        <Modal title={`Ajuster - ${adj.org}`} onClose={() => setAdj(null)} footer={<><button className="btn btn-outline" onClick={() => setAdj(null)}>Annuler</button><button className="btn btn-gold" onClick={saveAdj}>Appliquer</button></>}>
           <div><label>Points (ex : 5 ou -10)</label><input type="number" value={adj.delta} onChange={e => setAdj({ ...adj, delta: e.target.value })} /></div>
           <div><label>Motif</label><input value={adj.motif} onChange={e => setAdj({ ...adj, motif: e.target.value })} placeholder="Ex : a aidé lors du convoi" /></div>
         </Modal>
       )}
       {conv && (
-        <Modal title={`📜 Convocation officielle — ${conv.org}`} onClose={() => setConv(null)} footer={<><button className="btn btn-outline" onClick={() => setConv(null)}>Annuler</button><button className="btn btn-gold" onClick={genConv} disabled={!conv.destinataire.trim()}>Générer le PDF</button></>}>
+        <Modal title={`📜 Convocation officielle - ${conv.org}`} onClose={() => setConv(null)} footer={<><button className="btn btn-outline" onClick={() => setConv(null)}>Annuler</button><button className="btn btn-gold" onClick={genConv} disabled={!conv.destinataire.trim()}>Générer le PDF</button></>}>
           <div className="form-group"><label>Convoqué (chef / représentant) *</label><input list="conv-noms" value={conv.destinataire} onChange={e => setConv({ ...conv, destinataire: e.target.value })} /><datalist id="conv-noms">{conv.noms.map(n => <option key={n} value={n} />)}</datalist></div>
           <div className="form-group"><label>Objet</label><input value={conv.objet} onChange={e => setConv({ ...conv, objet: e.target.value })} /></div>
           <div className="form-grid"><div className="form-group"><label>Date</label><input type="date" value={conv.date} onChange={e => setConv({ ...conv, date: e.target.value })} /></div><div className="form-group"><label>Heure</label><input type="time" value={conv.heure} onChange={e => setConv({ ...conv, heure: e.target.value })} /></div></div>

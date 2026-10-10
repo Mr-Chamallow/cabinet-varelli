@@ -100,7 +100,7 @@ export default function EvenementsPage() {
     setList(l => l.map(x => (x.id === e.id ? { ...x, checklist } : x)));
     if (checklist.length > 0 && checklist.every((c: Check) => c.done) && !(e.checklist || []).every((c: Check) => c.done)) fireConfetti();
     const statut = autoStatut(e.type, checklist, e.statut);
-    if (statut !== e.statut) { setList(l => l.map(x => (x.id === e.id ? { ...x, statut } : x))); showToast(`Statut → ${(TYPES[e.type].statuts.find(s => s.k === statut) || { label: statut }).label}`); }
+    if (statut !== e.statut) { setList(l => l.map(x => (x.id === e.id ? { ...x, statut } : x))); showToast(`Statut -> ${(TYPES[e.type].statuts.find(s => s.k === statut) || { label: statut }).label}`); }
     const r = await gmWrite("gm_evenements", "PATCH", { id: e.id, checklist, statut });
     if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); load(); }
   }
@@ -109,7 +109,7 @@ export default function EvenementsPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Dashboard</a>
+      <a className="back-link" href="/">Dashboard</a>
       <div className="page-header">
         <div><h1 className="page-title">🚚 Convois · Enchères · Alertes</h1><p className="page-subtitle">Événements du Maître du Jeu</p><div className="gold-line" /></div>
         {canWrite && <button className="btn btn-gold" onClick={openNew}>+ {T.label.replace(/s$/, "")}</button>}
@@ -135,7 +135,7 @@ export default function EvenementsPage() {
                 </div>
                 {(e.lots || []).length > 0 && (
                   <div style={{ marginTop: "0.6rem", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                    {e.lots.map((l: Lot, i: number) => <div key={i} style={{ fontSize: "0.76rem", display: "flex", gap: "0.6rem" }}><span style={{ flex: 1 }}>🔹 {l.nom}</span><span style={{ color: "var(--text-dim)" }}>départ {usd(l.mise_depart)}</span><b>{l.mise_finale ? usd(l.mise_finale) : "—"}</b><span style={{ color: "var(--gold)" }}>{l.gagnant || ""}</span></div>)}
+                    {e.lots.map((l: Lot, i: number) => <div key={i} style={{ fontSize: "0.76rem", display: "flex", gap: "0.6rem" }}><span style={{ flex: 1 }}>🔹 {l.nom}</span><span style={{ color: "var(--text-dim)" }}>départ {usd(l.mise_depart)}</span><b>{l.mise_finale ? usd(l.mise_finale) : " - "}</b><span style={{ color: "var(--gold)" }}>{l.gagnant || ""}</span></div>)}
                   </div>
                 )}
                 {(e.checklist || []).length > 0 && (() => {
@@ -147,7 +147,7 @@ export default function EvenementsPage() {
                         <div style={{ flex: 1, height: 5, borderRadius: 3, background: "var(--surface)", overflow: "hidden" }}><div style={{ width: `${pct}%`, height: "100%", background: pct === 100 ? "var(--success)" : "var(--gold)", transition: "width .4s" }} /></div>
                       </div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
-                        {cl.map((c, i) => <button key={i} type="button" onClick={() => toggleCheck(e, i)} style={{ cursor: canWrite ? "pointer" : "default", fontSize: "0.72rem", padding: "0.15rem 0.6rem", borderRadius: 999, fontFamily: "'Inter',sans-serif", border: `1px solid ${c.done ? "rgba(34,197,94,.4)" : "var(--border)"}`, background: c.done ? "rgba(34,197,94,.12)" : "transparent", color: c.done ? "var(--success)" : "var(--text-muted)", textDecoration: c.done ? "line-through" : "none" }}>{c.done ? "✓ " : "○ "}{c.t}</button>)}
+                        {cl.map((c, i) => <button key={i} type="button" onClick={() => toggleCheck(e, i)} style={{ cursor: canWrite ? "pointer" : "default", fontSize: "0.72rem", padding: "0.15rem 0.6rem", borderRadius: 999, fontFamily: "'Inter',sans-serif", border: `1px solid ${c.done ? "rgba(34,197,94,.4)" : "var(--border)"}`, background: c.done ? "rgba(34,197,94,.12)" : "transparent", color: c.done ? "var(--success)" : "var(--text-muted)", textDecoration: c.done ? "line-through" : "none" }}>{c.done ? "" : "○ "}{c.t}</button>)}
                       </div>
                     </div>
                   );
@@ -159,13 +159,13 @@ export default function EvenementsPage() {
         </div>
       )}
       {show && (
-        <Modal title={`${TYPES[form.type].icon} ${editId ? "Modifier" : "Nouveau"} — ${TYPES[form.type].label}`} size="lg" onClose={() => setShow(false)}
-          footer={<><button className="btn btn-outline" onClick={() => setShow(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.titre.trim()} onClick={save}>{saving ? "…" : "Enregistrer"}</button></>}>
+        <Modal title={`${TYPES[form.type].icon} ${editId ? "Modifier" : "Nouveau"} - ${TYPES[form.type].label}`} size="lg" onClose={() => setShow(false)}
+          footer={<><button className="btn btn-outline" onClick={() => setShow(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.titre.trim()} onClick={save}>{saving ? "..." : "Enregistrer"}</button></>}>
           <div style={{ maxHeight: "62vh", overflowY: "auto" }}>
             <div className="form-grid">
               <div><label>Titre *</label><input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} /></div>
               <div><label>Statut</label><select value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>{TYPES[form.type].statuts.map(s => <option key={s.k} value={s.k}>{s.label}</option>)}</select></div>
-              <div><label>{TYPES[form.type].partenaireLabel}</label><GroupeSelect value={form.partenaire} groupes={groupes} onChange={v => setForm({ ...form, partenaire: v })} placeholder="— Aucun —" /></div>
+              <div><label>{TYPES[form.type].partenaireLabel}</label><GroupeSelect value={form.partenaire} groupes={groupes} onChange={v => setForm({ ...form, partenaire: v })} placeholder=" -  Aucun  - " /></div>
               <div><label>Date</label><input type="datetime-local" value={form.date_event} onChange={e => setForm({ ...form, date_event: e.target.value })} /></div>
               {form.type !== "enchere" && <div><label>{TYPES[form.type].montantLabel}</label><input type="number" min={0} value={form.montant || ""} onChange={e => setForm({ ...form, montant: e.target.value })} /></div>}
             </div>
@@ -199,7 +199,7 @@ export default function EvenementsPage() {
               </div>
             </div>
             <div><label>Notes</label><textarea rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
-            {form.type === "convoi" && <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>Convoi « Livré » = réputation du groupe +5 ; « Échec » = −5.</div>}
+            {form.type === "convoi" && <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>Convoi « Livré » = réputation du groupe +5 ; « Échec » = -5.</div>}
           </div>
         </Modal>
       )}

@@ -8,7 +8,7 @@ export const ROLE_RP: Record<string, RoleRP> = {
   "Responsable juridique": { surnom: "L'Inquisiteur", sigle: "CLO", pole: "Juridique", titre: "Responsable juridique", fonction: "Ancien procureur général corrompu. Applique le cadre légal du crime, lit l'acte d'accusation au Tribunal de l'Ombre." },
   "Agent juridique": { surnom: "Les Spectres", pole: "Juridique", titre: "Agent juridique (Enquêteur)", fonction: "Yeux et oreilles d'Obsidian : infiltrent les scènes, observent les flux, notent qui respecte les pactes." },
   "Avocat": { surnom: "La Défense d'office", pole: "Juridique", titre: "Avocat", fonction: "Désigné d'office pour défendre l'accusé au Tribunal de l'Ombre." },
-  "Responsable logistique": { surnom: "L'Intendant", sigle: "CLogO", pole: "Logistique", titre: "Responsable logistique", fonction: "Contrôle les ressources physiques : hangars de Blaine County, cargaisons de Cayo Perico." },
+  "Responsable logistique": { surnom: "L'Intendant", sigle: "HoL", pole: "Logistique", titre: "Responsable logistique", fonction: "Contrôle les ressources physiques : hangars de Blaine County, cargaisons de Cayo Perico." },
   "Agent logistique": { surnom: "Les Transporteurs", pole: "Logistique", titre: "Agent logistique (Transporteur)", fonction: "Chauffeurs et pilotes : conduite irréprochable, discrétion absolue." },
   "Responsable sécurité": { surnom: "Le Prévôt", sigle: "CSO", pole: "Sécurité", titre: "Responsable sécurité", fonction: "Ancien haut gradé militaire. Gardien de la neutralité : nettoie la zone de façon chirurgicale si un coup de feu éclate." },
   "Agent de sécurité": { surnom: "Les Exécuteurs", pole: "Sécurité", titre: "Agent de sécurité (Security Operator)", fonction: "Gardes et exécuteurs : sécurisent les convois et capturent les cibles condamnées." },
@@ -20,7 +20,7 @@ export const roleRP = (role?: string | null): RoleRP | null => (role ? ROLE_RP[r
 // « CEO · L'Arbitre Suprême »
 export const roleTag = (role?: string | null) => { const r = roleRP(role); return r ? `${r.sigle ? r.sigle + " · " : ""}${r.surnom}` : role || ""; };
 
-// ── Réputation : échelle nommée ──
+// -- Réputation : échelle nommée --
 export interface Palier { min: number; label: string; color: string; effet: string }
 export const PALIERS: Palier[] = [
   { min: 85, label: "Partenaire du Directoire", color: "var(--success)", effet: "Contrats d'importation exclusifs, invitation prioritaire aux Enchères de Grand Senora." },

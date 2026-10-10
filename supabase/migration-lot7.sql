@@ -8,7 +8,7 @@ delete from roles where nom = 'Associé / Patron';
 update roles set ordre = 1 where nom = 'CEO - Directeur général';
 update roles set ordre = 2 where nom = 'COO - Directrice opérationnel';
 
--- 2) Membres fictifs (1 par rôle) — repérables par "[TEST]" dans les notes
+-- 2) Membres fictifs (1 par rôle) - repérables par "[TEST]" dans les notes
 insert into obsidian_employes (nom, role, telephone, discord, email, notes, actif)
 select v.nom, v.role, v.tel, '', '', '[TEST] membre fictif', true
 from (values

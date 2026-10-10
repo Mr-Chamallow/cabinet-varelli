@@ -51,10 +51,10 @@ export function PhotoPicker({ value, onChange, listen = true, evidence = false, 
         <input ref={file} type="file" accept="image/*" hidden onChange={ev => { const f = ev.target.files?.[0]; if (f) setBlob(f); ev.target.value = ""; }} />
       </div>
       <div style={{ display: "flex", gap: "0.4rem" }}>
-        <input placeholder="🔗 ou lien d'image (https://…)" value={link} onChange={ev => setLink(ev.target.value)} style={{ flex: 1 }} />
+        <input placeholder="🔗 ou lien d'image (https://...)" value={link} onChange={ev => setLink(ev.target.value)} style={{ flex: 1 }} />
         <button type="button" className="btn btn-gold btn-sm" disabled={!/^https?:\/\//i.test(link.trim())} onClick={() => { onChange(link.trim()); setLink(""); }}>OK</button>
       </div>
-      <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>{busy ? "Traitement…" : err || "Astuce : Ctrl+V colle directement une image copiée (capture, Discord…)."}</div>
+      <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>{busy ? "Traitement..." : err || "Astuce : Ctrl+V colle directement une image copiée (capture, Discord...)."}</div>
     </div>
   );
 }

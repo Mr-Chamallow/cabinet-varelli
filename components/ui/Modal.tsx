@@ -26,7 +26,7 @@ export function Modal({ title, onClose, children, footer, size = "default", styl
       <div className={size === "xl" ? "modal modal-xl" : size === "lg" ? "modal modal-lg" : "modal"} style={style}>
         <div className="modal-header" style={headerStyle}>
           <h2 className="modal-title">{title}</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose}>x</button>
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-footer">{footer}</div>}

@@ -16,7 +16,7 @@ export default function ObsidianDashboard() {
     if (!user) { window.location.href = "/login"; return; }
     // ⚠️ Ne JAMAIS renvoyer vers /login ici : l'utilisateur EST connecté, seulement
     // sans accès au Dashboard (ex: rôle "Légal Service"). /login le renvoie vers "/",
-    // qui le renvoyait ici vers /login → boucle infinie. On l'envoie plutôt vers la
+    // qui le renvoyait ici vers /login -> boucle infinie. On l'envoie plutôt vers la
     // première page à laquelle il a vraiment accès.
     if (!hasPermission(user, "obsidian_dashboard")) {
       window.location.href = firstAccessiblePath(user);
@@ -79,7 +79,7 @@ export default function ObsidianDashboard() {
           {greeting()}, <span style={{ color: "var(--gold)" }}>{user.nom.split(" ")[0]}</span>
         </div>
         <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-          Obsidian Logistique — {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          Obsidian Logistique - {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
         </div>
         <div className="gold-line" style={{ marginTop: "0.8rem" }} />
       </div>
@@ -150,7 +150,7 @@ export default function ObsidianDashboard() {
                   <div className="section-title">Prochaines opérations</div>
                   <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.15rem" }}>Agenda partagé</div>
                 </div>
-                <a href="/obsidian/rdv" className="btn btn-ghost btn-sm">Planning complet →</a>
+                <a href="/obsidian/rdv" className="btn btn-ghost btn-sm">Planning complet {'->'}</a>
               </div>
 
               {events.length === 0 ? (

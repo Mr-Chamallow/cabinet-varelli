@@ -18,7 +18,7 @@ export function setPreviewRole(role: string | null) {
     if (role) sessionStorage.setItem(KEY, role);
     else sessionStorage.removeItem(KEY);
   } catch {
-    // sessionStorage indisponible — pas bloquant, l'aperçu ne fonctionnera juste pas
+    // sessionStorage indisponible - pas bloquant, l'aperçu ne fonctionnera juste pas
   }
   window.dispatchEvent(new Event(PREVIEW_ROLE_EVENT));
 }

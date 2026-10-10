@@ -61,7 +61,7 @@ export function ActionsTab() {
     setTypes(list => list.filter(t => t.nom !== nom)); flash("🗑️ Supprimé");
   }
 
-  if (loading) return <div style={{ color: "var(--text-dim)" }}>Chargement…</div>;
+  if (loading) return <div style={{ color: "var(--text-dim)" }}>Chargement...</div>;
 
   return (
     <div>

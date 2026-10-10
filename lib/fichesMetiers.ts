@@ -1,4 +1,4 @@
-// Métiers des fiches + sous-tags (ex-salons Discord info-civil, info-gouv, info-police…).
+// Métiers des fiches + sous-tags (ex-salons Discord info-civil, info-gouv, info-police...).
 export const METIERS: { k: string; label: string; icon: string; sous: string[] }[] = [
   { k: "civil", label: "Civil", icon: "🪪", sous: [] },
   { k: "gouv", label: "Gouv", icon: "🏛️", sous: ["JUGE", "PROC", "MARIE", "SECU MARIE"] },

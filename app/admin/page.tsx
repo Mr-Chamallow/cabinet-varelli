@@ -219,7 +219,7 @@ export default function AdminPage() {
   }
 
   // Connexions BLOQUÉES avant même la création de session (pas membre Discord,
-  // scope refusé, ou exception) — ce que site_session_log ne peut pas montrer,
+  // scope refusé, ou exception) - ce que site_session_log ne peut pas montrer,
   // vu que ce journal-là n'est rempli qu'après une connexion réussie.
   async function loadLoginFailures() {
     if (!supabase) return;
@@ -264,7 +264,7 @@ export default function AdminPage() {
   }
 
   async function testDiscordWebhook(kind: string) {
-    setDiscordTestMsg(m => ({ ...m, [kind]: "…" }));
+    setDiscordTestMsg(m => ({ ...m, [kind]: "..." }));
     const res = await apiRequest("/api/admin/discord-test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind }) });
     setDiscordTestMsg(m => ({ ...m, [kind]: res.ok ? "✅ Envoyé" : `❌ ${res.error}` }));
   }
@@ -327,7 +327,7 @@ export default function AdminPage() {
 
   async function requestResync(discordId: string, nom: string) {
     const r = await apiRequest("/api/admin/resync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
-    setResyncMsg(r.ok ? `🔄 Resynchro demandée pour ${nom || discordId} — appliquée à sa prochaine action sur le site.` : `❌ ${r.error}`);
+    setResyncMsg(r.ok ? `🔄 Resynchro demandée pour ${nom || discordId} - appliquée à sa prochaine action sur le site.` : `❌ ${r.error}`);
     setTimeout(() => setResyncMsg(""), 6000);
   }
 
@@ -342,7 +342,7 @@ export default function AdminPage() {
 
 
   if (userLoading) {
-    return <div className="page-container" style={{ color: "var(--text-dim)" }}>Chargement de la session…</div>;
+    return <div className="page-container" style={{ color: "var(--text-dim)" }}>Chargement de la session...</div>;
   }
   if (!user) {
     return (
@@ -366,13 +366,13 @@ export default function AdminPage() {
           <div className="empty-title">Accès refusé</div>
           <p style={{ fontSize: "0.82rem", color: "var(--text-dim)", marginTop: "0.5rem" }}>
             Rôle détecté : <strong style={{ color: "var(--text)" }}>{user.role || "(aucun)"}</strong>
-            {" — "}permissions Supabase : <code style={{ fontSize: "0.75rem" }}>{JSON.stringify(user.permissions || [])}</code>
+            {" - "}permissions Supabase : <code style={{ fontSize: "0.75rem" }}>{JSON.stringify(user.permissions || [])}</code>
           </p>
           <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginTop: "0.5rem" }}>
             Si ce rôle devrait avoir accès, ajoute la permission "admin" à ce rôle dans l'onglet Rôles,
             ou force le rôle "CEO - Directeur général" pour ce membre via un override.
           </p>
-          <a href="/" className="btn btn-outline btn-sm" style={{ marginTop: "1rem", display: "inline-block" }}>← Retour au tableau de bord</a>
+          <a href="/" className="btn btn-outline btn-sm" style={{ marginTop: "1rem", display: "inline-block" }}>Retour au tableau de bord</a>
         </div>
       </div>
     );
@@ -381,7 +381,7 @@ export default function AdminPage() {
   return (
     <div className="page-container">
       <button className="back-link" onClick={() => router.push("/")} style={{ background: "none", border: "none", cursor: "pointer" }}>
-        ← Tableau de bord
+        Tableau de bord
       </button>
       <div className="page-header">
         <div>
@@ -412,7 +412,7 @@ export default function AdminPage() {
       </div>
 
       {loading ? (
-        <div style={{ color:"var(--text-dim)" }}>Chargement…</div>
+        <div style={{ color:"var(--text-dim)" }}>Chargement...</div>
       ) : activeTab === "membres" ? (
         <div>
           {(() => {
@@ -464,10 +464,10 @@ export default function AdminPage() {
                         <div style={{ flex:1, minWidth:140 }}>
                           <div style={{ fontWeight:600, fontSize:"0.85rem" }}>🚫 {b.nom || b.discord_id}</div>
                           {b.motif && <div style={{ fontSize:"0.72rem", color:"var(--text-dim)" }}>Motif : {b.motif}</div>}
-                          <div style={{ fontSize:"0.65rem", color:"var(--text-dim)" }}>{b.banned_at ? timeAgo(b.banned_at) : ""}{b.banned_by ? ` — par ${b.banned_by}` : ""}</div>
+                          <div style={{ fontSize:"0.65rem", color:"var(--text-dim)" }}>{b.banned_at ? timeAgo(b.banned_at) : ""}{b.banned_by ? ` - par ${b.banned_by}` : ""}</div>
                         </div>
                         <button className="btn btn-outline btn-sm" disabled={banningId === b.discord_id} onClick={() => unbanUser(b.discord_id, b.nom || "")}>
-                          {banningId === b.discord_id ? "…" : "✅ Débannir"}
+                          {banningId === b.discord_id ? "..." : "✅ Débannir"}
                         </button>
                       </div>
                     ))}
@@ -513,7 +513,7 @@ export default function AdminPage() {
                             {isPatron && <button className="btn btn-ghost btn-sm" title="Renommer (Patron)" onClick={() => setRenameForm({ discord_id: l.discord_id, nom: l.nom_perso || l.discord_name || "", actuel: l.nom_perso || l.discord_name || "", employe: true })}>✏️</button>}
                             {isPatron && l.discord_id !== user?.discord_id && <button className="btn btn-ghost btn-sm" title="Virer (Patron)" style={{ color:"var(--danger)" }} onClick={() => kickMember(l.discord_id, l.nom_perso || l.discord_name || l.discord_id)}>🚪</button>}
                             {banned ? (
-                              <button className="btn btn-outline btn-sm" disabled={banningId === l.discord_id} onClick={() => unbanUser(l.discord_id, l.discord_name)}>{banningId === l.discord_id ? "…" : "✅"}</button>
+                              <button className="btn btn-outline btn-sm" disabled={banningId === l.discord_id} onClick={() => unbanUser(l.discord_id, l.discord_name)}>{banningId === l.discord_id ? "..." : "✅"}</button>
                             ) : (
                               <button className="btn btn-ghost btn-sm" title="Bannir" style={{ color:"var(--danger)" }} onClick={() => { setBanForm({ discord_id: l.discord_id, nom: l.discord_name || "", motif: "" }); setShowBanForm(true); }}>🚫</button>
                             )}
@@ -564,7 +564,7 @@ export default function AdminPage() {
               </div>
 
               {actLoading ? (
-                <div style={{ color:"var(--text-dim)" }}>Chargement du journal…</div>
+                <div style={{ color:"var(--text-dim)" }}>Chargement du journal...</div>
               ) : filteredActivity.length === 0 ? (
                 <div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">Aucune entrée</div></div>
               ) : (
@@ -597,7 +597,7 @@ export default function AdminPage() {
                 <button className="btn btn-outline btn-sm" onClick={loadSessionLog}>↻ Actualiser</button>
               </div>
               {sessionLogLoading ? (
-                <div style={{ color:"var(--text-dim)" }}>Chargement…</div>
+                <div style={{ color:"var(--text-dim)" }}>Chargement...</div>
               ) : sessionLog.length === 0 ? (
                 <div className="empty-state"><div className="empty-icon">🔌</div><div className="empty-title">Aucune connexion enregistrée</div></div>
               ) : (
@@ -621,7 +621,7 @@ export default function AdminPage() {
                 <button className="btn btn-outline btn-sm" onClick={loadLoginFailures}>↻ Actualiser</button>
               </div>
               {loginFailuresLoading ? (
-                <div style={{ color:"var(--text-dim)" }}>Chargement…</div>
+                <div style={{ color:"var(--text-dim)" }}>Chargement...</div>
               ) : loginFailures.length === 0 ? (
                 <div className="empty-state"><div className="empty-icon">🚫</div><div className="empty-title">Aucune connexion refusée</div></div>
               ) : (
@@ -644,7 +644,7 @@ export default function AdminPage() {
       ) : activeTab === "site" ? (
         <div>
           {siteLoading ? (
-            <div style={{ color:"var(--text-dim)" }}>Chargement…</div>
+            <div style={{ color:"var(--text-dim)" }}>Chargement...</div>
           ) : (
             <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:"1.5rem", alignItems:"start" }}>
               <div style={{ display:"flex", flexDirection:"column", gap:"1.25rem" }}>
@@ -662,7 +662,7 @@ export default function AdminPage() {
                   <div style={{ display:"flex", gap:"0.6rem", alignItems:"center" }}>
                     <input type="color" value={siteGold} onChange={e=>applySiteGold(e.target.value)} style={{ width:40,height:36,padding:0,border:"1px solid var(--border)",borderRadius:8,cursor:"pointer",background:"none" }}/>
                     <input value={siteGoldInput} onChange={e=>setSiteGoldInput(e.target.value)} onBlur={()=>isValidHex(siteGoldInput)&&applySiteGold(siteGoldInput)} placeholder="#c9a24d" style={{ flex:1, fontFamily: "var(--font-mono)" }}/>
-                    {siteSaving && <span style={{ fontSize:"0.72rem", color:"var(--text-dim)" }}>…</span>}
+                    {siteSaving && <span style={{ fontSize:"0.72rem", color:"var(--text-dim)" }}>...</span>}
                   </div>
                 </div>
 
@@ -674,7 +674,7 @@ export default function AdminPage() {
                         <label style={{ fontSize:"0.7rem", fontWeight:600, color:"var(--text-dim)", textTransform:"uppercase", letterSpacing:"0.06em" }}>{label}</label>
                         <div style={{ display:"flex", gap:"0.5rem" }}>
                           <input value={siteSettings[key]||""} onChange={e=>setSiteSettings(s=>({...s,[key]:e.target.value}))} placeholder={placeholder} style={{ flex:1 }}/>
-                          <button className="btn btn-gold btn-sm" onClick={()=>saveSiteKey(key, siteSettings[key]||"")} disabled={siteSaving}>{siteSaving?"…":"✓"}</button>
+                          <button className="btn btn-gold btn-sm" onClick={()=>saveSiteKey(key, siteSettings[key]||"")} disabled={siteSaving}>{siteSaving?"...":"OK"}</button>
                         </div>
                       </div>
                     ))}
@@ -698,7 +698,7 @@ export default function AdminPage() {
                 </div>
 
                 <p style={{ fontSize:"0.75rem", color:"var(--text-dim)" }}>
-                  Réglages détaillés (police, sous-titre complet…) → <a href="/settings" style={{ color:"var(--gold)" }}>page Personnalisation</a>.
+                  Réglages détaillés (police, sous-titre complet...) {'->'} <a href="/settings" style={{ color:"var(--gold)" }}>page Personnalisation</a>.
                 </p>
               </div>
 
@@ -727,16 +727,16 @@ export default function AdminPage() {
       {showCreateOverride && (
         <Modal title={<>Forcer un rôle</>} onClose={()=>setShowCreateOverride(false)} footer={<>
               <button className="btn btn-outline" onClick={()=>setShowCreateOverride(false)}>Annuler</button>
-              <button className="btn btn-gold" onClick={createOverride} disabled={creatingOverride||!overrideForm.discord_id.trim()||!overrideForm.role}>{creatingOverride?"Enregistrement…":"Forcer le rôle"}</button></>}>
+              <button className="btn btn-gold" onClick={createOverride} disabled={creatingOverride||!overrideForm.discord_id.trim()||!overrideForm.role}>{creatingOverride?"Enregistrement...":"Forcer le rôle"}</button></>}>
               <div className="form-group"><label>Nom (repère visuel)</label><input placeholder="Ex : Marco Varelli" value={overrideForm.nom} onChange={e=>setOverrideForm(f=>({...f,nom:e.target.value}))} autoFocus/></div>
               <div className="form-group">
                 <label>ID Discord *</label>
                 <input placeholder="Ex : 460865920278069248" value={overrideForm.discord_id} onChange={e=>setOverrideForm(f=>({...f,discord_id:e.target.value}))} style={{ fontFamily: "var(--font-mono)" }}/>
-                <div style={{ fontSize:"0.7rem", color:"var(--text-dim)", marginTop:"0.3rem" }}>Mode développeur Discord activé → clic droit sur le pseudo → Copier l'ID</div>
+                <div style={{ fontSize:"0.7rem", color:"var(--text-dim)", marginTop:"0.3rem" }}>Mode développeur Discord activé {'->'} clic droit sur le pseudo {'->'} Copier l'ID</div>
               </div>
               <div className="form-group"><label>Rôle à forcer *</label>
                 <select value={overrideForm.role} onChange={e=>setOverrideForm(f=>({...f,role:e.target.value}))}>
-                  <option value="">Choisir un rôle…</option>
+                  <option value="">Choisir un rôle...</option>
                   {(roles.length > 0 ? roles.map(r => r.nom) : Object.keys(DEFAULT_PERMISSIONS)).map(r=><option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
@@ -746,12 +746,12 @@ export default function AdminPage() {
       {showBanForm && (
         <Modal title={<>🚫 Bannir {banForm.nom || banForm.discord_id}</>} onClose={()=>setShowBanForm(false)} footer={<>
               <button className="btn btn-outline" onClick={()=>setShowBanForm(false)}>Annuler</button>
-              <button className="btn btn-gold" style={{ background:"var(--danger)" }} onClick={confirmBan} disabled={banningId===banForm.discord_id}>{banningId===banForm.discord_id?"…":"Confirmer le bannissement"}</button></>}>
+              <button className="btn btn-gold" style={{ background:"var(--danger)" }} onClick={confirmBan} disabled={banningId===banForm.discord_id}>{banningId===banForm.discord_id?"...":"Confirmer le bannissement"}</button></>}>
               <p style={{ fontSize:"0.8rem", color:"var(--text-dim)", marginBottom:"0.875rem" }}>
                 Le membre sera immédiatement redirigé vers une page de bannissement à sa prochaine navigation, et ne pourra plus accéder au site tant que le bannissement n'est pas levé.
               </p>
               <div className="form-group"><label>ID Discord</label><input value={banForm.discord_id} disabled style={{ fontFamily:"var(--font-mono)", opacity:0.7 }}/></div>
-              <div className="form-group" style={{ marginBottom:0 }}><label>Motif</label><textarea rows={3} autoFocus value={banForm.motif} onChange={e=>setBanForm(f=>({...f,motif:e.target.value}))} placeholder="Ex : comportement toxique, triche…"/></div>
+              <div className="form-group" style={{ marginBottom:0 }}><label>Motif</label><textarea rows={3} autoFocus value={banForm.motif} onChange={e=>setBanForm(f=>({...f,motif:e.target.value}))} placeholder="Ex : comportement toxique, triche..."/></div>
         </Modal>
       )}
 

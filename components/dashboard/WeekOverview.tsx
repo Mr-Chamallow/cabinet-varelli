@@ -81,7 +81,7 @@ export function WeekOverview({ showActions, showArrests }: { showActions: boolea
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
             <span>{type.icon}</span><span style={{ fontWeight: 700, fontSize: "0.85rem" }}>{type.nom}</span>
             <span style={{ fontSize: "0.68rem", color: "var(--text-dim)" }}>1 fois toutes les {fmtDelai(type.delaiMin)}</span>
-            <a href="/obsidian/actions-illegales" className="btn btn-ghost btn-sm" style={{ marginLeft: "auto" }}>Détails →</a>
+            <a href="/obsidian/actions-illegales" className="btn btn-ghost btn-sm" style={{ marginLeft: "auto" }}>Détails {'->'}</a>
           </div>
           {waiting.length === 0 ? (
             <div style={{ fontSize: "0.8rem", color: "var(--success)" }}>✅ Tout le monde est disponible</div>

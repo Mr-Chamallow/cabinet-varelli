@@ -67,7 +67,7 @@ export function PdfPreviewHost() {
           <iframe src={pdf.url} title={pdf.name} style={{ flex: 1, border: 0, background: "#fff" }} />
         ) : (
           <div style={{ flex: 1, overflow: "auto", padding: "12px", background: "#2a2a30" }}>
-            {state === "load" && <div style={{ color: "#bbb", textAlign: "center", padding: "2rem", fontSize: "0.85rem" }}>Préparation de l'aperçu…</div>}
+            {state === "load" && <div style={{ color: "#bbb", textAlign: "center", padding: "2rem", fontSize: "0.85rem" }}>Préparation de l'aperçu...</div>}
             <div ref={box} />
           </div>
         )}

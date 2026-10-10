@@ -78,7 +78,7 @@ export default function TagsModal({
           />
           <input
             type="text"
-            placeholder="Nouvelle catégorie…"
+            placeholder="Nouvelle catégorie..."
             value={newLabel}
             onChange={(e) => setNewLabel(e.target.value)}
             style={{

@@ -5,7 +5,7 @@ interface UndoToastProps {
   onUndo: () => void;
 }
 
-// Rendu du toast "Annuler" — classe CSS dédiée (.toast-undo) car sa fenêtre de 5s
+// Rendu du toast "Annuler" - classe CSS dédiée (.toast-undo) car sa fenêtre de 5s
 // est plus longue que celle des toasts normaux (3s) : réutiliser .toast tel quel
 // aurait fait disparaître visuellement le toast avant l'expiration réelle du délai.
 export function UndoToast({ pending, onUndo }: UndoToastProps) {

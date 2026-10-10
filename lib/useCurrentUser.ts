@@ -50,8 +50,8 @@ export function useCurrentUser(): {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [discordId, discordName, role, permsKey]);
 
-  // ─── Heartbeat de présence : signale toutes les 45s qu'on est actif, pour que
-  // Admin > Membres puisse afficher qui est "en ligne" en temps réel. ─────────
+  // --- Heartbeat de présence : signale toutes les 45s qu'on est actif, pour que
+  // Admin > Membres puisse afficher qui est "en ligne" en temps réel. ---
   useEffect(() => {
     if (!discordId) return;
     const ping = () => { fetch("/api/presence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "heartbeat" }) }).catch(() => {}); };
@@ -64,7 +64,7 @@ export function useCurrentUser(): {
   const previewRole = isRealAdmin ? previewRoleRaw : null;
 
   // Va chercher les VRAIES permissions configurées pour le rôle prévisualisé
-  // (table `roles`), pour un aperçu fidèle — pas une approximation figée.
+  // (table `roles`), pour un aperçu fidèle - pas une approximation figée.
   useEffect(() => {
     if (!previewRole || !supabase) { setPreviewPerms(null); return; }
     let cancelled = false;

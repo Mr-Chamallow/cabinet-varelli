@@ -63,7 +63,7 @@ export default function NewPointModal({ presets, onCancel, onConfirm }: Props) {
 
   function pickDrogue(preset: Preset) {
     setSelectedDrogue({ nom: preset.nom, icon_url: preset.icon_url });
-    setTitle(`${pointType === 'laboratoire' ? 'Labo' : 'Table'} — ${preset.nom}`);
+    setTitle(`${pointType === 'laboratoire' ? 'Labo' : 'Table'} - ${preset.nom}`);
     setStep('titre');
   }
 
@@ -181,7 +181,7 @@ export default function NewPointModal({ presets, onCancel, onConfirm }: Props) {
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Rechercher une drogue…"
+              placeholder="Rechercher une drogue..."
               style={{ ...inputStyle, marginBottom: 12 }}
             />
             <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -196,10 +196,10 @@ export default function NewPointModal({ presets, onCancel, onConfirm }: Props) {
             </div>
             <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between' }}>
               <button onClick={() => setStep('type')} style={{ background: 'transparent', border: 'none', color: colors.textDim, fontSize: 13, cursor: 'pointer' }}>
-                ← Retour
+                Retour
               </button>
               <button onClick={skipDrogue} style={{ background: 'transparent', border: 'none', color: colors.amber, fontSize: 13, cursor: 'pointer' }}>
-                Passer cette étape →
+                Passer cette étape {'->'}
               </button>
             </div>
           </>
@@ -231,7 +231,7 @@ export default function NewPointModal({ presets, onCancel, onConfirm }: Props) {
                 onClick={() => setStep(pointType === 'autre' ? 'type' : 'drogue')}
                 style={{ background: 'transparent', border: 'none', color: colors.textDim, fontSize: 13, cursor: 'pointer' }}
               >
-                ← Retour
+                Retour
               </button>
               <button
                 onClick={confirm}

@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       .single();
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Rôle forcé", body.nom || body.discord_id, body.role);
-    await postAlert("membres", "🎭 Rôle forcé", `**${body.nom || body.discord_id}** → **${body.role}**\nPar : ${((user as any)?.nom_perso || (user as any)?.discord_name || "?")}`, GOLD);
+    await postAlert("membres", "🎭 Rôle forcé", `**${body.nom || body.discord_id}** -> **${body.role}**\nPar : ${((user as any)?.nom_perso || (user as any)?.discord_name || "?")}`, GOLD);
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

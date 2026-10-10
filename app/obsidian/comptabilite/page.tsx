@@ -38,7 +38,7 @@ export default function ComptaHubPage() {
   useRealtimeTable(["obsidian_comptabilite", "arrestations", "obsidian_semaines"], load);
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    // Clôture automatique des semaines terminées (en plus du cron de la base) — silencieux.
+    // Clôture automatique des semaines terminées (en plus du cron de la base) - silencieux.
     await fetch("/api/obsidian/cloture", { method: "POST" }).catch(() => {});
     const [{ data }, { data: ar }, { data: mv }, { data: tr }, { data: st }, { data: sw }] = await Promise.all([
       supabase.from("obsidian_comptabilite").select("*").order("created_at", { ascending: false }).limit(10000),
@@ -50,7 +50,7 @@ export default function ComptaHubPage() {
     ]);
     const rows = (data || []).map((e: any) => ({ ...e, montant: Number(e.montant) || 0, source: e.source || "manuel" }));
     setRaw(rows);
-    // Blanchiment = TRANSFERT sale → propre : seule la perte (frais) est une vraie dépense.
+    // Blanchiment = TRANSFERT sale -> propre : seule la perte (frais) est une vraie dépense.
     const by: Record<string, any[]> = {}; rows.filter(e => e.source === "blanchiment").forEach(e => (by[e.source_id || e.id] ??= []).push(e));
     const frais = Object.values(by).map(g => { const out = g.find(x => x.type !== "recette"), inn = g.find(x => x.type === "recette"); const f = (out?.montant || 0) - (inn?.montant || 0); return { ...(out || g[0]), id: "bl-" + (out || g[0]).id, type: "dépense", categorie: "Frais de blanchiment", montant: Math.max(0, f), type_argent: "sale", source: "blanchiment-frais" }; });
     setEntries([...rows.filter(e => e.source !== "blanchiment"), ...frais].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")));
@@ -73,7 +73,7 @@ export default function ComptaHubPage() {
   const solde = useMemo(() => { const base = sum(entries.filter(e => weekKey(e.created_at) < wks[0]).map(e => (e.type === "recette" ? 1 : -1) * e.montant)); let a = base; return byWeek.map(x => (a += x.r - x.d)); }, [byWeek, entries, wks]);
   const soldeTotal = sum(entries.map(e => (e.type === "recette" ? 1 : -1) * e.montant));
 
-  const group = (l: any[], key: (e: any) => string) => { const m: Record<string, { r: number; d: number; n: number; max: number }> = {}; l.forEach(e => { const k = key(e) || "—"; const x = (m[k] ??= { r: 0, d: 0, n: 0, max: 0 }); if (e.type === "recette") x.r += e.montant; else x.d += e.montant; x.n++; x.max = Math.max(x.max, e.montant); }); return Object.entries(m).map(([k, v]) => ({ k, ...v, net: v.r - v.d })).sort((a, b) => b.r + b.d - (a.r + a.d)); };
+  const group = (l: any[], key: (e: any) => string) => { const m: Record<string, { r: number; d: number; n: number; max: number }> = {}; l.forEach(e => { const k = key(e) || "-"; const x = (m[k] ??= { r: 0, d: 0, n: 0, max: 0 }); if (e.type === "recette") x.r += e.montant; else x.d += e.montant; x.n++; x.max = Math.max(x.max, e.montant); }); return Object.entries(m).map(([k, v]) => ({ k, ...v, net: v.r - v.d })).sort((a, b) => b.r + b.d - (a.r + a.d)); };
   const cats = useMemo(() => group(cur, e => e.categorie), [cur]);
   const membres = useMemo(() => group(cur.filter(e => e.membre), e => e.membre), [cur]);
   const sources = useMemo(() => group(cur, e => e.source), [cur]);
@@ -129,7 +129,7 @@ export default function ComptaHubPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">← Dashboard Obsidian</a>
+      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
       <div className="page-header">
         <div><h1 className="page-title">💰 Hub Comptabilité</h1><p className="page-subtitle">Lecture seule · alimenté automatiquement par les Actions illégales, Arrestations et Transactions</p><div className="gold-line" /></div>
         <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
@@ -145,7 +145,7 @@ export default function ComptaHubPage() {
             <Kpi icon="↓" label="Dépenses & pertes" value={fmt(D)} color={COL.dep} sub={<>vs période préc. <Delta cur={D} prev={dep(prev)} invert /></>} />
             <Kpi icon="⚖️" label="Résultat net" value={fmt(N)} color={N >= 0 ? COL.rec : COL.dep} sub={<>vs période préc. <Delta cur={N} prev={rec(prev) - dep(prev)} /></>} />
             <Kpi icon="🏦" label="Trésorerie cumulée" value={fmt(soldeTotal)} color={soldeTotal >= 0 ? COL.rec : COL.dep} sub="depuis le début" />
-            <Kpi icon="📐" label="Marge" value={R ? pct((N / R) * 100) : "—"} sub="net / recettes" />
+            <Kpi icon="📐" label="Marge" value={R ? pct((N / R) * 100) : "-"} sub="net / recettes" />
             <Kpi icon="🚔" label="Amendes (primes de paie)" value={fmt(amendes)} color={COL.warn} sub={`${curArr.filter(a => Number(a.amende) > 0).length} amende(s)`} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
@@ -163,7 +163,7 @@ export default function ComptaHubPage() {
         </div>}
 
         {tab === "categories" && <Panel title="Détail par catégorie" right={<small style={{ color: "var(--text-dim)" }}>{cats.length} catégories</small>}>
-          <DataTable head={["Catégorie", "Op.", "Recettes", "Dépenses", "Net", "Moyenne", "Max", "Part recettes"]} rows={cats.map(c => [c.k, c.n, fmt(c.r), fmt(c.d), <b style={{ color: c.net >= 0 ? COL.rec : COL.dep }}>{fmt(c.net)}</b>, fmt((c.r + c.d) / c.n), fmt(c.max), R ? pct((c.r / R) * 100) : "—"])} />
+          <DataTable head={["Catégorie", "Op.", "Recettes", "Dépenses", "Net", "Moyenne", "Max", "Part recettes"]} rows={cats.map(c => [c.k, c.n, fmt(c.r), fmt(c.d), <b style={{ color: c.net >= 0 ? COL.rec : COL.dep }}>{fmt(c.net)}</b>, fmt((c.r + c.d) / c.n), fmt(c.max), R ? pct((c.r / R) * 100) : "-"])} />
         </Panel>}
 
         {tab === "employes" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
@@ -180,28 +180,28 @@ export default function ComptaHubPage() {
           </Panel>
           <Panel title="Argent sale / propre / mixte (flux)"><Donut parts={argent.map(a => ({ nom: a.k, value: a.r + a.d, color: MONEY_COL[a.k] || "var(--text-dim)" }))} />
             <div style={{ marginTop: "0.9rem" }}><DataTable head={["Type", "Recettes", "Dépenses", "Net"]} rows={argent.map(a => [a.k, fmt(a.r), fmt(a.d), fmt(a.net)])} /></div>
-            <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Ratio argent sale en recettes : <b>{R ? pct((sum(cur.filter(e => e.type === "recette" && e.type_argent === "sale").map(e => e.montant)) / R) * 100) : "—"}</b> — à blanchir.</p></Panel>
+            <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Ratio argent sale en recettes : <b>{R ? pct((sum(cur.filter(e => e.type === "recette" && e.type_argent === "sale").map(e => e.montant)) / R) * 100) : "-"}</b> - à blanchir.</p></Panel>
         </div>}
 
         {tab === "marges" && <Panel title="Marge par produit" right={<small style={{ color: "var(--text-dim)" }}>coût = achats de stock · vente = Transactions</small>}>
-          <DataTable empty="Aucun achat ni vente de produit." head={["Produit", "Acheté", "Coût moyen", "Vendu", "Prix vente moy.", "Marge unit.", "Marge totale", "Marge %", "En stock"]} rows={marges.map(m => [m.nom, m.qIn, m.qIn ? fmt(m.pc) : "—", m.qOut, m.qOut ? fmt(m.pv) : "—", m.qOut && m.qIn ? <b style={{ color: m.mu >= 0 ? COL.rec : COL.dep }}>{fmt(m.mu)}</b> : "—", <b style={{ color: m.mt >= 0 ? COL.rec : COL.dep }}>{fmt(m.mt)}</b>, m.rev ? pct(m.pct) : "—", m.stock])} />
-          <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Marge totale = ventes − (quantité vendue × coût moyen d'achat). Saisis le « prix d'achat » lors d'une entrée de stock pour un coût fiable.</p>
+          <DataTable empty="Aucun achat ni vente de produit." head={["Produit", "Acheté", "Coût moyen", "Vendu", "Prix vente moy.", "Marge unit.", "Marge totale", "Marge %", "En stock"]} rows={marges.map(m => [m.nom, m.qIn, m.qIn ? fmt(m.pc) : "-", m.qOut, m.qOut ? fmt(m.pv) : "-", m.qOut && m.qIn ? <b style={{ color: m.mu >= 0 ? COL.rec : COL.dep }}>{fmt(m.mu)}</b> : "-", <b style={{ color: m.mt >= 0 ? COL.rec : COL.dep }}>{fmt(m.mt)}</b>, m.rev ? pct(m.pct) : "-", m.stock])} />
+          <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Marge totale = ventes - (quantité vendue x coût moyen d'achat). Saisis le « prix d'achat » lors d'une entrée de stock pour un coût fiable.</p>
         </Panel>}
 
         {tab === "semaines" && <Panel title="Clôtures hebdomadaires" right={<small style={{ color: "var(--text-dim)" }}>Clôture auto : chaque dimanche 23:59:59 (heure de Paris)</small>}>
-          <DataTable head={["Semaine", "Statut", "Écritures", "Net clôturé", "Net actuel", "Régularisation", "Paies versées", ""]} rows={weeksTable.map(x => [`Sem. du ${x.w.split("-").reverse().slice(0, 2).join("/")}`, x.cl ? `🔒 clôturée ${new Date(x.cl.cloturee_at).toLocaleDateString("fr-FR")}` : "🟢 ouverte", x.nb, x.cl ? fmt(Number(x.cl.net)) : "—", fmt(x.net), x.cl ? <b style={{ color: Math.round(x.net - Number(x.cl.net)) === 0 ? "var(--text-dim)" : COL.warn }}>{fmt(x.net - Number(x.cl.net))}</b> : "—", fmt(x.paies), x.cl && isCEO ? <button className="btn btn-ghost btn-sm" onClick={() => rouvrir(x.w)}>Rouvrir</button> : ""])} />
+          <DataTable head={["Semaine", "Statut", "Écritures", "Net clôturé", "Net actuel", "Régularisation", "Paies versées", ""]} rows={weeksTable.map(x => [`Sem. du ${x.w.split("-").reverse().slice(0, 2).join("/")}`, x.cl ? `🔒 clôturée ${new Date(x.cl.cloturee_at).toLocaleDateString("fr-FR")}` : "🟢 ouverte", x.nb, x.cl ? fmt(Number(x.cl.net)) : "-", fmt(x.net), x.cl ? <b style={{ color: Math.round(x.net - Number(x.cl.net)) === 0 ? "var(--text-dim)" : COL.warn }}>{fmt(x.net - Number(x.cl.net))}</b> : "-", fmt(x.paies), x.cl && isCEO ? <button className="btn btn-ghost btn-sm" onClick={() => rouvrir(x.w)}>Rouvrir</button> : ""])} />
           <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Une semaine clôturée est figée : plus aucune écriture. Seules les paies versées après coup s'y ajoutent (régularisation), dans la semaine travaillée.</p>
         </Panel>}
 
         {tab === "journal" && <Panel title={`Journal des écritures (${journal.length})`}>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
-            <input placeholder="🔍 Rechercher…" value={q} onChange={e => setQ(e.target.value)} style={{ maxWidth: 220 }} />
+            <input placeholder="🔍 Rechercher..." value={q} onChange={e => setQ(e.target.value)} style={{ maxWidth: 220 }} />
             <select value={fType} onChange={e => setFType(e.target.value)} style={{ width: "auto" }}><option value="">Tous types</option><option value="recette">Recettes</option><option value="dépense">Dépenses</option></select>
             <select value={fCat} onChange={e => setFCat(e.target.value)} style={{ width: "auto" }}><option value="">Toutes catégories</option>{allCats.map(c => <option key={c}>{c}</option>)}</select>
             <select value={fMembre} onChange={e => setFMembre(e.target.value)} style={{ width: "auto" }}><option value="">Tous employés</option>{allMembres.map(c => <option key={c}>{c}</option>)}</select>
             <select value={fSrc} onChange={e => setFSrc(e.target.value)} style={{ width: "auto" }}><option value="">Toutes sources</option>{Object.entries(SRC).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
           </div>
-          <DataTable head={["Date", "Catégorie / motif", "Employé", "Source", "Argent", "Montant"]} rows={journal.slice(0, limit).map(e => [new Date(e.created_at).toLocaleString("fr-FR"), <span><b>{e.categorie}</b><br /><small style={{ color: "var(--text-dim)" }}>{e.motif}</small></span>, e.membre || "—", SRC[e.source] || e.source, e.type_argent, <b style={{ color: e.type === "recette" ? COL.rec : COL.dep }}>{e.type === "recette" ? "+" : "−"}{fmt(e.montant)}</b>])} />
+          <DataTable head={["Date", "Catégorie / motif", "Employé", "Source", "Argent", "Montant"]} rows={journal.slice(0, limit).map(e => [new Date(e.created_at).toLocaleString("fr-FR"), <span><b>{e.categorie}</b><br /><small style={{ color: "var(--text-dim)" }}>{e.motif}</small></span>, e.membre || "-", SRC[e.source] || e.source, e.type_argent, <b style={{ color: e.type === "recette" ? COL.rec : COL.dep }}>{e.type === "recette" ? "+" : "-"}{fmt(e.montant)}</b>])} />
           {journal.length > limit && <button className="btn btn-outline btn-sm" style={{ marginTop: 10 }} onClick={() => setLimit(l => l + 200)}>Afficher plus</button>}
         </Panel>}
 
@@ -215,10 +215,10 @@ export default function ComptaHubPage() {
             <Kpi label="Top 3 catégories" value={pct(ex.top3)} sub="part des recettes" />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
-            <Panel title="Projection du net — 4 prochaines semaines"><LineChart labels={[...labels.slice(-6), "+1", "+2", "+3", "+4"]} series={[{ nom: "Net réel", color: COL.info, values: [...ex.wN.slice(-6)] }, { nom: "Projection linéaire", color: COL.gold, values: [...Array(Math.max(0, Math.min(6, ex.wN.length) - 1)).fill(null), ex.wN[ex.wN.length - 1] ?? 0, ...ex.proj] }]} /></Panel>
+            <Panel title="Projection du net - 4 prochaines semaines"><LineChart labels={[...labels.slice(-6), "+1", "+2", "+3", "+4"]} series={[{ nom: "Net réel", color: COL.info, values: [...ex.wN.slice(-6)] }, { nom: "Projection linéaire", color: COL.gold, values: [...Array(Math.max(0, Math.min(6, ex.wN.length) - 1)).fill(null), ex.wN[ex.wN.length - 1] ?? 0, ...ex.proj] }]} /></Panel>
             <Panel title="Activité par jour et tranche horaire"><Heat rows={["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]} cols={["0-4h", "4-8h", "8-12h", "12-16h", "16-20h", "20-24h"]} grid={ex.grid} /></Panel>
-            <Panel title="Records"><DataTable head={["Indicateur", "Valeur"]} rows={[["Meilleure semaine", ex.bestI >= 0 ? `${shortWeek(byWeek[ex.bestI].w)} · ${fmt(ex.wN[ex.bestI])}` : "—"], ["Pire semaine", ex.worstI >= 0 ? `${shortWeek(byWeek[ex.worstI].w)} · ${fmt(ex.wN[ex.worstI])}` : "—"], ["Plus grosse recette", fmt(Math.max(0, ...cur.filter(e => e.type === "recette").map(e => e.montant)))], ["Plus grosse perte", fmt(Math.max(0, ...cur.filter(e => e.type !== "recette").map(e => e.montant)))], ["Tendance du net", ex.growth >= 0 ? `▲ ${fmtK(ex.growth)}` : `▼ ${fmtK(ex.growth)}`]]} /></Panel>
-            <Panel title="Anomalies (> moyenne + 2σ)"><DataTable empty="Aucune opération atypique." head={["Date", "Opération", "Montant"]} rows={ex.anomalies.map(e => [new Date(e.created_at).toLocaleDateString("fr-FR"), `${e.categorie} — ${e.membre || e.created_by || ""}`, <b style={{ color: e.type === "recette" ? COL.rec : COL.dep }}>{fmt(e.montant)}</b>])} /></Panel>
+            <Panel title="Records"><DataTable head={["Indicateur", "Valeur"]} rows={[["Meilleure semaine", ex.bestI >= 0 ? `${shortWeek(byWeek[ex.bestI].w)} · ${fmt(ex.wN[ex.bestI])}` : "-"], ["Pire semaine", ex.worstI >= 0 ? `${shortWeek(byWeek[ex.worstI].w)} · ${fmt(ex.wN[ex.worstI])}` : "-"], ["Plus grosse recette", fmt(Math.max(0, ...cur.filter(e => e.type === "recette").map(e => e.montant)))], ["Plus grosse perte", fmt(Math.max(0, ...cur.filter(e => e.type !== "recette").map(e => e.montant)))], ["Tendance du net", ex.growth >= 0 ? `▲ ${fmtK(ex.growth)}` : `▼ ${fmtK(ex.growth)}`]]} /></Panel>
+            <Panel title="Anomalies (> moyenne + 2σ)"><DataTable empty="Aucune opération atypique." head={["Date", "Opération", "Montant"]} rows={ex.anomalies.map(e => [new Date(e.created_at).toLocaleDateString("fr-FR"), `${e.categorie} - ${e.membre || e.created_by || ""}`, <b style={{ color: e.type === "recette" ? COL.rec : COL.dep }}>{fmt(e.montant)}</b>])} /></Panel>
           </div>
         </>}
       </>}

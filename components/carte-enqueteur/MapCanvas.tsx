@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useRef, useState, CSSProperties, ClipboardEvent as ReactClipboardEvent } from 'react';
 import L from 'leaflet';
@@ -68,7 +68,7 @@ const DEFAULT_ORIGIN = { px: 3755, py: 5525 };
 const TILE_SIZE = 256;
 const MAX_ZOOM = 5;
 
-// ─── Extensions hors-San Andreas (placement approximatif, non calé sur les coords réelles du jeu) ───
+// --- Extensions hors-San Andreas (placement approximatif, non calé sur les coords réelles du jeu) ---
 // Cayo Perico : image statique accrochée en bas à droite de la carte principale.
 const CAYO_IMAGE_URL = '/map/cayo-perico.jpg';
 const CAYO_SIZE = 90; // taille du carré ajouté (mêmes unités que TILE_SIZE)
@@ -88,9 +88,9 @@ const colors = {
   redLight: '#f87171',
 };
 
-// ─── Marqueur "pin" pro (remplace les anciens ronds plats) ───────────────
+// --- Marqueur "pin" pro (remplace les anciens ronds plats) ---
 // Forme goutte + tête blanche, ombre portée, pointe ancrée sur la coordonnée exacte.
-// Badge circulaire + pointe fine (style Google Maps / Mapbox) — remplace l'ancienne
+// Badge circulaire + pointe fine (style Google Maps / Mapbox) - remplace l'ancienne
 // grosse goutte. Le disque intérieur est blanc pour un contraste net avec l'emoji,
 // quelle que soit la couleur de catégorie.
 function sanitizeUrl(url: string) {
@@ -122,7 +122,7 @@ function pinMarkerHtml(color: string, selected: boolean, dimmed: boolean, emoji:
     </div>`;
 }
 
-// ─── Badge de cluster : cohérent avec la charte (au lieu du orange brut par défaut) ───
+// --- Badge de cluster : cohérent avec la charte (au lieu du orange brut par défaut) ---
 function clusterMarkerHtml(count: number) {
   const size = count >= 10 ? 42 : 36;
   return `
@@ -482,7 +482,7 @@ const S: Record<string, CSSProperties> = {
   },
 };
 
-// ─── Mini badge catégorie : même DA que les pins de la carte (cercle + emoji) ───
+// --- Mini badge catégorie : même DA que les pins de la carte (cercle + emoji) ---
 // remplace les puces de couleur plates dans le bandeau et la liste "Points chauds".
 function CategoryBadge({ color, emoji, size = 20, photoUrl }: { color: string; emoji: string; size?: number; photoUrl?: string | null }) {
   return (
@@ -601,7 +601,7 @@ export default function MapCanvas({
     };
   };
 
-  // ─── Init de la carte (SANS créer le tileLayer ici — géré par le useEffect [mapStyle]) ───
+  // --- Init de la carte (SANS créer le tileLayer ici - géré par le useEffect [mapStyle]) ---
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -678,8 +678,8 @@ export default function MapCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ─── Switch de style : détruit vraiment l'ancien layer avant d'en créer un nouveau ───
-  // (fix mémoire : setUrl() gardait les anciennes tuiles en cache → fuite RAM → crash navigateur)
+  // --- Switch de style : détruit vraiment l'ancien layer avant d'en créer un nouveau ---
+  // (fix mémoire : setUrl() gardait les anciennes tuiles en cache -> fuite RAM -> crash navigateur)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -731,13 +731,13 @@ export default function MapCanvas({
         setPlaquesAll(plq);
       } catch (err) {
         console.error(err);
-        setLoadError("Connexion à Supabase indisponible — mode local (rien n'est sauvegardé).");
+        setLoadError("Connexion à Supabase indisponible - mode local (rien n'est sauvegardé).");
       }
     })();
   }, []);
 
   // Dossier "vide" utilisé quand on ouvre un point qui n'a encore jamais été sauvegardé
-  // (créé avant l'existence des checklists, ou jamais ouvert) — applique quand même la
+  // (créé avant l'existence des checklists, ou jamais ouvert) - applique quand même la
   // checklist par défaut si la catégorie du point est Labo/Table de purification, pour
   // que les points déjà existants en profitent aussi, pas seulement les nouveaux.
   const emptyDossierFor = (p: CartePoint): Dossier => ({
@@ -751,7 +751,7 @@ export default function MapCanvas({
     setPendingCoords(null);
 
     // Fait correspondre le type choisi (étape 1 du modal de création) à une vraie
-    // catégorie existante par son libellé — les catégories sont gérées dynamiquement
+    // catégorie existante par son libellé - les catégories sont gérées dynamiquement
     // (⚙ Catégories) donc on matche par nom plutôt que par slug figé.
     const typeLabel = pointType === 'laboratoire' ? 'laboratoire' : pointType === 'table_purification' ? 'table de purification' : null;
     const matchedCategory = typeLabel ? categories.find((c) => c.label.trim().toLowerCase() === typeLabel) : null;
@@ -802,7 +802,7 @@ export default function MapCanvas({
     visiblePoints.forEach((p0) => {
       // Pendant l'édition (champs X/Y/Z ou collage d'un Vector3), on affiche tout de
       // suite la position à jour du point sur la carte au lieu d'attendre le clic sur
-      // "Enregistrer" — sinon la fiche affiche de nouvelles coordonnées pendant que le
+      // "Enregistrer" - sinon la fiche affiche de nouvelles coordonnées pendant que le
       // marqueur reste planté à l'ancien endroit.
       const p = editing && editing.point.id === p0.id ? { ...p0, ...editing.point } : p0;
       const statut: DossierStatut = dossiers[p.id]?.statut || 'actif';
@@ -810,7 +810,7 @@ export default function MapCanvas({
       const statutDot = statut !== 'actif'
         ? `<div style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:${STATUT_CONFIG[statut].color};border:2px solid #0f172a;"></div>`
         : '';
-      // Nombre de personnes recensées liées à ce point (Base de données) — affiché
+      // Nombre de personnes recensées liées à ce point (Base de données) - affiché
       // en badge sur le pin, la majorité des recensements se faisant sur un point chaud.
       const personneCount = (p.personne_ids || []).length;
       const countBadge = personneCount > 0
@@ -839,7 +839,7 @@ export default function MapCanvas({
           dossier: dossiers[p.id] ?? emptyDossierFor(p),
         });
       });
-      marker.bindTooltip(`${p.title}${statut !== 'actif' ? ` — ${STATUT_CONFIG[statut].label}` : ''}`, { direction: 'top', offset: [0, -10] });
+      marker.bindTooltip(`${p.title}${statut !== 'actif' ? ` - ${STATUT_CONFIG[statut].label}` : ''}`, { direction: 'top', offset: [0, -10] });
       marker.addTo(layerGroup);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -919,7 +919,7 @@ export default function MapCanvas({
       await deletePoint(id);
     } catch (err) {
       console.error(err);
-      // Échec réel de la suppression (réseau, permissions…) : on restaure tout de
+      // Échec réel de la suppression (réseau, permissions...) : on restaure tout de
       // suite, pas de faux "Annuler" sur quelque chose qui n'a jamais été supprimé.
       setPoints((p) => [...p, point]);
       if (dossier) setDossiers((d) => ({ ...d, [id]: dossier }));
@@ -963,7 +963,7 @@ export default function MapCanvas({
                   onClick={() => setAddMode((v) => !v)}
                   style={{ ...S.btn, ...(addMode ? S.btnActive : {}) }}
                 >
-                  {addMode ? 'Clique sur la carte…' : '+ Nouveau point'}
+                  {addMode ? 'Clique sur la carte...' : '+ Nouveau point'}
                 </button>
                 <div style={S.divider} />
               </>
@@ -995,7 +995,7 @@ export default function MapCanvas({
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un dossier, un tag…"
+              placeholder="Rechercher un dossier, un tag..."
               style={S.search}
             />
           </div>
@@ -1084,7 +1084,7 @@ export default function MapCanvas({
         </div>
 
         <div ref={coordsLabelRef} style={S.coordsLabel}>
-          X: —  Y: —
+          X: -  Y:  - 
         </div>
 
         {loadError && <div style={S.errorBanner}>{loadError}</div>}
@@ -1197,7 +1197,7 @@ export default function MapCanvas({
                                   )}
                                   {checklist.length > 0 && (
                                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10.5, fontWeight: 700, color: checklistDone === checklist.length ? '#22c55e' : colors.textDim, marginBottom: 3, marginLeft: 6 }}>
-                                      ✓ {checklistDone}/{checklist.length}
+                                      {checklistDone}/{checklist.length}
                                     </div>
                                   )}
                                   <div
@@ -1549,7 +1549,7 @@ function DossierModal({
             onChange={(e) => commit({ groupe_id: e.target.value || null }, {})}
             style={{ ...S.input, marginBottom: 12 }}
           >
-            <option value="">— Aucun —</option>
+            <option value=""> -  Aucun  - </option>
             {gangs.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.nom} ({gangTypeLabel(g.type)})
@@ -1566,7 +1566,7 @@ function DossierModal({
             }}
             style={{ ...S.input, marginBottom: 12 }}
           >
-            <option value="">— Aucune (pastille de catégorie) —</option>
+            <option value=""> -  Aucune (pastille de catégorie)  - </option>
             {presets.filter((p) => p.groupe === 'drogue').map((p) => (
               <option key={p.id} value={p.nom}>{p.nom}</option>
             ))}
@@ -1656,14 +1656,14 @@ function DossierModal({
                 return (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 6, background: done ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${done ? 'rgba(34,197,94,0.25)' : colors.border}` }}>
                     <span style={{ flex: 1, fontSize: 13, color: done ? '#22c55e' : colors.text, fontWeight: done ? 600 : 400 }}>
-                      {done && '✓ '}{item.label}
+                      {done && ''}{item.label}
                     </span>
                     <button
                       type="button"
                       onClick={() => setChecklistCounter(idx, count - 1)}
                       disabled={count <= 0}
                       style={{ width: 22, height: 22, borderRadius: 5, border: `1px solid ${colors.border}`, background: 'transparent', color: colors.textDim, cursor: count > 0 ? 'pointer' : 'default', opacity: count > 0 ? 1 : 0.4, fontSize: 13, lineHeight: 1 }}
-                    >−</button>
+                    >-</button>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12.5, minWidth: 42, textAlign: 'center', color: done ? '#22c55e' : colors.textDim }}>{count}/{max}</span>
                     <button
                       type="button"

@@ -29,10 +29,10 @@ export function EquivalentPanel() {
             <div style={{ position: "absolute", top: 0, left: 0, height: 2, width: `${(d.units / maxU) * 100}%`, background: "var(--gold)" }} />
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
               <span style={{ fontSize: "1.4rem" }}>{d.emoji}</span>
-              <div><div style={{ fontWeight: 600, fontSize: "0.875rem" }}>{d.nom}</div><div style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>{fmt(d.prix_min)}–{fmt(d.prix_max)}/u</div></div>
+              <div><div style={{ fontWeight: 600, fontSize: "0.875rem" }}>{d.nom}</div><div style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>{fmt(d.prix_min)}-{fmt(d.prix_max)}/u</div></div>
             </div>
             <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 900, fontSize: "1.75rem", color: montant > 0 && d.units > 0 ? "var(--gold)" : "var(--text-dim)" }}>
-              {montant > 0 ? fmtN(d.units) : "—"}{montant > 0 && <span style={{ fontSize: "0.75rem", fontWeight: 400, color: "var(--text-dim)", marginLeft: 4 }}>unités</span>}
+              {montant > 0 ? fmtN(d.units) : " - "}{montant > 0 && <span style={{ fontSize: "0.75rem", fontWeight: 400, color: "var(--text-dim)", marginLeft: 4 }}>unités</span>}
             </div>
             {montant > 0 && d.units > 0 && <div style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>Valeur estimée : {fmt(d.units * d.mid)}</div>}
           </div>

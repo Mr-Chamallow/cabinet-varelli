@@ -1,4 +1,4 @@
-﻿export interface Category {
+export interface Category {
   id: string;
   slug: string;
   label: string;
@@ -59,7 +59,7 @@ export interface ChecklistItem {
   max?: number;                // valeur max si kind === 'counter'
 }
 
-// Un item "counter" est considéré terminé quand count atteint max — un item
+// Un item "counter" est considéré terminé quand count atteint max - un item
 // "check" classique utilise simplement son booléen `done`.
 export function isChecklistItemDone(item: ChecklistItem): boolean {
   if (item.kind === 'counter') return (item.count ?? 0) >= (item.max ?? 0);
@@ -67,7 +67,7 @@ export function isChecklistItemDone(item: ChecklistItem): boolean {
 }
 
 // Checklists imposées d'office selon la catégorie du point (labo / table de
-// purification) — demandé pour un suivi cohérent des recensements/arrestations
+// purification) - demandé pour un suivi cohérent des recensements/arrestations
 // sans avoir à les retaper à chaque nouveau point.
 const LABO_TABLE_CHECKLIST: ChecklistItem[] = [
   { label: 'Recensements', done: false, kind: 'counter', count: 0, max: 15 },
@@ -118,7 +118,7 @@ export function categoryLabel(categories: Category[], slug: string): string {
 }
 
 // Emoji discret affiché au centre du pin quand le point n'a pas de logo de
-// drogue lié — déduit du libellé de la catégorie (reconnaît les mots-clés
+// drogue lié - déduit du libellé de la catégorie (reconnaît les mots-clés
 // usuels, marche aussi pour des catégories perso ajoutées via ⚙ Catégories).
 const CATEGORY_EMOJI_RULES: [RegExp, string][] = [
   [/labo/, '🧪'],

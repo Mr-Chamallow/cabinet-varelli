@@ -60,10 +60,10 @@ function Inner() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">← Dashboard Obsidian</a>
+      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
       <div className="page-header"><div><h1 className="page-title">🧬 Profil central</h1><p className="page-subtitle">Une personne = un seul profil : employé, fiche, base de données, activité</p><div className="gold-line" /></div></div>
       <div style={{ display: "flex", gap: 8, marginBottom: "1.25rem", flexWrap: "wrap" }}>
-        <input list="profil-names" placeholder="Nom Prénom…" value={nom} onChange={e => setNom(e.target.value)} style={{ maxWidth: 360 }} />
+        <input list="profil-names" placeholder="Nom Prénom..." value={nom} onChange={e => setNom(e.target.value)} style={{ maxWidth: 360 }} />
         <datalist id="profil-names">{names.map(n => <option key={n} value={n} />)}</datalist>
       </div>
       {busy ? <LoadingBlock /> : !d ? <div className="empty-state"><div className="empty-icon">🧬</div><div className="empty-title">Choisis une personne</div></div> :
@@ -74,9 +74,9 @@ function Inner() {
             </div>
             <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ fontSize: "1.3rem", fontWeight: 800 }}>{d.q}</div>
-              <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{d.emp ? `Employé · ${roleLabel(d.emp.role, d.emp.genre)}` : d.fiche ? `Fiche · ${d.fiche.organisation || "—"}` : "Base de données"}</div>
+              <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{d.emp ? `Employé · ${roleLabel(d.emp.role, d.emp.genre)}` : d.fiche ? `Fiche · ${d.fiche.organisation || " - "}` : "Base de données"}</div>
               <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap", fontSize: "0.7rem" }}>
-                {[["Employé", d.emp], ["Fiche", d.fiche], ["Base de données", d.pers]].map(([l, v]: any) => <span key={l} style={{ padding: "2px 8px", borderRadius: 999, border: "1px solid var(--border)", background: v ? "var(--gold-muted)" : "var(--surface)", color: v ? "var(--gold)" : "var(--text-dim)" }}>{v ? "✓" : "✗"} {l}</span>)}
+                {[["Employé", d.emp], ["Fiche", d.fiche], ["Base de données", d.pers]].map(([l, v]: any) => <span key={l} style={{ padding: "2px 8px", borderRadius: 999, border: "1px solid var(--border)", background: v ? "var(--gold-muted)" : "var(--surface)", color: v ? "var(--gold)" : "var(--text-dim)" }}>{v ? "OK" : "✗"} {l}</span>)}
               </div>
             </div>
             {photo && <button className="btn btn-outline btn-sm" onClick={syncPhoto}>📷 Photo partagée : appliquer partout</button>}
@@ -92,7 +92,7 @@ function Inner() {
             <Panel title="Contrats"><DataTable empty="Aucun contrat." head={["Contrat", "Statut", "Récompense"]} rows={d.contrats.map((c: any) => [c.titre, c.statut, fmt(Number(c.recompense))])} /></Panel>
             <Panel title="Rendez-vous"><DataTable empty="Aucun RDV." head={["RDV", "Date"]} rows={d.rdv.map((r: any) => [r.titre, `${r.date || ""} ${r.heure || ""}`])} /></Panel>
             <Panel title="Véhicules"><DataTable empty="Aucun véhicule." head={["Modèle", "Plaque"]} rows={d.garage.map((g: any) => [g.modele, g.plaque])} /></Panel>
-            {d.fiche && <Panel title="Fiche"><a className="btn btn-outline btn-sm" href="/obsidian/fiches">Ouvrir dans Fiches →</a></Panel>}
+            {d.fiche && <Panel title="Fiche"><a className="btn btn-outline btn-sm" href="/obsidian/fiches">Ouvrir dans Fiches {'->'}</a></Panel>}
           </div>
         </>}
       <Toast toast={toast} />

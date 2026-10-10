@@ -1,5 +1,5 @@
 -- ============================================================
--- LOT 14 — Compta cohérente : achats de stock, paies, contrats, clôture hebdo
+-- LOT 14 - Compta cohérente : achats de stock, paies, contrats, clôture hebdo
 -- ============================================================
 
 -- 0) Réparation des semaines (l'ancienne version rangeait le dimanche dans la semaine suivante)
@@ -65,7 +65,7 @@ begin
 end $$;
 grant execute on function obsidian_cloturer_semaines(text) to anon, authenticated, service_role;
 
--- 2) Achats de stock → dépense (entrée valorisée)
+-- 2) Achats de stock -> dépense (entrée valorisée)
 create or replace function obsidian_stock_compta() returns trigger language plpgsql security definer set search_path = public as $$
 declare cat text;
 begin
@@ -75,8 +75,8 @@ begin
   if new.type in ('entrée','entree') and coalesce(new.total, 0) > 0 and coalesce(new.motif, '') !~* '^annulation' then
     select categorie into cat from obsidian_stocks where id = new.stock_id;
     insert into obsidian_comptabilite (type, categorie, montant, type_argent, motif, membre, semaine, created_by, created_at, source, source_id)
-    values ('dépense', 'Achat stock — ' || coalesce(cat, 'divers'), new.total, 'sale',
-            'Achat ' || new.quantite || ' × ' || new.stock_nom || ' à ' || coalesce(new.prix_unitaire, 0) || ' $', coalesce(new.membre, ''),
+    values ('dépense', 'Achat stock - ' || coalesce(cat, 'divers'), new.total, 'sale',
+            'Achat ' || new.quantite || ' x ' || new.stock_nom || ' à ' || coalesce(new.prix_unitaire, 0) || ' $', coalesce(new.membre, ''),
             date_trunc('week', new.created_at at time zone 'Europe/Paris')::date, coalesce(new.created_by, ''), new.created_at, 'stock', new.id);
   end if;
   return new;
@@ -84,21 +84,21 @@ end $$;
 drop trigger if exists trg_stock_compta on obsidian_mouvements;
 create trigger trg_stock_compta after insert or delete on obsidian_mouvements for each row execute function obsidian_stock_compta();
 
--- 3) Paies versées → dépense dans la BONNE semaine (celle de la paie, même si elle est déjà clôturée)
+-- 3) Paies versées -> dépense dans la BONNE semaine (celle de la paie, même si elle est déjà clôturée)
 create or replace function obsidian_paie_compta() returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if tg_op = 'DELETE' then
     delete from obsidian_comptabilite where source = 'paie' and source_id = old.id; return old;
   end if;
   insert into obsidian_comptabilite (type, categorie, montant, type_argent, motif, membre, semaine, created_by, created_at, source, source_id)
-  values ('dépense', 'Paie & commissions', new.montant, 'propre', 'Paie semaine du ' || to_char(new.semaine, 'DD/MM') || ' — ' || new.employe, new.employe,
+  values ('dépense', 'Paie & commissions', new.montant, 'propre', 'Paie semaine du ' || to_char(new.semaine, 'DD/MM') || ' - ' || new.employe, new.employe,
           new.semaine, coalesce(new.paid_by, ''), new.created_at, 'paie', new.id);
   return new;
 end $$;
 drop trigger if exists trg_paie_compta on obsidian_paiements;
 create trigger trg_paie_compta after insert or delete on obsidian_paiements for each row execute function obsidian_paie_compta();
 
--- 4) Contrat terminé → recette (récompense encaissée)
+-- 4) Contrat terminé -> recette (récompense encaissée)
 create or replace function obsidian_contrat_compta() returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if tg_op = 'DELETE' then
@@ -106,10 +106,10 @@ begin
   end if;
   if new.statut = 'Terminé' and coalesce(new.recompense, 0) > 0 then
     if exists (select 1 from obsidian_comptabilite where source = 'contrat' and source_id = new.id) then
-      update obsidian_comptabilite set montant = new.recompense, motif = 'Contrat — ' || new.titre where source = 'contrat' and source_id = new.id;
+      update obsidian_comptabilite set montant = new.recompense, motif = 'Contrat - ' || new.titre where source = 'contrat' and source_id = new.id;
     else
       insert into obsidian_comptabilite (type, categorie, montant, type_argent, motif, membre, semaine, created_by, source, source_id)
-      values ('recette', 'Contrat', new.recompense, 'propre', 'Contrat — ' || new.titre, coalesce(new.membres_affectes[1], ''),
+      values ('recette', 'Contrat', new.recompense, 'propre', 'Contrat - ' || new.titre, coalesce(new.membres_affectes[1], ''),
               date_trunc('week', now() at time zone 'Europe/Paris')::date, coalesce(new.created_by, ''), 'contrat', new.id);
     end if;
   else
@@ -122,16 +122,16 @@ create trigger trg_contrat_compta after insert or update or delete on obsidian_c
 
 -- 5) Rattrapage de l'existant (avant la première clôture)
 insert into obsidian_comptabilite (type, categorie, montant, type_argent, motif, membre, semaine, created_by, created_at, source, source_id)
-select 'dépense', 'Paie & commissions', p.montant, 'propre', 'Paie semaine du ' || to_char(p.semaine,'DD/MM') || ' — ' || p.employe, p.employe, p.semaine, coalesce(p.paid_by,''), p.created_at, 'paie', p.id
+select 'dépense', 'Paie & commissions', p.montant, 'propre', 'Paie semaine du ' || to_char(p.semaine,'DD/MM') || ' - ' || p.employe, p.employe, p.semaine, coalesce(p.paid_by,''), p.created_at, 'paie', p.id
   from obsidian_paiements p where not exists (select 1 from obsidian_comptabilite c where c.source = 'paie' and c.source_id = p.id);
 insert into obsidian_comptabilite (type, categorie, montant, type_argent, motif, membre, semaine, created_by, created_at, source, source_id)
-select 'dépense', 'Achat stock — ' || coalesce(s.categorie,'divers'), m.total, 'sale', 'Achat ' || m.quantite || ' × ' || m.stock_nom, coalesce(m.membre,''),
+select 'dépense', 'Achat stock - ' || coalesce(s.categorie,'divers'), m.total, 'sale', 'Achat ' || m.quantite || ' x ' || m.stock_nom, coalesce(m.membre,''),
        date_trunc('week', m.created_at at time zone 'Europe/Paris')::date, coalesce(m.created_by,''), m.created_at, 'stock', m.id
   from obsidian_mouvements m left join obsidian_stocks s on s.id = m.stock_id
  where m.type in ('entrée','entree') and coalesce(m.total,0) > 0 and coalesce(m.motif,'') !~* '^annulation'
    and not exists (select 1 from obsidian_comptabilite c where c.source = 'stock' and c.source_id = m.id);
 insert into obsidian_comptabilite (type, categorie, montant, type_argent, motif, membre, semaine, created_by, created_at, source, source_id)
-select 'recette', 'Contrat', k.recompense, 'propre', 'Contrat — ' || k.titre, coalesce(k.membres_affectes[1],''),
+select 'recette', 'Contrat', k.recompense, 'propre', 'Contrat - ' || k.titre, coalesce(k.membres_affectes[1],''),
        date_trunc('week', k.created_at at time zone 'Europe/Paris')::date, coalesce(k.created_by,''), k.created_at, 'contrat', k.id
   from obsidian_contrats k where k.statut = 'Terminé' and coalesce(k.recompense,0) > 0
    and not exists (select 1 from obsidian_comptabilite c where c.source = 'contrat' and c.source_id = k.id);

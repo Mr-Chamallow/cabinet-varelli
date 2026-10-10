@@ -78,7 +78,7 @@ export default function PaieObsidianPage() {
   }
 
 
-  // ─── Agrégation par employé pour la semaine sélectionnée ───────────────────
+  // --- Agrégation par employé pour la semaine sélectionnée ---
   const rows: EmployeeRow[] = useMemo(() => {
     const map: Record<string, { revenus: number; depenses: number }> = {};
     const bump = (nom: string, rev: number, dep: number) => {
@@ -169,11 +169,11 @@ export default function PaieObsidianPage() {
     setSavingPct(false);
   }
 
-  const weekLabel = `${weekStart.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })} — ${new Date(weekStart.getTime() + 6 * 86400000).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`;
+  const weekLabel = `${weekStart.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })} - ${new Date(weekStart.getTime() + 6 * 86400000).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`;
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">← Obsidian Logistics</a>
+      <a className="back-link" href="/obsidian">Obsidian Logistics</a>
       <div className="page-header">
         <div>
           <h1 className="page-title">Paie & Commissions</h1>
@@ -193,9 +193,9 @@ export default function PaieObsidianPage() {
       {tab === "apercu" && (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
-            <button className="btn btn-outline btn-sm" onClick={() => setWeekOffset(w => w + 1)}>← Semaine précédente</button>
+            <button className="btn btn-outline btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Semaine précédente</button>
             <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>{weekOffset === 0 ? "Semaine en cours" : weekLabel}</span>
-            <button className="btn btn-outline btn-sm" onClick={() => setWeekOffset(w => Math.max(0, w - 1))} disabled={weekOffset === 0}>Semaine suivante →</button>
+            <button className="btn btn-outline btn-sm" onClick={() => setWeekOffset(w => Math.max(0, w - 1))} disabled={weekOffset === 0}>Semaine suivante {'->'}</button>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0.875rem", marginBottom: "1.5rem" }}>
@@ -214,7 +214,7 @@ export default function PaieObsidianPage() {
           </div>
 
           {loading ? (
-            <div className="empty-state"><div className="empty-icon">💰</div><div className="empty-title">Chargement…</div></div>
+            <div className="empty-state"><div className="empty-icon">💰</div><div className="empty-title">Chargement...</div></div>
           ) : rows.length === 0 ? (
             <div className="empty-state"><div className="empty-icon">💰</div><div className="empty-title">Aucune activité cette semaine</div></div>
           ) : (
@@ -247,7 +247,7 @@ export default function PaieObsidianPage() {
                     {r.restant > 0 ? (
                       <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                         <input type="number" placeholder={r.restant.toFixed(0)} value={payAmount[r.nom] ?? ""} onChange={e => setPayAmount(p => ({ ...p, [r.nom]: +e.target.value }))} style={{ width: 90, fontSize: "0.8rem" }} />
-                        <button className="btn btn-gold btn-sm" onClick={() => marquerPaye(r.nom)}>✓ Marquer payé</button>
+                        <button className="btn btn-gold btn-sm" onClick={() => marquerPaye(r.nom)}>Marquer payé</button>
                       </div>
                     ) : (
                       <span style={{ fontSize: "0.72rem", padding: "0.15rem 0.55rem", borderRadius: 999, background: "rgba(34,197,94,0.12)", color: "var(--success)", fontWeight: 600 }}>Soldé</span>
@@ -267,7 +267,7 @@ export default function PaieObsidianPage() {
             <label>Pourcentage appliqué au bénéfice net (%)</label>
             <input type="number" min={0} max={100} value={pct} onChange={e => setPct(+e.target.value)} />
           </div>
-          <button className="btn btn-gold" onClick={savePct} disabled={savingPct}>{savingPct ? "…" : "Enregistrer"}</button>
+          <button className="btn btn-gold" onClick={savePct} disabled={savingPct}>{savingPct ? "..." : "Enregistrer"}</button>
           <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.75rem" }}>
             S'applique à tout le monde, pareil pour chaque employé. Le changement prend effet sur les calculs futurs (n'affecte pas les paiements déjà marqués).
           </p>

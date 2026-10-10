@@ -31,7 +31,7 @@ async function auth(table: string) {
   return { err: NextResponse.json({ error: last?.error || "Écriture non autorisée sur cet onglet" }, { status: 403 }) } as any;
 }
 
-// Le groupe doit exister dans Base de données → Groupes (carte_gangs) : on le relie par son id.
+// Le groupe doit exister dans Base de données -> Groupes (carte_gangs) : on le relie par son id.
 const GROUP_FIELD: Record<string, { field: string; strict: boolean }> = {
   tribunal_dossiers: { field: "organisation", strict: true }, gm_pactes: { field: "organisation", strict: true },
   gm_audits: { field: "organisation", strict: true }, gm_reputation_log: { field: "organisation", strict: true },
@@ -44,7 +44,7 @@ async function linkGroupe(db: any, table: string, payload: any): Promise<string 
   const { data } = await db.from("carte_gangs").select("id,nom").ilike("nom", name).limit(1).maybeSingle();
   if (data) { payload.groupe_id = data.id; payload[g.field] = data.nom; return null; }
   payload.groupe_id = null;
-  return g.strict ? `Groupe « ${name} » introuvable : crée-le d'abord dans Base de données → Groupes.` : null;
+  return g.strict ? `Groupe « ${name} » introuvable : crée-le d'abord dans Base de données -> Groupes.` : null;
 }
 
 const pick = (b: any, cols: string[]) => Object.fromEntries(Object.entries(b || {}).filter(([k]) => cols.includes(k)).map(([k, v]) => [k, v === "" ? null : v]));
@@ -72,14 +72,14 @@ function pingEvent(type: string, statut = "") {
 async function afterCreate(db: any, table: string, row: any, who: string) {
   if (table === "gm_audits") {
     await rep(db, row.organisation, Math.round((Number(row.note) - 5) * 4), `Audit : ${row.note}/10`, "audit", row.id, who);
-    await syncAlert(db, table, row, "gm", `🔎 Audit — ${row.organisation}`, `Note **${row.note}/10**${row.appreciation ? `\n${row.appreciation}` : ""}${row.sanction ? `\n⛔ Sanction : **${row.sanction}**` : ""}`, Number(row.note) >= 5 ? GREEN : RED, undefined, Number(row.note) < 5 ? [...GROUPS.JURIDIQUE, "COO"] : ["RJ", "AJ"]);
+    await syncAlert(db, table, row, "gm", `🔎 Audit - ${row.organisation}`, `Note **${row.note}/10**${row.appreciation ? `\n${row.appreciation}` : ""}${row.sanction ? `\n⛔ Sanction : **${row.sanction}**` : ""}`, Number(row.note) >= 5 ? GREEN : RED, undefined, Number(row.note) < 5 ? [...GROUPS.JURIDIQUE, "COO"] : ["RJ", "AJ"]);
   } else if (table === "gm_pactes") {
     await ensureOrg(db, row.organisation);
     if (row.statut === "actif") await rep(db, row.organisation, 5, "Pacte signé", "pacte", row.id, who);
-    await syncAlert(db, table, row, "gm", `🤝 Pacte — ${row.organisation}`, `Statut : **${row.statut}**${row.clauses ? `\n${String(row.clauses).slice(0, 300)}` : ""}`, GOLD);
+    await syncAlert(db, table, row, "gm", `🤝 Pacte - ${row.organisation}`, `Statut : **${row.statut}**${row.clauses ? `\n${String(row.clauses).slice(0, 300)}` : ""}`, GOLD);
   } else if (table === "tribunal_dossiers") {
     await ensureOrg(db, row.organisation);
-    await syncAlert(db, table, row, "gm", `⚖️ Dossier — ${row.titre}`, `Accusé : **${row.accuse || row.organisation || "?"}**\nStatut : ${row.statut}`, GOLD);
+    await syncAlert(db, table, row, "gm", `⚖️ Dossier - ${row.titre}`, `Accusé : **${row.accuse || row.organisation || "?"}**\nStatut : ${row.statut}`, GOLD);
   } else if (table === "gm_evenements") {
     await ensureOrg(db, row.partenaire);
     const ic: any = { convoi: "🚚", enchere: "🔨", alerte: "🚨", capture: "🎯" };
@@ -96,22 +96,22 @@ async function afterUpdate(db: any, table: string, old: any, row: any, who: stri
     const nv = (row.violations || []).length - (old.violations || []).length;
     if (nv > 0) {
       await rep(db, row.organisation, -10 * nv, `${nv} violation(s) du pacte`, "pacte_violation", row.id, who);
-      await postAlert("gm", `⚠️ Violation de pacte — ${row.organisation}`, (row.violations || []).slice(-nv).map((v: any) => `• ${v.texte}`).join("\n"), ORANGE, undefined, GROUPS.JURIDIQUE);
+      await postAlert("gm", `⚠️ Violation de pacte - ${row.organisation}`, (row.violations || []).slice(-nv).map((v: any) => `· ${v.texte}`).join("\n"), ORANGE, undefined, GROUPS.JURIDIQUE);
     }
     if (row.statut !== old.statut) {
       if (row.statut === "rompu") await rep(db, row.organisation, -20, "Pacte rompu", "pacte_rompu", row.id, who);
-      await syncAlert(db, table, row, "gm", `🤝 Pacte — ${row.organisation}`, `Statut : **${row.statut}** _(avant : ${old.statut})_`, row.statut === "rompu" ? RED : GOLD, undefined, row.statut === "rompu" ? [...GROUPS.JURIDIQUE, ...GROUPS.DIRECTION] : undefined);
+      await syncAlert(db, table, row, "gm", `🤝 Pacte - ${row.organisation}`, `Statut : **${row.statut}** _(avant : ${old.statut})_`, row.statut === "rompu" ? RED : GOLD, undefined, row.statut === "rompu" ? [...GROUPS.JURIDIQUE, ...GROUPS.DIRECTION] : undefined);
     }
   } else if (table === "tribunal_dossiers") {
     if (row.verdict !== old.verdict && row.verdict !== "en_cours") {
       if (row.verdict === "coupable") {
         const { data: dupC } = await db.from("gm_evenements").select("id").eq("type", "capture").eq("dossier_id", row.id).limit(1).maybeSingle();
-        if (!dupC) await db.from("gm_evenements").insert([{ type: "capture", titre: `Capture : ${row.accuse || row.organisation || row.titre}`, statut: "a_faire", partenaire: row.organisation || null, dossier_id: row.id, notes: `Condamné par le Tribunal de l'Ombre — dossier « ${row.titre} ».${row.sentence ? `\nSentence : ${row.sentence}` : ""}`, created_by: who }]);
+        if (!dupC) await db.from("gm_evenements").insert([{ type: "capture", titre: `Capture : ${row.accuse || row.organisation || row.titre}`, statut: "a_faire", partenaire: row.organisation || null, dossier_id: row.id, notes: `Condamné par le Tribunal de l'Ombre - dossier « ${row.titre} ».${row.sentence ? `\nSentence : ${row.sentence}` : ""}`, created_by: who }]);
       }
       if (row.verdict === "coupable" && row.organisation) await rep(db, row.organisation, -15, `Condamné : ${row.titre}`, "tribunal", row.id, who);
-      await postAlert("gm", `⚖️ Verdict — ${row.titre}`, `**${row.verdict === "coupable" ? "COUPABLE" : "INNOCENT"}**${row.sentence ? `\nSentence : ${row.sentence}` : ""}\nAccusé : ${row.accuse || row.organisation || "?"}`, row.verdict === "coupable" ? RED : GREEN, undefined, row.verdict === "coupable" ? [...GROUPS.SECURITE, "CEO", "RJ"] : GROUPS.JURIDIQUE);
+      await postAlert("gm", `⚖️ Verdict - ${row.titre}`, `**${row.verdict === "coupable" ? "COUPABLE" : "INNOCENT"}**${row.sentence ? `\nSentence : ${row.sentence}` : ""}\nAccusé : ${row.accuse || row.organisation || "?"}`, row.verdict === "coupable" ? RED : GREEN, undefined, row.verdict === "coupable" ? [...GROUPS.SECURITE, "CEO", "RJ"] : GROUPS.JURIDIQUE);
     } else if (row.statut !== old.statut) {
-      await syncAlert(db, table, row, "gm", `⚖️ Dossier — ${row.titre}`, `Accusé : **${row.accuse || row.organisation || "?"}**\nStatut : **${row.statut}**`, GOLD);
+      await syncAlert(db, table, row, "gm", `⚖️ Dossier - ${row.titre}`, `Accusé : **${row.accuse || row.organisation || "?"}**\nStatut : **${row.statut}**`, GOLD);
     }
   } else if (table === "gm_evenements" && row.statut !== old.statut) {
     await clearRep(db, "evenement", row.id);
@@ -138,7 +138,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ table: string 
       const { data: all } = await a.db.from("gm_reputation_log").select("delta").eq("organisation", data.organisation);
       const after = Math.max(0, Math.min(100, 50 + (all || []).reduce((t: number, r: any) => t + Number(r.delta || 0), 0))), before = Math.max(0, Math.min(100, after - Number(data.delta || 0)));
       const pa = palierOf(after), pb = palierOf(before);
-      await postAlert("gm", `⭐ Réputation — ${data.organisation}`, `${data.delta > 0 ? "+" : ""}${data.delta} · ${data.motif || "ajustement manuel"}\nScore : ${after}/100 — **${pa.label}**${pa.label !== pb.label ? `\n${data.delta > 0 ? "⬆️" : "⬇️"} Changement de palier : ${pb.label} → **${pa.label}**\n_${pa.effet}_` : ""}`, data.delta >= 0 ? GREEN : RED);
+      await postAlert("gm", `⭐ Réputation - ${data.organisation}`, `${data.delta > 0 ? "+" : ""}${data.delta} · ${data.motif || "ajustement manuel"}\nScore : ${after}/100 - **${pa.label}**${pa.label !== pb.label ? `\n${data.delta > 0 ? "⬆️" : "⬇️"} Changement de palier : ${pb.label} -> **${pa.label}**\n_${pa.effet}_` : ""}`, data.delta >= 0 ? GREEN : RED);
     }
     else await afterCreate(a.db, table, data, a.who);
     return NextResponse.json(data);

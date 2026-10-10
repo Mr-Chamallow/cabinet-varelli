@@ -74,7 +74,7 @@ export default function ActionsIllegalesPage() {
     setLoading(false);
   }
 
-  // Dernière fois que chaque personne a fait chaque action → fin de cooldown.
+  // Dernière fois que chaque personne a fait chaque action -> fin de cooldown.
   const lastByKey = useMemo(() => {
     const m = new Map<string, number>();
     entries.forEach(e => {
@@ -172,7 +172,7 @@ export default function ActionsIllegalesPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">← Dashboard Obsidian</a>
+      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
       <div className="page-header">
         <div>
           <h1 className="page-title">🕶️ Actions illégales</h1>
@@ -244,7 +244,7 @@ export default function ActionsIllegalesPage() {
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
           {perAction.map(a => (
             <span key={a.nom} style={{ fontSize: "0.72rem", padding: "0.2rem 0.65rem", borderRadius: 999, background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-              {a.icon} {a.nom} · {a.count}× · <b style={{ color: a.net >= 0 ? "var(--success)" : "var(--danger)" }}>{fmt(a.net)}</b>
+              {a.icon} {a.nom} · {a.count}x · <b style={{ color: a.net >= 0 ? "var(--success)" : "var(--danger)" }}>{fmt(a.net)}</b>
             </span>
           ))}
         </div>
@@ -286,7 +286,7 @@ export default function ActionsIllegalesPage() {
         <Modal
           title={editId ? "Modifier l'action" : "Enregistrer une action"}
           onClose={() => setShowForm(false)}
-          footer={<><button className="btn btn-outline" onClick={() => setShowForm(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.membre.trim()} onClick={save}>{saving ? "…" : "Enregistrer"}</button></>}
+          footer={<><button className="btn btn-outline" onClick={() => setShowForm(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.membre.trim()} onClick={save}>{saving ? "..." : "Enregistrer"}</button></>}
         >
           <div className="form-grid">
             <div>
@@ -318,7 +318,7 @@ export default function ActionsIllegalesPage() {
           </div>
           <div>
             <label>Notes (optionnel)</label>
-            <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Détails, équipe, butin…" />
+            <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Détails, équipe, butin..." />
           </div>
           {formRemaining > 0 && (
             <div style={{ fontSize: "0.8rem", color: "var(--warning)" }}>

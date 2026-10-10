@@ -5,7 +5,7 @@ import { logAudit, postAlert, GREEN } from "@/lib/alerts";
 const PROMO_ROLES = ["CEO - Directeur général", "Associé / Patron", "COO - Directrice opérationnel", "COO - Directeur opérationnel"];
 const isPromoter = (u: any) => PROMO_ROLES.some(r => r === u?.site_role) || String(u?.site_role || "").startsWith("COO") || String(u?.site_role || "").startsWith("CEO") || (!!process.env.ADMIN_DISCORD_ID && u?.discord_id === process.env.ADMIN_DISCORD_ID);
 
-// [table, colonne du nom] — toutes pointent vers l'employé par employe_id (rempli automatiquement en base).
+// [table, colonne du nom] - toutes pointent vers l'employé par employe_id (rempli automatiquement en base).
 const TABLES_NOM: [string, string][] = [["actions_illegales", "membre"], ["arrestations", "membre"], ["obsidian_comptabilite", "membre"], ["obsidian_mouvements", "membre"], ["obsidian_paiements", "employe"], ["cahier_transactions", "created_by"]];
 
 export async function POST(req: Request) {
@@ -39,19 +39,19 @@ export async function PATCH(req: Request) {
     } else { delete patch.nom; }
     const { error: dbError } = await supabaseAdmin.from("obsidian_employes").update(patch).eq("id", id);
     if (!dbError && renamed) {
-      await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Employé renommé", old!.nom, `→ ${patch.nom}`);
+      await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Employé renommé", old!.nom, `-> ${patch.nom}`);
       for (const [t, c] of TABLES_NOM) {
         await supabaseAdmin.from(t).update({ [c]: patch.nom }).eq("employe_id", id);
         await supabaseAdmin.from(t).update({ [c]: patch.nom }).eq(c, old!.nom); // lignes anciennes sans employe_id
       }
-      // Le nom du personnage devient aussi le nom affiché partout (Discord → Prénom Nom).
+      // Le nom du personnage devient aussi le nom affiché partout (Discord -> Prénom Nom).
       if (old!.discord_id) await supabaseAdmin.from("site_logins").update({ nom_perso: patch.nom }).eq("discord_id", old!.discord_id);
     }
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     if (promoted && old) {
       const who = (user as any)?.nom_perso || (user as any)?.discord_name;
-      await logAudit(supabaseAdmin, who, "Promotion / changement de rôle", old.nom, `${old.role || "—"} → ${patch.role}`);
-      await postAlert("compta", `⬆️ Promotion — ${old.nom}`, `${old.role || "—"} → **${patch.role}**\nPar **${who || "?"}**`, GREEN);
+      await logAudit(supabaseAdmin, who, "Promotion / changement de rôle", old.nom, `${old.role || "-"} -> ${patch.role}`);
+      await postAlert("compta", `⬆️ Promotion - ${old.nom}`, `${old.role || "-"} -> **${patch.role}**\nPar **${who || "?"}**`, GREEN);
     }
     return NextResponse.json({ ok: true });
   } catch (e: any) {

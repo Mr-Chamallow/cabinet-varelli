@@ -14,8 +14,8 @@ export function use3DTilt<T extends HTMLElement>(maxDeg = 6) {
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width;  // 0 → 1
-    const py = (e.clientY - rect.top) / rect.height;   // 0 → 1
+    const px = (e.clientX - rect.left) / rect.width;  // 0 -> 1
+    const py = (e.clientY - rect.top) / rect.height;   // 0 -> 1
     const rotateY = (px - 0.5) * (maxDeg * 2);
     const rotateX = -(py - 0.5) * (maxDeg * 2);
     el.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;

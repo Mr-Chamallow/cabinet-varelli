@@ -5,7 +5,7 @@ import { fmtDelai } from "@/lib/actionTypes";
 import { syncEmployes } from "@/lib/syncEmployes";
 
 // À appeler toutes les 5 min (cron-job.org) avec l'en-tête  Authorization: Bearer <CRON_SECRET>.
-// 1) délais terminés (Go fast…)  2) stock bas  3) rappel d'opération (RDV) dans l'heure.
+// 1) délais terminés (Go fast...)  2) stock bas  3) rappel d'opération (RDV) dans l'heure.
 export const dynamic = "force-dynamic";
 
 // "2026-10-10" + "21:30" (heure de Paris) -> timestamp UTC
@@ -72,8 +72,8 @@ export async function GET(req: Request) {
       if (!r.heure) continue;
       const diff = parisToUtc(r.date, r.heure) - now;
       if (diff > 0 && diff <= 60 * 60_000) {
-        await postAlert("rdv", `⏰ Rappel — ${r.titre}`, `Dans **${Math.max(1, Math.round(diff / 60000))} min** (${r.heure})`, BLUE, [
-          { name: "Client", value: r.client || "—", inline: true }, { name: "Lieu", value: r.lieu || "—", inline: true },
+        await postAlert("rdv", `⏰ Rappel - ${r.titre}`, `Dans **${Math.max(1, Math.round(diff / 60000))} min** (${r.heure})`, BLUE, [
+          { name: "Client", value: r.client || " - ", inline: true }, { name: "Lieu", value: r.lieu || " - ", inline: true },
         ]);
         await db.from("obsidian_rdv").update({ rappel_envoye: true }).eq("id", r.id);
         n++;
@@ -86,7 +86,7 @@ export async function GET(req: Request) {
   try {
     const { data: aud } = await db.from("gm_audits").select("id,organisation,sanction,sanction_fin").eq("sanction_alerte", false).not("sanction_fin", "is", null).lte("sanction_fin", new Date(now).toISOString());
     for (const a of aud || []) {
-      await postAlert("gm", `✅ Sanction levée — ${a.organisation}`, `« ${a.sanction || "Sanction"} » est terminée.`, GREEN, undefined, ["COO"]);
+      await postAlert("gm", `✅ Sanction levée - ${a.organisation}`, `« ${a.sanction || "Sanction"} » est terminée.`, GREEN, undefined, ["COO"]);
       await db.from("gm_audits").update({ sanction_alerte: true }).eq("id", a.id);
     }
     out.sanctions = (aud || []).length;

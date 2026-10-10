@@ -69,7 +69,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   async function clearAll() { if (!window.confirm("Vider tout le tableau ? (les fiches ne sont pas supprimées)")) return; setItems([]); await supabase?.from("obsidian_board").delete().neq("id", "00000000-0000-0000-0000-000000000000"); }
   const persistPos = async (id: string, x: number, y: number) => { await supabase?.from("obsidian_board").update({ x: Math.round(x), y: Math.round(y) }).eq("id", id); };
 
-  // ── Fils : entre personnes présentes (même orga / relations) et personne → véhicule assigné ──
+  // -- Fils : entre personnes présentes (même orga / relations) et personne -> véhicule assigné --
   const links = useMemo(() => {
     const out: { a: string; b: string; car?: boolean }[] = [];
     const fi = shown.filter(i => i.kind === "fiche"), vi = shown.filter(i => i.kind === "vehicule");
@@ -114,7 +114,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   return (
     <div>
       <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <input list="board-people" value={pick} onChange={e => setPick(e.target.value)} onKeyDown={e => e.key === "Enter" && submitPick()} placeholder="🔎 Ajouter une personne (nom)…" style={{ flex: 1, minWidth: 220 }} />
+        <input list="board-people" value={pick} onChange={e => setPick(e.target.value)} onKeyDown={e => e.key === "Enter" && submitPick()} placeholder="🔎 Ajouter une personne (nom)..." style={{ flex: 1, minWidth: 220 }} />
         <datalist id="board-people">{candidates.map(f => <option key={f.id} value={f.nom}>{f.organisation || ""}</option>)}</datalist>
         <button className="btn btn-gold btn-sm" onClick={submitPick} disabled={!pick.trim()}>➕ Ajouter + ses liens</button>
         {items.length > 0 && <button className="btn btn-outline btn-sm" onClick={exportPdf}>📄 Export PDF</button>}
@@ -126,12 +126,12 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
           <svg width={W} height={H}>
             {links.map((l, i) => { const a = c(l.a), b = c(l.b); const sag = 28 + ((a.x + b.y) % 22); return <path key={i} d={`M${a.x},${a.y} Q${(a.x + b.x) / 2},${(a.y + b.y) / 2 + sag} ${b.x},${b.y}`} style={{ animationDelay: `${i * 0.05}s`, ...(l.car ? { stroke: "#e8b04a", strokeDasharray: "7 5", animation: "none" } : {}) }} />; })}
           </svg>
-          {items.length === 0 && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#cdb98a", fontSize: "1rem", textAlign: "center", padding: 40, pointerEvents: "none" }}>Tableau vide — ajoute une personne ci-dessus : ses liens (organisation, relations, véhicules) arrivent avec elle.<br />Tu peux aussi déposer des images ici.</div>}
+          {items.length === 0 && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#cdb98a", fontSize: "1rem", textAlign: "center", padding: 40, pointerEvents: "none" }}>Tableau vide - ajoute une personne ci-dessus : ses liens (organisation, relations, véhicules) arrivent avec elle.<br />Tu peux aussi déposer des images ici.</div>}
           {shown.map(it => {
             const rot = `rotate(${(it.id.charCodeAt(0) % 7) - 3}deg)`;
             if (it.kind === "note") return (
               <div key={it.id} className="pin" style={{ left: it.x, top: it.y, transform: rot }} onPointerDown={e => down(e, it)} onPointerMove={move} onPointerUp={() => up(it)}>
-                <button className="pin-x" onPointerDown={e => e.stopPropagation()} onClick={() => remove(it.id)} title="Retirer">×</button>
+                <button className="pin-x" onPointerDown={e => e.stopPropagation()} onClick={() => remove(it.id)} title="Retirer">x</button>
                 <img src={it.img || ""} alt="" draggable={false} /><small>PIÈCE</small>
               </div>);
             const f = it.kind === "fiche" ? fById.get(it.ref!) : null, v = it.kind === "vehicule" ? vById.get(it.ref!) : null;
@@ -139,9 +139,9 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
               <div key={it.id} className={`pin${f && Number(f.prime) > 0 ? " hot" : ""}${f?.surveille ? " eye" : ""}`} style={{ left: it.x, top: it.y, transform: rot }}
                 onPointerDown={e => down(e, it)} onPointerMove={move} onPointerUp={() => up(it)}
                 onDragOver={e => { e.preventDefault(); e.stopPropagation(); }} onDrop={e => dropPin(e, it)}>
-                <button className="pin-x" onPointerDown={e => e.stopPropagation()} onClick={() => remove(it.id)} title="Retirer du tableau">×</button>
+                <button className="pin-x" onPointerDown={e => e.stopPropagation()} onClick={() => remove(it.id)} title="Retirer du tableau">x</button>
                 {(f?.photo_url || v?.photo_url) ? <img src={(f?.photo_url || v?.photo_url)!} alt="" draggable={false} referrerPolicy="no-referrer" /> : <div className="pin-no">{v ? "🚗" : "?"}</div>}
-                <b>{f ? f.nom : v!.modele}</b><small>{f ? (f.organisation || "—") : `${v!.plaque || ""} · véhicule`}</small>
+                <b>{f ? f.nom : v!.modele}</b><small>{f ? (f.organisation || " - ") : `${v!.plaque || ""} · véhicule`}</small>
               </div>);
           })}
         </div>

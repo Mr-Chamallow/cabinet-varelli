@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/serverAuth";
 import { postAlert, usd, GOLD } from "@/lib/alerts";
 
-// Rapport hebdo automatique (Vercel Cron, lundi matin) : résumé de la semaine écoulée (lun → dim).
+// Rapport hebdo automatique (Vercel Cron, lundi matin) : résumé de la semaine écoulée (lun -> dim).
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
@@ -39,15 +39,15 @@ export async function GET(req: Request) {
     const primePropre = perdu - primeSale;
     const top = Object.entries(perMembre).sort((a, b) => b[1] - a[1]).slice(0, 5);
     const fr = (x: Date) => x.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
-    await postAlert("rapport", `📊 Rapport hebdo — ${fr(start)} → ${fr(new Date(end.getTime() - 86400_000))}`,
+    await postAlert("rapport", `📊 Rapport hebdo - ${fr(start)} -> ${fr(new Date(end.getTime() - 86400_000))}`,
       `**Solde : ${usd(rec - dep)}**`, GOLD, [
         { name: "Recettes", value: usd(rec), inline: true },
         { name: "Dépenses", value: usd(dep), inline: true },
         { name: "Amendes (hors solde)", value: usd(amendes), inline: true },
-        { name: `Actions (${(actions || []).length})`, value: Object.entries(perAction).map(([k, v]) => `${k} · ${v.n}× · ${usd(v.net)}`).join("\n") || "—", inline: false },
+        { name: `Actions (${(actions || []).length})`, value: Object.entries(perAction).map(([k, v]) => `${k} · ${v.n}x · ${usd(v.net)}`).join("\n") || " - ", inline: false },
         { name: `Arrestations (${(arr || []).length})`, value: `Primes de paie : ${usd(perdu)} (sale ${usd(primeSale)} · propre ${usd(primePropre)})`, inline: false },
         { name: "🏛️ Consortium", value: [`⚖️ ${(dos || []).length} dossier(s) · ${(dos || []).filter((x: any) => x.verdict === "coupable").length} coupable(s)`, `🤝 ${(pac || []).length} pacte(s) créé(s)`, `🔎 ${(aud || []).length} audit(s)${(aud || []).length ? ` · moyenne ${((aud || []).reduce((a: number, x: any) => a + Number(x.note), 0) / (aud || []).length).toFixed(1)}/10` : ""}`, `🚚 ${(evt || []).length} événement(s) · ${(evt || []).filter((x: any) => x.type === "convoi" && x.statut === "livre").length} convoi(s) livré(s)`].join("\n"), inline: false },
-        { name: "🏆 Top employés (net actions)", value: top.map(([k, v], i) => `${i + 1}. ${k} — ${usd(v)}`).join("\n") || "—", inline: false },
+        { name: "🏆 Top employés (net actions)", value: top.map(([k, v], i) => `${i + 1}. ${k} - ${usd(v)}`).join("\n") || " - ", inline: false },
       ], ["RESP"]);
     return NextResponse.json({ ok: true });
   } catch (err: any) {

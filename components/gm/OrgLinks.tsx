@@ -29,7 +29,7 @@ export function OrgLinks({ organisation, excludeDossierId }: { organisation?: st
   return (
     <div style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "0.6rem 0.75rem", background: "var(--surface)" }}>
       <div style={{ fontWeight: 700, marginBottom: "0.4rem" }}>🔗 Tout sur {organisation}</div>
-      {!d ? <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>Chargement…</span> : (
+      {!d ? <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>Chargement...</span> : (
         <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
           <Pill href="/obsidian/reputation">⭐ Réputation {d.score}/100{lab ? ` · ${lab.label}` : ""}</Pill>
           {d.pactes.map((p: any) => <Pill key={p.id} href="/obsidian/pactes">🤝 Pacte {p.statut}</Pill>)}

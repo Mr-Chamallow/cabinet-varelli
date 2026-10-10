@@ -18,14 +18,14 @@ export function usePersonnes() {
   return list;
 }
 
-export function PersonPicker({ value, onChange, placeholder = "— Aucune personne —" }: { value: string; onChange: (nom: string) => void; placeholder?: string }) {
+export function PersonPicker({ value, onChange, placeholder = " -  Aucune personne  - " }: { value: string; onChange: (nom: string) => void; placeholder?: string }) {
   const list = usePersonnes();
   const [q, setQ] = useState("");
   const known = !value || list.some(p => p.nom === value);
   const shown = list.filter(p => !q || p.nom.toLowerCase().includes(q.toLowerCase()));
   return (
     <div>
-      <input placeholder="🔍 Filtrer…" value={q} onChange={e => setQ(e.target.value)} style={{ marginBottom: 4 }} />
+      <input placeholder="🔍 Filtrer..." value={q} onChange={e => setQ(e.target.value)} style={{ marginBottom: 4 }} />
       <select value={value} onChange={e => onChange(e.target.value)}>
         <option value="">{placeholder}</option>
         {!known && <option value={value}>{value} (hors référentiel)</option>}
@@ -37,8 +37,8 @@ export function PersonPicker({ value, onChange, placeholder = "— Aucune person
   );
 }
 
-// Choix d'un membre (employé) : juge, procureur, avocat… plus de saisie libre.
-export function EmployeePicker({ value, onChange, placeholder = "— Choisir un membre —" }: { value: string; onChange: (nom: string) => void; placeholder?: string }) {
+// Choix d'un membre (employé) : juge, procureur, avocat... plus de saisie libre.
+export function EmployeePicker({ value, onChange, placeholder = " -  Choisir un membre  - " }: { value: string; onChange: (nom: string) => void; placeholder?: string }) {
   const [list, setList] = useState<{ nom: string; role: string }[]>([]);
   useEffect(() => { if (!supabase) return; supabase.from("obsidian_employes").select("nom,role,actif").order("nom").then(({ data }) => setList((data || []).filter((e: any) => e.actif !== false))); }, []);
   const known = !value || list.some(e => e.nom === value);
@@ -46,7 +46,7 @@ export function EmployeePicker({ value, onChange, placeholder = "— Choisir un 
     <select value={value} onChange={e => onChange(e.target.value)}>
       <option value="">{placeholder}</option>
       {!known && <option value={value}>{value} (hors annuaire)</option>}
-      {list.map(e => <option key={e.nom} value={e.nom}>{e.nom}{e.role ? ` — ${e.role}` : ""}</option>)}
+      {list.map(e => <option key={e.nom} value={e.nom}>{e.nom}{e.role ? ` - ${e.role}` : ""}</option>)}
     </select>
   );
 }

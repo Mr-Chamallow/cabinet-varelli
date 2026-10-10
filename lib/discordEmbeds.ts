@@ -1,7 +1,7 @@
 import { NotifyEmbed } from "@/lib/notifyDiscord";
 import { metierInfo } from "@/lib/fichesMetiers";
 
-const v = (x: any) => (x === null || x === undefined || x === "" ? "—" : String(x));
+const v = (x: any) => (x === null || x === undefined || x === "" ? "-" : String(x));
 const fmtUSD = (n: number) => (n || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 const PRIO_COLOR: Record<string, number> = {
@@ -22,7 +22,7 @@ export function buildFicheEmbed(f: any): NotifyEmbed {
       { name: "Origine", value: v(f.origine), inline: true },
       { name: "Âge", value: v(f.age), inline: true },
       { name: "Téléphone", value: v(f.telephone), inline: true },
-      { name: "Tags", value: f.tags?.length ? f.tags.join(", ") : "—", inline: false },
+      { name: "Tags", value: f.tags?.length ? f.tags.join(", ") : "-", inline: false },
       { name: "Adresses", value: v(f.adresses), inline: false },
       { name: "Véhicules", value: v(f.vehicules), inline: false },
       { name: "Comptes bancaires RP", value: v(f.comptes_bancaires), inline: false },
@@ -46,7 +46,7 @@ export function buildContratEmbed(c: any): NotifyEmbed {
       { name: "Statut", value: v(c.statut), inline: true },
       { name: "Récompense", value: fmtUSD(c.recompense), inline: true },
       { name: "Date cible", value: v(c.date_cible), inline: true },
-      { name: "Membres affectés", value: c.membres_affectes?.length ? c.membres_affectes.join(", ") : "—", inline: false },
+      { name: "Membres affectés", value: c.membres_affectes?.length ? c.membres_affectes.join(", ") : "-", inline: false },
       { name: "Description", value: v(c.description), inline: false },
       ...(c.rapport ? [{ name: "Rapport", value: v(c.rapport), inline: false }] : []),
     ],

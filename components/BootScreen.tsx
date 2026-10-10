@@ -14,15 +14,15 @@ const TIPS = [
 type Tag = "NET" | "SEC" | "AUTH" | "DB" | "SYS";
 interface L { at: number; tag: Tag; text: string; ok?: boolean }
 const END = 9200;
-// Chronologie (ms) — chaque ligne apparaît à son heure.
+// Chronologie (ms) - chaque ligne apparaît à son heure.
 const LINES: L[] = [
   { at: 300, tag: "SYS", text: "Initialisation du noyau Obsidian v7.2.1" },
-  { at: 750, tag: "NET", text: "Résolution du relais sécurisé…" },
-  { at: 1250, tag: "NET", text: "Liaison TLS 1.3 établie — latence 38 ms", ok: true },
+  { at: 750, tag: "NET", text: "Résolution du relais sécurisé..." },
+  { at: 1250, tag: "NET", text: "Liaison TLS 1.3 établie - latence 38 ms", ok: true },
   { at: 1750, tag: "SEC", text: "Échange de clés (X25519 / AES-256-GCM)" },
   { at: 2250, tag: "SEC", text: "Empreinte du serveur vérifiée", ok: true },
-  // 2700 → boîte « demande d'accès »
-  { at: 6000, tag: "AUTH", text: "Jeton de session émis — validité 12 h", ok: true },
+  // 2700 -> boîte « demande d'accès »
+  { at: 6000, tag: "AUTH", text: "Jeton de session émis - validité 12 h", ok: true },
   { at: 6400, tag: "DB", text: 'Montage de la base "obsidian_core"' },
   { at: 6800, tag: "DB", text: "Synchronisation temps réel active", ok: true },
   { at: 7200, tag: "SYS", text: "Chargement du profil opérateur" },
@@ -55,10 +55,10 @@ export function BootScreen() {
   function close() { setLeaving(true); setTimeout(() => setVisible(false), 500); }
   if (!visible) return null;
 
-  // Boîte « demande d'accès » : 2700→6000
+  // Boîte « demande d'accès » : 2700->6000
   const boxAt = 2700; const showBox = t >= boxAt;
   const phase = t < 3700 ? 0 : t < 4400 ? 1 : t < 5200 ? 2 : 3;
-  const status = ["TRANSMISSION DE LA DEMANDE…", "ATTENTE DU CONTRÔLEUR D'ACCÈS…", "VÉRIFICATION DU CERTIFICAT OPÉRATEUR…", "ACCÈS ACCORDÉ"][phase];
+  const status = ["TRANSMISSION DE LA DEMANDE...", "ATTENTE DU CONTRÔLEUR D'ACCÈS...", "VÉRIFICATION DU CERTIFICAT OPÉRATEUR...", "ACCÈS ACCORDÉ"][phase];
   const granted = phase === 3;
   const logoAt = 7600; const showLogo = t >= logoAt; const stamped = t >= 8300;
   const total = Math.min(1, t / (END - 600));
@@ -73,14 +73,14 @@ export function BootScreen() {
         <div className="boot-log">
           {LINES.filter(l => t >= l.at).map((l, i) => (
             <div key={i} className={l.ok ? "ok" : ""}>
-              <span className="tg">[{l.tag}]</span>{l.ok ? "✓ " : ""}{l.text}
+              <span className="tg">[{l.tag}]</span>{l.ok ? "" : ""}{l.text}
             </div>
           ))}
         </div>
 
         {showBox && (
           <div className={`boot-req${granted ? " granted" : ""}`}>
-            <div className="br-head"><span>⚿ DEMANDE D'ACCÈS — PROTOCOLE OBS-SECURE/7</span><span>{req}</span></div>
+            <div className="br-head"><span>⚿ DEMANDE D'ACCÈS - PROTOCOLE OBS-SECURE/7</span><span>{req}</span></div>
             <div className="br-grid">
               <span>ORIGINE</span><b>{fp}</b>
               <span>ENTITÉ</span><b>Obsidian Logistics</b>
@@ -100,7 +100,7 @@ export function BootScreen() {
         {showLogo && (
           <div className="boot-final">
             <ObsLogo size={64} className="boot-logo" />
-            <div className="boot-welcome">{stamped ? "ACCÈS AUTORISÉ" : "Initialisation de l'interface…"}</div>
+            <div className="boot-welcome">{stamped ? "ACCÈS AUTORISÉ" : "Initialisation de l'interface..."}</div>
           </div>
         )}
         <div className="boot-total"><u style={{ width: `${total * 100}%` }} /></div>

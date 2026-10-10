@@ -1,5 +1,5 @@
-// Fichier généré automatiquement — Obsidian Logistique
-// Codes: Pénal, Route, Fédéral de Conformité Économique — État de San Andreas
+// Fichier généré automatiquement - Obsidian Logistique
+// Codes: Pénal, Route, Fédéral de Conformité Économique - État de San Andreas
 
 export interface Article {
   id: string;
@@ -570,11 +570,11 @@ export const CATEGORIES_INFRACTIONS: Record<string, { label: string; icon: strin
   penal_delit_mineur: { label: "Délits mineurs", icon: "⚠️", color: "#f59e0b" },
   penal_delit_majeur: { label: "Délits majeurs", icon: "🔴", color: "#ef4444" },
   penal_crime: { label: "Crimes", icon: "💀", color: "#7c3aed" },
-  route_general: { label: "Route — Général", icon: "🚦", color: "#3b82f6" },
-  route_permis: { label: "Route — Permis", icon: "🪪", color: "#06b6d4" },
-  route_vehicules: { label: "Route — Véhicules", icon: "🚗", color: "#0ea5e9" },
-  route_circulation: { label: "Route — Circulation", icon: "🛣️", color: "#22c55e" },
-  route_priorites: { label: "Route — Priorités", icon: "⛔", color: "#f97316" },
-  route_controles: { label: "Route — Contrôles", icon: "👮", color: "#64748b" },
+  route_general: { label: "Route - Général", icon: "🚦", color: "#3b82f6" },
+  route_permis: { label: "Route - Permis", icon: "🪪", color: "#06b6d4" },
+  route_vehicules: { label: "Route - Véhicules", icon: "🚗", color: "#0ea5e9" },
+  route_circulation: { label: "Route - Circulation", icon: "🛣️", color: "#22c55e" },
+  route_priorites: { label: "Route - Priorités", icon: "⛔", color: "#f97316" },
+  route_controles: { label: "Route - Contrôles", icon: "👮", color: "#64748b" },
   federal: { label: "Code Fédéral (DOT)", icon: "🦅", color: "#06b6d4" },
 };

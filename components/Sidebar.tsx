@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Link from "next/link";
@@ -145,7 +145,7 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
 }
 
 // Petit pavé animé qui glisse derrière le lien actif au fil de la navigation, au lieu
-// d'un simple changement instantané de fond — vérifié visuellement (mockup isolé).
+// d'un simple changement instantané de fond - vérifié visuellement (mockup isolé).
 function SidebarActivePill({ pill }: { pill: { top: number; height: number; visible: boolean } }) {
   return (
     <div

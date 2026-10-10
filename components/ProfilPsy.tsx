@@ -34,7 +34,7 @@ export function ProfilPsy({ value, canEdit, onSave }: { value?: Psy | null; canE
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <div className="section-title">🧠 Profil psychologique</div>
         {canEdit && (edit
-          ? <div style={{ display: "flex", gap: 6 }}><button className="btn btn-gold btn-sm" disabled={busy} onClick={save}>{busy ? "…" : "✓ Enregistrer"}</button><button className="btn btn-ghost btn-sm" onClick={() => { setP(value || {}); setEdit(false); }}>Annuler</button></div>
+          ? <div style={{ display: "flex", gap: 6 }}><button className="btn btn-gold btn-sm" disabled={busy} onClick={save}>{busy ? "..." : "Enregistrer"}</button><button className="btn btn-ghost btn-sm" onClick={() => { setP(value || {}); setEdit(false); }}>Annuler</button></div>
           : <button className="btn btn-outline btn-sm" onClick={() => setEdit(true)}>✏️ {empty ? "Créer" : "Modifier"}</button>)}
       </div>
       {empty && !edit && <div style={{ color: "var(--text-dim)", fontSize: "0.82rem" }}>Aucun profil psy renseigné.</div>}

@@ -82,7 +82,7 @@ export default function TribunalPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Dashboard</a>
+      <a className="back-link" href="/">Dashboard</a>
       <div className="page-header">
         <div><h1 className="page-title">⚖️ Tribunal de l'Ombre</h1><p className="page-subtitle">Instruction · Accusation · Défense · Verdict</p><div className="gold-line" /></div>
         {canWrite && <button className="btn btn-gold" onClick={openNew}>+ Nouveau dossier</button>}
@@ -100,7 +100,7 @@ export default function TribunalPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", cursor: "pointer" }} onClick={() => setOpen(isOpen ? null : d.id)}>
                   <div style={{ flex: 1, minWidth: 180 }}>
                     <div style={{ fontWeight: 700 }}>{d.titre}</div>
-                    <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>Accusé : {d.accuse || d.organisation || "—"} · Audience : {fmtDT(d.date_audience)} · {(d.preuves || []).length} preuve(s)</div>
+                    <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>Accusé : {d.accuse || d.organisation || " - "} · Audience : {fmtDT(d.date_audience)} · {(d.preuves || []).length} preuve(s)</div>
                   </div>
                   <Badge color={st.color}>{st.label}</Badge>
                   {d.verdict !== "en_cours" && <Stamp style={{ flexShrink: 0, marginLeft: "0.4rem" }} color={d.verdict === "coupable" ? "red" : "green"} size="sm" rotate={-6}>{d.verdict === "coupable" ? "Coupable" : "Innocent"}</Stamp>}
@@ -108,7 +108,7 @@ export default function TribunalPage() {
                 {isOpen && (
                   <div style={{ marginTop: "0.85rem", display: "flex", flexDirection: "column", gap: "0.7rem", fontSize: "0.82rem" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: "0.5rem" }}>
-                      <div><b>Juge</b><br />{d.juge || "—"}</div><div><b>Procureur</b><br />{d.procureur || "—"}</div><div><b>Avocat commis d'office</b><br />{d.avocat || "—"}</div><div><b>Organisation</b><br />{d.organisation || "—"}</div>
+                      <div><b>Juge</b><br />{d.juge || " - "}</div><div><b>Procureur</b><br />{d.procureur || " - "}</div><div><b>Avocat commis d'office</b><br />{d.avocat || " - "}</div><div><b>Organisation</b><br />{d.organisation || " - "}</div>
                     </div>
                     {d.organisation && <OrgLinks organisation={d.organisation} excludeDossierId={d.id} />}
                     {d.acte_accusation && <div><b>📜 Acte d'accusation</b><div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{d.acte_accusation}</div></div>}
@@ -119,13 +119,13 @@ export default function TribunalPage() {
                       {(d.preuves || []).length === 0 && <div style={{ color: "var(--text-dim)" }}>Aucune preuve</div>}
                       {(d.preuves || []).map((p: any, i: number) => (
                         <div key={i} style={{ display: "flex", gap: "0.5rem", alignItems: "baseline", padding: "0.25rem 0" }}>
-                          <span>•</span><span style={{ flex: 1 }}>{p.texte}{p.url && <> — <a href={p.url} target="_blank" rel="noreferrer" style={{ color: "var(--gold)" }}>lien</a></>}<span style={{ color: "var(--text-dim)", fontSize: "0.68rem" }}> {p.par ? `· ${p.par}` : ""} {p.date ? `· ${fmtDT(p.date)}` : ""}</span></span>
+                          <span>·</span><span style={{ flex: 1 }}>{p.texte}{p.url && <> - <a href={p.url} target="_blank" rel="noreferrer" style={{ color: "var(--gold)" }}>lien</a></>}<span style={{ color: "var(--text-dim)", fontSize: "0.68rem" }}> {p.par ? `· ${p.par}` : ""} {p.date ? `· ${fmtDT(p.date)}` : ""}</span></span>
                           {canWrite && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => quick(d, { preuves: d.preuves.filter((_: any, j: number) => j !== i) })}>✕</button>}
                         </div>
                       ))}
                       {canWrite && (
                         <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
-                          <input placeholder="Nouvelle preuve (photo, écoute, témoignage…)" value={newProof.texte} onChange={e => setNewProof({ ...newProof, texte: e.target.value })} style={{ flex: 2, minWidth: 180 }} />
+                          <input placeholder="Nouvelle preuve (photo, écoute, témoignage...)" value={newProof.texte} onChange={e => setNewProof({ ...newProof, texte: e.target.value })} style={{ flex: 2, minWidth: 180 }} />
                           <input placeholder="Lien (optionnel)" value={newProof.url} onChange={e => setNewProof({ ...newProof, url: e.target.value })} style={{ flex: 1, minWidth: 120 }} />
                           <button className="btn btn-outline btn-sm" onClick={() => addProof(d)}>+ Preuve</button>
                         </div>
@@ -149,13 +149,13 @@ export default function TribunalPage() {
       )}
       {show && (
         <Modal title={editId ? "Modifier le dossier" : "Nouveau dossier"} size="lg" onClose={() => setShow(false)}
-          footer={<><button className="btn btn-outline" onClick={() => setShow(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.titre.trim()} onClick={save}>{saving ? "…" : "Enregistrer"}</button></>}>
+          footer={<><button className="btn btn-outline" onClick={() => setShow(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.titre.trim()} onClick={save}>{saving ? "..." : "Enregistrer"}</button></>}>
           <div style={{ maxHeight: "62vh", overflowY: "auto" }}>
             <div className="form-grid">
-              <div><label>Titre *</label><input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} placeholder="Ex : Trahison du Pacte — Les Vagos" /></div>
+              <div><label>Titre *</label><input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} placeholder="Ex : Trahison du Pacte - Les Vagos" /></div>
               <div><label>Statut</label><select value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>{STATUTS.map(s => <option key={s.k} value={s.k}>{s.label}</option>)}</select></div>
               <div><label>Accusé (personne)</label><PersonPicker value={form.accuse} onChange={v => setForm({ ...form, accuse: v })} /></div>
-              <div><label>Organisation</label><GroupeSelect value={form.organisation} groupes={groupes} onChange={v => setForm({ ...form, organisation: v })} placeholder="— Aucun / personne seule —" /></div>
+              <div><label>Organisation</label><GroupeSelect value={form.organisation} groupes={groupes} onChange={v => setForm({ ...form, organisation: v })} placeholder=" -  Aucun / personne seule  - " /></div>
               <div><label>Juge</label><EmployeePicker value={form.juge} onChange={v => setForm({ ...form, juge: v })} /></div>
               <div><label>Procureur</label><EmployeePicker value={form.procureur} onChange={v => setForm({ ...form, procureur: v })} /></div>
               <div><label>Avocat commis d'office</label><EmployeePicker value={form.avocat} onChange={v => setForm({ ...form, avocat: v })} /></div>
@@ -165,9 +165,9 @@ export default function TribunalPage() {
             <div><label>Défense</label><textarea rows={3} value={form.defense} onChange={e => setForm({ ...form, defense: e.target.value })} /></div>
             <div className="form-grid">
               <div><label>Verdict</label><select value={form.verdict} onChange={e => setForm({ ...form, verdict: e.target.value })}>{Object.entries(VERDICTS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
-              <div><label>Sentence</label><input value={form.sentence} onChange={e => setForm({ ...form, sentence: e.target.value })} placeholder="Amende, mort RP (validée staff)…" /></div>
+              <div><label>Sentence</label><input value={form.sentence} onChange={e => setForm({ ...form, sentence: e.target.value })} placeholder="Amende, mort RP (validée staff)..." /></div>
             </div>
-            <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>Les preuves s'ajoutent depuis la carte du dossier. Un verdict « coupable » lié à une organisation baisse sa réputation (−15).</div>
+            <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>Les preuves s'ajoutent depuis la carte du dossier. Un verdict « coupable » lié à une organisation baisse sa réputation (-15).</div>
           </div>
         </Modal>
       )}

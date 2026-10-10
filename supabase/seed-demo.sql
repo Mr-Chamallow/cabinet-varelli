@@ -1,8 +1,8 @@
 -- ============================================================
--- DONNÉES DE DÉMO (présentation du site) — ne touche JAMAIS à :
---   • Tableau des prix (obsidian_drogues, obsidian_armes_prix, obsidian_zones…)
---   • Employés (obsidian_employes) : les noms existants sont seulement réutilisés.
--- Toutes les lignes créées portent created_by = 'Démo'  →  supabase/unseed-demo.sql les supprime.
+-- DONNÉES DE DÉMO (présentation du site) - ne touche JAMAIS à :
+--   · Tableau des prix (obsidian_drogues, obsidian_armes_prix, obsidian_zones...)
+--   · Employés (obsidian_employes) : les noms existants sont seulement réutilisés.
+-- Toutes les lignes créées portent created_by = 'Démo'  ->  supabase/unseed-demo.sql les supprime.
 -- Relançable sans doublon (nettoyage au début).
 -- ============================================================
 select setseed(0.42);
@@ -54,9 +54,9 @@ from generate_series(1,16);
 -- 3) Stocks (quantités directes, sans toucher aux prix de référence)
 insert into obsidian_stocks (nom, categorie, emoji, quantite, seuil_alerte, unite, prix_unitaire, notes, created_by) values
  ('Cocaïne 50%','drogue','❄️',420,100,'u',180,'Démo','Démo'),('Cannabis 70%','drogue','🌿',860,200,'u',45,'Démo','Démo'),
- ('Mexicana 50%','drogue','💊',35,60,'u',95,'Démo — sous le seuil','Démo'),('Pistolet lourd','arme','🔫',12,4,'u',9500,'Démo','Démo'),
+ ('Mexicana 50%','drogue','💊',35,60,'u',95,'Démo - sous le seuil','Démo'),('Pistolet lourd','arme','🔫',12,4,'u',9500,'Démo','Démo'),
  ('Fusil à pompe','arme','🔫',5,3,'u',14000,'Démo','Démo'),('Munitions pistolet','munition','🔸',640,150,'boîte',220,'Démo','Démo'),
- ('Munitions SMG','munition','🔸',90,120,'boîte',310,'Démo — sous le seuil','Démo'),('Silencieux','accessoire','🔇',18,5,'u',2800,'Démo','Démo'),
+ ('Munitions SMG','munition','🔸',90,120,'boîte',310,'Démo - sous le seuil','Démo'),('Silencieux','accessoire','🔇',18,5,'u',2800,'Démo','Démo'),
  ('Kevlar','kev','🦺',27,8,'u',1500,'Démo','Démo'),('Grenade','explosif','💣',14,4,'u',3200,'Démo','Démo'),
  ('Fertilisant','composant','🧪',300,80,'u',20,'Démo','Démo'),('Boîtier de piratage','objet illégal','📟',9,3,'u',4200,'Démo','Démo'),
  ('Outil de crochetage','objet illégal','🗝️',40,10,'u',350,'Démo','Démo'),('Fausse plaque d''immatriculation','objet illégal','🪪',22,6,'u',900,'Démo','Démo'),
@@ -73,7 +73,7 @@ from generate_series(1,45) g,
 
 -- 4) Transactions (ex-Cahier de vente)
 insert into cahier_transactions (type, montant, categorie, motif, produit_nom, quantite, type_argent, created_by, created_at)
-select t, s.prix_unitaire * q, s.categorie, (case when t='entrée' then 'Vente ' else 'Achat ' end) || q || ' × ' || s.nom, s.nom, q,
+select t, s.prix_unitaire * q, s.categorie, (case when t='entrée' then 'Vente ' else 'Achat ' end) || q || ' x ' || s.nom, s.nom, q,
        (array['propre','sale','mixte'])[1+floor(random()*3)::int], 'Démo', now() - (random()*50 || ' days')::interval
 from generate_series(1,22) g,
      lateral (select (array['entrée','sortie'])[1+floor(random()*2)::int] t, (1+floor(random()*8))::int q) x,
@@ -82,7 +82,7 @@ where s.prix_unitaire > 0;
 
 -- 5) Comptabilité dérivée (même logique que le site : actions, arrestations, transactions)
 insert into obsidian_comptabilite (type, categorie, montant, type_argent, motif, membre, semaine, created_by, created_at, source, source_id)
-select case when montant > 0 then 'recette' else 'dépense' end, action, abs(montant), 'sale', action || ' — ' || membre, membre,
+select case when montant > 0 then 'recette' else 'dépense' end, action, abs(montant), 'sale', action || ' - ' || membre, membre,
        date_trunc('week', created_at)::date, 'Démo', created_at, 'action', id
 from actions_illegales where created_by = 'Démo' and montant <> 0;
 
@@ -103,7 +103,7 @@ insert into obsidian_garage (modele, plaque, couleur, position, statut, assigne_
 
 -- 7) Contrats
 insert into obsidian_contrats (titre, type, difficulte, recompense, statut, membres_affectes, description, rapport, date_cible, created_by) values
- ('Livraison Port → Entrepôt','Livraison','Facile',12000,'Terminé',array['Marcus Reed','Tony Rizzo'],'Convoi de caisses vers l''entrepôt.','Livré sans incident.',current_date-12,'Démo'),
+ ('Livraison Port -> Entrepôt','Livraison','Facile',12000,'Terminé',array['Marcus Reed','Tony Rizzo'],'Convoi de caisses vers l''entrepôt.','Livré sans incident.',current_date-12,'Démo'),
  ('Escorte convoi Fleeca','Escorte','Difficile',45000,'Terminé',array['Dante Cole','Jack Sullivan','Leo Martin'],'Escorte d''un convoi sensible.','Succès, 1 véhicule endommagé.',current_date-9,'Démo'),
  ('Récupération marchandise Sandy','Collecte','Normale',18000,'En cours',array['Sam Fletcher'],'Récupérer un lot à Sandy Shores.','',current_date+2,'Démo'),
  ('Transfert d''armes','Livraison','Extrême',80000,'En attente',array['Marcus Reed','Dante Cole'],'Transfert discret, deux véhicules.','',current_date+5,'Démo'),
@@ -150,7 +150,7 @@ from bdd_personnes p where p.created_by = 'Démo';
 insert into obsidian_journal (fiche_id, fiche_nom, action, par)
 select id, nom, 'Fiche créée', 'Démo' from obsidian_fiches where created_by = 'Démo';
 insert into obsidian_journal (fiche_id, fiche_nom, action, par)
-select id, nom, 'Fiche modifiée (statut → ' || statut || ')', 'Démo' from obsidian_fiches where created_by = 'Démo' and statut <> 'Actif';
+select id, nom, 'Fiche modifiée (statut -> ' || statut || ')', 'Démo' from obsidian_fiches where created_by = 'Démo' and statut <> 'Actif';
 
 -- 11) Consortium : réputation, pactes, audits, tribunal, événements
 insert into gm_reputation_log (organisation, delta, motif, source, created_by, created_at)

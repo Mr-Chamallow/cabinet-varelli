@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-// ─── DONNÉES ────────────────────────────────────────────────────────────────
+// --- DONNÉES ---
 
 const VEHICULES = {
   compacts: ["Asbo", "Blista", "Brioso", "Brioso 300", "Brioso 300 large", "Club", "Issi", "Issi Classic", "Kanjo", "Panto", "Rhapsody", "Weevil"],
@@ -122,10 +122,10 @@ const ARMES = {
 
 const FREQUENCES = {
   districts: [
-    { hz: "1–9 Hz", label: "Radio Commune" }, { hz: "10 Hz", label: "Mission Row" }, { hz: "11–19 Hz", label: "Privé Mission Row" },
-    { hz: "20 Hz", label: "Vespucci" }, { hz: "21–29 Hz", label: "Privé Vespucci" }, { hz: "30 Hz", label: "Alta" },
-    { hz: "31–39 Hz", label: "Privé Alta" }, { hz: "40 Hz", label: "Sandy Shores" }, { hz: "41–49 Hz", label: "Privé Sandy Shores" },
-    { hz: "50 Hz", label: "RoxWood" }, { hz: "51–59 Hz", label: "Privé RoxWood" },
+    { hz: "1-9 Hz", label: "Radio Commune" }, { hz: "10 Hz", label: "Mission Row" }, { hz: "11-19 Hz", label: "Privé Mission Row" },
+    { hz: "20 Hz", label: "Vespucci" }, { hz: "21-29 Hz", label: "Privé Vespucci" }, { hz: "30 Hz", label: "Alta" },
+    { hz: "31-39 Hz", label: "Privé Alta" }, { hz: "40 Hz", label: "Sandy Shores" }, { hz: "41-49 Hz", label: "Privé Sandy Shores" },
+    { hz: "50 Hz", label: "RoxWood" }, { hz: "51-59 Hz", label: "Privé RoxWood" },
   ],
   divisions: [
     { hz: "60 Hz", label: "F.T.O" }, { hz: "61-63 Hz", label: "Libre" }, { hz: "64 Hz", label: "L.S" },
@@ -133,8 +133,8 @@ const FREQUENCES = {
     { hz: "68-70 Hz", label: "N.O.O.S.E x DOA" },
   ],
   samp: [
-    { hz: "71–75 Hz", label: "SAMP × EMS × LS Army × LSFD" }, { hz: "76–79 Hz", label: "SAMP × EMS × LS Army × LSFD × Gouvernement" },
-    { hz: "80 Hz", label: "Code Rouge" }, { hz: "100–110 Hz", label: "LS Army" }, { hz: "132 Hz", label: "Milicia de Cayo" },
+    { hz: "71-75 Hz", label: "SAMP x EMS x LS Army x LSFD" }, { hz: "76-79 Hz", label: "SAMP x EMS x LS Army x LSFD x Gouvernement" },
+    { hz: "80 Hz", label: "Code Rouge" }, { hz: "100-110 Hz", label: "LS Army" }, { hz: "132 Hz", label: "Milicia de Cayo" },
   ],
 };
 
@@ -178,14 +178,14 @@ const ONGLETS = [
   { key: "codes", label: "Codes radio", icon: "🔟" },
 ];
 
-// ─── PAGE ───────────────────────────────────────────────────────────────────
+// --- PAGE ---
 
 export default function UtileSampPage() {
   const [tab, setTab] = useState("vehicules");
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Tableau de bord</a>
+      <a className="back-link" href="/">Tableau de bord</a>
 
       <div className="page-header">
         <div>
@@ -269,17 +269,17 @@ export default function UtileSampPage() {
                 {section.grades.map((g) => (
                   <div key={g.nom} style={{ marginBottom: "0.875rem" }}>
                     <div style={{ fontWeight: 700, fontSize: "0.85rem", color: g.color, marginBottom: "0.25rem" }}>{g.nom}</div>
-                    {g.items.map((it, i) => <div key={i} style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>• {it}</div>)}
+                    {g.items.map((it, i) => <div key={i} style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>· {it}</div>)}
                   </div>
                 ))}
               </div>
             ))}
           </div>
           <div className="card" style={{ marginBottom: "1rem" }}>
-            <div className="section-title" style={{ marginBottom: "0.6rem", color: "var(--gold)" }}>Véhicule × Grade</div>
+            <div className="section-title" style={{ marginBottom: "0.6rem", color: "var(--gold)" }}>Véhicule x Grade</div>
             {VEHICULE_X_GRADE.map((v) => (
               <div key={v.grade} style={{ fontSize: "0.8rem", padding: "0.35rem 0", borderBottom: "1px solid var(--border)" }}>
-                <strong style={{ color: "var(--text)" }}>{v.grade}</strong> <span style={{ color: "var(--text-dim)" }}>→</span> <span style={{ color: "var(--text-muted)" }}>{v.vehicules}</span>
+                <strong style={{ color: "var(--text)" }}>{v.grade}</strong> <span style={{ color: "var(--text-dim)" }}>{'->'}</span> <span style={{ color: "var(--text-muted)" }}>{v.vehicules}</span>
               </div>
             ))}
           </div>
@@ -309,10 +309,10 @@ export default function UtileSampPage() {
                 <tr key={row.grade}>
                   <td style={{ padding: "0.5rem", fontWeight: 600, borderBottom: "1px solid var(--border)" }}>{row.grade}</td>
                   {row.formations.map((ok, i) => (
-                    <td key={i} style={{ textAlign: "center", padding: "0.5rem", borderBottom: "1px solid var(--border)", color: ok ? "var(--success)" : "var(--danger)" }}>{ok ? "✓" : "✕"}</td>
+                    <td key={i} style={{ textAlign: "center", padding: "0.5rem", borderBottom: "1px solid var(--border)", color: ok ? "var(--success)" : "var(--danger)" }}>{ok ? "OK" : "✕"}</td>
                   ))}
                   {row.divisions.map((ok, i) => (
-                    <td key={i} style={{ textAlign: "center", padding: "0.5rem", borderBottom: "1px solid var(--border)", color: ok ? "var(--success)" : "var(--danger)" }}>{ok ? "✓" : "✕"}</td>
+                    <td key={i} style={{ textAlign: "center", padding: "0.5rem", borderBottom: "1px solid var(--border)", color: ok ? "var(--success)" : "var(--danger)" }}>{ok ? "OK" : "✕"}</td>
                   ))}
                 </tr>
               ))}
@@ -320,7 +320,7 @@ export default function UtileSampPage() {
           </table>
           <p style={{ fontSize: "0.76rem", color: "var(--text-dim)", marginTop: "1rem" }}>
             La formation 10.20 est obligatoire pour prétendre aux formations A.S.D et Mary. La priorité au grade est appliquée pour la formation Terrain.
-            Divisions primaires : N.O.O.S.E – D.O.A. Divisions secondaires : F.T.O – L.S – W.H.S.P.
+            Divisions primaires : N.O.O.S.E - D.O.A. Divisions secondaires : F.T.O - L.S - W.H.S.P.
           </p>
         </div>
       )}

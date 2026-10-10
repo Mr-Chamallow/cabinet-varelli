@@ -32,7 +32,7 @@ export const ACTIVITY_CONFIG: Record<ActivityType, { icon: string; color: string
 const fmt = (n: number) => (n || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export function timeAgo(iso: string): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (diff < 60) return "À l'instant";
   if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`;
@@ -42,7 +42,7 @@ export function timeAgo(iso: string): string {
 }
 
 // Reconstruit un journal d'activité à partir des tables Obsidian réelles
-// (aucune table de logs dédiée n'existe encore — on se base sur created_at/created_by
+// (aucune table de logs dédiée n'existe encore - on se base sur created_at/created_by
 // de chaque table métier, ce qui couvre les créations ; pas encore les modifications/suppressions).
 export async function fetchRecentActivity(limitPerSource = 40): Promise<ActivityItem[]> {
   if (!supabase) return [];
@@ -71,57 +71,57 @@ export async function fetchRecentActivity(limitPerSource = 40): Promise<Activity
     ...(mouvements || []).map((r: any) => ({
       type: "mouvement" as const,
       label: r.stock_nom || "Stock",
-      detail: `${r.type === "sortie" ? "Sortie" : "Entrée"} · ${r.quantite} · ${r.motif || "—"}`,
-      by: r.created_by || "—",
+      detail: `${r.type === "sortie" ? "Sortie" : "Entrée"} · ${r.quantite} · ${r.motif || "-"}`,
+      by: r.created_by || "-",
       at: r.created_at,
     })),
     ...(operations || []).map((r: any) => ({
       type: "operation" as const,
       label: r.titre || "Opération",
-      detail: `${r.type || "—"}${r.lieu ? ` · ${r.lieu}` : ""}${r.client ? ` · ${r.client}` : ""}`,
-      by: r.created_by || "—",
+      detail: `${r.type || "-"}${r.lieu ? ` · ${r.lieu}` : ""}${r.client ? ` · ${r.client}` : ""}`,
+      by: r.created_by || "-",
       at: r.created_at,
     })),
     ...(contrats || []).map((r: any) => ({
       type: "contrat" as const,
       label: r.titre || "Contrat",
-      detail: `${r.type || "—"} · ${r.statut || "—"}`,
-      by: r.created_by || "—",
+      detail: `${r.type || "-"} · ${r.statut || "-"}`,
+      by: r.created_by || "-",
       at: r.created_at,
     })),
     ...(fiches || []).map((r: any) => ({
       type: "fiche" as const,
       label: r.nom || "Fiche",
       detail: r.organisation ? `Organisation : ${r.organisation}` : "Nouvelle fiche",
-      by: r.created_by || "—",
+      by: r.created_by || "-",
       at: r.created_at,
     })),
     ...(employes || []).map((r: any) => ({
       type: "employe" as const,
       label: r.nom || "Employé",
       detail: r.role ? `Rôle : ${r.role}` : "Nouvel employé",
-      by: r.created_by || "—",
+      by: r.created_by || "-",
       at: r.created_at,
     })),
     ...(garage || []).map((r: any) => ({
       type: "garage" as const,
       label: r.modele || "Véhicule",
-      detail: `${r.plaque || "—"} · ${r.statut || "—"}`,
-      by: r.created_by || "—",
+      detail: `${r.plaque || "-"} · ${r.statut || "-"}`,
+      by: r.created_by || "-",
       at: r.created_at,
     })),
     ...(paiements || []).map((r: any) => ({
       type: "paiement" as const,
       label: r.employe || "Employé",
       detail: `Payé ${fmt(r.montant)}`,
-      by: r.paid_by || "—",
+      by: r.paid_by || "-",
       at: r.created_at,
     })),
     ...(compta || []).map((r: any) => ({
       type: "comptabilite" as const,
       label: r.categorie || (r.type === "recette" ? "Recette" : "Dépense"),
       detail: `${r.type === "recette" ? "+" : "-"}${fmt(r.montant)}`,
-      by: r.created_by || r.membre || "—",
+      by: r.created_by || r.membre || "-",
       at: r.created_at,
     })),
   ]

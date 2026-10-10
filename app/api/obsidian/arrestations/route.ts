@@ -4,11 +4,11 @@ import { weekStartOf } from "@/lib/weekStart";
 import { postAlert, syncAlert, logAudit, usd, ORANGE, RED, GREY } from "@/lib/alerts";
 
 function arrestFields(row: any) {
-  const items = (row.items || []).map((i: any) => `${i.emoji || ""} ${i.nom} × ${i.quantite}`).join("\n");
+  const items = (row.items || []).map((i: any) => `${i.emoji || ""} ${i.nom} x ${i.quantite}`).join("\n");
   return [
     { name: "Amende", value: usd(Number(row.amende) || 0), inline: true },
     { name: "Argent perdu (profil uniquement)", value: `${usd(Number(row.argent_perdu) || 0)} · argent ${row.type_argent || "sale"}`, inline: true },
-    { name: "Objets perdus", value: items || "—", inline: false },
+    { name: "Objets perdus", value: items || " - ", inline: false },
   ];
 }
 
@@ -55,7 +55,7 @@ async function createArrest(db: any, p: Parsed): Promise<{ row?: any; error?: st
     if (!st) continue;
     await db.from("obsidian_stocks").update({ quantite: Math.max(0, st.quantite - it.retire), updated_at: new Date().toISOString() }).eq("id", st.id);
     await db.from("obsidian_mouvements").insert([{
-      stock_id: st.id, stock_nom: st.nom, type: "sortie", quantite: it.retire, motif: `Arrestation — ${p.membre}`,
+      stock_id: st.id, stock_nom: st.nom, type: "sortie", quantite: it.retire, motif: `Arrestation - ${p.membre}`,
       membre: p.membre, prix_unitaire: st.prix_unitaire || 0, total: it.retire * (st.prix_unitaire || 0), created_by: p.createdBy || p.membre,
     }]);
   }
@@ -69,7 +69,7 @@ async function revertArrest(db: any, row: any, by: string) {
     if (!st) continue; // l'objet n'existe plus en stock : rien à restaurer
     await db.from("obsidian_stocks").update({ quantite: st.quantite + it.retire, updated_at: new Date().toISOString() }).eq("id", st.id);
     await db.from("obsidian_mouvements").insert([{
-      stock_id: st.id, stock_nom: st.nom, type: "entrée", quantite: it.retire, motif: `Annulation arrestation — ${row.membre}`,
+      stock_id: st.id, stock_nom: st.nom, type: "entrée", quantite: it.retire, motif: `Annulation arrestation - ${row.membre}`,
       membre: row.membre, prix_unitaire: st.prix_unitaire || 0, total: it.retire * (st.prix_unitaire || 0), created_by: by,
     }]);
   }
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
     if ("error" in p) return NextResponse.json({ error: p.error }, { status: 400 });
     const r = await createArrest(supabaseAdmin, p);
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
-    await syncAlert(supabaseAdmin, "arrestations", r.row, "arrestations", `🚔 Arrestation — ${r.row.membre}`, r.row.notes || "Nouvelle arrestation enregistrée.", RED, arrestFields(r.row));
+    await syncAlert(supabaseAdmin, "arrestations", r.row, "arrestations", `🚔 Arrestation - ${r.row.membre}`, r.row.notes || "Nouvelle arrestation enregistrée.", RED, arrestFields(r.row));
     return NextResponse.json(r.row);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
@@ -119,7 +119,7 @@ export async function PATCH(req: Request) {
     }
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
     if (old.discord_message_id) { r.row.discord_message_id = old.discord_message_id; await supabaseAdmin.from("arrestations").update({ discord_message_id: old.discord_message_id }).eq("id", r.row.id); }
-    await syncAlert(supabaseAdmin, "arrestations", r.row, "arrestations", `🚔 Arrestation — ${r.row.membre} (modifiée)`, r.row.notes || "Saisie corrigée (stock et prime recalculés).", ORANGE, arrestFields(r.row));
+    await syncAlert(supabaseAdmin, "arrestations", r.row, "arrestations", `🚔 Arrestation - ${r.row.membre} (modifiée)`, r.row.notes || "Saisie corrigée (stock et prime recalculés).", ORANGE, arrestFields(r.row));
     return NextResponse.json(r.row);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
@@ -137,7 +137,7 @@ export async function DELETE(req: Request) {
     const { error: e } = await revertArrest(supabaseAdmin, row, ((user as any)?.nom_perso || (user as any)?.discord_name || ""));
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
     await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Arrestation annulée", row.membre, `amende ${row.amende} $ · argent perdu ${row.argent_perdu} $`);
-    await syncAlert(supabaseAdmin, "arrestations", row, "arrestations", `🗑️ Arrestation annulée — ${row.membre}`, "Stock remis, prime de paie retirée.", GREY, arrestFields(row));
+    await syncAlert(supabaseAdmin, "arrestations", row, "arrestations", `🗑️ Arrestation annulée - ${row.membre}`, "Stock remis, prime de paie retirée.", GREY, arrestFields(row));
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

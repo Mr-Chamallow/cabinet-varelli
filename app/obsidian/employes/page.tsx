@@ -74,7 +74,7 @@ export default function EmployesObsidianPage() {
   }
   async function promouvoir() {
     if (!cardEmp || !promoRole || promoRole === cardEmp.role) return;
-    const from = cardEmp.role || "—", nom = cardEmp.nom, id = cardEmp.id, to = promoRole;
+    const from = cardEmp.role || "-", nom = cardEmp.nom, id = cardEmp.id, to = promoRole;
     const r = await fetch("/api/obsidian/employes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, role: to }) });
     if (!r.ok) { const d = await r.json(); alert("❌ " + d.error); return; }
     setPromo({ nom, from, to, step: 0 });
@@ -150,7 +150,7 @@ export default function EmployesObsidianPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">← Obsidian Logistics</a>
+      <a className="back-link" href="/obsidian">Obsidian Logistics</a>
       <div className="page-header">
         <div>
           <h1 className="page-title">Employés</h1>
@@ -167,7 +167,7 @@ export default function EmployesObsidianPage() {
       </div>
 
       {loading ? (
-        <div className="empty-state"><div className="empty-icon">🧑‍💼</div><div className="empty-title">Chargement…</div></div>
+        <div className="empty-state"><div className="empty-icon">🧑‍💼</div><div className="empty-title">Chargement...</div></div>
       ) : visibles.length === 0 ? (
         <div className="empty-state"><div className="empty-icon">🧑‍💼</div><div className="empty-title">Aucun employé enregistré</div></div>
       ) : (
@@ -189,22 +189,22 @@ export default function EmployesObsidianPage() {
       {showForm && (
         <Modal title={<>{editId ? "Modifier l'employé" : "Nouvel employé"}</>} onClose={() => setShowForm(false)} footer={<>
               <button className="btn btn-outline" onClick={() => setShowForm(false)}>Annuler</button>
-              <button className="btn btn-gold" onClick={save} disabled={saving || !form.nom.trim()}>{saving ? "…" : editId ? "Mettre à jour" : "Ajouter"}</button></>}>
+              <button className="btn btn-gold" onClick={save} disabled={saving || !form.nom.trim()}>{saving ? "..." : editId ? "Mettre à jour" : "Ajouter"}</button></>}>
               <div className="form-group"><label>Nom *</label><input autoFocus value={form.nom} disabled={!!editId && !isPatron} title={!!editId && !isPatron ? "Seul le Patron peut renommer" : ""} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} />{!!editId && !isPatron && <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: 4 }}>Seul le Patron peut renommer un employé.</div>}</div>
               <div className="form-group">
                 <label>Rôle</label>
                 <select value={form.role} disabled={!!editId && !canPromote} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
-                  <option value="">— Choisir un rôle —</option>
+                  <option value=""> -  Choisir un rôle  - </option>
                   {form.role && !ROLES_LOGISTIQUE.includes(form.role) && <option value={form.role}>{form.role}</option>}
                   {ROLES_LOGISTIQUE.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
                 {!!editId && !canPromote && <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: 4 }}>Seuls le CEO et le COO peuvent changer le rôle (promotion).</div>}
               </div>
-              <div className="form-group"><label>Genre (pour « Directeur / Directrice », « Agent / Agente »…)</label><select value={form.genre} onChange={e => setForm(f => ({ ...f, genre: e.target.value }))}><option value="m">Masculin</option><option value="f">Féminin</option></select></div>
+              <div className="form-group"><label>Genre (pour « Directeur / Directrice », « Agent / Agente »...)</label><select value={form.genre} onChange={e => setForm(f => ({ ...f, genre: e.target.value }))}><option value="m">Masculin</option><option value="f">Féminin</option></select></div>
               <div className="form-grid">
                 <div className="form-group"><label>Téléphone</label><input value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} /></div>
               </div>
-              <div className="form-group"><label>RIB</label><input value={form.rib} onChange={e => setForm(f => ({ ...f, rib: e.target.value }))} placeholder="Ex: FR76 …" /></div>
+              <div className="form-group"><label>RIB</label><input value={form.rib} onChange={e => setForm(f => ({ ...f, rib: e.target.value }))} placeholder="Ex: FR76 ..." /></div>
               <div className="form-group"><label>Email</label><input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
               <div className="form-group"><label>Notes</label><textarea rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
               <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
@@ -214,7 +214,7 @@ export default function EmployesObsidianPage() {
       )}
 
       {cardEmp && (
-        <Modal size="xl" title={`🗂️ Dossier — ${cardEmp.nom}`} onClose={() => setCardId(null)}>
+        <Modal size="xl" title={`🗂️ Dossier - ${cardEmp.nom}`} onClose={() => setCardId(null)}>
           <div className="fd-emp" style={{ maxHeight: "74vh", overflowY: "auto", padding: "0.4rem" }}>
             <div>
               <EmployeeCard e={cardEmp} />
@@ -227,7 +227,7 @@ export default function EmployesObsidianPage() {
                 <div className="card" style={{ marginTop: "0.9rem", padding: "0.8rem" }}>
                   <div style={{ fontSize: "0.72rem", fontWeight: 700, marginBottom: 6 }}>⬆️ Promotion (CEO / COO)</div>
                   <select value={promoRole} onChange={e => setPromoRole(e.target.value)}>
-                    <option value="">— Nouveau rôle —</option>
+                    <option value=""> -  Nouveau rôle  - </option>
                     {ROLES_LOGISTIQUE.filter(r => r !== cardEmp.role).map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                   <button className="btn btn-gold btn-sm" style={{ width: "100%", marginTop: 6 }} disabled={!promoRole} onClick={promouvoir}>Promouvoir</button>
@@ -241,8 +241,8 @@ export default function EmployesObsidianPage() {
               {dTab === "dossier" ? <EmployeeDossier e={cardEmp} /> : dTab === "psy" ? <ProfilPsy value={cardEmp.profil_psy} canEdit={true} onSave={savePsy} /> : (
                 <div className="card">
                   <div className="section-title" style={{ marginBottom: 8 }}>Histoire du personnage</div>
-                  <div className="form-group"><label>Texte de l'histoire</label><textarea rows={10} value={histTxt} onChange={e => setHistTxt(e.target.value)} placeholder="Écris ou colle le background du personnage…" /></div>
-                  <div className="form-group"><label>Lien Google Doc (optionnel)</label><input value={histUrl} onChange={e => setHistUrl(e.target.value)} placeholder="https://docs.google.com/document/d/…" /></div>
+                  <div className="form-group"><label>Texte de l'histoire</label><textarea rows={10} value={histTxt} onChange={e => setHistTxt(e.target.value)} placeholder="Écris ou colle le background du personnage..." /></div>
+                  <div className="form-group"><label>Lien Google Doc (optionnel)</label><input value={histUrl} onChange={e => setHistUrl(e.target.value)} placeholder="https://docs.google.com/document/d/..." /></div>
                   <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
                     <button className="btn btn-gold btn-sm" onClick={saveHistoire}>Enregistrer</button>
                     {cardEmp.histoire_url && <a className="btn btn-outline btn-sm" href={cardEmp.histoire_url} target="_blank" rel="noreferrer">Ouvrir ↗</a>}
@@ -261,7 +261,7 @@ export default function EmployesObsidianPage() {
           <div className={`promo-stage ${promo.step ? "promo-new" : ""}`}>
             <div className="promo-title">⬆️ PROMOTION</div>
             <EmployeeCard e={{ ...(employes.find(x => x.nom === promo.nom) as any), role: promo.step ? promo.to : promo.from }} flippable={false} />
-            <div className="promo-sub">{promo.nom} · {promo.from} → <b>{promo.to}</b></div>
+            <div className="promo-sub">{promo.nom} · {promo.from} {'->'} <b>{promo.to}</b></div>
           </div>
         </div>
       )}

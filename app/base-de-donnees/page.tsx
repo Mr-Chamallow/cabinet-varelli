@@ -82,8 +82,8 @@ export default function BaseDeDonneesPage() {
     setLoading(false);
   }
 
-  // ─── Lien personne ↔ point chaud (stocké côté carte_points.personne_ids,
-  // réutilise le champ déjà existant sur la carte enquêteur) ───────────────
+  // --- Lien personne <-> point chaud (stocké côté carte_points.personne_ids,
+  // réutilise le champ déjà existant sur la carte enquêteur) ---
   function pointOf(personneId: string): CartePoint | null {
     return points.find(pt => (pt.personne_ids || []).includes(personneId)) || null;
   }
@@ -101,7 +101,7 @@ export default function BaseDeDonneesPage() {
     if (old || newPointId) setPoints(await fetchPoints());
   }
 
-  // ─── Timeline d'activité ────────────────────────────────────────────────
+  // --- Timeline d'activité ---
   async function logActivite(personneId: string, type: string, description: string) {
     if (!supabase) return;
     await supabase.from("bdd_activites").insert([{ personne_id: personneId, type, description, created_by: user?.nom || "" }]);
@@ -112,7 +112,7 @@ export default function BaseDeDonneesPage() {
       .then(({ data }: any) => setActivites(data || []));
   }, [selectedPersonneId]);
 
-  // ─── Recherche globale (personne ou plaque) ───────────────────────────
+  // --- Recherche globale (personne ou plaque) ---
   const globalResults = useMemo(() => {
     const q = globalQuery.trim().toLowerCase();
     if (!q) return { personnes: [], vehicules: [] };
@@ -122,7 +122,7 @@ export default function BaseDeDonneesPage() {
     };
   }, [globalQuery, personnes, vehicules]);
 
-  // ─── Import rapide : détecte un doublon pendant la création (nom, tel) ───
+  // --- Import rapide : détecte un doublon pendant la création (nom, tel) ---
   const quickImportMatches = useMemo(() => {
     const q = quickImportQuery.trim().toLowerCase();
     if (!q || editPersonneId) return [];
@@ -134,7 +134,7 @@ export default function BaseDeDonneesPage() {
     openEditPersonne(p);
   }
 
-  // ─── Dossiers liés : recherche pour ajouter un lien ────────────────────
+  // --- Dossiers liés : recherche pour ajouter un lien ---
   const liensMatches = useMemo(() => {
     const q = liensQuery.trim().toLowerCase();
     if (!q) return [];
@@ -153,7 +153,7 @@ export default function BaseDeDonneesPage() {
   function gotoPersonne(id: string) { setTab("personnes"); setSelectedPersonneId(id); setGlobalQuery(""); }
   function gotoVehicule(id: string) { setTab("vehicules"); setSelectedVehiculeId(id); setGlobalQuery(""); }
 
-  // ─── Personnes ─────────────────────────────────────────────────────────
+  // --- Personnes ---
   const filteredPersonnes = personnes.filter(p => !search || `${fullName(p)} ${p.surnom || ""}`.toLowerCase().includes(search.toLowerCase()));
   const selectedPersonne = personnes.find(p => p.id === selectedPersonneId) || null;
   const vehiculesDe = (personneId: string) => vehicules.filter(v => v.proprietaire_id === personneId);
@@ -162,7 +162,7 @@ export default function BaseDeDonneesPage() {
   function openNewPersonne() { setPersonneForm({ ...EMPTY_PERSONNE }); setEditPersonneId(null); setTagsInput(""); setFormPointId(""); setLiensQuery(""); setQuickImportQuery(""); setShowPersonneForm(true); }
   function openEditPersonne(p: Personne) { setPersonneForm({ ...p, liens_ids: p.liens_ids || [] }); setEditPersonneId(p.id); setTagsInput((p.tags || []).join(", ")); setFormPointId(pointOf(p.id)?.id || ""); setLiensQuery(""); setQuickImportQuery(""); setShowPersonneForm(true); }
 
-  // ─── Dossiers liés (liens_ids, symétrique entre les deux fiches) ───────
+  // --- Dossiers liés (liens_ids, symétrique entre les deux fiches) ---
   async function syncLiens(personneId: string, newLiens: string[]) {
     if (!supabase) return;
     const before = personnes.find(p => p.id === personneId);
@@ -187,7 +187,7 @@ export default function BaseDeDonneesPage() {
     }
   }
 
-  // ─── Notification Discord — uniquement les events "importants" ────────
+  // --- Notification Discord - uniquement les events "importants" ---
   async function notifyDiscord(title: string, description: string, color = 0xef4444) {
     try {
       await fetch("/api/discord-notify", {
@@ -211,8 +211,8 @@ export default function BaseDeDonneesPage() {
       setPersonnes(list => list.map(x => x.id === editPersonneId ? data : x));
       if (data.fiche_id) await syncBddToFiche(supabase, data); // fiche liée mise à jour aussi
       showToast("Fiche mise à jour");
-      if (before && before.statut !== data.statut) await logActivite(data.id, "statut", `Statut : ${before.statut || "—"} → ${data.statut || "—"}`);
-      if (before && before.groupe_id !== data.groupe_id) await logActivite(data.id, "groupe", `Groupe : ${gangOf(before.groupe_id)?.nom || "aucun"} → ${gangOf(data.groupe_id)?.nom || "aucun"}`);
+      if (before && before.statut !== data.statut) await logActivite(data.id, "statut", `Statut : ${before.statut || "-"} -> ${data.statut || "-"}`);
+      if (before && before.groupe_id !== data.groupe_id) await logActivite(data.id, "groupe", `Groupe : ${gangOf(before.groupe_id)?.nom || "aucun"} -> ${gangOf(data.groupe_id)?.nom || "aucun"}`);
       if (before && before.priorite !== "Critique" && data.priorite === "Critique") {
         await notifyDiscord("🚨 Priorité CRITIQUE", `**${fullName(data)}** est passé(e) en priorité Critique${user?.nom ? ` (par ${user.nom})` : ""}.`);
       }
@@ -248,11 +248,11 @@ export default function BaseDeDonneesPage() {
     setPersonneForm(f => ({ ...f, [field]: url }));
   }
 
-  // ─── Véhicules ──────────────────────────────────────────────────────────
+  // --- Véhicules ---
   const filteredVehicules = vehicules.filter(v => !search || v.plaque.toLowerCase().includes(search.toLowerCase()));
   const selectedVehicule = vehicules.find(v => v.id === selectedVehiculeId) || null;
 
-  // ─── Alerte plaque récurrente : même plaque déjà vue sur une autre fiche ───
+  // --- Alerte plaque récurrente : même plaque déjà vue sur une autre fiche ---
   const norm = (p: string) => (p || "").trim().toUpperCase().replace(/\s+/g, "");
   function autresFichesPourPlaque(plaque: string, excludeId?: string | null) {
     const p = norm(plaque);
@@ -292,7 +292,7 @@ export default function BaseDeDonneesPage() {
       showToast("Véhicule ajouté");
       if (doublonsAvant.length > 0) {
         const noms = doublonsAvant.map(v => v.marque_modele || v.id).join(", ");
-        await notifyDiscord("🚨 Plaque récurrente détectée", `La plaque **${data.plaque}** est déjà enregistrée sur ${doublonsAvant.length} autre(s) fiche(s) (${noms})${user?.nom ? ` — ajoutée par ${user.nom}` : ""}.`, 0xf97316);
+        await notifyDiscord("🚨 Plaque récurrente détectée", `La plaque **${data.plaque}** est déjà enregistrée sur ${doublonsAvant.length} autre(s) fiche(s) (${noms})${user?.nom ? ` - ajoutée par ${user.nom}` : ""}.`, 0xf97316);
       }
     }
     setShowVehiculeForm(false); setEditVehiculeId(null); setSavingVehicule(false);
@@ -315,7 +315,7 @@ export default function BaseDeDonneesPage() {
     setVehiculeForm(f => ({ ...f, photos: (f.photos || []).filter((_, i) => i !== idx) }));
   }
 
-  // ─── Groupes ────────────────────────────────────────────────────────────
+  // --- Groupes ---
   const selectedGroupe = gangs.find(g => g.id === selectedGroupeId) || null;
   const membresDe = (groupeId: string) => personnes.filter(p => p.groupe_id === groupeId);
   const vehiculesGroupe = (groupeId: string) => vehicules.filter(v => v.groupe_id === groupeId);
@@ -352,20 +352,20 @@ export default function BaseDeDonneesPage() {
     showToast("Groupe supprimé, fiches détachées");
   }
 
-  if (loading) return <div className="page-container"><div style={{ color: "var(--text-dim)" }}>Chargement…</div></div>;
+  if (loading) return <div className="page-container"><div style={{ color: "var(--text-dim)" }}>Chargement...</div></div>;
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">← Dashboard Obsidian</a>
+      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
       <div className="page-header">
-        <div><h1 className="page-title">🗄️ Base de données</h1><p className="page-subtitle">Recensements · Véhicules · Groupes — tout au même endroit</p><div className="gold-line" /></div>
+        <div><h1 className="page-title">🗄️ Base de données</h1><p className="page-subtitle">Recensements · Véhicules · Groupes - tout au même endroit</p><div className="gold-line" /></div>
       </div>
 
       {/* Recherche globale */}
       <div style={{ position: "relative", marginBottom: "1rem" }}>
         <div className="search-bar"><span className="search-icon">🔍</span>
-          <input placeholder="Rechercher une personne ou une plaque…" value={globalQuery} onChange={e => setGlobalQuery(e.target.value)} />
-          {globalQuery && <button onClick={() => setGlobalQuery("")} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer" }}>×</button>}
+          <input placeholder="Rechercher une personne ou une plaque..." value={globalQuery} onChange={e => setGlobalQuery(e.target.value)} />
+          {globalQuery && <button onClick={() => setGlobalQuery("")} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer" }}>x</button>}
         </div>
         {globalQuery && (globalResults.personnes.length > 0 || globalResults.vehicules.length > 0) && (
           <div className="card" style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, marginTop: 4, maxHeight: 320, overflowY: "auto", padding: "0.5rem" }}>
@@ -391,12 +391,12 @@ export default function BaseDeDonneesPage() {
         <button className={tab === "groupes" ? "btn btn-gold" : "btn btn-outline"} onClick={() => setTab("groupes")}>🛡️ Groupes ({gangs.length})</button>
       </div>
 
-      {/* ─── Onglet Personnes ─────────────────────────────────────────── */}
+      {/* --- Onglet Personnes --- */}
       {tab === "personnes" && (
         <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "1.25rem", alignItems: "start" }}>
           <div>
             <div style={{ display: "flex", gap: 8, marginBottom: "0.75rem" }}>
-              <div className="search-bar" style={{ flex: 1 }}><span className="search-icon">🔍</span><input placeholder="Filtrer…" value={search} onChange={e => setSearch(e.target.value)} /></div>
+              <div className="search-bar" style={{ flex: 1 }}><span className="search-icon">🔍</span><input placeholder="Filtrer..." value={search} onChange={e => setSearch(e.target.value)} /></div>
               {canWrite && <button className="btn btn-gold btn-sm" onClick={openNewPersonne}>+</button>}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
@@ -486,10 +486,10 @@ export default function BaseDeDonneesPage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", maxHeight: 220, overflowY: "auto" }}>
                     {activites.map(a => (
                       <div key={a.id} style={{ display: "flex", gap: 8, fontSize: "0.76rem" }}>
-                        <span>{ACT_ICON[a.type] || "•"}</span>
+                        <span>{ACT_ICON[a.type] || "·"}</span>
                         <div style={{ flex: 1 }}>
                           <div style={{ color: "var(--text-muted)" }}>{a.description}</div>
-                          <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>{new Date(a.created_at).toLocaleString("fr-FR")}{a.created_by ? " — " + a.created_by : ""}</div>
+                          <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>{new Date(a.created_at).toLocaleString("fr-FR")}{a.created_by ? " - " + a.created_by : ""}</div>
                         </div>
                       </div>
                     ))}
@@ -501,12 +501,12 @@ export default function BaseDeDonneesPage() {
         </div>
       )}
 
-      {/* ─── Onglet Véhicules ─────────────────────────────────────────── */}
+      {/* --- Onglet Véhicules --- */}
       {tab === "vehicules" && (
         <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "1.25rem", alignItems: "start" }}>
           <div>
             <div style={{ display: "flex", gap: 8, marginBottom: "0.75rem" }}>
-              <div className="search-bar" style={{ flex: 1 }}><span className="search-icon">🔍</span><input placeholder="Filtrer une plaque…" value={search} onChange={e => setSearch(e.target.value)} /></div>
+              <div className="search-bar" style={{ flex: 1 }}><span className="search-icon">🔍</span><input placeholder="Filtrer une plaque..." value={search} onChange={e => setSearch(e.target.value)} /></div>
               {canWrite && <button className="btn btn-gold btn-sm" onClick={openNewVehicule}>+</button>}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
@@ -522,7 +522,7 @@ export default function BaseDeDonneesPage() {
                         <div style={{ fontWeight: 700, fontSize: "0.82rem", fontFamily: "var(--font-mono)" }}>{v.plaque}</div>
                         {plaquesRecurrentes.has(norm(v.plaque)) && <span title="Plaque récurrente : vue sur plusieurs fiches">⚠️</span>}
                       </div>
-                      <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>{v.marque_modele || "—"}</div>
+                      <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>{v.marque_modele || "-"}</div>
                     </div>
                   </button>
                 );
@@ -561,7 +561,7 @@ export default function BaseDeDonneesPage() {
 
               {autresFichesPourPlaque(selectedVehicule.plaque, selectedVehicule.id).length > 0 && (
                 <div style={{ marginTop: "0.75rem", padding: "0.625rem 0.875rem", background: "rgba(249,115,22,0.08)", borderRadius: "var(--radius)", borderLeft: "3px solid #f97316" }}>
-                  <div style={{ fontSize: "0.68rem", color: "#f97316", fontWeight: 700, marginBottom: "0.35rem" }}>⚠️ Plaque récurrente — autres fiches avec la même plaque</div>
+                  <div style={{ fontSize: "0.68rem", color: "#f97316", fontWeight: 700, marginBottom: "0.35rem" }}>⚠️ Plaque récurrente - autres fiches avec la même plaque</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {autresFichesPourPlaque(selectedVehicule.plaque, selectedVehicule.id).map(v => (
                       <button key={v.id} onClick={() => gotoVehicule(v.id)} className="card" style={{ padding: "0.35rem 0.6rem", cursor: "pointer", fontSize: "0.76rem" }}>
@@ -576,7 +576,7 @@ export default function BaseDeDonneesPage() {
         </div>
       )}
 
-      {/* ─── Onglet Groupes ───────────────────────────────────────────── */}
+      {/* --- Onglet Groupes --- */}
       {tab === "groupes" && (
         <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "1.25rem", alignItems: "start" }}>
           <div>
@@ -618,15 +618,15 @@ export default function BaseDeDonneesPage() {
         </div>
       )}
 
-      {/* ─── Modale Personne ──────────────────────────────────────────── */}
+      {/* --- Modale Personne --- */}
       {showPersonneForm && (
-        <Modal title={<>{editPersonneId ? "Modifier" : "Nouveau"} recensement</>} onClose={() => setShowPersonneForm(false)} size="lg" footer={<><button className="btn btn-outline" onClick={() => setShowPersonneForm(false)}>Annuler</button><button className="btn btn-gold" onClick={savePersonne} disabled={savingPersonne || !personneForm.nom}>{savingPersonne ? "…" : "Sauvegarder"}</button></>}>
+        <Modal title={<>{editPersonneId ? "Modifier" : "Nouveau"} recensement</>} onClose={() => setShowPersonneForm(false)} size="lg" footer={<><button className="btn btn-outline" onClick={() => setShowPersonneForm(false)}>Annuler</button><button className="btn btn-gold" onClick={savePersonne} disabled={savingPersonne || !personneForm.nom}>{savingPersonne ? "..." : "Sauvegarder"}</button></>}>
           <div style={{ maxHeight: "62vh", overflowY: "auto" }}>
             {!editPersonneId && (
               <div style={{ position: "relative", marginBottom: "1rem" }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>🔎 Import rapide — vérifier si la fiche existe déjà (nom, tel)</label>
-                  <input value={quickImportQuery} onChange={e => setQuickImportQuery(e.target.value)} placeholder="Taper un nom ou un téléphone…" />
+                  <label>🔎 Import rapide - vérifier si la fiche existe déjà (nom, tel)</label>
+                  <input value={quickImportQuery} onChange={e => setQuickImportQuery(e.target.value)} placeholder="Taper un nom ou un téléphone..." />
                 </div>
                 {quickImportMatches.length > 0 && (
                   <div className="card" style={{ marginTop: 6, padding: "0.4rem" }}>
@@ -634,7 +634,7 @@ export default function BaseDeDonneesPage() {
                       <button key={p.id} onClick={() => importPersonne(p)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "0.45rem 0.6rem", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}>
                         <span>👤</span><span style={{ fontWeight: 600 }}>{fullName(p)}</span>
                         {p.telephone && <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>{p.telephone}</span>}
-                        <span style={{ marginLeft: "auto", fontSize: "0.68rem", color: "var(--gold)" }}>Ouvrir →</span>
+                        <span style={{ marginLeft: "auto", fontSize: "0.68rem", color: "var(--gold)" }}>Ouvrir {'->'}</span>
                       </button>
                     ))}
                   </div>
@@ -672,12 +672,12 @@ export default function BaseDeDonneesPage() {
                   return (
                     <span key={id} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.72rem", padding: "0.15rem 0.5rem", borderRadius: 999, background: "var(--gold-muted)", color: "var(--gold)", border: "1px solid rgba(var(--gold-rgb), 0.3)" }}>
                       {p2 ? fullName(p2) : "?"}
-                      <button onClick={() => removeLien(id)} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", fontWeight: 700, padding: 0 }}>×</button>
+                      <button onClick={() => removeLien(id)} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", fontWeight: 700, padding: 0 }}>x</button>
                     </span>
                   );
                 })}
               </div>
-              <input value={liensQuery} onChange={e => setLiensQuery(e.target.value)} placeholder="Chercher une personne à lier…" />
+              <input value={liensQuery} onChange={e => setLiensQuery(e.target.value)} placeholder="Chercher une personne à lier..." />
               {liensMatches.length > 0 && (
                 <div className="card" style={{ position: "absolute", zIndex: 10, marginTop: 4, padding: "0.35rem", width: "100%" }}>
                   {liensMatches.map(p => (
@@ -693,15 +693,15 @@ export default function BaseDeDonneesPage() {
         </Modal>
       )}
 
-      {/* ─── Modale Véhicule ──────────────────────────────────────────── */}
+      {/* --- Modale Véhicule --- */}
       {showVehiculeForm && (
-        <Modal title={<>{editVehiculeId ? "Modifier" : "Nouveau"} véhicule</>} onClose={() => setShowVehiculeForm(false)} footer={<><button className="btn btn-outline" onClick={() => setShowVehiculeForm(false)}>Annuler</button><button className="btn btn-gold" onClick={saveVehicule} disabled={savingVehicule || !vehiculeForm.plaque}>{savingVehicule ? "…" : "Sauvegarder"}</button></>}>
+        <Modal title={<>{editVehiculeId ? "Modifier" : "Nouveau"} véhicule</>} onClose={() => setShowVehiculeForm(false)} footer={<><button className="btn btn-outline" onClick={() => setShowVehiculeForm(false)}>Annuler</button><button className="btn btn-gold" onClick={saveVehicule} disabled={savingVehicule || !vehiculeForm.plaque}>{savingVehicule ? "..." : "Sauvegarder"}</button></>}>
           <label style={{ display: "block", fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>📸 Photos (3 max)</label>
           <div style={{ display: "flex", gap: 8, marginBottom: "1rem" }}>
             {(vehiculeForm.photos || []).map((url, i) => (
               <div key={i} style={{ position: "relative", width: 84, height: 64, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border-light)", boxShadow: "0 2px 8px rgba(0,0,0,0.35)" }}>
                 <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                <button onClick={() => removeVehiculePhoto(i)} style={{ position: "absolute", top: 3, right: 3, background: "rgba(0,0,0,0.65)", color: "#fff", border: "none", borderRadius: "50%", width: 17, height: 17, fontSize: 10, cursor: "pointer", lineHeight: "17px" }}>×</button>
+                <button onClick={() => removeVehiculePhoto(i)} style={{ position: "absolute", top: 3, right: 3, background: "rgba(0,0,0,0.65)", color: "#fff", border: "none", borderRadius: "50%", width: 17, height: 17, fontSize: 10, cursor: "pointer", lineHeight: "17px" }}>x</button>
               </div>
             ))}
             {(vehiculeForm.photos || []).length < 3 && (
@@ -737,7 +737,7 @@ export default function BaseDeDonneesPage() {
         </Modal>
       )}
 
-      {/* ─── Modale Groupe ────────────────────────────────────────────── */}
+      {/* --- Modale Groupe --- */}
       {showGroupeForm && (
         <Modal title="Nouveau groupe" onClose={() => setShowGroupeForm(false)} footer={<><button className="btn btn-outline" onClick={() => setShowGroupeForm(false)}>Annuler</button><button className="btn btn-gold" onClick={addGroupe} disabled={!groupeNom.trim()}>Créer</button></>}>
           <div className="form-group"><label>Nom</label><input autoFocus value={groupeNom} onChange={e => setGroupeNom(e.target.value)} /></div>

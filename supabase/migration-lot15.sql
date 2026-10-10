@@ -1,4 +1,4 @@
--- Lot 15 : catégories de stock → tags simplifiés, statuts garage valides.
+-- Lot 15 : catégories de stock -> tags simplifiés, statuts garage valides.
 update obsidian_stocks set categorie = 'objet illégal' where lower(categorie) in ('objet rare','autre','objet_illegal','objet illegal');
 update obsidian_stocks set categorie = 'objet légal'   where lower(categorie) = 'radio';
 update obsidian_stocks set categorie = 'kev'           where lower(categorie) = 'gilet';

@@ -1,4 +1,4 @@
--- Lot 2 : référentiel des groupes (Base de données → Groupes), carte employé (photo), arrestations → prime de paie. À exécuter une fois.
+-- Lot 2 : référentiel des groupes (Base de données -> Groupes), carte employé (photo), arrestations -> prime de paie. À exécuter une fois.
 
 -- 1) Photo de la carte employé
 alter table obsidian_employes add column if not exists photo_url text;

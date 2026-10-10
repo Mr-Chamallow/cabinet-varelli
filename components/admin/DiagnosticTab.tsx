@@ -48,7 +48,7 @@ export function DiagnosticTab() {
           )}
         </div>
         <button className="btn btn-outline btn-sm" onClick={run} disabled={loading}>
-          {loading ? "Vérification…" : "🔄 Relancer"}
+          {loading ? "Vérification..." : "🔄 Relancer"}
         </button>
       </div>
 
@@ -58,7 +58,7 @@ export function DiagnosticTab() {
         </div>
       )}
 
-      {!checks && loading && <div style={{ color: "var(--text-dim)" }}>Vérification en cours…</div>}
+      {!checks && loading && <div style={{ color: "var(--text-dim)" }}>Vérification en cours...</div>}
 
       {checks && (
         <>

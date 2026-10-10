@@ -1,8 +1,8 @@
 "use client";
 
-// ─── Emplacement photo (upload / lecture seule) : remplace les cases grises
+// --- Emplacement photo (upload / lecture seule) : remplace les cases grises
 // peu lisibles par une icône + libellé en bon contraste, cohérent avec le
-// design "badge" de la carte enquêteur. ─────────────────────────────────
+// design "badge" de la carte enquêteur. ---
 export function PhotoSlot({ url, icon, label, size = 64, onUpload, onRemove }: {
   url?: string | null; icon: string; label: string; size?: number;
   onUpload?: (file: File) => void; onRemove?: () => void;
@@ -34,7 +34,7 @@ export function PhotoSlot({ url, icon, label, size = 64, onUpload, onRemove }: {
         />
       )}
       {url && onRemove && (
-        <button onClick={onRemove} style={{ position: "absolute", top: 3, right: 3, width: 17, height: 17, borderRadius: "50%", background: "rgba(0,0,0,0.65)", color: "#fff", border: "none", fontSize: 10, cursor: "pointer", lineHeight: "17px" }}>×</button>
+        <button onClick={onRemove} style={{ position: "absolute", top: 3, right: 3, width: 17, height: 17, borderRadius: "50%", background: "rgba(0,0,0,0.65)", color: "#fff", border: "none", fontSize: 10, cursor: "pointer", lineHeight: "17px" }}>x</button>
       )}
     </div>
   );

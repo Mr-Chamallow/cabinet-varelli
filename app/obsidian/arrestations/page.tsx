@@ -118,7 +118,7 @@ export default function ArrestationsPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">← Dashboard Obsidian</a>
+      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
       <div className="page-header">
         <div>
           <h1 className="page-title">🚔 Arrestations</h1>
@@ -162,7 +162,7 @@ export default function ArrestationsPage() {
                 </div>
                 {a.photo_url && <img src={a.photo_url} alt="Photo de l'arrestation" title="Voir la photo" onClick={() => setZoom(a.photo_url!)} style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 8, border: "1px solid var(--border)", cursor: "zoom-in" }} />}
                 {a.amende > 0 && <span style={{ fontSize: "0.75rem", padding: "0.15rem 0.6rem", borderRadius: 999, background: "rgba(234,179,8,0.12)", color: "var(--warning)", border: "1px solid rgba(234,179,8,0.3)", fontWeight: 700 }}>Amende {fmt(a.amende)}</span>}
-                {a.argent_perdu > 0 && <span style={{ fontSize: "0.75rem", padding: "0.15rem 0.6rem", borderRadius: 999, background: "rgba(239,68,68,0.1)", color: "var(--danger)", border: "1px solid rgba(239,68,68,0.3)", fontWeight: 700 }}>−{fmt(a.argent_perdu)} ({a.type_argent})</span>}
+                {a.argent_perdu > 0 && <span style={{ fontSize: "0.75rem", padding: "0.15rem 0.6rem", borderRadius: 999, background: "rgba(239,68,68,0.1)", color: "var(--danger)", border: "1px solid rgba(239,68,68,0.3)", fontWeight: 700 }}>-{fmt(a.argent_perdu)} ({a.type_argent})</span>}
                 <button className="btn btn-ghost btn-sm" onClick={() => openEdit(a)} title="Modifier">✏️</button>
                 <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => del(a)} title="Annuler (remet le stock)">🗑️</button>
               </div>
@@ -170,7 +170,7 @@ export default function ArrestationsPage() {
                 <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
                   {a.items.map((it: any, i: number) => (
                     <span key={i} style={{ fontSize: "0.7rem", padding: "0.12rem 0.55rem", borderRadius: 999, background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                      {it.emoji} {it.nom} × {it.quantite}{it.retire < it.quantite ? ` (stock : ${it.retire} retiré)` : ""}
+                      {it.emoji} {it.nom} x {it.quantite}{it.retire < it.quantite ? ` (stock : ${it.retire} retiré)` : ""}
                     </span>
                   ))}
                 </div>
@@ -185,13 +185,13 @@ export default function ArrestationsPage() {
           title={editId ? "Modifier l'arrestation" : "Nouvelle arrestation"}
           size="lg"
           onClose={() => setShowForm(false)}
-          footer={<><button className="btn btn-outline" onClick={() => setShowForm(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.membre} onClick={save}>{saving ? "…" : "Enregistrer"}</button></>}
+          footer={<><button className="btn btn-outline" onClick={() => setShowForm(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.membre} onClick={save}>{saving ? "..." : "Enregistrer"}</button></>}
         >
           <div className="form-grid">
             <div>
               <label>Employé arrêté *</label>
               <select value={form.membre} onChange={e => setForm({ ...form, membre: e.target.value })}>
-                <option value="">— Choisir —</option>
+                <option value=""> -  Choisir  - </option>
                 {employes.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
               {employes.length === 0 && <div style={{ fontSize: "0.68rem", color: "var(--warning)", marginTop: 4 }}>Aucun employé : ajoute-les dans la page Employés.</div>}
@@ -201,11 +201,11 @@ export default function ArrestationsPage() {
               <input type="datetime-local" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
             </div>
             <div>
-              <label>🧾 Amende ($) — non déduite du solde</label>
+              <label>🧾 Amende ($) - non déduite du solde</label>
               <input type="number" min="0" value={form.amende} onChange={e => setForm({ ...form, amende: e.target.value })} placeholder="0" />
             </div>
             <div>
-              <label>💵 Argent perdu ($) — noté sur le profil, pas en compta</label>
+              <label>💵 Argent perdu ($) - noté sur le profil, pas en compta</label>
               <input type="number" min="0" value={form.argent} onChange={e => setForm({ ...form, argent: e.target.value })} placeholder="0" />
             </div>
           </div>
@@ -228,7 +228,7 @@ export default function ArrestationsPage() {
                 return (
                   <div key={i} style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
                     <select value={r.stock_id} onChange={e => setRows(rs => rs.map((x, j) => j === i ? { ...x, stock_id: e.target.value } : x))} style={{ flex: 1 }}>
-                      <option value="">— Objet —</option>
+                      <option value=""> -  Objet  - </option>
                       {grouped.map(([cat, arr]) => (
                         <optgroup key={cat} label={cat}>
                           {arr.map(s => <option key={s.id} value={s.id}>{s.emoji} {s.nom} (stock : {s.quantite})</option>)}
@@ -246,12 +246,12 @@ export default function ArrestationsPage() {
           </div>
 
           <div>
-            <label>📷 Photo (preuve — inventaire, saisie…)</label>
+            <label>📷 Photo (preuve - inventaire, saisie...)</label>
             <PhotoPicker evidence value={form.photo_url} onChange={u => setForm(f => ({ ...f, photo_url: u || "" }))} />
           </div>
           <div>
             <label>Notes (optionnel)</label>
-            <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Lieu, circonstances…" />
+            <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Lieu, circonstances..." />
           </div>
         </Modal>
       )}

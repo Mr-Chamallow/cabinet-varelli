@@ -59,7 +59,7 @@ export default function RegistreModal({ onClose, readOnly = false }: Props) {
         setPlaques(pl);
       } catch (err) {
         console.error(err);
-        setLoadError("Connexion à Supabase indisponible — mode local (rien n'est sauvegardé).");
+        setLoadError("Connexion à Supabase indisponible - mode local (rien n'est sauvegardé).");
       }
     })();
   }, []);
@@ -197,7 +197,7 @@ export default function RegistreModal({ onClose, readOnly = false }: Props) {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un nom, une plaque, une note…"
+            placeholder="Rechercher un nom, une plaque, une note..."
             style={inputStyle}
           />
         </div>
@@ -260,7 +260,7 @@ export default function RegistreModal({ onClose, readOnly = false }: Props) {
                     onChange={(e) => patchPlaque(p.id, { personne_id: e.target.value || null })}
                     style={{ ...inputStyle, width: '30%' }}
                   >
-                    <option value="">— Propriétaire inconnu —</option>
+                    <option value=""> -  Propriétaire inconnu  - </option>
                     {personnes.map((pe) => (
                       <option key={pe.id} value={pe.id}>
                         {pe.nom} {pe.prenom ?? ''}

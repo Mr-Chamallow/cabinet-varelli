@@ -29,7 +29,7 @@ export const COULEURS_PRESET = [
   "#3b82f6","#84cc16","#e11d48","#0ea5e9","#d97706",
 ];
 
-// ─── Niveau d'accès par permission : aucun → lecture → écriture → aucun ───
+// --- Niveau d'accès par permission : aucun -> lecture -> écriture -> aucun ---
 // Stocké comme "perm" (écriture, rétro-compat) ou "perm:read" (lecture seule).
 type PermLvl = "none" | "read" | "write";
 export function getPermLvl(perms: string[], perm: string): PermLvl {
@@ -42,7 +42,7 @@ function cyclePermLvl(perms: string[], perm: string): string[] {
   const stripped = perms.filter(p => p !== perm && p !== perm + ":read");
   if (current === "none") return [...stripped, perm + ":read"];
   if (current === "read") return [...stripped, perm];
-  return stripped; // write → none
+  return stripped; // write -> none
 }
 
 const ALL_INFO = PERMISSION_GUIDE.flatMap(g => g.perms);
@@ -125,7 +125,7 @@ export function RolesTab() {
     });
   }
 
-  if (loading) return <div style={{ color: "var(--text-dim)" }}>Chargement…</div>;
+  if (loading) return <div style={{ color: "var(--text-dim)" }}>Chargement...</div>;
 
   return (
     <div>
@@ -144,14 +144,14 @@ export function RolesTab() {
       <details className="card" style={{ marginBottom: "1rem" }}>
         <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: "0.85rem" }}>📖 Guide des permissions (ce que donne chaque accès)</summary>
         <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", margin: "0.6rem 0" }}>
-          ○ Aucun = page cachée · 👁 Lecture seule = voir sans rien modifier (boutons d'action masqués, API refusée) · ✓ Écriture = tout faire sur la page.
+          ○ Aucun = page cachée · 👁 Lecture seule = voir sans rien modifier (boutons d'action masqués, API refusée) · Écriture = tout faire sur la page.
         </div>
         {PERMISSION_GUIDE.map(g => (
           <div key={g.titre} style={{ marginBottom: "0.9rem" }}>
             <div className="section-title" style={{ margin: "0.4rem 0" }}>{g.icon} {g.titre}</div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", fontSize: "0.72rem", borderCollapse: "collapse" }}>
-                <thead><tr style={{ textAlign: "left", color: "var(--text-dim)" }}><th style={{ padding: "0.25rem 0.5rem" }}>Permission</th><th style={{ padding: "0.25rem 0.5rem" }}>👁 Lecture</th><th style={{ padding: "0.25rem 0.5rem" }}>✓ Écriture</th></tr></thead>
+                <thead><tr style={{ textAlign: "left", color: "var(--text-dim)" }}><th style={{ padding: "0.25rem 0.5rem" }}>Permission</th><th style={{ padding: "0.25rem 0.5rem" }}>👁 Lecture</th><th style={{ padding: "0.25rem 0.5rem" }}>Écriture</th></tr></thead>
                 <tbody>{g.perms.map(x => (
                   <tr key={x.key} style={{ borderTop: "1px solid var(--border)", verticalAlign: "top" }}>
                     <td style={{ padding: "0.35rem 0.5rem", fontWeight: 600, whiteSpace: "nowrap" }}>{PERMISSION_LABELS[x.key] || x.key}</td>
@@ -200,7 +200,7 @@ export function RolesTab() {
                     </>
                   ) : (
                     <>
-                      <button className="btn btn-gold btn-sm" onClick={() => saveRole(r.id)} disabled={savingRole}>{savingRole ? "…" : "✓ Sauvegarder"}</button>
+                      <button className="btn btn-gold btn-sm" onClick={() => saveRole(r.id)} disabled={savingRole}>{savingRole ? "..." : "Sauvegarder"}</button>
                       <button className="btn btn-ghost btn-sm" onClick={() => setEditRoleId(null)}>Annuler</button>
                     </>
                   )}
@@ -219,16 +219,16 @@ export function RolesTab() {
                 </div>
               )}
 
-              {(() => { const obs = currentPerms.filter(p => !ALL_PERMISSIONS.includes(p.replace(/:(read|write)$/, ""))); return obs.length > 0 ? <div style={{ fontSize: "0.7rem", color: "var(--danger)", marginBottom: "0.5rem" }}>⚠️ Permissions obsolètes (n'existent plus) : {obs.join(", ")} — retirées à l'enregistrement.</div> : null; })()}
+              {(() => { const obs = currentPerms.filter(p => !ALL_PERMISSIONS.includes(p.replace(/:(read|write)$/, ""))); return obs.length > 0 ? <div style={{ fontSize: "0.7rem", color: "var(--danger)", marginBottom: "0.5rem" }}>⚠️ Permissions obsolètes (n'existent plus) : {obs.join(", ")} - retirées à l'enregistrement.</div> : null; })()}
               {isEditing && (
                 <p style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginBottom: "0.5rem" }}>
-                  Clique une permission pour faire tourner : ○ Aucun → 👁 Lecture seule → ✓ Écriture
+                  Clique une permission pour faire tourner : ○ Aucun {'->'} 👁 Lecture seule {'->'} Écriture
                 </p>
               )}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: "0.375rem" }}>
                 {ALL_PERMISSIONS.map(p => {
                   const lvl = getPermLvl(currentPerms, p);
-                  const icon = lvl === "write" ? "✓" : lvl === "read" ? "👁" : "○";
+                  const icon = lvl === "write" ? "OK" : lvl === "read" ? "👁" : "○";
                   const color = lvl === "write" ? currentCouleur : lvl === "read" ? "var(--info)" : "var(--text-dim)";
                   return (
                     <button
@@ -259,7 +259,7 @@ export function RolesTab() {
       {showCreateRole && (
         <Modal title={<>Nouveau rôle</>} onClose={() => setShowCreateRole(false)} size="lg" footer={<>
           <button className="btn btn-outline" onClick={() => setShowCreateRole(false)}>Annuler</button>
-          <button className="btn btn-gold" onClick={createRole} disabled={creatingRole || !roleForm.nom.trim()}>{creatingRole ? "Création…" : "Créer le rôle"}</button></>}>
+          <button className="btn btn-gold" onClick={createRole} disabled={creatingRole || !roleForm.nom.trim()}>{creatingRole ? "Création..." : "Créer le rôle"}</button></>}>
           <div className="form-grid">
             <div className="form-group"><label>Nom du rôle *</label><input placeholder="Ex : Stagiaire" value={roleForm.nom} onChange={e => setRoleForm(f => ({ ...f, nom: e.target.value }))} autoFocus /></div>
             <div className="form-group">
@@ -274,7 +274,7 @@ export function RolesTab() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: "0.375rem" }}>
               {ALL_PERMISSIONS.map(p => {
                 const lvl = getPermLvl(roleForm.permissions, p);
-                const icon = lvl === "write" ? "✓" : lvl === "read" ? "👁" : "○";
+                const icon = lvl === "write" ? "OK" : lvl === "read" ? "👁" : "○";
                 const color = lvl === "write" ? roleForm.couleur : lvl === "read" ? "var(--info)" : "var(--text-dim)";
                 return (<button key={p} onClick={() => setRoleForm(f => ({ ...f, permissions: cyclePermLvl(f.permissions, p) }))} title={lvl === "write" ? "Écriture" : lvl === "read" ? "Lecture seule" : "Aucun accès"} style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.35rem 0.625rem", borderRadius: 8, background: lvl !== "none" ? color + "15" : "var(--surface)", border: `1px solid ${lvl !== "none" ? color + "35" : "var(--border)"}`, cursor: "pointer", fontFamily: "'Inter',sans-serif", fontSize: "0.72rem", color: lvl !== "none" ? color : "var(--text-dim)", fontWeight: lvl !== "none" ? 600 : 400, transition: "all 0.12s" }}><span style={{ fontSize: "0.6rem" }}>{icon}</span>{PERMISSION_LABELS[p] || p}</button>);
               })}

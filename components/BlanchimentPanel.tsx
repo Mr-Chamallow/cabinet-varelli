@@ -33,7 +33,7 @@ export function BlanchimentPanel({ onDone }: { onDone?: () => void }) {
     const r = await fetch("/api/obsidian/blanchiment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ montant, taux, membre, notes, sens, groupe, created_by: user?.nom }) });
     const d = await r.json(); setBusy(false);
     if (!r.ok) { setMsg("❌ " + d.error); return; }
-    setMsg(`✅ ${fmt(montant)} ${src}s → ${fmt(d.propre)} ${dst}s (frais ${fmt(d.frais)})`); setMontant(0); setNotes(""); load(); onDone?.();
+    setMsg(`✅ ${fmt(montant)} ${src}s -> ${fmt(d.propre)} ${dst}s (frais ${fmt(d.frais)})`); setMontant(0); setNotes(""); load(); onDone?.();
   }
 
   return (
@@ -41,20 +41,20 @@ export function BlanchimentPanel({ onDone }: { onDone?: () => void }) {
       <div className="card">
         <div className="section-title" style={{ marginBottom: "1rem" }}>🧼 Blanchir de l'argent</div>
         <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-          {([["sale_propre", "Sale → Propre"], ["propre_sale", "Propre → Sale"]] as const).map(([k, l]) => <button key={k} type="button" onClick={() => setSens(k)} className={sens === k ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} style={{ flex: 1, justifyContent: "center" }}>{l}</button>)}
+          {([["sale_propre", "Sale -> Propre"], ["propre_sale", "Propre -> Sale"]] as const).map(([k, l]) => <button key={k} type="button" onClick={() => setSens(k)} className={sens === k ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} style={{ flex: 1, justifyContent: "center" }}>{l}</button>)}
         </div>
         <div className="form-group"><label>Groupe qui blanchit pour nous (vide = nous-mêmes)</label><input list="bl-orgs" value={groupe} onChange={e => setGroupe(e.target.value)} placeholder="Ex: La Main de Minuit" /><datalist id="bl-orgs">{orgs.map(o => <option key={o} value={o} />)}</datalist></div>
         <div className="form-group"><label>Montant d'argent {src} à donner ($) *</label><input type="number" min={0} value={montant || ""} onChange={e => setMontant(+e.target.value)} style={{ fontWeight: 700, fontSize: "1.1rem" }} /></div>
         <div className="form-group"><label>Taux de perte (%)</label><input type="number" min={0} max={100} value={taux} onChange={e => setTaux(+e.target.value)} /></div>
-        <div className="form-group"><label>Employé</label><select value={membre} onChange={e => setMembre(e.target.value)}><option value="">— Aucun —</option>{emps.map(n => <option key={n}>{n}</option>)}</select></div>
+        <div className="form-group"><label>Employé</label><select value={membre} onChange={e => setMembre(e.target.value)}><option value=""> -  Aucun  - </option>{emps.map(n => <option key={n}>{n}</option>)}</select></div>
         <div className="form-group"><label>Notes</label><input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Ex: via le Casino" /></div>
-        <button className="btn btn-gold" disabled={busy || montant <= 0} onClick={go} style={{ width: "100%", justifyContent: "center" }}>{busy ? "…" : "🧼 Blanchir"}</button>
+        <button className="btn btn-gold" disabled={busy || montant <= 0} onClick={go} style={{ width: "100%", justifyContent: "center" }}>{busy ? "..." : "🧼 Blanchir"}</button>
         {msg && <div style={{ marginTop: 10, fontSize: "0.82rem" }}>{msg}</div>}
       </div>
       <div className="card">
         <div className="section-title" style={{ marginBottom: "0.9rem" }}>Aperçu</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.85rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}><span>Argent {src} sorti</span><b style={{ color: "var(--danger)" }}>−{fmt(montant)}</b></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>Argent {src} sorti</span><b style={{ color: "var(--danger)" }}>-{fmt(montant)}</b></div>
           <div style={{ display: "flex", justifyContent: "space-between" }}><span>Argent {dst} reçu</span><b style={{ color: "var(--success)" }}>+{fmt(propre)}</b></div>
           <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--border)", paddingTop: 8 }}><span>Frais de blanchiment (dépense réelle)</span><b style={{ color: "var(--warning)" }}>{fmt(montant - propre)}</b></div>
         </div>

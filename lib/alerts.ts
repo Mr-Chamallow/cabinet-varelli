@@ -22,7 +22,7 @@ export async function postAlert(kind: DiscordWebhookKind, title: string, descrip
   } catch {}
 }
 
-// Un seul message Discord par ligne (convoi, dossier, pacte, audit…) : créé une fois, puis MODIFIÉ à chaque changement.
+// Un seul message Discord par ligne (convoi, dossier, pacte, audit...) : créé une fois, puis MODIFIÉ à chaque changement.
 // Le message modifié ne notifie personne ; un ping n'est envoyé (séparément) que pour les changements urgents.
 export async function syncAlert(db: any, table: string, row: any, kind: DiscordWebhookKind, title: string, description: string, color = GOLD, fields?: DiscordEmbedField[], ping?: RoleKey[]) {
   try {
@@ -45,11 +45,11 @@ export async function bigThreshold(db: any): Promise<number> {
   return 100000;
 }
 
-// Si |montant| >= seuil → alerte « gros mouvement » dans le salon compta.
+// Si |montant| >= seuil -> alerte « gros mouvement » dans le salon compta.
 export async function bigMoveAlert(db: any, montant: number, label: string, who: string) {
   const seuil = await bigThreshold(db);
   if (!seuil || Math.abs(montant) < seuil) return;
-  await postAlert("compta", `${montant >= 0 ? "💰 Gros gain" : "📉 Grosse perte"} — ${usd(Math.abs(montant))}`, `${label}\nPar **${who || "?"}**`, montant >= 0 ? GREEN : RED, undefined, ["CEO", "COO"]);
+  await postAlert("compta", `${montant >= 0 ? "💰 Gros gain" : "📉 Grosse perte"} - ${usd(Math.abs(montant))}`, `${label}\nPar **${who || "?"}**`, montant >= 0 ? GREEN : RED, undefined, ["CEO", "COO"]);
 }
 
 // Journal des actions sensibles (Admin > Journaux > Sensibles). Ne throw jamais.

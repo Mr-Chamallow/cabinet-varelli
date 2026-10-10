@@ -36,7 +36,7 @@ export default function ConsortiumStatsPage() {
     return {
       scores, avgScore: scores.length ? Math.round(scores.reduce((s: number, x: any) => s + x.score, 0) / scores.length) : 0,
       pactes: { actifs: cnt(d.pactes, (x: any) => x.statut === "actif"), suspendus: cnt(d.pactes, (x: any) => x.statut === "suspendu"), rompus: cnt(d.pactes, (x: any) => x.statut === "rompu"), viol: d.pactes.reduce((s: number, x: any) => s + (x.violations || []).length, 0) },
-      auditAvg: d.audits.length ? (d.audits.reduce((s: number, x: any) => s + Number(x.note), 0) / d.audits.length).toFixed(1) : "—",
+      auditAvg: d.audits.length ? (d.audits.reduce((s: number, x: any) => s + Number(x.note), 0) / d.audits.length).toFixed(1) : " - ",
       auditBad: cnt(d.audits, (x: any) => Number(x.note) < 5),
       dossiers: { total: d.dossiers.length, cours: cnt(d.dossiers, (x: any) => x.verdict === "en_cours"), coupable: cnt(d.dossiers, (x: any) => x.verdict === "coupable"), innocent: cnt(d.dossiers, (x: any) => x.verdict === "innocent") },
       convois: { livres: cnt(conv, (x: any) => x.statut === "livre"), echecs: cnt(conv, (x: any) => x.statut === "echec"), valeur: conv.filter((x: any) => x.statut === "livre").reduce((s: number, x: any) => s + Number(x.montant), 0) },
@@ -57,7 +57,7 @@ export default function ConsortiumStatsPage() {
 
   return (
     <div className="page-container no-fx">
-      <a className="back-link" href="/">← Dashboard</a>
+      <a className="back-link" href="/">Dashboard</a>
       <div className="page-header"><div><h1 className="page-title">📈 Stats du Consortium</h1><p className="page-subtitle">Réputation · Pactes · Audits · Tribunal · Événements</p><div className="gold-line" /></div></div>
       {!k ? <LoadingBlock /> : (
         <>

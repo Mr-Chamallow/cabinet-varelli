@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/authOptions";
 import { supabaseAdmin } from "@/lib/serverAuth";
 
 // Heartbeat de présence + journal de déconnexion. Ouvert à n'importe quel membre
-// connecté (pas de permission spécifique requise) — juste une session valide.
+// connecté (pas de permission spécifique requise) - juste une session valide.
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);

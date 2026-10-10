@@ -50,7 +50,7 @@ export default function PactesPage() {
     if (!viol || !viol.texte.trim()) return;
     const r = await gmWrite("gm_pactes", "PATCH", { id: viol.pact.id, violations: [...(viol.pact.violations || []), { texte: viol.texte.trim(), date: new Date().toISOString() }] });
     if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); return; }
-    setViol(null); showToast("Violation notée (réputation −10)"); load();
+    setViol(null); showToast("Violation notée (réputation -10)"); load();
   }
   async function setStatut(p: any, statut: string) {
     const r = await gmWrite("gm_pactes", "PATCH", { id: p.id, statut });
@@ -65,7 +65,7 @@ export default function PactesPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Dashboard</a>
+      <a className="back-link" href="/">Dashboard</a>
       <div className="page-header">
         <div><h1 className="page-title">🤝 Pactes d'Obsidienne</h1><p className="page-subtitle">Groupes signataires · Clauses · Violations</p><div className="gold-line" /></div>
         {canWrite && <button className="btn btn-gold" onClick={openNew}>+ Nouveau pacte</button>}
@@ -84,14 +84,14 @@ export default function PactesPage() {
                   <div style={{ fontWeight: 700 }}>{p.organisation}</div><Badge color={s.color}>{s.label}</Badge>
                 </div>
                 <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", margin: "0.25rem 0 0.6rem" }}>
-                  Signé le {p.date_signature ? new Date(p.date_signature).toLocaleDateString("fr-FR") : "—"}{p.date_fin ? ` · fin ${new Date(p.date_fin).toLocaleDateString("fr-FR")}` : ""}{p.signataire ? ` · par ${p.signataire}` : ""}
+                  Signé le {p.date_signature ? new Date(p.date_signature).toLocaleDateString("fr-FR") : " - "}{p.date_fin ? ` · fin ${new Date(p.date_fin).toLocaleDateString("fr-FR")}` : ""}{p.signataire ? ` · par ${p.signataire}` : ""}
                   {expired && <span style={{ color: "var(--warning)" }}> · ⚠️ échéance dépassée</span>}
                 </div>
                 {p.clauses && <div style={{ fontSize: "0.8rem", whiteSpace: "pre-wrap", color: "var(--text-muted)", marginBottom: "0.6rem" }}>{p.clauses}</div>}
                 {(p.violations || []).length > 0 && (
                   <div style={{ marginBottom: "0.6rem", padding: "0.5rem 0.7rem", background: "rgba(239,68,68,0.06)", borderRadius: "var(--radius)", borderLeft: "3px solid var(--danger)" }}>
                     <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--danger)", marginBottom: "0.2rem" }}>{p.violations.length} violation(s)</div>
-                    {p.violations.map((v: any, i: number) => <div key={i} style={{ fontSize: "0.75rem" }}>• {v.texte} <span style={{ color: "var(--text-dim)" }}>({fmtDT(v.date)})</span></div>)}
+                    {p.violations.map((v: any, i: number) => <div key={i} style={{ fontSize: "0.75rem" }}>· {v.texte} <span style={{ color: "var(--text-dim)" }}>({fmtDT(v.date)})</span></div>)}
                   </div>
                 )}
                 <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: canWrite ? "0.35rem" : 0 }}><button className="btn btn-outline btn-sm" onClick={() => pdfPacte(p)}>📄 PDF</button></div>
@@ -100,7 +100,7 @@ export default function PactesPage() {
                     <button className="btn btn-outline btn-sm" onClick={() => setViol({ pact: p, texte: "" })}>⚠️ Violation</button>
                     {p.statut === "actif" && <button className="btn btn-outline btn-sm" onClick={() => setStatut(p, "suspendu")}>⏸️</button>}
                     {p.statut !== "actif" && p.statut !== "rompu" && <button className="btn btn-outline btn-sm" onClick={() => setStatut(p, "actif")}>▶️ Réactiver</button>}
-                    {p.statut !== "rompu" && <button className="btn btn-outline btn-sm" style={{ color: "var(--danger)" }} onClick={() => window.confirm("Marquer ce pacte comme ROMPU (réputation −20) ?") && setStatut(p, "rompu")}>💥 Rompre</button>}
+                    {p.statut !== "rompu" && <button className="btn btn-outline btn-sm" style={{ color: "var(--danger)" }} onClick={() => window.confirm("Marquer ce pacte comme ROMPU (réputation -20) ?") && setStatut(p, "rompu")}>💥 Rompre</button>}
                     <button className="btn btn-ghost btn-sm" onClick={() => openEdit(p)}>✏️</button>
                     <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => del(p)}>🗑️</button>
                   </div>
@@ -112,7 +112,7 @@ export default function PactesPage() {
       )}
       {show && (
         <Modal title={editId ? "Modifier le pacte" : "Nouveau pacte"} onClose={() => setShow(false)}
-          footer={<><button className="btn btn-outline" onClick={() => setShow(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.organisation.trim()} onClick={save}>{saving ? "…" : "Enregistrer"}</button></>}>
+          footer={<><button className="btn btn-outline" onClick={() => setShow(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.organisation.trim()} onClick={save}>{saving ? "..." : "Enregistrer"}</button></>}>
           <div className="form-grid">
             <div><label>Organisation *</label><GroupeSelect value={form.organisation} groupes={groupes} onChange={v => setForm({ ...form, organisation: v })} /></div>
             <div><label>Statut</label><select value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>{Object.entries(STATUTS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}</select></div>
@@ -124,7 +124,7 @@ export default function PactesPage() {
         </Modal>
       )}
       {viol && (
-        <Modal title={`Violation — ${viol.pact.organisation}`} onClose={() => setViol(null)}
+        <Modal title={`Violation - ${viol.pact.organisation}`} onClose={() => setViol(null)}
           footer={<><button className="btn btn-outline" onClick={() => setViol(null)}>Annuler</button><button className="btn btn-gold" disabled={!viol.texte.trim()} onClick={addViolation}>Noter</button></>}>
           <label>Que s'est-il passé ?</label>
           <textarea rows={3} autoFocus value={viol.texte} onChange={e => setViol({ ...viol, texte: e.target.value })} />

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 
-// Journal des actions sensibles — lecture réservée à l'admin (la table n'est pas lisible côté navigateur).
+// Journal des actions sensibles - lecture réservée à l'admin (la table n'est pas lisible côté navigateur).
 export const dynamic = "force-dynamic";
 export async function GET() {
   const { authorized, supabaseAdmin, error } = await requirePermission("admin");

@@ -12,7 +12,7 @@ export function useGmAccess(perm: string) {
   return { user, loading, canWrite: !!user && hasWriteAccess(user, perm) };
 }
 
-// Référentiel UNIQUE des groupes illégaux : Base de données → onglet « Groupes » (table carte_gangs).
+// Référentiel UNIQUE des groupes illégaux : Base de données -> onglet « Groupes » (table carte_gangs).
 export interface Groupe { id: string; nom: string; type: string }
 export function useGroupes(reload?: number) {
   const [groupes, setGroupes] = useState<Groupe[]>([]);
@@ -25,7 +25,7 @@ export function useGroupes(reload?: number) {
 export function useOrgs(reload?: number) { return useGroupes(reload).map(g => g.nom); }
 
 // Liste déroulante des groupes (pas de saisie libre : on pointe vers le référentiel).
-export function GroupeSelect({ value, onChange, groupes, placeholder = "— Choisir un groupe —" }: { value: string; onChange: (nom: string) => void; groupes: Groupe[]; placeholder?: string }) {
+export function GroupeSelect({ value, onChange, groupes, placeholder = " -  Choisir un groupe  - " }: { value: string; onChange: (nom: string) => void; groupes: Groupe[]; placeholder?: string }) {
   const known = !value || groupes.some(g => g.nom === value);
   return (
     <div>
@@ -34,7 +34,7 @@ export function GroupeSelect({ value, onChange, groupes, placeholder = "— Choi
         {!known && <option value={value}>{value} (hors référentiel)</option>}
         {groupes.map(g => <option key={g.id} value={g.nom}>{g.nom} · {gangTypeLabel(g.type)}</option>)}
       </select>
-      <div style={{ fontSize: "0.65rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>Absent ? Crée-le dans <a href="/base-de-donnees" style={{ color: "var(--gold)" }}>Base de données → Groupes</a>.</div>
+      <div style={{ fontSize: "0.65rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>Absent ? Crée-le dans <a href="/base-de-donnees" style={{ color: "var(--gold)" }}>Base de données {'->'} Groupes</a>.</div>
     </div>
   );
 }
@@ -49,7 +49,7 @@ export const Badge = ({ color, children }: { color: string; children: React.Reac
   <span style={{ fontSize: "0.68rem", padding: "0.1rem 0.55rem", borderRadius: 999, fontWeight: 700, color, background: `color-mix(in srgb, ${color} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 35%, transparent)` }}>{children}</span>
 );
 
-export const fmtDT = (s?: string | null) => (s ? new Date(s).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }) : "—");
+export const fmtDT = (s?: string | null) => (s ? new Date(s).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }) : " - ");
 export function toLocalInput(s?: string | null) {
   if (!s) return "";
   const d = new Date(s); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());

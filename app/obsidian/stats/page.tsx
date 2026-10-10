@@ -17,7 +17,7 @@ const TABS: { k: Tab; label: string }[] = [
 ];
 const C = { ok: "var(--success)", ko: "var(--danger)", gold: "var(--gold)", info: "var(--info)", warn: "var(--warning)" };
 const PAL = ["var(--gold)", "var(--info)", "var(--success)", "var(--danger)", "var(--warning)", "var(--text-dim)"];
-const count = <T,>(l: T[], k: (x: T) => string) => { const m: Record<string, number> = {}; l.forEach(x => { const v = k(x) || "—"; m[v] = (m[v] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
+const count = <T,>(l: T[], k: (x: T) => string) => { const m: Record<string, number> = {}; l.forEach(x => { const v = k(x) || "-"; m[v] = (m[v] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
 
 export default function StatsHubPage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -58,9 +58,9 @@ export default function StatsHubPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">← Dashboard Obsidian</a>
+      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
       <div className="page-header">
-        <div><h1 className="page-title">📊 Hub Statistiques</h1><p className="page-subtitle">Activité · Performance · Risques — lecture seule, calculé en direct</p><div className="gold-line" /></div>
+        <div><h1 className="page-title">📊 Hub Statistiques</h1><p className="page-subtitle">Activité · Performance · Risques - lecture seule, calculé en direct</p><div className="gold-line" /></div>
         <div style={{ display: "flex", gap: "0.4rem" }}>{[4, 8, 12, 26].map(n => <button key={n} className={`btn btn-sm ${nW === n ? "btn-gold" : "btn-outline"}`} onClick={() => setNW(n)}>{n} sem.</button>)}</div>
       </div>
       <Tabs tabs={TABS} value={tab} onChange={x => setTab(x as Tab)} />
@@ -80,19 +80,19 @@ export default function StatsHubPage() {
             <Panel title="Activité hebdomadaire"><BarChart labels={labels} series={[{ nom: "Gains", color: C.ok, values: k.perWeek.map(x => x.g) }, { nom: "Pertes", color: C.ko, values: k.perWeek.map(x => x.p) }]} /></Panel>
             <Panel title="Nombre d'actions / arrestations"><LineChart labels={labels} series={[{ nom: "Actions", color: C.gold, values: k.perWeek.map(x => x.n) }, { nom: "Arrestations", color: C.ko, values: k.perWeek.map(x => x.ar) }]} /></Panel>
             <Panel title="Effectif par pôle"><Donut parts={k.poles.map(([nom, value], i) => ({ nom, value, color: PAL[i % PAL.length] }))} center={<>{k.EM.length}<br />actifs</>} /></Panel>
-            <Panel title="Top actions (net)"><HBars rows={k.byType.slice(0, 6).map(t => ({ label: t.nom, value: t.net, sub: `${t.n}×` }))} /></Panel>
+            <Panel title="Top actions (net)"><HBars rows={k.byType.slice(0, 6).map(t => ({ label: t.nom, value: t.net, sub: `${t.n}x` }))} /></Panel>
           </div>
         </>}
 
         {tab === "actions" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
           <Panel title="Rentabilité par type d'action"><DataTable head={["Action", "Nb", "Gains", "Net", "Net moyen"]} rows={k.byType.map(t => [t.nom, t.n, fmt(t.g), <b style={{ color: t.net >= 0 ? C.ok : C.ko }}>{fmt(t.net)}</b>, fmt(t.net / t.n)])} /></Panel>
           <Panel title="Répartition par type (nombre)"><Donut parts={count(k.A, (a: any) => a.action).slice(0, 6).map(([nom, value], i) => ({ nom, value, color: PAL[i % PAL.length] }))} /></Panel>
-          <Panel title="Quand agit-on ? (jour × heure)"><Heat rows={["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]} cols={["0-4h", "4-8h", "8-12h", "12-16h", "16-20h", "20-24h"]} grid={k.grid} /></Panel>
+          <Panel title="Quand agit-on ? (jour x heure)"><Heat rows={["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]} cols={["0-4h", "4-8h", "8-12h", "12-16h", "16-20h", "20-24h"]} grid={k.grid} /></Panel>
           <Panel title="Net par semaine"><LineChart area labels={labels} series={[{ nom: "Net", color: C.gold, values: k.perWeek.map(x => x.g - x.p) }]} /></Panel>
         </div>}
 
         {tab === "employes" && <div style={{ display: "grid", gap: "1.25rem" }}>
-          <Panel title="Performance détaillée par employé"><DataTable head={["Employé", "Actions", "Net", "Net / action", "Arrest.", "Amendes", "Pertes"]} rows={k.byEmp.map(e => [e.nom, e.n, <b style={{ color: e.net >= 0 ? C.ok : C.ko }}>{fmt(e.net)}</b>, e.n ? fmt(e.net / e.n) : "—", e.ar, fmt(e.amende), fmt(e.perte)])} /></Panel>
+          <Panel title="Performance détaillée par employé"><DataTable head={["Employé", "Actions", "Net", "Net / action", "Arrest.", "Amendes", "Pertes"]} rows={k.byEmp.map(e => [e.nom, e.n, <b style={{ color: e.net >= 0 ? C.ok : C.ko }}>{fmt(e.net)}</b>, e.n ? fmt(e.net / e.n) : "-", e.ar, fmt(e.amende), fmt(e.perte)])} /></Panel>
           <EmployeeRanking />
         </div>}
 

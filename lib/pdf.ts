@@ -1,5 +1,5 @@
 "use client";
-// Gabarit PDF commun à tous les documents partageables (fiches, procès, pactes, audits, convois…).
+// Gabarit PDF commun à tous les documents partageables (fiches, procès, pactes, audits, convois...).
 // Même en-tête, même classification, même pied de page : un seul style pour tout le Consortium.
 
 const GOLD: [number, number, number] = [201, 162, 77];
@@ -9,14 +9,14 @@ const SCARLET: [number, number, number] = [200, 50, 56];
 
 // jsPDF (polices standard) ne gère pas les emojis ni l'unicode hors Latin-1 : on nettoie proprement.
 export function clean(s: any): string {
-  if (s === null || s === undefined || s === "") return "—";
+  if (s === null || s === undefined || s === "") return "-";
   return String(s)
-    .replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/…/g, "...")
-    .replace(/[–—]/g, "-").replace(/→/g, "->").replace(/ /g, " ")
-    .replace(/[^\u0009\u000A -~ -ÿ]/g, "").replace(/ {2,}/g, " ").trim() || "—";
+    .replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/\u2026/g, "...")
+    .replace(/[\u2010-\u2015]/g, "-").replace(/\u2192/g, "->").replace(/\u00A0/g, " ")
+    .replace(/[^\u0009\u000A -~ -ÿ]/g, "").replace(/ {2,}/g, " ").trim() || "-";
 }
-export const fdate = (s?: string | null) => (s ? new Date(s).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }) : "—");
-export const fday = (s?: string | null) => (s ? new Date(s).toLocaleDateString("fr-FR") : "—");
+export const fdate = (s?: string | null) => (s ? new Date(s).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }) : " - ");
+export const fday = (s?: string | null) => (s ? new Date(s).toLocaleDateString("fr-FR") : " - ");
 export const fusd = (n: number) => clean((n || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 }));
 
 // Logo du Consortium (celui des réglages d'identité) en data-URL ; null si indisponible (CORS) -> emblème vectoriel.
@@ -136,22 +136,37 @@ export class Pdf {
     d.setLineWidth(0.4); d.setFillColor(...this.t.accent); star.forEach((pt, i) => { const q = star[(i + 1) % 10]; d.line(pt[0], pt[1], q[0], q[1]); });
   }
 
-  // Signature manuscrite : le NOM du signataire est écrit en italique penché (encre bleue) avec un
-  // paraphe tracé d'après ce nom (stable). Sans nom, aucune fausse signature : la ligne reste à signer.
-  private scribble(x: number, y: number, w: number, name: string) {
+  // Signature manuscrite : le NOM du signataire est ecrit a la main (encre), avec un paraphe propre a ce nom.
+  // Deux styles distincts : l'auteur (style 0, italique penche + trait ondule) et le destinataire
+  // (style 1, initiale ample + nom compact + barre de paraphe). Sans nom : ligne laissee a signer.
+  private scribble(x: number, y: number, w: number, name: string, style = 0) {
     const d = this.doc;
     const txt = clean(name).split(" - ")[0].trim().slice(0, 30);
-    if (!txt) return;
+    if (!txt || txt === "-") return;
     let h = 2166136261; for (let i = 0; i < txt.length; i++) { h ^= txt.charCodeAt(i); h = Math.imul(h, 16777619); }
     let seed = h >>> 0; const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
-    d.setTextColor(28, 38, 92); d.setFont("times", "italic");
-    let size = 22; d.setFontSize(size);
-    while (d.getTextWidth(txt) > w - 4 && size > 9) { size -= 1; d.setFontSize(size); }
-    d.text(txt, x + 1, y + 6.5, { angle: 4 });
-    // paraphe : trait ondulé sous le nom, propre à chaque signataire
-    d.setDrawColor(28, 38, 92); d.setLineWidth(0.45);
-    const x0 = x + w * (0.05 + rnd() * 0.1), x1 = x + w * (0.8 + rnd() * 0.15), yb = y + 9.5;
-    d.lines([[(x1 - x0) * 0.3, -(1.5 + rnd() * 2.5), (x1 - x0) * 0.6, 2 + rnd() * 2, x1 - x0, -(rnd() * 3)]], x0, yb, [1, 1], "S");
+    d.setTextColor(28, 38, 92); d.setDrawColor(28, 38, 92);
+    if (style === 0) {
+      d.setFont("times", "italic");
+      let size = 22; d.setFontSize(size);
+      while (d.getTextWidth(txt) > w - 4 && size > 9) { size -= 1; d.setFontSize(size); }
+      d.text(txt, x + 1, y + 6.5, { angle: 4 });
+      d.setLineWidth(0.45);
+      const x0 = x + w * (0.05 + rnd() * 0.1), x1 = x + w * (0.8 + rnd() * 0.15), yb = y + 9.5;
+      d.lines([[(x1 - x0) * 0.3, -(1.5 + rnd() * 2.5), (x1 - x0) * 0.6, 2 + rnd() * 2, x1 - x0, -(rnd() * 3)]], x0, yb, [1, 1], "S");
+    } else {
+      const parts = txt.split(/\s+/); const ini = parts[0].charAt(0).toUpperCase(); const rest = (parts.length > 1 ? parts.slice(1).join(" ") : parts[0].slice(1)).trim();
+      d.setFont("times", "bolditalic"); d.setFontSize(30); const wi = d.getTextWidth(ini);
+      d.text(ini, x + 1, y + 7.5, { angle: -3 });
+      d.setFont("helvetica", "italic");
+      let size = 13; d.setFontSize(size);
+      while (d.getTextWidth(rest) > w - wi - 6 && size > 7) { size -= 1; d.setFontSize(size); }
+      d.text(rest, x + wi + 2, y + 6, { angle: -3 });
+      d.setLineWidth(0.6);
+      const sx = x + w * (0.1 + rnd() * 0.1), ex = x + w * (0.85 + rnd() * 0.1);
+      d.line(sx, y + 10.5 + rnd() * 1.5, ex, y + 7 + rnd() * 2);
+      d.setLineWidth(0.3); d.line(sx + 4, y + 11.5, ex - 6, y + 9.5);
+    }
   }
 
   private frame() {
@@ -213,7 +228,7 @@ export class Pdf {
     this.y += 4;
     d.setFillColor(...this.t.accent); d.rect(this.M, this.y - 4.2, 1.6, 6.2, "F");
     d.setFont("times", "bold"); d.setFontSize(11.5); d.setTextColor(...INK);
-    this.n++; const pre = this.t.num === "roman" ? this.roman(this.n) + ".  " : this.t.num === "article" ? `ARTICLE ${this.n}  -  ` : "";
+    this.n++; const pre = this.t.num === "roman" ? this.roman(this.n) + ".  " : this.t.num === "article" ? `ARTICLE ${this.n} - ` : "";
     d.text(pre + clean(title).toUpperCase(), this.M + 4.5, this.y, { charSpace: 0.9 });
     d.setDrawColor(225, 215, 185); d.setLineWidth(0.25); d.line(this.M, this.y + 2.4, this.W - this.M, this.y + 2.4);
     this.y += 8;
@@ -236,7 +251,7 @@ export class Pdf {
         const x = this.M + j * col;
         d.setFont("helvetica", "normal"); d.setFontSize(7.5); d.setTextColor(...MUTED); d.text(clean(r[0]).toUpperCase(), x, this.y, { charSpace: 0.4 });
         d.setFont("helvetica", "bold"); d.setFontSize(10); d.setTextColor(...INK);
-        d.text(d.splitTextToSize(clean(r[1]), col - 6)[0] || "—", x, this.y + 5);
+        d.text(d.splitTextToSize(clean(r[1]), col - 6)[0] || " - ", x, this.y + 5);
       }
       this.y += 11;
     }
@@ -289,7 +304,7 @@ export class Pdf {
     const labels = [this.opts.signers?.[0] || this.t.signers[0], this.opts.signers?.[1] || this.t.signers[1]];
     // Format "Rôle|Nom" : le nom réel de la personne qui signe est imprimé sous la ligne.
     xs.forEach((x, i) => {
-      this.scribble(x + 2, y0 + 10, colW - 6, labels[i].split("|")[1] || "");
+      this.scribble(x + 2, y0 + 10, colW - 6, labels[i].split("|")[1] || "", i);
       d.setDrawColor(...INK); d.setLineWidth(0.3); d.line(x, y0 + 24, x + colW, y0 + 24);
       d.setFont("helvetica", "bold"); d.setFontSize(7.5); d.setTextColor(...INK); d.text(clean(labels[i].split("|")[0]).toUpperCase(), x, y0 + 28.5, { charSpace: 0.4 });
       const nm = clean((labels[i].split("|")[1] || "").trim()); const nmShort = nm.length > 38 ? nm.slice(0, 37) + "." : nm;
@@ -314,14 +329,14 @@ export class Pdf {
         d.setFillColor(...this.t.band); d.rect(0, 0, this.W, 11, "F"); d.setFillColor(...this.t.accent); d.rect(0, 11, this.W, 0.5, "F");
         this.drawLogo(this.M, 1.8, 7.4);
         d.setFont("times", "bold"); d.setFontSize(9); d.setTextColor(...GOLD); d.text("OBSIDIAN LOGISTICS", this.M + 10, 7, { charSpace: 0.8 });
-        d.setFont("helvetica", "normal"); d.setFontSize(7); d.setTextColor(170, 170, 180); d.text(`${this.ref}  -  ${clean(this.opts.title).slice(0, 48)}`, this.W - this.M, 7, { align: "right" });
+        d.setFont("helvetica", "normal"); d.setFontSize(7); d.setTextColor(170, 170, 180); d.text(`${this.ref} - ${clean(this.opts.title).slice(0, 48)}`, this.W - this.M, 7, { align: "right" });
       }
       d.setDrawColor(220, 220, 226); d.setLineWidth(0.2); d.line(this.M, this.H - 14, this.W - this.M, this.H - 14);
       this.drawLogo(this.M, this.H - 12.5, 5);
       d.setFont("helvetica", "normal"); d.setFontSize(7); d.setTextColor(...MUTED);
       d.text(`${this.t.footer} - Obsidian Logistics - ne pas diffuser en dehors du Consortium`, this.M + 7, this.H - 9.5);
-      d.setFontSize(6.3); d.text(`${this.ref}  -  Empreinte ${(this.hash >>> 0).toString(16).toUpperCase().padStart(8, "0")}`, this.M + 7, this.H - 6);
-      d.setFontSize(7.5); d.text(`${stamp}   -   Page ${i}/${n}`, this.W - this.M, this.H - 9.5, { align: "right" });
+      d.setFontSize(6.3); d.text(`${this.ref} - Empreinte ${(this.hash >>> 0).toString(16).toUpperCase().padStart(8, "0")}`, this.M + 7, this.H - 6);
+      d.setFontSize(7.5); d.text(`${stamp}  -  Page ${i}/${n}`, this.W - this.M, this.H - 9.5, { align: "right" });
       this.barcode(this.W - this.M - 30, this.H - 8, 30, 3);
     }
     const name = `${filename.replace(/[^a-zA-Z0-9_-]+/g, "_")}.pdf`;

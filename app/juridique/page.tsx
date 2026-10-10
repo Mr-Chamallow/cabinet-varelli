@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { CODE_COMPLET as ARTICLES, CATEGORIES_INFRACTIONS } from "@/lib/code-penal";
 
-// ─── ONGLETS DYNAMIQUES, regroupés par section (Pénal / Route / Fédéral) ──────
+// --- ONGLETS DYNAMIQUES, regroupés par section (Pénal / Route / Fédéral) ---
 const SECTION_LABELS: Record<string, string> = {
   penal: "⚖️ Code pénal",
   route: "🚦 Code de la route",
@@ -30,7 +30,7 @@ for (const o of ONGLETS) {
   (ONGLETS_PAR_SECTION[s] ??= []).push(o);
 }
 
-// ─── ONGLETS DE RÉFÉRENCE (données statiques, hors ARTICLES) ─────────────────
+// --- ONGLETS DE RÉFÉRENCE (données statiques, hors ARTICLES) ---
 const REF_ONGLETS = [
   { key: "ref_armes", label: "🔫 Armes", icon: "⚔️", color: "#ef4444" },
   { key: "ref_drogues", label: "💊 Drogues", icon: "💊", color: "#7c3aed" },
@@ -167,7 +167,7 @@ export default function JuridiqueePage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Tableau de bord</a>
+      <a className="back-link" href="/">Tableau de bord</a>
 
       <div className="page-header">
         <div>
@@ -184,13 +184,13 @@ export default function JuridiqueePage() {
           <span className="search-icon">🔍</span>
           <input
             type="text"
-            placeholder="Rechercher dans tous les codes (Pénal, Route, Fédéral)…"
+            placeholder="Rechercher dans tous les codes (Pénal, Route, Fédéral)..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setExpanded(null); }}
             style={{ fontSize: "0.875rem" }}
           />
           {search && (
-            <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "1rem", flexShrink: 0 }}>×</button>
+            <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "1rem", flexShrink: 0 }}>x</button>
           )}
         </div>
       </div>

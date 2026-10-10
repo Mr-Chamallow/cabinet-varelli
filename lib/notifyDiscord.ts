@@ -27,7 +27,7 @@ export async function notifyDiscordCreate(kind: NotifyKind, embed: NotifyEmbed):
 }
 
 // Édite le message existant. Si l'ID est absent (jamais sauvegardé), poste un nouveau message
-// à la place — fire-and-forget, ne bloque jamais l'UI.
+// à la place - fire-and-forget, ne bloque jamais l'UI.
 export function notifyDiscordUpdate(kind: NotifyKind, messageId: string | null | undefined, embed: NotifyEmbed) {
   call({ kind, action: messageId ? "update" : "create", messageId, ...embed });
 }

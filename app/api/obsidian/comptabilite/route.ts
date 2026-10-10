@@ -12,12 +12,12 @@ export async function POST(req: Request) {
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     const m = Number(data.montant) || 0;
     const signed = data.type === "recette" ? m : -m;
-    await postAlert("compta", `${data.type === "recette" ? "↑ Recette" : "↓ Dépense"} — ${usd(m)}`, `${data.motif || data.categorie}`, signed >= 0 ? GREEN : RED, [
-      { name: "Catégorie", value: data.categorie || "—", inline: true },
-      { name: "Argent", value: data.type_argent || "—", inline: true },
-      { name: "Saisi par", value: data.created_by || "—", inline: true },
+    await postAlert("compta", `${data.type === "recette" ? "↑ Recette" : "↓ Dépense"} - ${usd(m)}`, `${data.motif || data.categorie}`, signed >= 0 ? GREEN : RED, [
+      { name: "Catégorie", value: data.categorie || "-", inline: true },
+      { name: "Argent", value: data.type_argent || "-", inline: true },
+      { name: "Saisi par", value: data.created_by || "-", inline: true },
     ]);
-    await bigMoveAlert(supabaseAdmin, signed, `${data.categorie} — ${data.motif || ""}`, data.created_by || "");
+    await bigMoveAlert(supabaseAdmin, signed, `${data.categorie} - ${data.motif || ""}`, data.created_by || "");
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

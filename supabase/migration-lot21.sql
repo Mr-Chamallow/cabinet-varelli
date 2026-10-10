@@ -1,6 +1,6 @@
 -- Lot 21 : histoire complète de Pierce Davenport
 update obsidian_employes
-set histoire_texte = $h$PIERCE DAVENPORT — « L'Arbitre Suprême »
+set histoire_texte = $h$PIERCE DAVENPORT - « L'Arbitre Suprême »
 CEO d'Obsidian Logistics
 
 QUI JE SUIS

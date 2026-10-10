@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const { error: e } = await db.from("carte_gangs").update({ nom: n }).eq("id", id);
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
     for (const [t, c] of TABLES) await db.from(t).update({ [c]: n }).eq("groupe_id", id);
-    await logAudit(db, ((user as any)?.nom_perso || (user as any)?.discord_name), "Groupe renommé", old.nom, `→ ${n}`);
+    await logAudit(db, ((user as any)?.nom_perso || (user as any)?.discord_name), "Groupe renommé", old.nom, `-> ${n}`);
     return NextResponse.json({ ok: true });
   } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
 }

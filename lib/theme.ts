@@ -1,4 +1,4 @@
-export const DEFAULT_GOLD = "#c9a24d"; // or bruni — sur fond obsidienne
+export const DEFAULT_GOLD = "#c9a24d"; // or bruni - sur fond obsidienne
 export const DEFAULT_LOGO_URL = "https://i.imgur.com/Shh0rIn.png";
 export const DEFAULT_APP_NOM = "Obsidian Logistique";
 export const THEME_STORAGE_KEY = "obsidian_theme_gold";
@@ -10,7 +10,7 @@ export interface GoldPalette {
   goldDark: string;
   goldMuted: string;
   goldGlow: string;
-  goldRgb: string; // "r,g,b" — pour composer des rgba(var(--gold-rgb), X) dynamiques
+  goldRgb: string; // "r,g,b" - pour composer des rgba(var(--gold-rgb), X) dynamiques
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -90,12 +90,12 @@ export function applyThemeToDocument(hex: string) {
   try {
     localStorage.setItem(THEME_STORAGE_KEY, p.gold);
   } catch {
-    // localStorage indisponible (navigation privée…) — pas bloquant
+    // localStorage indisponible (navigation privée...) - pas bloquant
   }
 }
 
 // Applique instantanément la dernière couleur connue (cache local), avant même
-// que la requête Supabase ne réponde — évite le flash de la couleur par défaut.
+// que la requête Supabase ne réponde - évite le flash de la couleur par défaut.
 export function applyCachedThemeIfAny() {
   if (typeof window === "undefined") return;
   try {

@@ -14,7 +14,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 function cd(ms: number) { const s = Math.max(0, Math.floor(ms / 1000)); return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`; }
 const NOTE_COL = (n: number) => (n >= 8 ? "#22c55e" : n >= 6 ? "#84cc16" : n === 5 ? "#64b5f6" : n >= 3 ? "#f59e0b" : "#ef4444");
 const NOTE_LBL = (n: number) => (n >= 9 ? "Exemplaire" : n >= 7 ? "Bon partenaire" : n >= 6 ? "Correct" : n === 5 ? "Neutre" : n >= 3 ? "Insuffisant" : n >= 1 ? "Mauvais" : "Hostile");
-// Sélecteur de note visuel : 11 pastilles 0→10, jauge colorée, mention et impact sur la réputation.
+// Sélecteur de note visuel : 11 pastilles 0->10, jauge colorée, mention et impact sur la réputation.
 function ScoreSelector({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   const col = NOTE_COL(value); const rep = Math.round((value - 5) * 4);
   return (
@@ -73,7 +73,7 @@ export default function AuditsPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Dashboard</a>
+      <a className="back-link" href="/">Dashboard</a>
       <div className="page-header">
         <div><h1 className="page-title">🔎 Audits de conformité</h1><p className="page-subtitle">Notes · Sanctions · Compte à rebours</p><div className="gold-line" /></div>
         {canWrite && <button className="btn btn-gold" onClick={openNew}>+ Nouvel audit</button>}
@@ -101,7 +101,7 @@ export default function AuditsPage() {
                 <div style={{ width: 46, height: 46, borderRadius: "50%", border: `2px solid ${col}`, color: col, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, flexShrink: 0 }}>{a.note}<span style={{ fontSize: "0.55rem" }}>/10</span></div>
                 <div style={{ flex: 1, minWidth: 180 }}>
                   <div style={{ fontWeight: 700 }}>{a.organisation}</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{a.appreciation || "—"}</div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{a.appreciation || " - "}</div>
                   <div style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>{fmtDT(a.created_at)}{a.created_by ? ` · ${a.created_by}` : ""}{a.notes ? ` · ${a.notes}` : ""}</div>
                 </div>
                 {a.sanction && <Badge color="var(--warning)">⛔ {a.sanction}{a.sanction_fin ? ` · jusqu'au ${fmtDT(a.sanction_fin)}` : ""}</Badge>}
@@ -114,12 +114,12 @@ export default function AuditsPage() {
       )}
       {show && (
         <Modal title={editId ? "Modifier l'audit" : "Nouvel audit"} onClose={() => setShow(false)}
-          footer={<><button className="btn btn-outline" onClick={() => setShow(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.organisation.trim()} onClick={save}>{saving ? "…" : "Enregistrer"}</button></>}>
+          footer={<><button className="btn btn-outline" onClick={() => setShow(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.organisation.trim()} onClick={save}>{saving ? "..." : "Enregistrer"}</button></>}>
           <div><label>Organisation *</label><GroupeSelect value={form.organisation} groupes={groupes} onChange={v => setForm({ ...form, organisation: v })} /></div>
           <ScoreSelector value={form.note} onChange={n => setForm({ ...form, note: n })} />
-          <div><label>Appréciation</label><input value={form.appreciation} onChange={e => setForm({ ...form, appreciation: e.target.value })} placeholder="Bilan, guerres récentes, respect des pactes…" /></div>
+          <div><label>Appréciation</label><input value={form.appreciation} onChange={e => setForm({ ...form, appreciation: e.target.value })} placeholder="Bilan, guerres récentes, respect des pactes..." /></div>
           <div className="form-grid">
-            <div><label>Sanction (optionnel)</label><input value={form.sanction} onChange={e => setForm({ ...form, sanction: e.target.value })} placeholder="Embargo armes, taxe…" /></div>
+            <div><label>Sanction (optionnel)</label><input value={form.sanction} onChange={e => setForm({ ...form, sanction: e.target.value })} placeholder="Embargo armes, taxe..." /></div>
             <div><label>Fin de la sanction</label><input type="datetime-local" value={form.sanction_fin} onChange={e => setForm({ ...form, sanction_fin: e.target.value })} />
               <div style={{ display: "flex", gap: "0.3rem", marginTop: 4 }}>{[24, 48, 72, 168].map(h => <button type="button" key={h} className="btn btn-outline btn-sm" onClick={() => quickDuration(h)}>{h === 168 ? "7 j" : `${h} h`}</button>)}</div></div>
           </div>

@@ -48,17 +48,17 @@ export function WeeklyReport() {
     const amendes = ar.reduce((s, e) => s + (Number(e.amende) || 0), 0);
     const perdu = ar.reduce((s, e) => s + (Number(e.argent_perdu) || 0), 0);
     const lines = [
-      `📊 RAPPORT HEBDO — ${d2(start)} → ${d2(new Date(end.getTime() - 1))}`,
+      `📊 RAPPORT HEBDO - ${d2(start)} -> ${d2(new Date(end.getTime() - 1))}`,
       ``,
       `💰 Recettes : ${fmt(rec)} · Dépenses : ${fmt(dep)} · Solde : ${fmt(rec - dep)}`,
       ``,
       `🕶️ Actions illégales : ${a.length} · net ${fmt(a.reduce((s, e) => s + (Number(e.montant) || 0), 0))}`,
-      ...Object.entries(byAction).map(([k, v]) => `  • ${k} : ${v.n}× · ${fmt(v.net)}`),
+      ...Object.entries(byAction).map(([k, v]) => `  · ${k} : ${v.n}x · ${fmt(v.net)}`),
       ``,
       `🚔 Arrestations : ${ar.length} · Amendes : ${fmt(amendes)} (hors solde) · Argent perdu : ${fmt(perdu)}`,
       ``,
       `🏆 Top employés (net actions)`,
-      ...(top.length ? top.map(([n, v], i) => `  ${i + 1}. ${n} — ${fmt(v)}`) : ["  —"]),
+      ...(top.length ? top.map(([n, v], i) => `  ${i + 1}. ${n} - ${fmt(v)}`) : ["   - "]),
     ];
     return { text: lines.join("\n"), byAction, top, rec, dep, a, ar, amendes, perdu };
   }, [compta, actions, arrests, offset]);

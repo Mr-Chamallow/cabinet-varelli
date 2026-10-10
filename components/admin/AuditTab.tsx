@@ -18,11 +18,11 @@ export function AuditTab() {
   return (
     <>
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher (acteur, action, cible)…" style={{ flex: 1 }} />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher (acteur, action, cible)..." style={{ flex: 1 }} />
         <button className="btn btn-outline btn-sm" onClick={load}>↻ Actualiser</button>
       </div>
-      {err && <div className="card" style={{ color: "var(--danger)", fontSize: "0.8rem" }}>{err} — la migration <code>migration-lot1.sql</code> est-elle lancée ?</div>}
-      {loading ? <div style={{ color: "var(--text-dim)" }}>Chargement…</div> : f.length === 0 ? (
+      {err && <div className="card" style={{ color: "var(--danger)", fontSize: "0.8rem" }}>{err} - la migration <code>migration-lot1.sql</code> est-elle lancée ?</div>}
+      {loading ? <div style={{ color: "var(--text-dim)" }}>Chargement...</div> : f.length === 0 ? (
         <div className="empty-state"><div className="empty-icon">🛡️</div><div className="empty-title">Aucune action sensible enregistrée</div></div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>

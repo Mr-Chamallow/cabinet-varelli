@@ -140,12 +140,12 @@ export default function SupervisionPage() {
     const counts: Record<string, number> = {};
     for (const a of activity) counts[a.by] = (counts[a.by] || 0) + 1;
     return Object.entries(counts)
-      .filter(([nom]) => nom && nom !== "—")
+      .filter(([nom]) => nom && nom !== "-")
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8);
   }, [activity]);
 
-  if (userLoading || loading) return <div className="page-container" style={{ color: "var(--text-dim)" }}>Chargement…</div>;
+  if (userLoading || loading) return <div className="page-container" style={{ color: "var(--text-dim)" }}>Chargement...</div>;
   if (!authorized) {
     return (
       <div className="page-container">
@@ -156,7 +156,7 @@ export default function SupervisionPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Tableau de bord</a>
+      <a className="back-link" href="/">Tableau de bord</a>
       <div className="page-header">
         <div>
           <h1 className="page-title">📡 Supervision</h1>
@@ -234,7 +234,7 @@ export default function SupervisionPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{op.titre}</div>
                     <div style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>
-                      {op.type}{op.lieu ? ` · ${op.lieu}` : ""}{op.client ? ` · ${op.client}` : ""} — par {op.created_by}
+                      {op.type}{op.lieu ? ` · ${op.lieu}` : ""}{op.client ? ` · ${op.client}` : ""} - par {op.created_by}
                     </div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -274,7 +274,7 @@ export default function SupervisionPage() {
           </div>
 
           {actLoading ? (
-            <div style={{ color: "var(--text-dim)" }}>Chargement du journal…</div>
+            <div style={{ color: "var(--text-dim)" }}>Chargement du journal...</div>
           ) : filteredActivity.length === 0 ? (
             <div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">Aucune entrée</div></div>
           ) : (

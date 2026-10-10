@@ -3,7 +3,7 @@
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { setPreviewRole } from "@/lib/previewRole";
 
-// Bandeau toujours visible pendant un aperçu par rôle — pour ne jamais oublier
+// Bandeau toujours visible pendant un aperçu par rôle - pour ne jamais oublier
 // qu'on est en train de voir le site avec des permissions qui ne sont pas les
 // siennes (et éviter toute confusion sur ce qu'on "peut" vraiment faire : les
 // vraies actions restent vérifiées côté serveur avec le VRAI rôle, cet aperçu
@@ -23,7 +23,7 @@ export function PreviewBanner() {
         fontSize: "0.8rem", color: "var(--gold)", fontWeight: 600,
       }}
     >
-      <span>👁️ Aperçu en tant que <strong>{previewRole}</strong> — la navigation reflète ce rôle, mais tes vraies actions restent celles de ton compte réel</span>
+      <span>👁️ Aperçu en tant que <strong>{previewRole}</strong> - la navigation reflète ce rôle, mais tes vraies actions restent celles de ton compte réel</span>
       <button
         onClick={() => setPreviewRole(null)}
         style={{

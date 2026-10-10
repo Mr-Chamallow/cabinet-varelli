@@ -17,7 +17,7 @@ export function Kpi({ label, value, sub, color = "var(--text)", icon }: { label:
 }
 
 export function Delta({ cur, prev, invert = false }: { cur: number; prev: number; invert?: boolean }) {
-  if (!prev) return <span style={{ color: "var(--text-dim)" }}>—</span>;
+  if (!prev) return <span style={{ color: "var(--text-dim)" }}> - </span>;
   const d = ((cur - prev) / Math.abs(prev)) * 100; const good = invert ? d <= 0 : d >= 0;
   return <span style={{ color: good ? "var(--success)" : "var(--danger)", fontWeight: 600 }}>{d >= 0 ? "▲" : "▼"} {Math.abs(d).toFixed(0)} %</span>;
 }
@@ -58,7 +58,7 @@ export function LineChart({ labels, series, height = 180, area = false }: { labe
           return <g key={s.nom}>
             {area && s.values.length > 1 && <polygon points={`${x(0)},${y(0)} ${pts} ${x(s.values.length - 1)},${y(0)}`} fill={s.color} opacity={0.12} />}
             <polyline points={pts} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" />
-            {s.values.length < 40 && s.values.map((v, i) => v == null ? null : <circle key={i} cx={x(i)} cy={y(v)} r={2.2} fill={s.color}><title>{`${labels[i]} — ${s.nom} : ${fmt(v)}`}</title></circle>)}
+            {s.values.length < 40 && s.values.map((v, i) => v == null ? null : <circle key={i} cx={x(i)} cy={y(v)} r={2.2} fill={s.color}><title>{`${labels[i]} - ${s.nom} : ${fmt(v)}`}</title></circle>)}
           </g>;
         })}
         {labels.map((l, i) => i % step === 0 && <text key={i} x={x(i)} y={H - 8} fontSize={8} textAnchor="middle" fill="var(--text-dim)">{l}</text>)}
@@ -81,7 +81,7 @@ export function BarChart({ labels, series, height = 170 }: { labels: string[]; s
         {labels.map((l, i) => (
           <div key={i} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, height: "100%", justifyContent: "flex-end" }}>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 2, width: "100%", height: height - 18 }}>
-              {series.map(s => <div key={s.nom} title={`${l} — ${s.nom} : ${fmt(s.values[i])}`} style={{ flex: 1, background: s.color, borderRadius: "3px 3px 0 0", height: `${Math.max((s.values[i] / max) * 100, s.values[i] > 0 ? 2 : 0)}%`, opacity: 0.85 }} />)}
+              {series.map(s => <div key={s.nom} title={`${l} - ${s.nom} : ${fmt(s.values[i])}`} style={{ flex: 1, background: s.color, borderRadius: "3px 3px 0 0", height: `${Math.max((s.values[i] / max) * 100, s.values[i] > 0 ? 2 : 0)}%`, opacity: 0.85 }} />)}
             </div>
             <div style={{ fontSize: "0.55rem", color: "var(--text-dim)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{l}</div>
           </div>
@@ -130,7 +130,7 @@ export function Donut({ parts, size = 140, center }: { parts: { nom: string; val
   );
 }
 
-// Carte de chaleur jour × tranche horaire (valeurs = nombre d'événements).
+// Carte de chaleur jour x tranche horaire (valeurs = nombre d'événements).
 export function Heat({ grid, rows, cols }: { grid: number[][]; rows: string[]; cols: string[] }) {
   const max = Math.max(1, ...grid.flat());
   return (

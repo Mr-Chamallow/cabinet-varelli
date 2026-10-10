@@ -3,7 +3,7 @@ import { requirePatron } from "@/lib/serverAuth";
 import { postAlert, logAudit, ORANGE, RED } from "@/lib/alerts";
 import { syncEmployes } from "@/lib/syncEmployes";
 
-// Renommer / virer un membre du site — Patron uniquement.
+// Renommer / virer un membre du site - Patron uniquement.
 const TABLES_NOM = ["actions_illegales", "arrestations", "obsidian_comptabilite", "obsidian_mouvements"];
 
 export async function PATCH(req: Request) {
@@ -25,8 +25,8 @@ export async function PATCH(req: Request) {
         await db.from("obsidian_paiements").update({ employe: nouveau }).eq("employe", emp.nom);
       }
     }
-    await logAudit(db, ((user as any)?.nom_perso || (user as any)?.discord_name), "Membre renommé", old.nom_perso || old.discord_name, `→ ${nouveau}`);
-    await postAlert("membres", "✏️ Membre renommé", `**${old.nom_perso || old.discord_name}** → **${nouveau}**\nPar : ${((user as any)?.nom_perso || (user as any)?.discord_name || "?")}`, ORANGE);
+    await logAudit(db, ((user as any)?.nom_perso || (user as any)?.discord_name), "Membre renommé", old.nom_perso || old.discord_name, `-> ${nouveau}`);
+    await postAlert("membres", "✏️ Membre renommé", `**${old.nom_perso || old.discord_name}** -> **${nouveau}**\nPar : ${((user as any)?.nom_perso || (user as any)?.discord_name || "?")}`, ORANGE);
     return NextResponse.json({ ok: true });
   } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
 }

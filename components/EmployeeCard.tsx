@@ -81,7 +81,7 @@ export function EmployeeCard({ e, flippable = true, onZoom, onOpen, strike = fal
     el.style.setProperty("--mx", `${x * 100}%`); el.style.setProperty("--my", `${y * 100}%`);
   }
   function leave() { const el = tilt.current; if (!el) return; el.style.setProperty("--rx", "0deg"); el.style.setProperty("--ry", "0deg"); }
-  const since = e.created_at ? new Date(e.created_at).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" }) : "—";
+  const since = e.created_at ? new Date(e.created_at).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" }) : " - ";
   const h = (BASE / 1.586) * scale;
   return (
     <div className={`idc-wrap${strike ? " idc-strike" : ""}`}>
@@ -113,7 +113,7 @@ export function EmployeeCard({ e, flippable = true, onZoom, onOpen, strike = fal
               </div>
               <div className="idc-foot">
                 <div className="idc-chip"><i /><i /><i /><i /></div>
-                <div className="idc-code">{(e.discord || "").slice(0, 18) || "—"}</div>
+                <div className="idc-code">{(e.discord || "").slice(0, 18) || " - "}</div>
                 <div className="idc-bars">{Array.from({ length: 28 }).map((_, i) => <u key={i} style={{ width: 1 + ((i * 7 + e.nom.length) % 3) }} />)}</div>
               </div>
             </div>
@@ -122,7 +122,7 @@ export function EmployeeCard({ e, flippable = true, onZoom, onOpen, strike = fal
               <div className="idc-grid" /><div className="idc-shine" />
               <div className="idc-mag" />
               <div className="idc-vtext">Cette carte est strictement personnelle et reste la propriété d'Obsidian Logistics. Elle atteste l'appartenance de son porteur au Consortium. En cas de perte ou de vol, prévenir immédiatement la Direction. Toute utilisation frauduleuse sera portée devant le Tribunal de l'Ombre.</div>
-              <div className="idc-acces"><small>HABILITATION {p.hab}/5 — ACCÈS AUTORISÉS</small>{p.acces.map(a => <span key={a}>{a}</span>)}</div>
+              <div className="idc-acces"><small>HABILITATION {p.hab}/5 - ACCÈS AUTORISÉS</small>{p.acces.map(a => <span key={a}>{a}</span>)}</div>
               <div className="idc-sign"><span>{e.nom}</span><small>SIGNATURE</small></div>
               <div className="idc-vfoot"><span>{matricule(e.id)} · {p.nom.toUpperCase()}</span><span style={{ color: p.color }}>◆ OBSIDIAN</span></div>
             </div>

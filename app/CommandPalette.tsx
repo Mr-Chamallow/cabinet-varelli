@@ -25,7 +25,7 @@ interface PageEntry {
 }
 
 // Reflète l'intégralité des pages de la Sidebar (+ Calculatrice, orpheline : accessible
-// par URL directe mais absente du menu — la recherche est la seule façon de la trouver).
+// par URL directe mais absente du menu - la recherche est la seule façon de la trouver).
 const ALL_PAGES: PageEntry[] = [
   { title: "Dashboard", subtitle: "Accueil", href: "/", icon: "🏠", permission: "obsidian_dashboard" },
   { title: "Tableau des prix", subtitle: "Drogues, armes, accessoires", href: "/obsidian/prix", icon: "🏷️", permission: "obsidian_prix" },
@@ -75,7 +75,7 @@ export default function CommandPalette() {
   const [selected, setSelected] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // Pages réellement accessibles à CET utilisateur — recalculé seulement quand il
+  // Pages réellement accessibles à CET utilisateur - recalculé seulement quand il
   // change, pas à chaque frappe.
   const accessiblePages = useMemo<Result[]>(() => {
     if (!user) return [];
@@ -139,7 +139,7 @@ export default function CommandPalette() {
       if (type === "employe") r.push(...data.map((e: any) => ({ type: "employe" as const, id: e.id, title: e.nom, subtitle: e.poste || "Employé", href: "/obsidian/employes", icon: "🧑‍💼" })));
     });
 
-    // Code pénal : recherche locale (pas de table, article statique) — seulement si accès
+    // Code pénal : recherche locale (pas de table, article statique) - seulement si accès
     if (hasPermission(user, "juridique")) {
       const articleMatches = CODE_COMPLET
         .filter(a => a.titre.toLowerCase().includes(ql) || a.contenu.toLowerCase().includes(ql))
@@ -189,7 +189,7 @@ export default function CommandPalette() {
           <span style={{ color:"var(--text-dim)" }}>🔍</span>
           <input
             autoFocus
-            placeholder="Rechercher fiches, stocks, employés, code pénal, pages…"
+            placeholder="Rechercher fiches, stocks, employés, code pénal, pages..."
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyNav}
@@ -199,7 +199,7 @@ export default function CommandPalette() {
 
         <div className="cmdk-results">
           {loading && (
-            <div style={{ padding:"1rem", textAlign:"center", color:"var(--text-dim)", fontSize:"0.8rem" }}>Recherche…</div>
+            <div style={{ padding:"1rem", textAlign:"center", color:"var(--text-dim)", fontSize:"0.8rem" }}>Recherche...</div>
           )}
           {!loading && results.length === 0 && (
             <div style={{ padding:"2rem", textAlign:"center", color:"var(--text-dim)", fontSize:"0.85rem" }}>Aucun résultat</div>

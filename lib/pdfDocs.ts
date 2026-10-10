@@ -50,7 +50,7 @@ export async function pdfAudit(a: any) {
   const p = await Pdf.create({ kind: "audit", title: `Audit de conformite - ${a.organisation}`, subtitle: `Note ${a.note}/10 - ${fdate(a.created_at)}`, classification: "Audit - confidentiel", signers: [`L'auditeur|${a.created_by || "Obsidian Logistics"}`, `L'organisation auditee|${a.organisation || ""}`] });
   p.section("Resultat");
   p.kv([["Organisation", a.organisation], ["Note", `${a.note}/10`], ["Realise par", a.created_by], ["Date", fdate(a.created_at)]]);
-  p.section("Appreciation"); p.para(a.appreciation || "—");
+  p.section("Appreciation"); p.para(a.appreciation || " - ");
   if (a.sanction) { p.section("Sanction"); p.kv([["Sanction", a.sanction], ["Jusqu'au", fdate(a.sanction_fin)]]); }
   if (a.notes) { p.section("Notes"); p.para(a.notes); }
   p.save(`audit-${a.organisation}-${day()}`);
@@ -60,8 +60,8 @@ const TYPE_LABEL: any = { convoi: "Convoi", enchere: "Enchere", alerte: "Lanceur
 export async function pdfEvenement(e: any) {
   const p = await Pdf.create({ kind: "evenement", title: e.titre, subtitle: `${TYPE_LABEL[e.type] || "Evenement"} - ${e.statut}`, classification: "Operation - confidentiel", signers: [`Le responsable|${e.created_by || "Obsidian Logistics"}`, `Le partenaire / la cible|${e.partenaire || ""}`] });
   p.section("Details");
-  p.kv([["Type", TYPE_LABEL[e.type]], ["Statut", e.statut], ["Partenaire / cible", e.partenaire], ["Date", fdate(e.date_event)], ["Montant", e.montant ? fusd(e.montant) : "—"], ["Cree par", e.created_by]]);
-  if ((e.lots || []).length) { p.section("Lots"); p.table(["Lot", "Depart", "Adjuge", "Gagnant"], e.lots.map((l: any) => [l.nom, fusd(l.mise_depart), l.mise_finale ? fusd(l.mise_finale) : "—", l.gagnant]), [70, 32, 32, 40]); }
+  p.kv([["Type", TYPE_LABEL[e.type]], ["Statut", e.statut], ["Partenaire / cible", e.partenaire], ["Date", fdate(e.date_event)], ["Montant", e.montant ? fusd(e.montant) : " - "], ["Cree par", e.created_by]]);
+  if ((e.lots || []).length) { p.section("Lots"); p.table(["Lot", "Depart", "Adjuge", "Gagnant"], e.lots.map((l: any) => [l.nom, fusd(l.mise_depart), l.mise_finale ? fusd(l.mise_finale) : " - ", l.gagnant]), [70, 32, 32, 40]); }
   if (e.notes) { p.section("Notes"); p.para(e.notes); }
   p.save(`${e.type}-${e.titre}-${day()}`);
 }
@@ -76,10 +76,10 @@ export async function pdfOrganisation(org: any, ctx: { pactes: any[]; audits: an
   if (org.notes) p.para(org.notes);
   if (ctx.fiches?.length) { p.section(`Fiches liees (${ctx.fiches.length})`); p.table(["Nom", "Metier", "Priorite", "Statut"], ctx.fiches.map(f => [f.nom, metierInfo(f.metier).label, f.priorite, f.statut]), [60, 40, 36, 38]); }
   p.section(`Pactes (${ctx.pactes.length})`);
-  if (ctx.pactes.length) p.table(["Statut", "Signe le", "Echeance", "Violations"], ctx.pactes.map(x => [x.statut, fday(x.date_signature), x.date_fin ? fday(x.date_fin) : "—", (x.violations || []).length]), [30, 40, 40, 64]);
+  if (ctx.pactes.length) p.table(["Statut", "Signe le", "Echeance", "Violations"], ctx.pactes.map(x => [x.statut, fday(x.date_signature), x.date_fin ? fday(x.date_fin) : " - ", (x.violations || []).length]), [30, 40, 40, 64]);
   else p.para("Aucun pacte.", { italic: true });
   p.section(`Audits (${ctx.audits.length})`);
-  if (ctx.audits.length) p.table(["Date", "Note", "Appreciation", "Sanction"], ctx.audits.map(a => [fday(a.created_at), `${a.note}/10`, a.appreciation, a.sanction || "—"]), [28, 20, 76, 50]);
+  if (ctx.audits.length) p.table(["Date", "Note", "Appreciation", "Sanction"], ctx.audits.map(a => [fday(a.created_at), `${a.note}/10`, a.appreciation, a.sanction || " - "]), [28, 20, 76, 50]);
   else p.para("Aucun audit.", { italic: true });
   p.section(`Dossiers du tribunal (${ctx.dossiers.length})`);
   if (ctx.dossiers.length) p.table(["Date", "Dossier", "Statut", "Verdict"], ctx.dossiers.map(d => [fday(d.created_at), d.titre, d.statut, d.verdict === "en_cours" ? "En cours" : d.verdict]), [28, 74, 36, 36]);
@@ -88,7 +88,7 @@ export async function pdfOrganisation(org: any, ctx: { pactes: any[]; audits: an
   if (ctx.evenements.length) p.table(["Date", "Type", "Titre", "Statut"], ctx.evenements.map(e => [fday(e.date_event || e.created_at), TYPE_LABEL[e.type] || e.type, e.titre, e.statut]), [28, 32, 78, 36]);
   else p.para("Aucun evenement.", { italic: true });
   p.section("Historique de reputation");
-  if (ctx.history.length) p.table(["Date", "Points", "Motif"], ctx.history.slice(0, 40).map(h => [fday(h.created_at), `${h.delta > 0 ? "+" : ""}${h.delta}`, h.motif || h.source || "—"]), [28, 22, 124]);
+  if (ctx.history.length) p.table(["Date", "Points", "Motif"], ctx.history.slice(0, 40).map(h => [fday(h.created_at), `${h.delta > 0 ? "+" : ""}${h.delta}`, h.motif || h.source || " - "]), [28, 22, 124]);
   else p.para("Aucun mouvement (score de depart : 50).", { italic: true });
   p.save(`dossier-${org.nom}-${day()}`);
 }
@@ -96,7 +96,7 @@ export async function pdfOrganisation(org: any, ctx: { pactes: any[]; audits: an
 export async function pdfContrat(c: any) {
   const p = await Pdf.create({ kind: "contrat", title: c.titre || "Contrat", subtitle: `${c.type || "Mission"} - ${c.statut || ""}`, classification: "Contrat - confidentiel", signers: [`Le donneur d'ordre|${c.created_by || "Obsidian Logistics"}`, `Le prestataire|${(c.membres_affectes || []).join(", ")}`] });
   p.section("Parties et conditions");
-  p.kv([["Type", c.type], ["Difficulte", c.difficulte], ["Statut", c.statut], ["Recompense", c.recompense ? fusd(c.recompense) : "—"], ["Date cible", c.date_cible ? fdate(c.date_cible) : "—"], ["Employes affectes", (c.membres_affectes || []).join(", ") || "—"]]);
+  p.kv([["Type", c.type], ["Difficulte", c.difficulte], ["Statut", c.statut], ["Recompense", c.recompense ? fusd(c.recompense) : " - "], ["Date cible", c.date_cible ? fdate(c.date_cible) : " - "], ["Employes affectes", (c.membres_affectes || []).join(", ") || " - "]]);
   if (c.description) { p.section("Objet du contrat"); p.para(c.description); }
   if (c.rapport) { p.section("Rapport de mission"); p.para(c.rapport); }
   p.save(`contrat-${c.titre || "contrat"}-${day()}`);
@@ -131,10 +131,10 @@ export async function pdfEnquete(items: EnqueteItem[], links: { a: string; b: st
   const people = items.filter(i => i.kind === "fiche");
   if (people.length) {
     p.section(`Personnes (${people.length})`);
-    p.table(["Nom", "Organisation", "Liens"], people.map(i => [i.label, i.sub || "—", links.filter(l => (l.a === i.id || l.b === i.id)).map(l => (l.car ? "[veh] " : "") + name(l.a === i.id ? l.b : l.a)).join(", ") || "—"]), [48, 44, 82]);
+    p.table(["Nom", "Organisation", "Liens"], people.map(i => [i.label, i.sub || " - ", links.filter(l => (l.a === i.id || l.b === i.id)).map(l => (l.car ? "[veh] " : "") + name(l.a === i.id ? l.b : l.a)).join(", ") || " - "]), [48, 44, 82]);
   }
   const cars = items.filter(i => i.kind === "vehicule");
-  if (cars.length) { p.section(`Vehicules (${cars.length})`); p.table(["Modele", "Plaque / details", "Assigne a"], cars.map(i => [i.label, i.sub || "—", links.filter(l => l.car && l.b === i.id || l.car && l.a === i.id).map(l => name(l.a === i.id ? l.b : l.a)).join(", ") || "—"]), [60, 54, 60]); }
+  if (cars.length) { p.section(`Vehicules (${cars.length})`); p.table(["Modele", "Plaque / details", "Assigne a"], cars.map(i => [i.label, i.sub || " - ", links.filter(l => l.car && l.b === i.id || l.car && l.a === i.id).map(l => name(l.a === i.id ? l.b : l.a)).join(", ") || " - "]), [60, 54, 60]); }
   const notes = items.filter(i => i.kind === "note" && i.img);
   if (notes.length) { p.section(`Pieces libres (${notes.length})`); for (let n = 0; n < notes.length; n += 3) p.photos(notes.slice(n, n + 3).map((x, j) => ({ url: x.img, label: `Piece ${n + j + 1}`, w: 50, h: 38 }))); }
   p.save(`tableau-enquete-${day()}`);
@@ -145,7 +145,7 @@ export async function pdfConvocation(c: { organisation: string; destinataire: st
   p.section("Notification");
   p.para(`Par la presente, le Consortium de Regulation Obsidian Logistics convoque ${c.destinataire || "le representant"} de l'organisation ${c.organisation}. Cette convocation est personnelle et ne peut etre cedee.`);
   p.section("Details de la convocation");
-  p.kv([["Convoque", c.destinataire], ["Organisation", c.organisation], ["Objet", c.objet], ["Date", c.date ? fday(c.date) : "—"], ["Heure", c.heure], ["Lieu", c.lieu], ["Statut de reputation", c.score !== undefined ? `${palierOf(c.score).label} (${c.score}/100)` : ""]]);
+  p.kv([["Convoque", c.destinataire], ["Organisation", c.organisation], ["Objet", c.objet], ["Date", c.date ? fday(c.date) : " - "], ["Heure", c.heure], ["Lieu", c.lieu], ["Statut de reputation", c.score !== undefined ? `${palierOf(c.score).label} (${c.score}/100)` : ""]]);
   if (c.consignes) { p.section("Consignes"); p.para(c.consignes); }
   p.section("Rappel");
   p.list(["Obsidian Logistics est neutre : elle ne prend jamais parti, sauf si un contrat ou un pacte est viole.", "Toute absence non justifiee sera consignee au dossier de reputation de l'organisation.", "Le contenu de cette convocation est confidentiel."]);

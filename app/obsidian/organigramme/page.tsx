@@ -11,7 +11,7 @@ const NODES: Record<string, { role: string; titre: string; desc: string }> = {
   do: { role: "COO - Directrice opérationnel", titre: "Directeur Opérationnel (COO)", desc: "Gère les événements sur le terrain : contacte les groupes pour proposer les contrats de convoi, organise les ventes aux enchères." },
   rj: { role: "Responsable juridique", titre: "Responsable juridique (CLO)", desc: "Ancien procureur général corrompu. Sa présence à une table signifie que le cadre légal du crime va être appliqué. Lit l'acte d'accusation au Tribunal de l'Ombre." },
   aj: { role: "Agent juridique", titre: "Agent juridique (Enquêteur)", desc: "Yeux et oreilles d'Obsidian : infiltrent les scènes, observent les flux, notent qui respecte les traités et fournissent le RP d'enquête." },
-  rl: { role: "Responsable logistique", titre: "Responsable logistique", desc: "Contrôle les ressources physiques : maître des hangars de Blaine County et des cargaisons de Cayo Perico." },
+  rl: { role: "Responsable logistique", titre: "Responsable logistique (HoL)", desc: "Contrôle les ressources physiques : maître des hangars de Blaine County et des cargaisons de Cayo Perico." },
   al: { role: "Agent logistique", titre: "Agent logistique (Transporteur)", desc: "L'élite du transport : chauffeurs et pilotes, conduite irréprochable, discrétion absolue." },
   rs: { role: "Responsable sécurité", titre: "Responsable sécurité (CSO)", desc: "Ancien haut gradé militaire. Gardien de la neutralité : si un coup de feu éclate en médiation, nettoie la zone de manière chirurgicale." },
   as: { role: "Agent de sécurité", titre: "Agent de sécurité (Exécuteur / Garde)", desc: "Security Operators : sécurisent les convois majeurs, gardent les infrastructures et capturent les cibles condamnées par le Tribunal." },
@@ -52,7 +52,7 @@ export default function OrganigrammePage() {
         {roleRP(n.role) && <div style={{ fontStyle: "italic", fontSize: "0.74rem", color: "var(--gold)" }}>« {roleRP(n.role)!.surnom} »</div>}
         <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.25rem 0 0.5rem" }}>{n.desc}</div>
         <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
-          {who.length === 0 ? <span style={{ fontSize: "0.68rem", color: "var(--text-dim)" }}>—</span> : who.map(w => <span key={w} style={{ fontSize: "0.68rem", padding: "0.1rem 0.5rem", borderRadius: 999, background: "var(--surface)", border: "1px solid var(--border)" }}>{w}</span>)}
+          {who.length === 0 ? <span style={{ fontSize: "0.68rem", color: "var(--text-dim)" }}> - </span> : who.map(w => <span key={w} style={{ fontSize: "0.68rem", padding: "0.1rem 0.5rem", borderRadius: 999, background: "var(--surface)", border: "1px solid var(--border)" }}>{w}</span>)}
         </div>
       </div>
     );
@@ -60,7 +60,7 @@ export default function OrganigrammePage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Dashboard</a>
+      <a className="back-link" href="/">Dashboard</a>
       <div className="page-header"><div><h1 className="page-title">🏛️ Organigramme</h1><p className="page-subtitle">Direction & gouvernance · Obsidian Logistics</p><div className="gold-line" /></div><button className="btn btn-outline" onClick={() => setGallery(true)}>🪪 Cartes par grade</button></div>
       <div className="section-title" style={{ marginBottom: "0.6rem" }}>👑 Directoire exécutif (Niveau Écarlate)</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}><Node k="dg" /><Node k="do" /></div>

@@ -60,7 +60,7 @@ export default function PrixPage() {
     setDrogues(d||[]);setArmes(a||[]);setZones(z||[]);setLoading(false);
   }
 
-  // ── Drogues ──
+  // -- Drogues --
   async function addDrogue(){
     if(!supabase||!newDrogue.nom)return;
     const{data,error}=await supabase.from("obsidian_drogues").insert([{...newDrogue,ordre:drogues.length+1}]).select().single();
@@ -80,7 +80,7 @@ export default function PrixPage() {
     setDrogues(d=>d.filter(x=>x.id!==id));showToast("Supprimée");
   }
 
-  // ── Armes ──
+  // -- Armes --
   async function addArme(){
     if(!supabase||!newArme.nom)return;
     const{data,error}=await supabase.from("obsidian_armes_prix").insert([{...newArme,ordre:armes.length+1}]).select().single();
@@ -100,7 +100,7 @@ export default function PrixPage() {
     setArmes(a=>a.filter(x=>x.id!==id));showToast("Supprimée");
   }
 
-  // ── Zones ──
+  // -- Zones --
   async function addZone(){
     if(!supabase||!newZone.nom)return;
     const{data,error}=await supabase.from("obsidian_zones").insert([{...newZone,ordre:zones.length+1}]).select().single();
@@ -124,8 +124,8 @@ export default function PrixPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">← Dashboard Obsidian</a>
-      <div className="page-header"><div><h1 className="page-title">💲 Tableau des prix</h1><p className="page-subtitle">Drogues · Armes · Accessoires · Zones — Personnalisable</p><div className="gold-line"/></div></div>
+      <a className="back-link" href="/">Dashboard Obsidian</a>
+      <div className="page-header"><div><h1 className="page-title">💲 Tableau des prix</h1><p className="page-subtitle">Drogues · Armes · Accessoires · Zones - Personnalisable</p><div className="gold-line"/></div></div>
 
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem",flexWrap:"wrap"}}>
         {[["drogues","💊 Drogues"],["armes","🔫 Armes"],["accessoires","🔧 Accessoires"],["zones","🗺️ Zones"]].map(([k,l])=>
@@ -135,7 +135,7 @@ export default function PrixPage() {
 
       {loading ? <LoadingBlock /> : <>
 
-      {/* ── DROGUES ── */}
+      {/* -- DROGUES -- */}
       {tab==="drogues" && (
         <>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:"0.75rem",marginBottom:"1.5rem"}}>
@@ -155,7 +155,7 @@ export default function PrixPage() {
                       </div>
                       <input type="number" placeholder="Semaines revend." value={editDrogueForm.semaines_revend} onChange={e=>setEditDrogueForm((f:any)=>({...f,semaines_revend:+e.target.value}))}/>
                       <div style={{display:"flex",gap:"0.4rem"}}>
-                        <button className="btn btn-gold btn-sm" onClick={()=>saveDrogue(d.id)} style={{flex:1}}>✓</button>
+                        <button className="btn btn-gold btn-sm" onClick={()=>saveDrogue(d.id)} style={{flex:1}}>OK</button>
                         <button className="btn btn-ghost btn-sm" onClick={()=>setEditDrogueId(null)}>✕</button>
                       </div>
                     </div>
@@ -171,7 +171,7 @@ export default function PrixPage() {
                           <button className="btn btn-ghost btn-sm" onClick={()=>delDrogue(d.id)} style={{color:"var(--danger)"}}>🗑️</button>
                         </div>
                       </div>
-                      <div style={{fontFamily:"'Playfair Display',serif",fontWeight:900,color:"var(--gold)"}}>{fmt(d.prix_min)} – {fmt(d.prix_max)}</div>
+                      <div style={{fontFamily:"'Playfair Display',serif",fontWeight:900,color:"var(--gold)"}}>{fmt(d.prix_min)} - {fmt(d.prix_max)}</div>
                     </>
                   )}
                 </div>
@@ -194,7 +194,7 @@ export default function PrixPage() {
         </>
       )}
 
-      {/* ── ARMES ── */}
+      {/* -- ARMES -- */}
       {tab==="armes" && (
         <>
           <div style={{display:"flex",flexDirection:"column",gap:"0.375rem",marginBottom:"1.5rem"}}>
@@ -206,7 +206,7 @@ export default function PrixPage() {
                     <>
                       <input value={editArmeForm.nom} onChange={e=>setEditArmeForm((f:any)=>({...f,nom:e.target.value}))} style={{flex:1}}/>
                       <input type="number" value={editArmeForm.prix} onChange={e=>setEditArmeForm((f:any)=>({...f,prix:+e.target.value}))} style={{width:140}}/>
-                      <button className="btn btn-gold btn-sm" onClick={()=>saveArme(a.id)}>✓</button>
+                      <button className="btn btn-gold btn-sm" onClick={()=>saveArme(a.id)}>OK</button>
                       <button className="btn btn-ghost btn-sm" onClick={()=>setEditArmeId(null)}>✕</button>
                     </>
                   ) : (
@@ -232,14 +232,14 @@ export default function PrixPage() {
         </>
       )}
 
-      {/* ── ACCESSOIRES (statique, comme avant) ── */}
+      {/* -- ACCESSOIRES (statique, comme avant) -- */}
       {tab==="accessoires" && (
         <div style={{display:"flex",flexDirection:"column",gap:"0.375rem"}}>
           {ACCS.map(a=><div key={a.nom} style={{display:"flex",justifyContent:"space-between",padding:"0.625rem 1rem",background:"var(--card)",borderRadius:"var(--radius)",border:"1px solid var(--border)"}}><span style={{fontWeight:500}}>{a.nom}</span><span style={{fontWeight:700,color:"var(--gold)"}}>{fmt(a.prix)}</span></div>)}
         </div>
       )}
 
-      {/* ── ZONES ── */}
+      {/* -- ZONES -- */}
       {tab==="zones" && (
         <>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"0.625rem",marginBottom:"1.5rem"}}>
@@ -254,7 +254,7 @@ export default function PrixPage() {
                       <input placeholder="Drogue" value={editZoneForm.drogue} onChange={e=>setEditZoneForm((f:any)=>({...f,drogue:e.target.value}))}/>
                       <input placeholder="Revendiquée par" value={editZoneForm.revendique_par||""} onChange={e=>setEditZoneForm((f:any)=>({...f,revendique_par:e.target.value}))}/>
                       <div style={{display:"flex",gap:"0.4rem"}}>
-                        <button className="btn btn-gold btn-sm" onClick={()=>saveZone(z.id)} style={{flex:1}}>✓</button>
+                        <button className="btn btn-gold btn-sm" onClick={()=>saveZone(z.id)} style={{flex:1}}>OK</button>
                         <button className="btn btn-ghost btn-sm" onClick={()=>setEditZoneId(null)}>✕</button>
                       </div>
                     </div>

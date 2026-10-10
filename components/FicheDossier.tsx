@@ -21,7 +21,7 @@ export function FicheDossier({ f, showPrivate = true }: { f: any; showPrivate?: 
       <div className="fd-tab">DOSSIER N° {ref(f.id)}</div>
       <div className="fd-paper">
         {bigStamp && <div className="fd-bigstamp"><Stamp color={bigStamp.c} size="lg" rotate={-14}>{bigStamp.t}</Stamp></div>}
-        <div className="fd-head"><span style={{ display: "flex", alignItems: "center", gap: 8 }}><ObsLogo size={26} />OBSIDIAN LOGISTICS — SERVICE RENSEIGNEMENT</span><span>{m.icon} {m.label}{(f.sous_tags || []).length ? " · " + f.sous_tags.join(", ") : ""}</span></div>
+        <div className="fd-head"><span style={{ display: "flex", alignItems: "center", gap: 8 }}><ObsLogo size={26} />OBSIDIAN LOGISTICS - SERVICE RENSEIGNEMENT</span><span>{m.icon} {m.label}{(f.sous_tags || []).length ? " · " + f.sous_tags.join(", ") : ""}</span></div>
         <div className="fd-grid">
           <div className="fd-photos">
             <div className="fd-polaroid">
@@ -44,9 +44,9 @@ export function FicheDossier({ f, showPrivate = true }: { f: any; showPrivate?: 
           </div>
         </div>
         {blocks.filter(b => b[1]).map(([k, v]) => <div className="fd-block" key={k}><b>{k}</b><p>{v}</p></div>)}
-        {showPrivate && f.notes_privees && <div className="fd-block fd-secret"><b>🔒 Notes privées — ne pas diffuser</b><p>{f.notes_privees}</p></div>}
+        {showPrivate && f.notes_privees && <div className="fd-block fd-secret"><b>🔒 Notes privées - ne pas diffuser</b><p>{f.notes_privees}</p></div>}
         {showPrivate && journal.length > 0 && <div className="fd-block"><b>Journal d'activité</b><div className="appar">{journal.map(j => <div key={j.id} className="appar-row"><small>{new Date(j.created_at).toLocaleString("fr-FR")}</small><span>{j.action}</span><small>{j.par}</small></div>)}</div></div>}
-        <div className="fd-foot">Document interne — Consortium Obsidian · Mis à jour le {f.updated_at ? new Date(f.updated_at).toLocaleDateString("fr-FR") : "—"}</div>
+        <div className="fd-foot">Document interne - Consortium Obsidian · Mis à jour le {f.updated_at ? new Date(f.updated_at).toLocaleDateString("fr-FR") : " - "}</div>
       </div>
     </div>
   );

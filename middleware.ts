@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 const ADMIN_ONLY_PATHS = ["/admin", "/settings", "/supervision"];
 
 // ⚠️ Le middleware tourne dans l'Edge Runtime de Vercel : il ne doit JAMAIS importer
-// lib/auth.ts (qui importe lib/supabase.ts → @supabase/supabase-js). Ce module n'est
+// lib/auth.ts (qui importe lib/supabase.ts -> @supabase/supabase-js). Ce module n'est
 // pas compatible Edge Runtime et provoque un crash immédiat (500
 // MIDDLEWARE_INVOCATION_FAILED) sur TOUT le site, même si `next build` passe en local
 // (le build ne détecte pas ce type d'incompatibilité runtime).

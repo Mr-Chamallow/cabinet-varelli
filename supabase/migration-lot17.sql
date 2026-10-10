@@ -3,12 +3,12 @@ alter table obsidian_employes add column if not exists histoire_texte text;
 alter table obsidian_employes add column if not exists profil_psy jsonb;
 
 update obsidian_employes set
-histoire_texte = $h$PIERCE DAVENPORT — « L'Arbitre Suprême »
+histoire_texte = $h$PIERCE DAVENPORT - « L'Arbitre Suprême »
 CEO d'Obsidian Logistics · Juge suprême du Tribunal de l'Ombre
 
 Avant Obsidian, Pierce Davenport n'était personne de remarquable : un homme discret, méthodique, qui observait Los Santos plus qu'il n'y vivait. Il a compris tôt une chose que les gangs, les cartels et même la police refusaient de voir : le crime n'est pas un chaos, c'est une industrie. Et une industrie sans gestionnaire s'effondre dans le sang.
 
-Il a passé des années à regarder les guerres de territoire, les fusillades à répétition, les représailles absurdes, et à compter ce qu'elles coûtaient à tout le monde : des hommes, de l'argent, des routes, de la confiance. De ce constat est né le Consortium de Régulation : un groupe qui ne prend jamais parti, qui ne fait jamais la guerre, qui n'agit jamais pour son profit personnel — sauf quand un contrat ou un pacte est violé.
+Il a passé des années à regarder les guerres de territoire, les fusillades à répétition, les représailles absurdes, et à compter ce qu'elles coûtaient à tout le monde : des hommes, de l'argent, des routes, de la confiance. De ce constat est né le Consortium de Régulation : un groupe qui ne prend jamais parti, qui ne fait jamais la guerre, qui n'agit jamais pour son profit personnel - sauf quand un contrat ou un pacte est violé.
 
 Il a bâti Obsidian comme on bâtit une institution : des pôles (juridique, logistique, sécurité), des règles écrites, des pactes signés, des audits. Des infrastructures ultra-sécurisées dans le désert de Blaine County. Des cadres qui se déplacent comme des diplomates et jugent comme des magistrats déchus.
 
@@ -16,7 +16,7 @@ Pierce est le visage public du consortium lors des grands événements. Il n'int
 
 Sa doctrine tient en une phrase : « Le crime est une industrie. Le chaos est une mauvaise gestion. Nous sommes les gestionnaires. »
 
-Sa neutralité est sa seule vraie arme. Il le sait : le jour où Obsidian prendra parti, le consortium deviendra un gang de plus — et il aura échoué.$h$,
+Sa neutralité est sa seule vraie arme. Il le sait : le jour où Obsidian prendra parti, le consortium deviendra un gang de plus - et il aura échoué.$h$,
 profil_psy = $p${
  "archetype": "L'Arbitre Suprême",
  "devise": "Le crime est une industrie. Le chaos est une mauvaise gestion.",

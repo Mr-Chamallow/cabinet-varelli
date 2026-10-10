@@ -37,7 +37,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  "Associé / Patron":               [...ALL_PERMISSIONS], // ← LA CLÉ QUI MANQUAIT
+  "Associé / Patron":               [...ALL_PERMISSIONS], // LA CLÉ QUI MANQUAIT
   "CEO - Directeur général":        [...ALL_PERMISSIONS],
   "COO - Directrice opérationnel":  ALL_PERMISSIONS.filter(p => p !== "delete_all"),
   "Responsable juridique":          ["obsidian_dashboard","obsidian_rdv","obsidian_contrats","obsidian_stats","juridique","utile_samp","carte-enqueteur"],
@@ -48,7 +48,7 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   "Agent de sécurité":              ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","carte-enqueteur","obsidian_arrestations","obsidian_stocks"],
   "Opérateur":                      ["obsidian_dashboard","obsidian_rdv","carte-enqueteur","obsidian_actions","obsidian_arrestations"],
   "Opérateur stagiaire":            ["obsidian_dashboard"],
-  // Rôle externe (site "Légal Service") — accès à la carte enquêteur uniquement, en lecture seule.
+  // Rôle externe (site "Légal Service") - accès à la carte enquêteur uniquement, en lecture seule.
   "Légal Service":                  ["carte-enqueteur"],
 };
 
@@ -58,7 +58,7 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
 // (une permission stockée en "perm:read" produit le même effet, rôle par rôle).
 export const READONLY_ROLES = ["Légal Service"];
 
-// ─── Niveaux d'accès par permission (onglet) ────────────────────────────
+// --- Niveaux d'accès par permission (onglet) ---
 // Une entrée de permission peut s'écrire "perm" (= écriture, comportement
 // historique) ou "perm:read" (lecture seule). Rien ne casse pour les rôles
 // non migrés : toute entrée sans suffixe reste en écriture comme avant.
@@ -110,11 +110,31 @@ export const canAccess = hasPermission;
 // qui les renvoyait vers /, qui les renvoyait vers /login... boucle infinie.
 const LANDING_PRIORITY: { path: string; permission: string }[] = [
   { path: "/", permission: "obsidian_dashboard" },
-  { path: "/carte-enqueteur", permission: "carte-enqueteur" },
+  { path: "/obsidian/prix", permission: "obsidian_prix" },
+  { path: "/obsidian/stocks", permission: "obsidian_stocks" },
+  { path: "/obsidian/armurerie", permission: "obsidian_armurerie" },
+  { path: "/obsidian/garage", permission: "obsidian_garage" },
+  { path: "/obsidian/comptabilite", permission: "obsidian_comptabilite" },
+  { path: "/obsidian/rdv", permission: "obsidian_rdv" },
+  { path: "/obsidian/contrats", permission: "obsidian_contrats" },
+  { path: "/obsidian/actions-illegales", permission: "obsidian_actions" },
+  { path: "/obsidian/arrestations", permission: "obsidian_arrestations" },
+  { path: "/obsidian/stats", permission: "obsidian_stats" },
+  { path: "/obsidian/fiches", permission: "obsidian_fiches" },
+  { path: "/cahier-vente", permission: "cahier_vente" },
+  { path: "/obsidian/paie", permission: "obsidian_paie" },
+  { path: "/obsidian/employes", permission: "obsidian_employes" },
   { path: "/juridique", permission: "juridique" },
   { path: "/utile-samp", permission: "utile_samp" },
-  { path: "/obsidian/prix", permission: "obsidian_prix" },
-  { path: "/cahier-vente", permission: "cahier_vente" },
+  { path: "/carte-enqueteur", permission: "carte-enqueteur" },
+  { path: "/base-de-donnees", permission: "base_donnees" },
+  { path: "/obsidian/organigramme", permission: "organigramme" },
+  { path: "/obsidian/tribunal", permission: "gm_tribunal" },
+  { path: "/obsidian/pactes", permission: "gm_pactes" },
+  { path: "/obsidian/audits", permission: "gm_audits" },
+  { path: "/obsidian/evenements", permission: "gm_evenements" },
+  { path: "/obsidian/reputation", permission: "gm_reputation" },
+  { path: "/obsidian/consortium", permission: "gm_stats" },
   { path: "/admin", permission: "admin" },
   { path: "/supervision", permission: "supervision" },
 ];

@@ -48,7 +48,7 @@ export function WantedPoster({ d }: { d: WantedData }) {
             <div className="wp-rows">
               {([["Âge", d.age ? `${d.age} ans` : "", 0], ["Origine", d.origine, 0], ["Occupation", d.occupation, 1], ["Groupe", d.organisation, 0], ["Danger", threat, 0], ["Véhicules", d.vehicules, 1], ["Signes", (d.tags || []).join(", "), 1], ["Motif", d.motif, 1]] as [string, any, number][]).filter(r => r[1]).map(([k, v, w]) => <div key={k} className={w ? "w2" : ""}><small>{k}</small><span>{v}</span></div>)}
             </div>
-            <div className="wp-foot">Document interne — Consortium Obsidian</div>
+            <div className="wp-foot">Document interne - Consortium Obsidian</div>
           </div>
         </div>
       </div>

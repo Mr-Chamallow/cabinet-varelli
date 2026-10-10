@@ -158,7 +158,7 @@ export default function CahierVentePage() {
     setSaving(true);
     const prod = produits.find(p => p.nom === form.produit_nom && p.type === form.categorie);
     if (form.type === "entrée" && prod && (prod.quantite || 0) < form.quantite) { showToast(`Stock insuffisant (${prod.quantite || 0})`); setSaving(false); return; }
-    const motif = form.motif.trim() || `${form.type === "entrée" ? "Vente" : "Achat"} ${form.quantite} × ${form.produit_nom}`;
+    const motif = form.motif.trim() || `${form.type === "entrée" ? "Vente" : "Achat"} ${form.quantite} x ${form.produit_nom}`;
     const { data } = await supabase.from("cahier_transactions").insert([{
       ...form, motif, created_by: user.nom,
     }]).select().single();
@@ -257,7 +257,7 @@ export default function CahierVentePage() {
       <Toast toast={toast} />
       <UndoToast pending={pendingUndo} onUndo={undoDelete} />
 
-      <a className="back-link" href="/">← Tableau de bord</a>
+      <a className="back-link" href="/">Tableau de bord</a>
       <div className="page-header">
         <div>
           <h1 className="page-title">Transaction</h1>
@@ -287,7 +287,7 @@ export default function CahierVentePage() {
         ))}
       </div>
 
-      {/* ── APERÇU ── */}
+      {/* -- APERÇU -- */}
       {tab === "apercu" && (
         <>
           <div className="stat-grid" style={{ marginBottom: "1.5rem" }}>
@@ -379,14 +379,14 @@ export default function CahierVentePage() {
         </>
       )}
 
-      {/* ── HISTORIQUE ── */}
+      {/* -- HISTORIQUE -- */}
       {tab === "historique" && (
         <>
           <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
             <div className="search-bar" style={{ flex: 1, minWidth: 200 }}>
               <span className="search-icon">🔍</span>
-              <input placeholder="Chercher un motif, catégorie…" value={search} onChange={e => setSearch(e.target.value)}/>
-              {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer" }}>×</button>}
+              <input placeholder="Chercher un motif, catégorie..." value={search} onChange={e => setSearch(e.target.value)}/>
+              {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer" }}>x</button>}
             </div>
             <select value={filterType} onChange={e => setFilterType(e.target.value)} style={{ width: "auto", minWidth: 140 }}>
               <option value="">Toutes opérations</option>
@@ -410,7 +410,7 @@ export default function CahierVentePage() {
           </div>
 
           {loading ? (
-            <div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">Chargement…</div></div>
+            <div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">Chargement...</div></div>
           ) : filtered.length === 0 ? (
             <div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">Aucune transaction</div></div>
           ) : (
@@ -429,7 +429,7 @@ export default function CahierVentePage() {
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.2rem", flexWrap: "wrap" }}>
                       <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>{t.motif || t.categorie}</span>
                       <span style={{ fontSize: "0.65rem", padding: "0.08rem 0.4rem", borderRadius: 999, background: t.type === "entrée" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)", color: t.type === "entrée" ? "var(--success)" : "var(--danger)", border: `1px solid ${t.type === "entrée" ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`, fontWeight: 600, flexShrink: 0 }}>{t.categorie}</span>
-                      {t.produit_nom && <span style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>{t.produit_nom}{t.quantite > 0 ? ` ×${t.quantite}` : ""}</span>}
+                      {t.produit_nom && <span style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>{t.produit_nom}{t.quantite > 0 ? ` x${t.quantite}` : ""}</span>}
                       <span style={{ fontSize: "0.65rem", padding: "0.08rem 0.4rem", borderRadius: 999, background: "var(--surface)", color: "var(--text-dim)", border: "1px solid var(--border)" }}>{t.type_argent}</span>
                       <span style={{ marginLeft: "auto", fontSize: "0.65rem", color: "var(--text-dim)", flexShrink: 0 }}>{t.created_by} · {fmtDate(t.created_at)}</span>
                     </div>
@@ -447,7 +447,7 @@ export default function CahierVentePage() {
         </>
       )}
 
-      {/* ── SAISIE ── */}
+      {/* -- SAISIE -- */}
       {tab === "saisie" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
           <div className="card">
@@ -464,7 +464,7 @@ export default function CahierVentePage() {
                     border: `1px solid ${form.type === t ? (t === "entrée" ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)") : "var(--border)"}`,
                     color: form.type === t ? (t === "entrée" ? "var(--success)" : "var(--danger)") : "var(--text-muted)",
                   }}>
-                    {t === "entrée" ? "↑ Vente (entrée d'argent · stock −)" : "↓ Achat (sortie d'argent · stock +)"}
+                    {t === "entrée" ? "↑ Vente (entrée d'argent · stock -)" : "↓ Achat (sortie d'argent · stock +)"}
                   </button>
                 ))}
               </div>
@@ -486,7 +486,7 @@ export default function CahierVentePage() {
 
             <div className="form-group">
               <label>Motif / Description *</label>
-              <textarea rows={2} placeholder="Ex: Vente 50 unités de cocaïne…" value={form.motif}
+              <textarea rows={2} placeholder="Ex: Vente 50 unités de cocaïne..." value={form.motif}
                 onChange={e => setForm(f => ({ ...f, motif: e.target.value }))}/>
             </div>
 
@@ -494,7 +494,7 @@ export default function CahierVentePage() {
               <div className="form-group">
                 <label>Produit (stock {form.categorie}) *</label>
                 <select value={form.produit_nom} onChange={e => { const pr = produits.find(x => x.nom === e.target.value); setForm(f => ({ ...f, produit_nom: e.target.value, ...(pr && !f.montant ? { montant: pr.prix_propre * (f.quantite || 1) } : {}) })); }}>
-                  <option value="">— Choisir —</option>
+                  <option value=""> -  Choisir  - </option>
                   {produits.filter(p => p.type === form.categorie).map(p => <option key={p.id} value={p.nom}>{p.emoji} {p.nom} (stock : {p.quantite}{p.unite ? " " + p.unite : ""})</option>)}
                 </select>
               </div>
@@ -525,7 +525,7 @@ export default function CahierVentePage() {
               <button className="btn btn-gold" onClick={saveTransaction}
                 disabled={saving || !form.produit_nom || form.quantite <= 0 || form.montant <= 0}
                 style={{ flex: 1, justifyContent: "center", opacity: saving ? 0.7 : 1 }}>
-                {saving ? "Enregistrement…" : "✓ Enregistrer la transaction"}
+                {saving ? "Enregistrement..." : "Enregistrer la transaction"}
               </button>
             </div>
           </div>
@@ -554,7 +554,7 @@ export default function CahierVentePage() {
 
             {produits.filter(p => p.actif).length > 0 && (
               <div className="card">
-                <div className="section-title" style={{ marginBottom: "0.75rem" }}>Saisie rapide — Produits</div>
+                <div className="section-title" style={{ marginBottom: "0.75rem" }}>Saisie rapide - Produits</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                   {produits.filter(p => p.actif).map(p => (
                     <button key={p.id} onClick={() => quickSell(p)} style={{
@@ -577,14 +577,14 @@ export default function CahierVentePage() {
         </div>
       )}
 
-      {/* ── PRODUITS (issus du Stock) ── */}
+      {/* -- PRODUITS (issus du Stock) -- */}
       {tab === "blanchiment" && <BlanchimentPanel />}
       {tab === "equivalent" && <EquivalentPanel />}
 
       {tab === "produits" && (
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
-            <div className="section-title">Produits — synchronisés avec les Stocks</div>
+            <div className="section-title">Produits - synchronisés avec les Stocks</div>
             <a className="btn btn-outline btn-sm" href="/obsidian/stocks">📦 Gérer dans Stocks</a>
           </div>
           {produits.length === 0 ? (

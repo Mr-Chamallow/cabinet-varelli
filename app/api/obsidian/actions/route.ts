@@ -27,7 +27,7 @@ export async function POST(req: Request) {
         categorie: action,
         montant: Math.abs(montant),
         type_argent: "sale",
-        motif: `${action} — ${membre}${b.notes ? ` — ${b.notes}` : ""}`,
+        motif: `${action} - ${membre}${b.notes ? ` - ${b.notes}` : ""}`,
         membre,
         semaine: weekStartOf(createdAt),
         created_by: b.created_by || "",
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       }
     }
     await postAlert("actions", `🕶️ ${action}`, `**${membre}** · ${montant >= 0 ? "gain" : "perte"} **${usd(Math.abs(montant))}**${b.notes ? `\n${b.notes}` : ""}`, montant >= 0 ? GREEN : RED);
-    await bigMoveAlert(supabaseAdmin, montant, `${action} — ${membre}`, b.created_by || membre);
+    await bigMoveAlert(supabaseAdmin, montant, `${action} - ${membre}`, b.created_by || membre);
     return NextResponse.json(row);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
@@ -59,8 +59,8 @@ export async function DELETE(req: Request) {
     await supabaseAdmin.from("obsidian_comptabilite").delete().eq("source", "action").eq("source_id", id);
     const { error: e } = await supabaseAdmin.from("actions_illegales").delete().eq("id", id);
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
-    if (old) await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Action supprimée", `${old.action} — ${old.membre}`, `${Number(old.montant) || 0} $`);
-    if (old) await postAlert("actions", `🗑️ Action supprimée — ${old.action}`, `**${old.membre}** · ${usd(Number(old.montant) || 0)}`, GREY);
+    if (old) await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Action supprimée", `${old.action} - ${old.membre}`, `${Number(old.montant) || 0} $`);
+    if (old) await postAlert("actions", `🗑️ Action supprimée - ${old.action}`, `**${old.membre}** · ${usd(Number(old.montant) || 0)}`, GREY);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
@@ -89,12 +89,12 @@ export async function PATCH(req: Request) {
     if (montant !== 0) {
       const { error: e2 } = await supabaseAdmin.from("obsidian_comptabilite").insert([{
         type: montant > 0 ? "recette" : "dépense", categorie: action, montant: Math.abs(montant), type_argent: "sale",
-        motif: `${action} — ${membre}${b.notes ? ` — ${b.notes}` : ""}`, membre, semaine: weekStartOf(createdAt),
+        motif: `${action} - ${membre}${b.notes ? ` - ${b.notes}` : ""}`, membre, semaine: weekStartOf(createdAt),
         created_by: row.created_by || b.created_by || "", created_at: createdAt, source: "action", source_id: id,
       }]);
       if (e2) return NextResponse.json({ error: `Compta : ${e2.message}` }, { status: 400 });
     }
-    await postAlert("actions", `✏️ Action modifiée — ${action}`, `**${membre}** · ${montant >= 0 ? "gain" : "perte"} **${usd(Math.abs(montant))}**`, ORANGE);
+    await postAlert("actions", `✏️ Action modifiée - ${action}`, `**${membre}** · ${montant >= 0 ? "gain" : "perte"} **${usd(Math.abs(montant))}**`, ORANGE);
     return NextResponse.json(row);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

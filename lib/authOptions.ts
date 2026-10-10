@@ -21,7 +21,7 @@ type GuildMembership = {
 // ⚠️ Distingue "pas membre du serveur Discord" (inGuild: false) de "membre mais
 // aucun des rôles suivis" (inGuild: true, roles: []). Avant ce fix, les deux cas
 // renvoyaient un simple [] et getHighestRole() retombait sur "Opérateur stagiaire"
-// par défaut — donnant accès au site à N'IMPORTE QUI se connectant via Discord,
+// par défaut - donnant accès au site à N'IMPORTE QUI se connectant via Discord,
 // même hors du serveur. Voir Admin > Journaux pour vérifier qui s'est connecté ainsi.
 async function fetchGuildMembership(accessToken: string): Promise<GuildMembership> {
   const res = await fetch(
@@ -79,8 +79,8 @@ async function saveSyncState(discordId: string, siteRole: string, discordRole: s
     await supabase.from("site_logins").update({ site_role: siteRole, discord_role: discordRole, force_resync: false }).eq("discord_id", discordId);
     if (prev && (prev.site_role || "") !== (siteRole || "")) {
       const nom = prev.discord_name || discordId;
-      if (!inGuild) await postAlert("membres", "🚪 Membre parti du serveur", `**${nom}** (\`${discordId}\`) n'est plus sur le Discord.\nAncien rôle : ${prev.site_role || "—"}`, RED);
-      else await postAlert("membres", "🔄 Changement de rôle", `**${nom}**\n${prev.site_role || "—"} → **${siteRole || "aucun"}**`, ORANGE);
+      if (!inGuild) await postAlert("membres", "🚪 Membre parti du serveur", `**${nom}** (\`${discordId}\`) n'est plus sur le Discord.\nAncien rôle : ${prev.site_role || "-"}`, RED);
+      else await postAlert("membres", "🔄 Changement de rôle", `**${nom}**\n${prev.site_role || "-"} -> **${siteRole || "aucun"}**`, ORANGE);
     }
   } catch {}
 }
@@ -93,7 +93,7 @@ async function logFailedLogin(discordId: string, discordName: string, reason: st
   try {
     await supabase.from("site_login_failures").insert([{ discord_id: discordId, discord_name: discordName, reason }]);
   } catch {
-    // Table pas encore créée (migration non exécutée) — ne bloque jamais la connexion pour ça.
+    // Table pas encore créée (migration non exécutée) - ne bloque jamais la connexion pour ça.
   }
   await sendSecurityAlert("🚫 Connexion refusée", `**${discordName}** (\`${discordId}\`)\nRaison : \`${reason}\``);
 }
@@ -120,7 +120,7 @@ async function getRolePermissions(roleName: string): Promise<string[] | null> {
 
 // Vérifie si ce Discord ID est banni du site. Ne doit jamais faire planter la
 // connexion si la table n'existe pas encore (migration pas encore exécutée).
-// Nom RP (prénom + nom) défini dans Admin → Membres ; sinon on retombe sur le pseudo Discord.
+// Nom RP (prénom + nom) défini dans Admin -> Membres ; sinon on retombe sur le pseudo Discord.
 async function getNomPerso(discordId: string): Promise<string> {
   if (!supabase) return "";
   try { const { data } = await supabase.from("site_logins").select("nom_perso").eq("discord_id", discordId).maybeSingle(); return data?.nom_perso || ""; } catch { return ""; }
@@ -143,12 +143,12 @@ async function logSession(discordId: string, discordName: string, event: "connec
   try {
     await supabase.from("site_session_log").insert([{ discord_id: discordId, discord_name: discordName, event }]);
   } catch {
-    // Table pas encore créée (migration non exécutée) — ne bloque jamais la connexion pour ça.
+    // Table pas encore créée (migration non exécutée) - ne bloque jamais la connexion pour ça.
   }
 }
 
 // Trace chaque connexion (nom + rôle détecté + horodatage) dans site_logins, pour
-// avoir une vraie liste des membres qui utilisent le site (Admin > Membres) — et
+// avoir une vraie liste des membres qui utilisent le site (Admin > Membres) - et
 // pouvoir vérifier si quelqu'un qui dit "je n'arrive pas à accéder au site" s'est
 // réellement connecté ou non. Ne doit jamais faire planter la connexion en cas d'échec.
 async function recordLogin(discordId: string, discordName: string, role: string, discordRole: string) {
@@ -166,7 +166,7 @@ async function recordLogin(discordId: string, discordName: string, role: string,
       await postAlert("membres", "🆕 Nouveau membre sur le site", `**${discordName}** (\`${discordId}\`)\nRôle : **${role || "aucun"}**`, GREEN, undefined, ["COO"]);
     }
   } catch {
-    // La table n'existe peut-être pas encore (script SQL non exécuté) — ne bloque jamais la connexion pour ça.
+    // La table n'existe peut-être pas encore (script SQL non exécuté) - ne bloque jamais la connexion pour ça.
   }
 }
 
@@ -179,7 +179,7 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
       // ⚠️ Discord renvoie désormais un paramètre `iss` au callback (RFC 9207).
       // next-auth v4 (openid-client) le vérifie, mais le provider Discord intégré
-      // n'a aucun `issuer` configuré → erreur "issuer must be configured on the
+      // n'a aucun `issuer` configuré -> erreur "issuer must be configured on the
       // issuer" (OAuthCallback) AVANT d'exécuter signIn()/jwt(). Même symptôme que
       // celui rapporté pour GitHub avec RFC 9207. Fix : déclarer l'issuer Discord.
       // Si les logs Vercel affichent ensuite "unexpected iss value, expected X, got Y",
@@ -198,7 +198,7 @@ export const authOptions: NextAuthOptions = {
       // Tout est enveloppé dans un try/catch : avant ce fix, une exception imprévue
       // ici (fetch qui throw, etc.) remontait tout droit à NextAuth, qui affichait
       // juste "Connexion refusée. Réessaie." SANS rien logguer dans
-      // site_login_failures — impossible de savoir pourquoi. Maintenant la vraie
+      // site_login_failures - impossible de savoir pourquoi. Maintenant la vraie
       // erreur est toujours enregistrée, visible dans Admin > Journaux > 🚫 Refusées.
       const discordName = (profile as any)?.username || "Inconnu";
       try {

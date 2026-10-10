@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -14,7 +14,7 @@ function LoginContent() {
   const discordError = params?.get("error");
   const [invite, setInvite] = useState("");
   const inviteLink = invite ? (
-    <a href={invite} target="_blank" rel="noreferrer" style={{ color: "var(--gold)", display: "block", marginTop: "0.5rem" }}>Rejoindre le serveur Discord →</a>
+    <a href={invite} target="_blank" rel="noreferrer" style={{ color: "var(--gold)", display: "block", marginTop: "0.5rem" }}>Rejoindre le serveur Discord {'->'}</a>
   ) : null;
   const [identity, setIdentity] = useState<Identity>({ logoUrl: DEFAULT_LOGO_URL, appNom: DEFAULT_APP_NOM });
 
@@ -26,7 +26,7 @@ function LoginContent() {
     if (status === "authenticated") router.push("/");
   }, [status, router]);
 
-  // Même identité (logo, nom, couleur) que la Sidebar — avant, /login gardait un cœur
+  // Même identité (logo, nom, couleur) que la Sidebar - avant, /login gardait un cœur
   // noir et un nom figés, seule page du site à ne pas suivre la Personnalisation.
   useEffect(() => {
     applyCachedThemeIfAny();

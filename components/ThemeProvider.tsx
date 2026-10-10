@@ -6,7 +6,7 @@ import { applyCachedThemeIfAny, applyThemeToDocument, DEFAULT_GOLD } from "@/lib
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    // 1) applique immédiatement la dernière couleur connue (cache local) → pas de flash
+    // 1) applique immédiatement la dernière couleur connue (cache local) -> pas de flash
     applyCachedThemeIfAny();
 
     // 2) va chercher la couleur officielle en base et la ré-applique si différente
@@ -20,7 +20,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           .maybeSingle();
         applyThemeToDocument(data?.valeur || DEFAULT_GOLD);
       } catch {
-        // Supabase indisponible — on reste sur le cache local (ou le défaut du CSS)
+        // Supabase indisponible - on reste sur le cache local (ou le défaut du CSS)
       }
     })();
   }, []);

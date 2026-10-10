@@ -54,7 +54,7 @@ export async function GET() {
       checks.push({
         label: "Connexion Supabase (clé de service)",
         ok: !error,
-        detail: error ? error.message : "OK — lecture de la table 'roles' réussie",
+        detail: error ? error.message : "OK - lecture de la table 'roles' réussie",
       });
     } catch (e: any) {
       checks.push({ label: "Connexion Supabase (clé de service)", ok: false, detail: e?.message || String(e) });
@@ -72,7 +72,7 @@ export async function GET() {
       checks.push({
         label: "Connexion Supabase (clé publique)",
         ok: !error,
-        detail: error ? error.message : "OK — lecture de la table 'app_settings' réussie",
+        detail: error ? error.message : "OK - lecture de la table 'app_settings' réussie",
       });
     } catch (e: any) {
       checks.push({ label: "Connexion Supabase (clé publique)", ok: false, detail: e?.message || String(e) });
