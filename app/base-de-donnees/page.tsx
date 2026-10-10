@@ -731,7 +731,7 @@ export default function BaseDeDonneesPage() {
 
       {wantedP && (
         <Modal title="🧾 Avis de recherche" size="lg" onClose={() => setWantedP(null)}>
-          <WantedPoster d={{ nom: fullName(wantedP), alias: wantedP.surnom, organisation: gangOf(wantedP.groupe_id)?.nom || wantedP.organisation, priorite: wantedP.priorite, prime: (wantedP as any).prime, photo_url: wantedP.photo_police || wantedP.photo_identite, motif: (wantedP.notes_publiques || "").split("\n")[0].slice(0, 140), age: wantedP.age, origine: wantedP.origine, occupation: wantedP.occupation, vehicules: undefined, tags: wantedP.tags }} />
+          <WantedPoster d={{ nom: fullName(wantedP), alias: wantedP.surnom, organisation: gangOf(wantedP.groupe_id)?.nom || wantedP.organisation, priorite: wantedP.priorite, prime: (wantedP as any).prime, photo_url: wantedP.photo_police || wantedP.photo_identite, photo_id: wantedP.photo_police ? wantedP.photo_identite : null, motif: (wantedP.notes_publiques || "").split("\n")[0].slice(0, 140), age: wantedP.age, origine: wantedP.origine, occupation: wantedP.occupation, vehicules: undefined, tags: wantedP.tags }} />
         </Modal>
       )}
 

@@ -17,7 +17,7 @@ function arrestFields(row: any) {
 //  - l'argent perdu (sale / propre) n'est PAS déduit de la compta : il devient une PRIME sur la paie de la semaine,
 //  - l'amende est seulement enregistrée (jamais déduite du solde).
 
-type Parsed = { membre: string; amende: number; argent: number; typeArgent: string; createdBy: string; createdAt: string; notes: string | null; wanted: { stock_id: string; quantite: number }[] };
+type Parsed = { membre: string; amende: number; argent: number; typeArgent: string; createdBy: string; createdAt: string; notes: string | null; photo: string | null; wanted: { stock_id: string; quantite: number }[] };
 
 function parse(b: any): Parsed | { error: string } {
   const membre = String(b.membre || "").trim();
@@ -30,6 +30,7 @@ function parse(b: any): Parsed | { error: string } {
     createdBy: b.created_by || "",
     createdAt: b.created_at ? new Date(b.created_at).toISOString() : new Date().toISOString(),
     notes: b.notes || null,
+    photo: typeof b.photo_url === "string" && b.photo_url ? b.photo_url : null,
     wanted: (Array.isArray(b.items) ? b.items : [])
       .map((i: any) => ({ stock_id: String(i.stock_id || ""), quantite: Math.floor(Number(i.quantite) || 0) }))
       .filter((i: any) => i.stock_id && i.quantite > 0),
@@ -44,7 +45,7 @@ async function createArrest(db: any, p: Parsed): Promise<{ row?: any; error?: st
     items.push({ stock_id: st.id, nom: st.nom, emoji: st.emoji, categorie: st.categorie, unite: st.unite, quantite: w.quantite, retire: Math.min(st.quantite, w.quantite) });
   }
   const { data: row, error: e1 } = await db.from("arrestations").insert([{
-    membre: p.membre, amende: p.amende, argent_perdu: p.argent, type_argent: p.typeArgent, items, notes: p.notes, created_by: p.createdBy, created_at: p.createdAt,
+    membre: p.membre, amende: p.amende, argent_perdu: p.argent, type_argent: p.typeArgent, items, notes: p.notes, photo_url: p.photo, created_by: p.createdBy, created_at: p.createdAt,
   }]).select().single();
   if (e1) return { error: e1.message };
 
@@ -111,7 +112,7 @@ export async function PATCH(req: Request) {
       // Échec : on restaure l'ancienne version pour ne rien perdre.
       await createArrest(supabaseAdmin, {
         membre: old.membre, amende: Number(old.amende) || 0, argent: Number(old.argent_perdu) || 0, typeArgent: old.type_argent || "sale",
-        createdBy: old.created_by || "", createdAt: old.created_at, notes: old.notes || null,
+        createdBy: old.created_by || "", createdAt: old.created_at, notes: old.notes || null, photo: old.photo_url || null,
         wanted: (old.items || []).map((i: any) => ({ stock_id: i.stock_id, quantite: i.quantite })),
       });
       return NextResponse.json({ error: r.error || "Échec de la modification" }, { status: 400 });

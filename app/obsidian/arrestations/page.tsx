@@ -1,4 +1,5 @@
 "use client";
+import { PhotoPicker } from "@/components/PhotoPicker";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -16,9 +17,9 @@ import { useOpenOnNew } from "@/lib/useOpenOnNew";
 const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 function localInputNow() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); }
 
-interface Arrest { id: string; membre: string; amende: number; argent_perdu: number; type_argent: string; items: any[]; notes?: string; created_by?: string; created_at: string; }
+interface Arrest { id: string; membre: string; amende: number; argent_perdu: number; type_argent: string; items: any[]; notes?: string; created_by?: string; created_at: string; photo_url?: string | null; }
 interface StockLite { id: string; nom: string; emoji: string; categorie: string; quantite: number; unite: string; }
-const EMPTY = () => ({ membre: "", amende: "", argent: "", type_argent: "sale", date: localInputNow(), notes: "" });
+const EMPTY = () => ({ membre: "", amende: "", argent: "", type_argent: "sale", date: localInputNow(), notes: "", photo_url: "" as string });
 
 export default function ArrestationsPage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -33,6 +34,7 @@ export default function ArrestationsPage() {
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY());
+  const [zoom, setZoom] = useState<string | null>(null);
   const [rows, setRows] = useState<{ stock_id: string; quantite: number }[]>([]);
   const [filterMembre, setFilterMembre] = useState("");
 
@@ -68,7 +70,7 @@ export default function ArrestationsPage() {
   function openEdit(a: Arrest) {
     const d = new Date(a.created_at); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     setEditId(a.id);
-    setForm({ membre: a.membre, amende: a.amende ? String(a.amende) : "", argent: a.argent_perdu ? String(a.argent_perdu) : "", type_argent: a.type_argent || "sale", date: d.toISOString().slice(0, 16), notes: a.notes || "" });
+    setForm({ membre: a.membre, amende: a.amende ? String(a.amende) : "", argent: a.argent_perdu ? String(a.argent_perdu) : "", type_argent: a.type_argent || "sale", date: d.toISOString().slice(0, 16), notes: a.notes || "", photo_url: a.photo_url || "" });
     setRows((a.items || []).filter((i: any) => i.stock_id).map((i: any) => ({ stock_id: i.stock_id, quantite: Number(i.quantite) || 1 })));
     setShowForm(true);
   }
@@ -90,6 +92,7 @@ export default function ArrestationsPage() {
       type_argent: form.type_argent,
       items: rows.filter(r => r.stock_id && r.quantite > 0),
       notes: form.notes.trim() || null,
+      photo_url: form.photo_url || null,
       created_by: (user as any)?.nom || "",
       created_at: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
     };
@@ -157,6 +160,7 @@ export default function ArrestationsPage() {
                     {a.notes ? ` · ${a.notes}` : ""}
                   </div>
                 </div>
+                {a.photo_url && <img src={a.photo_url} alt="Photo de l'arrestation" title="Voir la photo" onClick={() => setZoom(a.photo_url!)} style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 8, border: "1px solid var(--border)", cursor: "zoom-in" }} />}
                 {a.amende > 0 && <span style={{ fontSize: "0.75rem", padding: "0.15rem 0.6rem", borderRadius: 999, background: "rgba(234,179,8,0.12)", color: "var(--warning)", border: "1px solid rgba(234,179,8,0.3)", fontWeight: 700 }}>Amende {fmt(a.amende)}</span>}
                 {a.argent_perdu > 0 && <span style={{ fontSize: "0.75rem", padding: "0.15rem 0.6rem", borderRadius: 999, background: "rgba(239,68,68,0.1)", color: "var(--danger)", border: "1px solid rgba(239,68,68,0.3)", fontWeight: 700 }}>−{fmt(a.argent_perdu)} ({a.type_argent})</span>}
                 <button className="btn btn-ghost btn-sm" onClick={() => openEdit(a)} title="Modifier">✏️</button>
@@ -242,11 +246,16 @@ export default function ArrestationsPage() {
           </div>
 
           <div>
+            <label>📷 Photo (preuve — inventaire, saisie…)</label>
+            <PhotoPicker evidence value={form.photo_url} onChange={u => setForm(f => ({ ...f, photo_url: u || "" }))} />
+          </div>
+          <div>
             <label>Notes (optionnel)</label>
             <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Lieu, circonstances…" />
           </div>
         </Modal>
       )}
+      {zoom && <div onClick={() => setZoom(null)} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,.88)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "zoom-out", padding: "2vh 2vw" }}><img src={zoom} alt="" style={{ maxWidth: "100%", maxHeight: "96vh", borderRadius: 8 }} /></div>}
       <Toast toast={toast} />
     </div>
   );

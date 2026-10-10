@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Modal } from "@/components/ui/Modal";
+import { CardGallery } from "@/components/CardGallery";
 import { useGmAccess } from "@/components/gm/bits";
 
 const NODES: Record<string, { role: string; titre: string; desc: string }> = {
@@ -25,6 +27,7 @@ const POLES = [
 
 export default function OrganigrammePage() {
   useGmAccess("organigramme");
+  const [gallery, setGallery] = useState(false);
   const [members, setMembers] = useState<Record<string, string[]>>({});
   useEffect(() => {
     if (!supabase) return;
@@ -56,7 +59,7 @@ export default function OrganigrammePage() {
   return (
     <div className="page-container">
       <a className="back-link" href="/">← Dashboard</a>
-      <div className="page-header"><div><h1 className="page-title">🏛️ Organigramme</h1><p className="page-subtitle">Direction & gouvernance · Obsidian Logistics</p><div className="gold-line" /></div></div>
+      <div className="page-header"><div><h1 className="page-title">🏛️ Organigramme</h1><p className="page-subtitle">Direction & gouvernance · Obsidian Logistics</p><div className="gold-line" /></div><button className="btn btn-outline" onClick={() => setGallery(true)}>🪪 Cartes par grade</button></div>
       <div className="section-title" style={{ marginBottom: "0.6rem" }}>👑 Directoire exécutif</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}><Node k="dg" /><Node k="do" /></div>
       <div className="org-link" aria-hidden="true"><i /></div>
@@ -71,6 +74,7 @@ export default function OrganigrammePage() {
       <div className="org-link" aria-hidden="true"><i /></div>
       <div className="section-title" style={{ marginBottom: "0.6rem" }}>🧑‍💼 Membres</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "0.75rem" }}><Node k="op" color="var(--info)" /><Node k="st" color="var(--text-dim)" /></div>
+      {gallery && <Modal size="lg" title="🪪 Une carte par rôle et par grade" onClose={() => setGallery(false)}><div style={{ maxHeight: "70vh", overflowY: "auto" }}><CardGallery /></div></Modal>}
     </div>
   );
 }

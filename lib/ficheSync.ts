@@ -13,7 +13,9 @@ export function ficheToPersonne(f: any, groupes: { id: string; nom: string }[]) 
     tags: f.tags || [], adresses: f.adresses || "", comptes_bancaires: f.comptes_bancaires || "", relations: f.relations || "",
     notes_publiques: f.notes_publiques || "", notes_privees: f.notes_privees || "", prime: Number(f.prime) || 0, fiche_id: f.id,
   };
-  if (f.photo_url) o.photo_identite = f.photo_url;
+  // Photo de la personne ↔ photo « Police » ; carte d'identité ↔ « Carte ID » (Base de données).
+  if (f.photo_url) o.photo_police = f.photo_url;
+  if (f.photo_id) o.photo_identite = f.photo_id;
   return o;
 }
 
@@ -23,7 +25,7 @@ export function personneToFiche(p: any) {
     organisation: p.organisation || "", groupe_id: p.groupe_id ?? null, statut: p.statut || "Actif", priorite: p.priorite || "Normale",
     tags: p.tags || [], adresses: p.adresses || "", comptes_bancaires: p.comptes_bancaires || "", relations: p.relations || "",
     notes_publiques: p.notes_publiques || "", notes_privees: p.notes_privees || "", prime: Number(p.prime) || 0,
-    photo_url: p.photo_identite || p.photo_police || "", personne_id: p.id,
+    photo_url: p.photo_police || "", photo_id: p.photo_identite || "", personne_id: p.id,
   };
 }
 

@@ -9,6 +9,7 @@ const day = () => new Date().toISOString().slice(0, 10);
 export async function pdfFiche(f: any) {
   const m = metierInfo(f.metier);
   const p = await Pdf.create({ title: f.nom, subtitle: `Fiche - ${m.label}${(f.sous_tags || []).length ? " - " + f.sous_tags.join(", ") : ""}`, classification: "Fiche - confidentiel" });
+  p.photos([{ url: f.photo_url, label: "Photo de la personne", w: 38, h: 47.5 }, { url: f.photo_id, label: "Carte d'identite", w: 72, h: 45 }]);
   p.section("Identite");
   p.kv([["Type", f.type], ["Priorite", f.priorite], ["Statut", f.statut], ["Metier", m.label], ["Organisation", f.organisation], ["Occupation", f.occupation],
     ["Origine", f.origine], ["Age", f.age ? `${f.age} ans` : ""], ["Telephone", f.telephone]]);

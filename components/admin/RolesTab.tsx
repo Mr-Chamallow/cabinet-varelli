@@ -14,7 +14,12 @@ interface Role {
   nom: string;
   permissions: string[];
   couleur: string;
+  ordre?: number | null;
+  groupe?: string | null;
 }
+
+const ORDRE_DEFAUT = ["Associé / Patron","CEO - Directeur général","COO - Directrice opérationnel","Responsable juridique","Agent juridique","Avocat","Responsable logistique","Agent logistique","Responsable sécurité","Agent de sécurité","Opérateur","Opérateur stagiaire","Légal Service"];
+function rang(r: Role) { return r.ordre ?? (ORDRE_DEFAUT.indexOf(r.nom) >= 0 ? ORDRE_DEFAUT.indexOf(r.nom) + 1 : 999); }
 
 export const COULEURS_PRESET = [
   "#a48fff","#c9a84c","#6366f1","#22c55e","#ef4444","#f97316",
@@ -60,7 +65,7 @@ export function RolesTab() {
   async function refresh() {
     setLoading(true);
     const r = await loadRolesFromSupabase();
-    setRoles(r || []);
+    setRoles(((r || []) as Role[]).slice().sort((a, b) => rang(a) - rang(b) || a.nom.localeCompare(b.nom)));
     setLoading(false);
   }
 
@@ -134,12 +139,16 @@ export function RolesTab() {
         {roles.length === 0 && (
           <div className="empty-state"><div className="empty-icon">🎭</div><div className="empty-title">Aucun rôle trouvé</div></div>
         )}
-        {roles.map(r => {
+        {roles.map((r, idx) => {
+          const grp = r.groupe || "";
+          const showGrp = grp && grp !== (roles[idx - 1]?.groupe || "");
           const isEditing = editRoleId === r.id;
           const currentPerms = isEditing ? editRolePerms : (r.permissions || []);
           const currentCouleur = isEditing ? editRoleCouleur : (r.couleur || "#c9a84c");
           return (
-            <div key={r.id} className="card" style={{ border: `1px solid ${isEditing ? currentCouleur + "40" : "var(--border)"}` }}>
+            <div key={r.id}>
+            {showGrp && <div className="section-title" style={{ margin: "0.5rem 0" }}>{grp}</div>}
+            <div className="card" style={{ border: `1px solid ${isEditing ? currentCouleur + "40" : "var(--border)"}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                   <div style={{ width: 12, height: 12, borderRadius: "50%", background: currentCouleur, flexShrink: 0 }} />
@@ -210,6 +219,7 @@ export function RolesTab() {
                   );
                 })}
               </div>
+            </div>
             </div>
           );
         })}

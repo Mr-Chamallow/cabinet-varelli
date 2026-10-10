@@ -31,6 +31,8 @@ interface Produit {
   prix_sale: number;
   actif: boolean;
   ordre: number;
+  quantite?: number;
+  unite?: string;
 }
 
 interface FormState {
@@ -92,10 +94,11 @@ export default function CahierVentePage() {
     if (!supabase) { setLoading(false); return; }
     const [{ data: t }, { data: p }] = await Promise.all([
       supabase.from("cahier_transactions").select("*").order("created_at", { ascending: false }),
-      supabase.from("cahier_produits").select("*").order("ordre"),
+      supabase.from("obsidian_stocks").select("id,nom,categorie,emoji,prix_unitaire,quantite,unite").order("categorie").order("nom"),
     ]);
     setTransactions(t || []);
-    setProduits(p || []);
+    // Produits = uniquement les articles du Stock (une seule source de vérité).
+    setProduits((p || []).map((x: any, i: number) => ({ id: x.id, nom: x.nom, type: x.categorie || "", emoji: x.emoji || "📦", prix_propre: Number(x.prix_unitaire) || 0, prix_sale: Number(x.prix_unitaire) || 0, actif: true, ordre: i, quantite: Number(x.quantite) || 0, unite: x.unite || "" })));
     setLoading(false);
   }
 
@@ -470,9 +473,10 @@ export default function CahierVentePage() {
             <div className="form-grid">
               <div className="form-group">
                 <label>Produit (optionnel)</label>
-                <input list="produits-list" placeholder="Ex: Cocaïne" value={form.produit_nom}
-                  onChange={e => setForm(f => ({ ...f, produit_nom: e.target.value }))}/>
-                <datalist id="produits-list">{produits.map(p => <option key={p.id} value={p.nom}/>)}</datalist>
+                <select value={form.produit_nom} onChange={e => { const pr = produits.find(x => x.nom === e.target.value); setForm(f => ({ ...f, produit_nom: e.target.value, ...(pr && !f.montant ? { montant: pr.prix_propre * (f.quantite || 1) } : {}) })); }}>
+                  <option value="">— Aucun —</option>
+                  {produits.map(p => <option key={p.id} value={p.nom}>{p.emoji} {p.nom} (stock : {p.quantite}{p.unite ? " " + p.unite : ""})</option>)}
+                </select>
               </div>
               <div className="form-group">
                 <label>Quantité</label>
@@ -553,94 +557,29 @@ export default function CahierVentePage() {
         </div>
       )}
 
-      {/* ── PRODUITS ── */}
+      {/* ── PRODUITS (issus du Stock) ── */}
       {tab === "produits" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "1.5rem" }}>
-          <div>
-            <div className="section-title" style={{ marginBottom: "1rem" }}>Articles configurés</div>
-            {produits.length === 0 ? (
-              <div className="empty-state"><div className="empty-icon">📦</div><div className="empty-title">Aucun produit configuré</div></div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {produits.map(p => (
-                  <div key={p.id} className="card" style={{ opacity: p.actif ? 1 : 0.45 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
-                      <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>{p.emoji}</span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 600, fontSize: "0.875rem" }}>{p.nom}</div>
-                        <div style={{ fontSize: "0.68rem", color: "var(--text-dim)" }}>
-                          {p.type} · Propre: {fmt(p.prix_propre)} · Sale: {fmt(p.prix_sale)}
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", gap: "0.35rem", flexShrink: 0 }}>
-                        {editProduitId !== p.id && (
-                          <>
-                            <button className="btn btn-outline btn-sm" onClick={() => { setEditProduitId(p.id); setEditProduitForm({ nom: p.nom, emoji: p.emoji, prix_propre: p.prix_propre, prix_sale: p.prix_sale, actif: p.actif }); }}>✏️</button>
-                            <button className="btn btn-ghost btn-sm" onClick={() => deleteProduit(p.id)} style={{ color: "var(--danger)" }}>🗑️</button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {editProduitId === p.id && (
-                      <div style={{ marginTop: "0.875rem", paddingTop: "0.875rem", borderTop: "1px solid var(--border)" }}>
-                        <div style={{ display: "grid", gridTemplateColumns: "60px 1fr 1fr 1fr", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                          <div className="form-group" style={{ marginBottom: 0 }}><label>Emoji</label><input value={editProduitForm.emoji || ""} onChange={e => setEditProduitForm(f => ({ ...f, emoji: e.target.value }))}/></div>
-                          <div className="form-group" style={{ marginBottom: 0 }}><label>Nom</label><input value={editProduitForm.nom || ""} onChange={e => setEditProduitForm(f => ({ ...f, nom: e.target.value }))}/></div>
-                          <div className="form-group" style={{ marginBottom: 0 }}><label>Prix propre</label><input type="number" value={editProduitForm.prix_propre || 0} onChange={e => setEditProduitForm(f => ({ ...f, prix_propre: +e.target.value }))}/></div>
-                          <div className="form-group" style={{ marginBottom: 0 }}><label>Prix sale</label><input type="number" value={editProduitForm.prix_sale || 0} onChange={e => setEditProduitForm(f => ({ ...f, prix_sale: +e.target.value }))}/></div>
-                        </div>
-                        <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-                          <button className="btn btn-ghost btn-sm" onClick={() => setEditProduitId(null)}>Annuler</button>
-                          <button className="btn btn-gold btn-sm" onClick={() => updateProduit(p.id)}>Sauvegarder</button>
-                        </div>
-                      </div>
-                    )}
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div className="section-title">Produits — synchronisés avec les Stocks</div>
+            <a className="btn btn-outline btn-sm" href="/obsidian/stocks">📦 Gérer dans Stocks</a>
+          </div>
+          {produits.length === 0 ? (
+            <div className="empty-state"><div className="empty-icon">📦</div><div className="empty-title">Aucun article en stock</div><div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>Ajoute-les dans Stocks : ils apparaissent ici automatiquement.</div></div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: "0.5rem" }}>
+              {produits.map(p => (
+                <div key={p.id} className="card" style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+                  <span style={{ fontSize: "1.3rem" }}>{p.emoji}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: "0.875rem" }}>{p.nom}</div>
+                    <div style={{ fontSize: "0.68rem", color: "var(--text-dim)" }}>{p.type} · {fmt(p.prix_propre)} · stock {p.quantite}{p.unite ? " " + p.unite : ""}</div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Formulaire d'ajout d'un produit (qui était coupé) */}
-          <div className="card" style={{ alignSelf: "start" }}>
-            <div className="section-title" style={{ marginBottom: "1rem" }}>Ajouter un produit</div>
-            
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.625rem" }}>
-              <div className="form-group" style={{ width: 70, marginBottom: 0 }}>
-                <label>Emoji</label>
-                <input value={produitForm.emoji} onChange={e => setProduitForm(f => ({ ...f, emoji: e.target.value }))} placeholder="💊" />
-              </div>
-              <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                <label>Nom *</label>
-                <input value={produitForm.nom} onChange={e => setProduitForm(f => ({ ...f, nom: e.target.value }))} placeholder="Nom du produit" />
-              </div>
+                  <button className="btn btn-outline btn-sm" onClick={() => quickSell(p)}>Vendre</button>
+                </div>
+              ))}
             </div>
-
-            <div className="form-group">
-              <label>Catégorie / Type</label>
-              <select value={produitForm.type} onChange={e => setProduitForm(f => ({ ...f, type: e.target.value }))}>
-                <option value="drogue">Drogue</option>
-                <option value="arme">Arme</option>
-                <option value="materiel">Matériel</option>
-                <option value="autre">Autre</option>
-              </select>
-            </div>
-
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Prix propre ($)</label>
-                <input type="number" min={0} value={produitForm.prix_propre || ""} onChange={e => setProduitForm(f => ({ ...f, prix_propre: +e.target.value }))} />
-              </div>
-              <div className="form-group">
-                <label>Prix sale ($)</label>
-                <input type="number" min={0} value={produitForm.prix_sale || ""} onChange={e => setProduitForm(f => ({ ...f, prix_sale: +e.target.value }))} />
-              </div>
-            </div>
-
-            <button className="btn btn-gold" onClick={saveProduit} disabled={saving || !produitForm.nom.trim()} style={{ width: "100%", justifyContent: "center", marginTop: "0.5rem" }}>
-              + Créer le produit
-            </button>
-          </div>
+          )}
         </div>
       )}
     </div>

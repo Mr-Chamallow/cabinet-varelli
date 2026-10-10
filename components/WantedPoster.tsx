@@ -2,7 +2,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
 // Avis de recherche du Consortium : affiche papier vieilli, photo, récompense, tampon animé, recto/verso.
-export interface WantedData { nom: string; alias?: string | null; organisation?: string | null; priorite?: string | null; prime?: number | string | null; photo_url?: string | null; motif?: string | null; age?: number | string | null; origine?: string | null; occupation?: string | null; vehicules?: string | null; tags?: string[] | null }
+export interface WantedData { nom: string; alias?: string | null; organisation?: string | null; priorite?: string | null; prime?: number | string | null; photo_url?: string | null; photo_id?: string | null; motif?: string | null; age?: number | string | null; origine?: string | null; occupation?: string | null; vehicules?: string | null; tags?: string[] | null }
 const BASE = 380;
 const usd = (n: any) => (Number(n) || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
@@ -27,6 +27,7 @@ export function WantedPoster({ d }: { d: WantedData }) {
             <div className="wp-photo">
               {d.photo_url ? <img src={d.photo_url} alt="" referrerPolicy="no-referrer" /> : <span>?</span>}
               {hot && <b className="wp-stamp">PRIORITAIRE</b>}
+              {d.photo_id && <img className="wp-idc" src={d.photo_id} alt="" referrerPolicy="no-referrer" />}
             </div>
             <div className="wp-name">{d.nom}</div>
             {d.alias && <div className="wp-alias">dit « {d.alias} »</div>}
@@ -37,6 +38,7 @@ export function WantedPoster({ d }: { d: WantedData }) {
           </div>
           <div className="wp wp-verso">
             <div className="wp-top">SIGNALEMENT<small>NE PAS APPROCHER SANS ESCORTE</small></div>
+            {d.photo_id && <img className="wp-idc-big" src={d.photo_id} alt="" referrerPolicy="no-referrer" />}
             <div className="wp-rows">
               {([["Nom", d.nom], ["Alias", d.alias], ["Âge", d.age ? `${d.age} ans` : ""], ["Origine", d.origine], ["Occupation", d.occupation], ["Groupe", d.organisation], ["Véhicules", d.vehicules], ["Signes", (d.tags || []).join(", ")], ["Dangerosité", threat]] as [string, any][]).filter(r => r[1]).map(([k, v]) => <div key={k}><small>{k}</small><span>{v}</span></div>)}
             </div>

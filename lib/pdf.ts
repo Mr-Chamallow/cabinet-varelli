@@ -60,6 +60,21 @@ export class Pdf {
     if (this.y + h > this.H - 20) { this.doc.addPage(); this.y = 20; }
   }
 
+  // Photos intégrées (data-URL uniquement ; un lien externe ne peut pas être embarqué).
+  photos(list: { url?: string | null; label: string; w: number; h: number }[]) {
+    const items = list.filter(i => i.url && String(i.url).startsWith("data:image"));
+    if (!items.length) return;
+    const hmax = Math.max(...items.map(i => i.h));
+    this.ensure(hmax + 12);
+    const d = this.doc; let x = this.M;
+    for (const it of items) {
+      try { d.setDrawColor(200, 200, 208); d.setLineWidth(0.3); d.rect(x - 0.5, this.y - 0.5, it.w + 1, it.h + 1); d.addImage(it.url, "JPEG", x, this.y, it.w, it.h); } catch { /* image illisible : ignorée */ }
+      d.setFont("helvetica", "normal"); d.setFontSize(7); d.setTextColor(...MUTED); d.text(clean(it.label), x, this.y + it.h + 4.5);
+      x += it.w + 8;
+    }
+    this.y += hmax + 9;
+  }
+
   section(title: string) {
     this.ensure(16);
     const d = this.doc;
