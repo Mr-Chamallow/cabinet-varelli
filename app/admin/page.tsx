@@ -12,6 +12,7 @@ import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
 import { DiagnosticTab } from "@/components/admin/DiagnosticTab";
 import { RolesTab, COULEURS_PRESET } from "@/components/admin/RolesTab";
+import { ActionsTab } from "@/components/admin/ActionsTab";
 import { apiRequest } from "@/lib/apiRequest";
 
 // Force le rendu dynamique côté serveur/client et désactive le pré-rendu statique au build Vercel
@@ -90,7 +91,7 @@ export default function AdminPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"membres"|"roles"|"journaux"|"site"|"diagnostic">("membres");
+  const [activeTab, setActiveTab] = useState<"membres"|"roles"|"actions"|"journaux"|"site"|"diagnostic">("membres");
 
   const [showCreateOverride, setShowCreateOverride] = useState(false);
   const [overrideForm, setOverrideForm] = useState({ nom:"", discord_id:"", role:"" });
@@ -377,7 +378,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1.5rem", flexWrap:"wrap" }}>
-        {([["membres","👥 Membres"],["roles","🎭 Rôles & Permissions"],["journaux","📋 Journaux"],["site","⚙️ Site"],["diagnostic","🩺 Diagnostic"]] as [string,string][]).map(([k,l]) => (
+        {([["membres","👥 Membres"],["roles","🎭 Rôles & Permissions"],["actions","🕶️ Actions"],["journaux","📋 Journaux"],["site","⚙️ Site"],["diagnostic","🩺 Diagnostic"]] as [string,string][]).map(([k,l]) => (
           <button key={k} onClick={() => setActiveTab(k as any)} style={{
             padding:"0.55rem 1.25rem", borderRadius:"var(--radius)", cursor:"pointer",
             fontFamily:"'Inter',sans-serif", fontSize:"0.85rem", fontWeight:activeTab===k?700:400,
@@ -503,6 +504,8 @@ export default function AdminPage() {
         </div>
       ) : activeTab === "roles" ? (
         <RolesTab />
+      ) : activeTab === "actions" ? (
+        <ActionsTab />
       ) : activeTab === "journaux" ? (
         <div>
           <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1rem" }}>

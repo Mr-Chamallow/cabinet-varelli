@@ -10,18 +10,7 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { CountUp } from "@/components/ui/CountUp";
 import { hasPermission, hasWriteAccess } from "@/lib/auth";
 import { timeAgo } from "@/lib/activity";
-
-// ⚙️ Délais de réutilisation, par personne. delaiH = 0 → sans délai.
-// Pour changer un délai, modifie juste le nombre d'heures ici.
-const ACTIONS = [
-  { nom: "Vente de drogue", icon: "💊", delaiH: 0 },
-  { nom: "Go fast", icon: "🏎️", delaiH: 24 },
-  { nom: "LTD", icon: "🏪", delaiH: 0 },
-  { nom: "ATM", icon: "🏧", delaiH: 0 },
-  { nom: "Cambriolage", icon: "🏚️", delaiH: 0 },
-  { nom: "Human Labs", icon: "🧪", delaiH: 0 },
-  { nom: "Pacific Bank", icon: "🏦", delaiH: 0 },
-];
+import { ActionType, DEFAULT_ACTION_TYPES, rowToType, fmtDelai } from "@/lib/actionTypes";
 
 const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const PERIODS = [
@@ -43,7 +32,6 @@ function localInputNow() {
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0, 16);
 }
-const actionInfo = (nom: string) => ACTIONS.find(a => a.nom === nom) || { nom, icon: "🕶️", delaiH: 0 };
 
 export default function ActionsIllegalesPage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -53,6 +41,7 @@ export default function ActionsIllegalesPage() {
   const canDeleteAll = !!user && hasWriteAccess(user, "delete_all");
 
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [types, setTypes] = useState<ActionType[]>(DEFAULT_ACTION_TYPES);
   const [employes, setEmployes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
@@ -61,18 +50,22 @@ export default function ActionsIllegalesPage() {
   const [filterMembre, setFilterMembre] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ action: ACTIONS[0].nom, membre: "", resultat: "gain", montant: "", date: localInputNow(), notes: "" });
+  const [form, setForm] = useState({ action: DEFAULT_ACTION_TYPES[0].nom, membre: "", resultat: "gain", montant: "", date: localInputNow(), notes: "" });
 
   useEffect(() => { load(); }, []);
-  useRealtimeTable("actions_illegales", load);
+  useRealtimeTable(["actions_illegales", "actions_illegales_types"], load);
+  const actionInfo = (nom: string): ActionType => types.find(a => a.nom === nom) || { nom, icon: "🕶️", delaiMin: 0, ordre: 999, actif: false };
+  const activeTypes = types.filter(t => t.actif);
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
 
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const [{ data }, { data: emp }] = await Promise.all([
+    const [{ data }, { data: emp }, { data: ty, error: tyErr }] = await Promise.all([
       supabase.from("actions_illegales").select("*").order("created_at", { ascending: false }).limit(1000),
       supabase.from("obsidian_employes").select("nom").order("nom"),
+      supabase.from("actions_illegales_types").select("*").order("ordre").order("nom"),
     ]);
+    if (!tyErr && ty && ty.length > 0) setTypes(ty.map(rowToType));
     setEntries((data || []).map((e: any) => ({ ...e, montant: Number(e.montant) || 0 })));
     setEmployes((emp || []).map((e: any) => e.nom).filter(Boolean));
     setLoading(false);
@@ -94,10 +87,10 @@ export default function ActionsIllegalesPage() {
 
   function remainingMs(membre: string, action: string) {
     const info = actionInfo(action);
-    if (!info.delaiH) return 0;
+    if (!info.delaiMin) return 0;
     const last = lastByKey.get(`${membre}||${action}`);
     if (!last) return 0;
-    return Math.max(0, last + info.delaiH * 3600_000 - now);
+    return Math.max(0, last + info.delaiMin * 60_000 - now);
   }
 
   const periodMs = PERIODS.find(p => p.k === period)?.ms || 0;
@@ -110,13 +103,13 @@ export default function ActionsIllegalesPage() {
   const pertes = visible.filter(e => e.montant < 0).reduce((s, e) => s + e.montant, 0);
   const net = gains + pertes;
 
-  const perAction = ACTIONS.map(a => {
+  const perAction = types.map(a => {
     const list = visible.filter(e => e.action === a.nom);
     return { ...a, count: list.length, net: list.reduce((s, e) => s + e.montant, 0) };
   }).filter(a => a.count > 0);
 
   function openForm() {
-    setForm({ action: ACTIONS[0].nom, membre: (user as any)?.nom || "", resultat: "gain", montant: "", date: localInputNow(), notes: "" });
+    setForm({ action: activeTypes[0]?.nom || DEFAULT_ACTION_TYPES[0].nom, membre: (user as any)?.nom || "", resultat: "gain", montant: "", date: localInputNow(), notes: "" });
     setShowForm(true);
   }
 
@@ -149,8 +142,8 @@ export default function ActionsIllegalesPage() {
   }
 
   const formRemaining = form.membre.trim() ? remainingMs(form.membre.trim(), form.action) : 0;
-  const timedActions = ACTIONS.filter(a => a.delaiH > 0);
-  const freeActions = ACTIONS.filter(a => a.delaiH === 0);
+  const timedActions = activeTypes.filter(a => a.delaiMin > 0);
+  const freeActions = activeTypes.filter(a => a.delaiMin === 0);
 
   const chip = (active: boolean): React.CSSProperties => ({
     padding: "0.25rem 0.75rem", borderRadius: 999, cursor: "pointer", fontSize: "0.75rem", fontFamily: "'Inter',sans-serif",
@@ -177,7 +170,7 @@ export default function ActionsIllegalesPage() {
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem", flexWrap: "wrap" }}>
             <span style={{ fontSize: "1.1rem" }}>{a.icon}</span>
             <span style={{ fontWeight: 700 }}>{a.nom}</span>
-            <span style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>1 fois toutes les {a.delaiH} h par personne</span>
+            <span style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>1 fois toutes les {fmtDelai(a.delaiMin)} par personne</span>
           </div>
           {membres.length === 0 ? (
             <div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>Aucune action enregistrée pour le moment.</div>
@@ -210,7 +203,7 @@ export default function ActionsIllegalesPage() {
         {PERIODS.map(p => <button key={p.k} onClick={() => setPeriod(p.k)} style={chip(period === p.k)}>{p.label}</button>)}
         <select value={filterAction} onChange={e => setFilterAction(e.target.value)} style={{ maxWidth: 190 }}>
           <option value="">Toutes les actions</option>
-          {ACTIONS.map(a => <option key={a.nom} value={a.nom}>{a.icon} {a.nom}</option>)}
+          {types.map(a => <option key={a.nom} value={a.nom}>{a.icon} {a.nom}</option>)}
         </select>
         <select value={filterMembre} onChange={e => setFilterMembre(e.target.value)} style={{ maxWidth: 190 }}>
           <option value="">Toutes les personnes</option>
@@ -275,7 +268,7 @@ export default function ActionsIllegalesPage() {
             <div>
               <label>Action</label>
               <select value={form.action} onChange={e => setForm({ ...form, action: e.target.value })}>
-                {ACTIONS.map(a => <option key={a.nom} value={a.nom}>{a.icon} {a.nom}</option>)}
+                {activeTypes.map(a => <option key={a.nom} value={a.nom}>{a.icon} {a.nom}</option>)}
               </select>
             </div>
             <div>
