@@ -262,7 +262,7 @@ export const authOptions: NextAuthOptions = {
       if (token.discord_id) {
         token.site_role =
           token.discord_id === ADMIN_DISCORD_ID
-            ? "Associé / Patron"
+            ? "CEO - Directeur général"
             // Garde-fou : plus membre du serveur -> plus de rôle (donc plus d'accès).
             : (token.in_guild ? getHighestRole((token.discord_roles as string[]) || []) : null);
         token.discord_role = token.site_role;

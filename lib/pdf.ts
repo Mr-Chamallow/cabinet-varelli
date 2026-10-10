@@ -158,7 +158,8 @@ export class Pdf {
     const name = `${filename.replace(/[^a-zA-Z0-9_-]+/g, "_")}.pdf`;
     // Aperçu d'abord (PdfPreviewHost) ; le téléchargement se fait depuis l'aperçu.
     const url = URL.createObjectURL(d.output("blob"));
-    if (typeof window !== "undefined" && window.dispatchEvent(new CustomEvent("pdf-preview", { detail: { url, name }, cancelable: true }))) return;
+    // dispatchEvent renvoie false quand l'aperçu a pris en charge (preventDefault) -> on ne télécharge PAS.
+    if (typeof window !== "undefined" && !window.dispatchEvent(new CustomEvent("pdf-preview", { detail: { url, name }, cancelable: true }))) return;
     d.save(name);
   }
 }

@@ -106,7 +106,7 @@ export default function AdminPage() {
   const [banForm, setBanForm] = useState({ discord_id:"", nom:"", motif:"" });
   const [banningId, setBanningId] = useState<string | null>(null);
   const [showBansList, setShowBansList] = useState(false);
-  const isPatron = user?.role === "Associé / Patron";
+  const isPatron = ["CEO - Directeur général","Associé / Patron"].includes(user?.role as string);
   const [renameForm, setRenameForm] = useState<{ discord_id: string; nom: string; actuel: string; employe: boolean } | null>(null);
 
   async function confirmRename() {
@@ -370,7 +370,7 @@ export default function AdminPage() {
           </p>
           <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginTop: "0.5rem" }}>
             Si ce rôle devrait avoir accès, ajoute la permission "admin" à ce rôle dans l'onglet Rôles,
-            ou force le rôle "Associé / Patron" pour ce membre via un override.
+            ou force le rôle "CEO - Directeur général" pour ce membre via un override.
           </p>
           <a href="/" className="btn btn-outline btn-sm" style={{ marginTop: "1rem", display: "inline-block" }}>← Retour au tableau de bord</a>
         </div>

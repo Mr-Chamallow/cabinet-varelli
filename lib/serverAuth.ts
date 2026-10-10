@@ -65,13 +65,14 @@ export async function requireAnyPermission(permissions: string[]) {
   return last!;
 }
 
-export const PATRON_ROLE = "Associé / Patron";
+export const PATRON_ROLE = "CEO - Directeur général";
+const PATRON_ROLES = [PATRON_ROLE, "Associé / Patron"]; // ancien nom accepté
 
 // Réservé au Patron (rôle « Associé / Patron », ou l'ADMIN_DISCORD_ID).
 export async function requirePatron() {
   const res = await requirePermission("admin");
   if (!res.authorized) return res;
   const u: any = res.user;
-  const ok = u?.site_role === PATRON_ROLE || (!!process.env.ADMIN_DISCORD_ID && u?.discord_id === process.env.ADMIN_DISCORD_ID);
+  const ok = PATRON_ROLES.includes(u?.site_role) || (!!process.env.ADMIN_DISCORD_ID && u?.discord_id === process.env.ADMIN_DISCORD_ID);
   return ok ? res : { ...res, authorized: false, error: "Réservé au Patron" };
 }

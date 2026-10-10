@@ -1,4 +1,5 @@
 "use client";
+import { ObsLogo } from "@/components/ObsLogo";
 import { useLayoutEffect, useRef, useState } from "react";
 
 // Avis de recherche du Consortium : affiche papier vieilli, photo, récompense, tampon animé, recto/verso.
@@ -22,7 +23,7 @@ export function WantedPoster({ d }: { d: WantedData }) {
         <div className={`wp-flip${back ? " back" : ""}`} style={{ width: BASE, height: H, transform: `scale(${scale})`, transformOrigin: "0 0" }}>
           <div className="wp wp-front">
             <i className="wp-tape l" /><i className="wp-tape r" />
-            <div className="wp-top">AVIS DE RECHERCHE<small>OBSIDIAN LOGISTICS · CONSORTIUM</small></div>
+            <ObsLogo size={30} className="wp-logo" /><div className="wp-top">AVIS DE RECHERCHE<small>OBSIDIAN LOGISTICS · CONSORTIUM</small></div>
             <div className="wp-title">RECHERCHÉ</div>
             <div className="wp-photo">
               {d.photo_url ? <img src={d.photo_url} alt="" referrerPolicy="no-referrer" /> : <span>?</span>}
@@ -37,10 +38,15 @@ export function WantedPoster({ d }: { d: WantedData }) {
             <div className="wp-foot">Tout renseignement : Tribunal de l'Ombre · Danger : <b>{threat}</b></div>
           </div>
           <div className="wp wp-verso">
+            <ObsLogo size={30} className="wp-logo" />
             <div className="wp-top">SIGNALEMENT<small>NE PAS APPROCHER SANS ESCORTE</small></div>
-            {d.photo_id && <img className="wp-idc-big" src={d.photo_id} alt="" referrerPolicy="no-referrer" />}
+            <div className="wp-vhead">
+              {d.photo_url && <img className="wp-vph" src={d.photo_url} alt="" referrerPolicy="no-referrer" />}
+              {d.photo_id && <img className="wp-vid" src={d.photo_id} alt="" referrerPolicy="no-referrer" />}
+            </div>
+            <div className="wp-vname">{d.nom}{d.alias ? <i> dit « {d.alias} »</i> : null}</div>
             <div className="wp-rows">
-              {([["Nom", d.nom], ["Alias", d.alias], ["Âge", d.age ? `${d.age} ans` : ""], ["Origine", d.origine], ["Occupation", d.occupation], ["Groupe", d.organisation], ["Véhicules", d.vehicules], ["Signes", (d.tags || []).join(", ")], ["Dangerosité", threat]] as [string, any][]).filter(r => r[1]).map(([k, v]) => <div key={k}><small>{k}</small><span>{v}</span></div>)}
+              {([["Âge", d.age ? `${d.age} ans` : "", 0], ["Origine", d.origine, 0], ["Occupation", d.occupation, 1], ["Groupe", d.organisation, 0], ["Danger", threat, 0], ["Véhicules", d.vehicules, 1], ["Signes", (d.tags || []).join(", "), 1], ["Motif", d.motif, 1]] as [string, any, number][]).filter(r => r[1]).map(([k, v, w]) => <div key={k} className={w ? "w2" : ""}><small>{k}</small><span>{v}</span></div>)}
             </div>
             <div className="wp-foot">Document interne — Consortium Obsidian</div>
           </div>

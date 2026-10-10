@@ -1,4 +1,5 @@
 "use client";
+import { ObsLogo } from "@/components/ObsLogo";
 import { metierInfo } from "@/lib/fichesMetiers";
 
 // Fiche sous forme de dossier papier (chemise kraft, photos agrafées, tampon de priorité, texte à la machine).
@@ -13,7 +14,7 @@ export function FicheDossier({ f, showPrivate = true }: { f: any; showPrivate?: 
     <div className="fd">
       <div className="fd-tab">DOSSIER N° {ref(f.id)}</div>
       <div className="fd-paper">
-        <div className="fd-head"><span>OBSIDIAN LOGISTICS — SERVICE RENSEIGNEMENT</span><span>{m.icon} {m.label}{(f.sous_tags || []).length ? " · " + f.sous_tags.join(", ") : ""}</span></div>
+        <div className="fd-head"><span style={{ display: "flex", alignItems: "center", gap: 8 }}><ObsLogo size={26} />OBSIDIAN LOGISTICS — SERVICE RENSEIGNEMENT</span><span>{m.icon} {m.label}{(f.sous_tags || []).length ? " · " + f.sous_tags.join(", ") : ""}</span></div>
         <div className="fd-grid">
           <div className="fd-photos">
             <div className="fd-polaroid">

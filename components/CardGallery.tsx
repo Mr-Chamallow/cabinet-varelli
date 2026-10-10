@@ -3,7 +3,6 @@ import { EmployeeCard, type CardEmploye } from "@/components/EmployeeCard";
 
 // Aperçu de toutes les cartes (une par rôle / grade) avec des employés fictifs.
 export const SAMPLE_CARDS: CardEmploye[] = [
-  { id: "a1b2c3d4", nom: "Pierce Davenport", role: "Associé / Patron" },
   { id: "b2c3d4e5", nom: "Victor Hale", role: "CEO - Directeur général" },
   { id: "c3d4e5f6", nom: "Elena Moretti", role: "COO - Directrice opérationnel" },
   { id: "d4e5f6a7", nom: "Adrian Vance", role: "Responsable juridique" },

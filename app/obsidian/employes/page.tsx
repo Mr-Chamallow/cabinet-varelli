@@ -44,7 +44,7 @@ export default function EmployesObsidianPage() {
     showToast(url ? "Photo enregistrée" : "Photo retirée");
   }
 
-  const isPatron = (user as any)?.role === "Associé / Patron";
+  const isPatron = ["CEO - Directeur général","Associé / Patron"].includes((user as any)?.role);
   useEffect(() => { load(); }, []);
   useRealtimeTable("obsidian_employes", load);
   // Importe automatiquement les membres du site (rôles internes) qui ne sont pas encore employés.
