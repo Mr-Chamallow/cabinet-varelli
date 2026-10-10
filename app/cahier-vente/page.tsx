@@ -57,6 +57,7 @@ const TYPES_ARGENT = ["propre", "sale", "mixte"];
 
 const weekStartISO = () => weekStartOf();
 const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const prixUnit = (p: { prix_propre: number; prix_sale: number }, argent: string) => (argent === "sale" && p.prix_sale > 0 ? p.prix_sale : p.prix_propre);
 const fmtDate = (s: string) => new Date(s).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 const EMPTY_FORM: FormState = { type: "entrée", montant: 0, categorie: "drogue", motif: "", produit_nom: "", quantite: 0, type_argent: "propre" };
@@ -99,6 +100,7 @@ export default function CahierVentePage() {
 
   // Formulaire saisie
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM });
+  const [montantAuto, setMontantAuto] = useState(true); // le montant suit prix x quantité tant qu'il n'est pas saisi à la main
   const [horsStock, setHorsStock] = useState(false); // achat d'un produit absent du stock (saisie libre)
   const [saving, setSaving] = useState(false);
   const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
@@ -157,15 +159,27 @@ export default function CahierVentePage() {
     return Object.entries(map).sort((a,b) => (b[1].entree + b[1].sortie) - (a[1].entree + a[1].sortie));
   }, [transactions]);
 
+  // Montant automatique = prix unitaire x quantité (produit du stock reconnu), sauf si saisi à la main.
+  const prodForm = useMemo(() => produits.find(x => x.type === form.categorie && normNom(x.nom) === normNom(form.produit_nom)), [produits, form.categorie, form.produit_nom]);
+  const qteForm = form.quantite > 0 ? form.quantite : 1;
+  useEffect(() => {
+    if (!montantAuto || !prodForm) return;
+    const total = prixUnit(prodForm, form.type_argent) * qteForm;
+    if (total > 0 && total !== form.montant) setForm(f => ({ ...f, montant: total }));
+  }, [montantAuto, prodForm, qteForm, form.type_argent]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function quickSell(p: Produit) {
+    const q = tab === "saisie" && form.quantite > 0 ? form.quantite : 1;
+    const arg = tab === "saisie" ? form.type_argent : "propre";
+    setMontantAuto(true);
     setForm({ 
       type: "entrée", 
-      montant: p.prix_propre, 
+      montant: prixUnit(p, arg) * q, 
       categorie: CATEGORIES.includes(p.type) ? p.type : "drogue", 
       motif: `Vente de ${p.nom}`, 
       produit_nom: p.nom, 
-      quantite: 1, 
-      type_argent: "propre" 
+      quantite: q, 
+      type_argent: arg 
     });
     setTab("saisie");
   }
@@ -193,7 +207,7 @@ export default function CahierVentePage() {
       setTransactions(ts => [data, ...ts]); 
       showToast(record ? "🏆 Record de vente battu !" : "Transaction enregistrée");
       if (record) goldRain();
-      setHorsStock(false); setForm({ ...EMPTY_FORM }); 
+      setHorsStock(false); setMontantAuto(true); setForm({ ...EMPTY_FORM }); 
       setTab("apercu"); 
     }
     setSaving(false);
@@ -490,7 +504,7 @@ export default function CahierVentePage() {
             <div className="form-group">
               <label>Montant ($) *</label>
               <input type="number" min={0} value={form.montant || ""} placeholder="Ex: 50 000"
-                onChange={e => setForm(f => ({ ...f, montant: +e.target.value }))}
+                onChange={e => { setMontantAuto(!e.target.value); setForm(f => ({ ...f, montant: +e.target.value })); }}
                 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text)" }}/>
             </div>
 
@@ -551,7 +565,7 @@ export default function CahierVentePage() {
             </div>
 
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button className="btn btn-outline" onClick={() => { setHorsStock(false); setForm({ ...EMPTY_FORM }); }}>Réinitialiser</button>
+              <button className="btn btn-outline" onClick={() => { setHorsStock(false); setMontantAuto(true); setForm({ ...EMPTY_FORM }); }}>Réinitialiser</button>
               <button className="btn btn-gold" onClick={saveTransaction}
                 disabled={saving || !form.produit_nom || form.quantite <= 0 || form.montant <= 0}
                 style={{ flex: 1, justifyContent: "center", opacity: saving ? 0.7 : 1 }}>
@@ -572,6 +586,9 @@ export default function CahierVentePage() {
                   <span style={{ color: "var(--text-dim)" }}>Montant</span>
                   <span style={{ fontWeight: 700, color: form.type === "entrée" ? "var(--success)" : "var(--danger)", fontSize: "1.1rem" }}>{form.type === "entrée" ? "+" : "-"}{fmt(form.montant)}</span>
                 </div>
+                {prodForm && <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "0.35rem" }}>
+                  <span style={{ color: "var(--text-dim)" }}>Calcul</span><span>{prodForm.emoji} {prodForm.nom} : {fmt(prixUnit(prodForm, form.type_argent))} x {qteForm}{!montantAuto && prixUnit(prodForm, form.type_argent) * qteForm !== form.montant ? " (montant modifié)" : ""}</span>
+                </div>}
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "0.35rem" }}>
                   <span style={{ color: "var(--text-dim)" }}>Catégorie</span><span>{form.categorie}</span>
                 </div>
@@ -595,8 +612,9 @@ export default function CahierVentePage() {
                     }}>
                       <span style={{ fontSize: "0.82rem" }}>{p.emoji} {p.nom}</span>
                       <div style={{ display: "flex", gap: "0.5rem", fontSize: "0.68rem", color: "var(--text-dim)" }}>
-                        <span>Propre: {fmt(p.prix_propre)}</span>
-                        {p.prix_sale > 0 && <span>Sale: {fmt(p.prix_sale)}</span>}
+                        <span>Propre: {fmt(p.prix_propre * qteForm)}</span>
+                        {p.prix_sale > 0 && <span>Sale: {fmt(p.prix_sale * qteForm)}</span>}
+                        {qteForm > 1 && <span style={{ color: "var(--gold)" }}>x{qteForm}</span>}
                       </div>
                     </button>
                   ))}
