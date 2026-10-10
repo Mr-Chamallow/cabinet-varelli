@@ -24,7 +24,7 @@ const GROUPS: { titre: string; keys: string[] }[] = [
   { titre: "👑 Directoire exécutif", keys: ["patron", "ceo", "coo"] }, { titre: "⚖️ Pôle Juridique", keys: ["rj", "aj", "avocat"] }, { titre: "📦 Pôle Logistique", keys: ["rl", "al"] }, { titre: "🛡️ Pôle Sécurité", keys: ["rs", "as"] }, { titre: "🧑‍💼 Membres", keys: ["op", "st"] }, { titre: "🤝 Partenaires externes", keys: ["legal"] },
 ];
 const ROLES_LOGISTIQUE = Object.keys(DEFAULT_PERMISSIONS).filter(r =>
-  DEFAULT_PERMISSIONS[r].some(p => p.startsWith("obsidian_") || p === "cahier_vente" || p === "h47")
+  DEFAULT_PERMISSIONS[r].some(p => p.startsWith("obsidian_") || p === "cahier_vente")
 );
 
 export default function EmployesObsidianPage() {

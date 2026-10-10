@@ -90,7 +90,7 @@ export function RolesTab() {
     setSavingRole(true); setFetchError("");
     const r = await apiRequest("/api/admin/roles", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, permissions: editRolePerms, couleur: editRoleCouleur }),
+      body: JSON.stringify({ id, permissions: editRolePerms.filter(p => ALL_PERMISSIONS.includes(p.replace(/:(read|write)$/, ""))), couleur: editRoleCouleur }),
     });
     if (!r.ok) setFetchError(`Impossible de sauvegarder le rôle : ${r.error}`);
     else setEditRoleId(null);
@@ -219,6 +219,7 @@ export function RolesTab() {
                 </div>
               )}
 
+              {(() => { const obs = currentPerms.filter(p => !ALL_PERMISSIONS.includes(p.replace(/:(read|write)$/, ""))); return obs.length > 0 ? <div style={{ fontSize: "0.7rem", color: "var(--danger)", marginBottom: "0.5rem" }}>⚠️ Permissions obsolètes (n'existent plus) : {obs.join(", ")} — retirées à l'enregistrement.</div> : null; })()}
               {isEditing && (
                 <p style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginBottom: "0.5rem" }}>
                   Clique une permission pour faire tourner : ○ Aucun → 👁 Lecture seule → ✓ Écriture

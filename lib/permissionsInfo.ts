@@ -7,7 +7,7 @@ export const PERMISSION_GUIDE: PermGroup[] = [
     { key: "obsidian_dashboard", read: "Voir le tableau de bord (KPI, alertes, activité).", write: "Idem (page en lecture seule)." },
     { key: "obsidian_prix", read: "Consulter le tableau des prix (achat/vente).", write: "Créer, modifier, supprimer des prix. Sert de référence pour stocks, marges et transactions." },
     { key: "obsidian_stocks", read: "Voir les stocks, quantités et historique des mouvements.", write: "Créer des articles, faire des entrées/sorties. Une entrée avec prix d'achat crée automatiquement une DÉPENSE en compta." },
-    { key: "obsidian_armurerie", read: "Voir les armes et munitions en stock.", write: "Entrées/sorties d'armes et munitions (mêmes règles compta que Stocks)." },
+    { key: "obsidian_armurerie", read: "Accès à la page Stocks, vue armes / munitions / explosifs / kev.", write: "Entrées/sorties sur ces articles (mêmes règles compta que Stocks). Utile pour un rôle qui ne doit voir que l'armurerie." },
     { key: "obsidian_garage", read: "Voir les véhicules, photos et affectations.", write: "Ajouter, modifier, assigner un véhicule à un employé, supprimer." },
     { key: "obsidian_rdv", read: "Voir le planning (opérations, rendez-vous, calendrier).", write: "Créer, modifier, supprimer des rendez-vous / opérations." },
     { key: "obsidian_contrats", read: "Voir les contrats, leur statut et leurs rapports.", write: "Créer/modifier/supprimer, changer le statut, rédiger le rapport, exporter le PDF. Passer un contrat en « Terminé » crée la RECETTE de la récompense en compta." },
@@ -40,7 +40,6 @@ export const PERMISSION_GUIDE: PermGroup[] = [
     { key: "juridique", read: "Consulter le code pénal.", write: "Modifier le code pénal." },
     { key: "carte-enqueteur", read: "Voir la carte San Andreas.", write: "Poser/modifier des marqueurs." },
     { key: "utile_samp", read: "Voir les ressources utiles SAMP.", write: "Modifier le contenu." },
-    { key: "h47", read: "Accéder à la section H-47.", write: "Modifier le contenu H-47." },
   ]},
   { titre: "Administration", icon: "🛡️", perms: [
     { key: "admin", read: "Voir l'admin (utilisateurs, rôles, logs).", write: "Gérer rôles, permissions, overrides utilisateurs. À réserver à la direction." },
