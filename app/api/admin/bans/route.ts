@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
-import { postAlert, RED, GREEN } from "@/lib/alerts";
+import { postAlert, logAudit, RED, GREEN } from "@/lib/alerts";
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +14,7 @@ export async function POST(req: Request) {
       discord_id, nom: nom || "", motif: motif || "", banned_by: (user as any)?.discord_name || "", banned_at: new Date().toISOString(),
     });
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
+    await logAudit(supabaseAdmin, (user as any)?.discord_name, "Bannissement", nom || discord_id, motif || "");
     await postAlert("admin", "🔨 Membre banni du site", `**${nom || discord_id}** (\`${discord_id}\`)\nMotif : ${motif || "—"}\nPar : ${(user as any)?.discord_name || "?"}`, RED);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
@@ -31,6 +32,7 @@ export async function DELETE(req: Request) {
 
     const { error: dbError } = await supabaseAdmin.from("site_bans").delete().eq("discord_id", discord_id);
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
+    await logAudit(supabaseAdmin, (user as any)?.discord_name, "Débannissement", discord_id);
     await postAlert("admin", "✅ Membre débanni", `\`${discord_id}\`\nPar : ${(user as any)?.discord_name || "?"}`, GREEN);
     return NextResponse.json({ ok: true });
   } catch (e: any) {

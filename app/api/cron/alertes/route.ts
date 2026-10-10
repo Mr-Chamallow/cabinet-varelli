@@ -38,7 +38,9 @@ export async function GET(req: Request) {
         // seulement si c'est bien la DERNIÈRE fois que la personne a fait cette action
         const { data: newer } = await db.from("actions_illegales").select("id").eq("action", t.nom).eq("membre", membre).gt("created_at", limit).limit(1);
         if (!newer || newer.length === 0) {
-          await postAlert("delais", `⏳ ${t.icon || "🕶️"} ${t.nom} de nouveau disponible`, `**${membre}** peut refaire « ${t.nom} » (délai : ${fmtDelai(t.delai_minutes)}).`, GREEN);
+          const { data: emp } = await db.from("obsidian_employes").select("discord_id").ilike("nom", membre).maybeSingle();
+          const uid: string | undefined = emp?.discord_id || undefined;
+          await postAlert("delais", `⏳ ${t.icon || "🕶️"} ${t.nom} de nouveau disponible`, `**${membre}** peut refaire « ${t.nom} » (délai : ${fmtDelai(t.delai_minutes)}).`, GREEN, undefined, undefined, uid ? [uid] : undefined);
           n++;
         }
       }
@@ -53,7 +55,7 @@ export async function GET(req: Request) {
     const nowLow = (stocks || []).filter((s: any) => s.quantite <= s.seuil_alerte && !s.alerte_envoyee);
     const recovered = (stocks || []).filter((s: any) => s.quantite > s.seuil_alerte && s.alerte_envoyee);
     if (nowLow.length) {
-      await postAlert("stocks", "📦 Stock bas", nowLow.map((s: any) => `${s.emoji || "📦"} **${s.nom}** : ${s.quantite} ${s.unite || ""} (seuil ${s.seuil_alerte})`).join("\n"), ORANGE);
+      await postAlert("stocks", "📦 Stock bas", nowLow.map((s: any) => `${s.emoji || "📦"} **${s.nom}** : ${s.quantite} ${s.unite || ""} (seuil ${s.seuil_alerte})`).join("\n"), ORANGE, undefined, ["RL"]);
       await db.from("obsidian_stocks").update({ alerte_envoyee: true }).in("id", nowLow.map((s: any) => s.id));
     }
     if (recovered.length) await db.from("obsidian_stocks").update({ alerte_envoyee: false }).in("id", recovered.map((s: any) => s.id));
@@ -84,7 +86,7 @@ export async function GET(req: Request) {
   try {
     const { data: aud } = await db.from("gm_audits").select("id,organisation,sanction,sanction_fin").eq("sanction_alerte", false).not("sanction_fin", "is", null).lte("sanction_fin", new Date(now).toISOString());
     for (const a of aud || []) {
-      await postAlert("gm", `✅ Sanction levée — ${a.organisation}`, `« ${a.sanction || "Sanction"} » est terminée.`, GREEN);
+      await postAlert("gm", `✅ Sanction levée — ${a.organisation}`, `« ${a.sanction || "Sanction"} » est terminée.`, GREEN, undefined, ["COO"]);
       await db.from("gm_audits").update({ sanction_alerte: true }).eq("id", a.id);
     }
     out.sanctions = (aud || []).length;

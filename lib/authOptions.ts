@@ -157,7 +157,7 @@ async function recordLogin(discordId: string, discordName: string, role: string,
       await supabase.from("site_logins").update({ discord_name: discordName, site_role: role, discord_role: discordRole, last_login: new Date().toISOString(), force_resync: false }).eq("discord_id", discordId);
     } else {
       await supabase.from("site_logins").insert([{ discord_id: discordId, discord_name: discordName, site_role: role, discord_role: discordRole }]);
-      await postAlert("membres", "🆕 Nouveau membre sur le site", `**${discordName}** (\`${discordId}\`)\nRôle : **${role || "aucun"}**`, GREEN);
+      await postAlert("membres", "🆕 Nouveau membre sur le site", `**${discordName}** (\`${discordId}\`)\nRôle : **${role || "aucun"}**`, GREEN, undefined, ["COO"]);
     }
   } catch {
     // La table n'existe peut-être pas encore (script SQL non exécuté) — ne bloque jamais la connexion pour ça.

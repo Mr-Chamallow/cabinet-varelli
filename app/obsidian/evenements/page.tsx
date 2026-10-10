@@ -7,6 +7,7 @@ import { Toast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { gmWrite } from "@/lib/gmApi";
+import { pdfEvenement } from "@/lib/pdfDocs";
 import { useGmAccess, useOrgs, Chip, Badge, fmtDT, toLocalInput, fromLocalInput, usd } from "@/components/gm/bits";
 
 type Lot = { nom: string; mise_depart: number; mise_finale: number; gagnant: string };
@@ -15,6 +16,8 @@ const TYPES: Record<string, { label: string; icon: string; montantLabel: string;
     { k: "planifie", label: "Planifié", color: "var(--info)" }, { k: "en_route", label: "En route", color: "var(--warning)" }, { k: "livre", label: "Livré", color: "var(--success)" }, { k: "echec", label: "Échec", color: "var(--danger)" }, { k: "annule", label: "Annulé", color: "var(--text-dim)" }] },
   enchere: { label: "Enchères", icon: "🔨", montantLabel: "Total adjugé ($)", partenaireLabel: "Lieu / organisateur", statuts: [
     { k: "annoncee", label: "Annoncée", color: "var(--info)" }, { k: "ouverte", label: "Ouverte", color: "var(--warning)" }, { k: "cloturee", label: "Clôturée", color: "var(--success)" }, { k: "annulee", label: "Annulée", color: "var(--text-dim)" }] },
+  capture: { label: "Captures", icon: "🎯", montantLabel: "Prime / enjeu ($)", partenaireLabel: "Organisation de la cible", statuts: [
+    { k: "a_faire", label: "À faire", color: "var(--danger)" }, { k: "en_cours", label: "En cours", color: "var(--warning)" }, { k: "capturee", label: "Capturée", color: "var(--success)" }, { k: "annulee", label: "Annulée", color: "var(--text-dim)" }] },
   alerte: { label: "Lanceur d'alerte", icon: "🚨", montantLabel: "Prime ($)", partenaireLabel: "Groupe en tête de la traque", statuts: [
     { k: "ouverte", label: "Ouverte", color: "var(--danger)" }, { k: "traquee", label: "Traquée", color: "var(--warning)" }, { k: "resolue", label: "Résolue", color: "var(--success)" }, { k: "annulee", label: "Annulée", color: "var(--text-dim)" }] },
 };
@@ -87,6 +90,7 @@ export default function EvenementsPage() {
                   </div>
                   <Badge color={st.color}>{st.label}</Badge>
                   {canWrite && <select value={e.statut} onChange={ev => setStatut(e, ev.target.value)} style={{ maxWidth: 130 }}>{T.statuts.map(s => <option key={s.k} value={s.k}>{s.label}</option>)}</select>}
+                  <button className="btn btn-ghost btn-sm" title="PDF" onClick={() => pdfEvenement(e)}>📄</button>
                   {canWrite && <><button className="btn btn-ghost btn-sm" onClick={() => openEdit(e)}>✏️</button><button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => del(e)}>🗑️</button></>}
                 </div>
                 {(e.lots || []).length > 0 && (

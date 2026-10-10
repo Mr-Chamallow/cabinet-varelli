@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { CountUp } from "@/components/ui/CountUp";
 import { gmWrite, scoreOf, scoreLabel } from "@/lib/gmApi";
+import { pdfOrganisation } from "@/lib/pdfDocs";
 import { useGmAccess, Badge, fmtDT } from "@/components/gm/bits";
 
 const CATS = ["Gang", "Cartel", "Mafia", "Police / SAMP", "Gouvernement", "Entreprise", "Autre"];
@@ -51,6 +52,17 @@ export default function ReputationPage() {
     if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); return; }
     setAdj(null); showToast("Réputation ajustée"); load();
   }
+  async function dossierPdf(o: any) {
+    if (!supabase) return;
+    const [{ data: pactes }, { data: audits }, { data: dossiers }, { data: evenements }, { data: fiches }] = await Promise.all([
+      supabase.from("gm_pactes").select("*").eq("organisation", o.nom),
+      supabase.from("gm_audits").select("*").eq("organisation", o.nom).order("created_at", { ascending: false }),
+      supabase.from("tribunal_dossiers").select("*").eq("organisation", o.nom).order("created_at", { ascending: false }),
+      supabase.from("gm_evenements").select("*").eq("partenaire", o.nom).order("created_at", { ascending: false }),
+      supabase.from("obsidian_fiches").select("nom,metier,priorite,statut").eq("organisation", o.nom),
+    ]);
+    await pdfOrganisation(o, { pactes: pactes || [], audits: audits || [], dossiers: dossiers || [], evenements: evenements || [], history: o.history, fiches: fiches || [] });
+  }
   async function delLog(id: string) {
     const r = await gmWrite("gm_reputation_log", "DELETE", { id });
     if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else load();
@@ -84,10 +96,11 @@ export default function ReputationPage() {
                 </div>
                 {isOpen && (
                   <div style={{ marginTop: "0.8rem" }}>
-                    {canWrite && <div style={{ display: "flex", gap: "0.4rem", marginBottom: "0.6rem" }}>
-                      <button className="btn btn-outline btn-sm" onClick={() => setAdj({ org: o.nom, delta: "5", motif: "" })}>± Ajuster</button>
-                      <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => delOrg(o.nom)}>🗑️ Supprimer</button>
-                    </div>}
+                    <div style={{ display: "flex", gap: "0.4rem", marginBottom: "0.6rem" }}>
+                      <button className="btn btn-outline btn-sm" onClick={() => dossierPdf(o)}>📄 Dossier complet (PDF)</button>
+                      {canWrite && <><button className="btn btn-outline btn-sm" onClick={() => setAdj({ org: o.nom, delta: "5", motif: "" })}>± Ajuster</button>
+                      <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => delOrg(o.nom)}>🗑️ Supprimer</button></>}
+                    </div>
                     {o.history.length === 0 ? <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>Aucun mouvement (score de départ : 50)</div> :
                       o.history.slice(0, 30).map((h: any) => (
                         <div key={h.id} style={{ display: "flex", gap: "0.6rem", fontSize: "0.78rem", padding: "0.2rem 0", alignItems: "baseline" }}>

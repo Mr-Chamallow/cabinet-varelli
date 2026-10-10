@@ -30,6 +30,9 @@ export interface DiscordEmbedField {
 }
 
 export interface DiscordEmbedInput {
+  content?: string;      // texte hors embed (mentions @rôle / @membre)
+  mentionRoles?: string[]; // ids de rôles autorisés à être notifiés
+  mentionUsers?: string[]; // ids d'utilisateurs autorisés à être notifiés
   title: string;
   description?: string;
   fields?: DiscordEmbedField[];
@@ -78,7 +81,11 @@ export async function sendDiscordMessage(kind: DiscordWebhookKind, opts: Discord
     const res = await fetch(`${url}?wait=true`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ embeds: [buildEmbed(opts)] }),
+      body: JSON.stringify({
+        content: opts.content || undefined,
+        allowed_mentions: { parse: [], roles: opts.mentionRoles || [], users: opts.mentionUsers || [] },
+        embeds: [buildEmbed(opts)],
+      }),
     });
     if (!res.ok) return { ok: false, error: `Discord a répondu ${res.status}` };
     const data = await res.json().catch(() => null);

@@ -41,7 +41,7 @@ export async function GET(req: Request) {
         { name: `Actions (${(actions || []).length})`, value: Object.entries(perAction).map(([k, v]) => `${k} · ${v.n}× · ${usd(v.net)}`).join("\n") || "—", inline: false },
         { name: `Arrestations (${(arr || []).length})`, value: `Argent perdu : ${usd(perdu)}`, inline: false },
         { name: "🏆 Top employés (net actions)", value: top.map(([k, v], i) => `${i + 1}. ${k} — ${usd(v)}`).join("\n") || "—", inline: false },
-      ]);
+      ], ["RESP"]);
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || String(err) }, { status: 500 });

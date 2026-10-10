@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
-import { postAlert, ORANGE, RED } from "@/lib/alerts";
+import { postAlert, logAudit, ORANGE, RED } from "@/lib/alerts";
 
 export async function POST(req: Request) {
   try {
@@ -24,6 +24,7 @@ export async function PATCH(req: Request) {
     const { id, ...patch } = await req.json();
     const { error: dbError } = await supabaseAdmin.from("roles").update(patch).eq("id", id);
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
+    await logAudit(supabaseAdmin, (user as any)?.discord_name, "Rôle / permissions modifiés", String(patch.nom || id), Array.isArray(patch.permissions) ? `${patch.permissions.length} permission(s)` : "");
     await postAlert("admin", "🛡️ Rôle / permissions modifiés", `Rôle : **${patch.nom || id}**${Array.isArray(patch.permissions) ? `\n${patch.permissions.length} permission(s)` : ""}\nPar : ${(user as any)?.discord_name || "?"}`, ORANGE);
     return NextResponse.json({ ok: true });
   } catch (e: any) {

@@ -7,6 +7,7 @@ import { Toast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { gmWrite } from "@/lib/gmApi";
+import { pdfAudit } from "@/lib/pdfDocs";
 import { useGmAccess, useOrgs, Badge, fmtDT, toLocalInput, fromLocalInput } from "@/components/gm/bits";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -85,6 +86,7 @@ export default function AuditsPage() {
                   <div style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>{fmtDT(a.created_at)}{a.created_by ? ` · ${a.created_by}` : ""}{a.notes ? ` · ${a.notes}` : ""}</div>
                 </div>
                 {a.sanction && <Badge color="var(--warning)">⛔ {a.sanction}{a.sanction_fin ? ` · jusqu'au ${fmtDT(a.sanction_fin)}` : ""}</Badge>}
+                <button className="btn btn-ghost btn-sm" title="PDF" onClick={() => pdfAudit(a)}>📄</button>
                 {canWrite && <><button className="btn btn-ghost btn-sm" onClick={() => openEdit(a)}>✏️</button><button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => del(a)}>🗑️</button></>}
               </div>
             );

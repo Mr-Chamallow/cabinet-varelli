@@ -7,6 +7,7 @@ import { Toast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { gmWrite } from "@/lib/gmApi";
+import { pdfDossier } from "@/lib/pdfDocs";
 import { useGmAccess, useOrgs, Chip, Badge, fmtDT, toLocalInput, fromLocalInput } from "@/components/gm/bits";
 
 const STATUTS = [
@@ -126,6 +127,7 @@ export default function TribunalPage() {
                         </div>
                       )}
                     </div>
+                    <div><button className="btn btn-outline btn-sm" onClick={() => pdfDossier(d)}>📄 Dossier PDF</button></div>
                     {canWrite && (
                       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                         {d.statut !== "clos" && <button className="btn btn-gold btn-sm" onClick={() => quick(d, { statut: nextStatut(d.statut) })}>➡️ Passer à : {STATUTS.find(s => s.k === nextStatut(d.statut))?.label}</button>}

@@ -14,6 +14,7 @@ import { DiagnosticTab } from "@/components/admin/DiagnosticTab";
 import { RolesTab, COULEURS_PRESET } from "@/components/admin/RolesTab";
 import { ActionsTab } from "@/components/admin/ActionsTab";
 import { apiRequest } from "@/lib/apiRequest";
+import { AuditTab } from "@/components/admin/AuditTab";
 
 // Force le rendu dynamique côté serveur/client et désactive le pré-rendu statique au build Vercel
 export const dynamic = "force-dynamic";
@@ -129,7 +130,7 @@ export default function AdminPage() {
   const [actLoading, setActLoading] = useState(false);
   const [filterActMember, setFilterActMember] = useState("");
   const [filterActType, setFilterActType] = useState("");
-  const [journauxSubTab, setJournauxSubTab] = useState<"activite" | "connexions" | "refusees">("activite");
+  const [journauxSubTab, setJournauxSubTab] = useState<"activite" | "connexions" | "refusees" | "audit">("activite");
   const [sessionLog, setSessionLog] = useState<SessionLogItem[]>([]);
   const [sessionLogLoading, setSessionLogLoading] = useState(false);
   const [loginFailures, setLoginFailures] = useState<LoginFailureItem[]>([]);
@@ -536,9 +537,12 @@ export default function AdminPage() {
             <button className={journauxSubTab==="activite" ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} onClick={()=>setJournauxSubTab("activite")}>📋 Activité</button>
             <button className={journauxSubTab==="connexions" ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} onClick={()=>setJournauxSubTab("connexions")}>🔌 Connexions</button>
             <button className={journauxSubTab==="refusees" ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} onClick={()=>setJournauxSubTab("refusees")}>🚫 Refusées</button>
+            <button className={journauxSubTab==="audit" ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} onClick={()=>setJournauxSubTab("audit")}>🛡️ Sensibles</button>
           </div>
 
-          {journauxSubTab === "activite" ? (
+          {journauxSubTab === "audit" ? (
+            <AuditTab />
+          ) : journauxSubTab === "activite" ? (
             <>
               <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1rem", flexWrap:"wrap", alignItems:"center" }}>
                 <select value={filterActMember} onChange={e=>setFilterActMember(e.target.value)} style={{ maxWidth:200 }}>

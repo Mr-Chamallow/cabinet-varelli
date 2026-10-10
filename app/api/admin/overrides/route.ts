@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
-import { postAlert, GOLD, GREY } from "@/lib/alerts";
+import { postAlert, logAudit, GOLD, GREY } from "@/lib/alerts";
 
 export async function POST(req: Request) {
   try {
@@ -17,6 +17,7 @@ export async function POST(req: Request) {
       .select()
       .single();
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
+    await logAudit(supabaseAdmin, (user as any)?.discord_name, "Rôle forcé", body.nom || body.discord_id, body.role);
     await postAlert("membres", "🎭 Rôle forcé", `**${body.nom || body.discord_id}** → **${body.role}**\nPar : ${(user as any)?.discord_name || "?"}`, GOLD);
     return NextResponse.json(data);
   } catch (e: any) {
@@ -33,6 +34,7 @@ export async function DELETE(req: Request) {
     if (!discord_id) return NextResponse.json({ error: "discord_id requis" }, { status: 400 });
     const { error: dbError } = await supabaseAdmin.from("role_overrides").delete().eq("discord_id", discord_id);
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
+    await logAudit(supabaseAdmin, (user as any)?.discord_name, "Rôle forcé retiré", discord_id);
     await postAlert("membres", "🎭 Rôle forcé retiré", `\`${discord_id}\`\nPar : ${(user as any)?.discord_name || "?"}`, GREY);
     return NextResponse.json({ ok: true });
   } catch (e: any) {

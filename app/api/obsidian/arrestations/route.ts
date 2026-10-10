@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { weekStartOf } from "@/lib/weekStart";
-import { postAlert, bigMoveAlert, usd, ORANGE, RED, GREY } from "@/lib/alerts";
+import { postAlert, logAudit, bigMoveAlert, usd, ORANGE, RED, GREY } from "@/lib/alerts";
 
 function arrestFields(row: any) {
   const items = (row.items || []).map((i: any) => `${i.emoji || ""} ${i.nom} × ${i.quantite}`).join("\n");
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     if ("error" in p) return NextResponse.json({ error: p.error }, { status: 400 });
     const r = await createArrest(supabaseAdmin, p);
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
-    await postAlert("arrestations", `🚔 Arrestation — ${r.row.membre}`, r.row.notes || "Nouvelle arrestation enregistrée.", RED, arrestFields(r.row));
+    await postAlert("arrestations", `🚔 Arrestation — ${r.row.membre}`, r.row.notes || "Nouvelle arrestation enregistrée.", RED, arrestFields(r.row), ["RS"]);
     await bigMoveAlert(supabaseAdmin, -(Number(r.row.argent_perdu) || 0), `Arrestation — ${r.row.membre}`, r.row.created_by || "");
     return NextResponse.json(r.row);
   } catch (e: any) {
@@ -143,6 +143,7 @@ export async function DELETE(req: Request) {
     if (!row) return NextResponse.json({ error: "Arrestation introuvable" }, { status: 404 });
     const { error: e } = await revertArrest(supabaseAdmin, row, (user as any)?.discord_name || "");
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
+    await logAudit(supabaseAdmin, (user as any)?.discord_name, "Arrestation annulée", row.membre, `amende ${row.amende} $ · argent perdu ${row.argent_perdu} $`);
     await postAlert("arrestations", `🗑️ Arrestation annulée — ${row.membre}`, "Stock remis, dépense retirée de la compta.", GREY, arrestFields(row));
     return NextResponse.json({ ok: true });
   } catch (e: any) {

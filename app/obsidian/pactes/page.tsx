@@ -7,6 +7,7 @@ import { Toast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { gmWrite } from "@/lib/gmApi";
+import { pdfPacte } from "@/lib/pdfDocs";
 import { useGmAccess, useOrgs, Chip, Badge, fmtDT } from "@/components/gm/bits";
 
 const STATUTS: Record<string, { label: string; color: string }> = {
@@ -93,6 +94,7 @@ export default function PactesPage() {
                     {p.violations.map((v: any, i: number) => <div key={i} style={{ fontSize: "0.75rem" }}>• {v.texte} <span style={{ color: "var(--text-dim)" }}>({fmtDT(v.date)})</span></div>)}
                   </div>
                 )}
+                <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: canWrite ? "0.35rem" : 0 }}><button className="btn btn-outline btn-sm" onClick={() => pdfPacte(p)}>📄 PDF</button></div>
                 {canWrite && (
                   <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
                     <button className="btn btn-outline btn-sm" onClick={() => setViol({ pact: p, texte: "" })}>⚠️ Violation</button>

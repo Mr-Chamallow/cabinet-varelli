@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { weekStartOf } from "@/lib/weekStart";
-import { postAlert, bigMoveAlert, usd, GREEN, RED, ORANGE, GREY } from "@/lib/alerts";
+import { postAlert, logAudit, bigMoveAlert, usd, GREEN, RED, ORANGE, GREY } from "@/lib/alerts";
 
 // Enregistre une action illégale ET écrit automatiquement le gain / la perte dans la comptabilité.
 export async function POST(req: Request) {
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 // Supprime l'action ET sa ligne de compta liée.
 export async function DELETE(req: Request) {
   try {
-    const { authorized, supabaseAdmin, error } = await requirePermission("obsidian_actions");
+    const { authorized, supabaseAdmin, error, user } = await requirePermission("obsidian_actions");
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
     const { id } = await req.json();
     if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
@@ -59,6 +59,7 @@ export async function DELETE(req: Request) {
     await supabaseAdmin.from("obsidian_comptabilite").delete().eq("source", "action").eq("source_id", id);
     const { error: e } = await supabaseAdmin.from("actions_illegales").delete().eq("id", id);
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
+    if (old) await logAudit(supabaseAdmin, (user as any)?.discord_name, "Action supprimée", `${old.action} — ${old.membre}`, `${Number(old.montant) || 0} $`);
     if (old) await postAlert("actions", `🗑️ Action supprimée — ${old.action}`, `**${old.membre}** · ${usd(Number(old.montant) || 0)}`, GREY);
     return NextResponse.json({ ok: true });
   } catch (e: any) {

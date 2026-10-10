@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePermission, requirePatron } from "@/lib/serverAuth";
+import { logAudit } from "@/lib/alerts";
 
 const TABLES_NOM = ["actions_illegales", "arrestations", "obsidian_comptabilite", "obsidian_mouvements"];
 
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const { authorized, supabaseAdmin, error } = await requirePermission("obsidian_employes");
+    const { authorized, supabaseAdmin, error, user } = await requirePermission("obsidian_employes");
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
 
     const { id, ...patch } = await req.json();
@@ -32,6 +33,7 @@ export async function PATCH(req: Request) {
     } else { delete patch.nom; }
     const { error: dbError } = await supabaseAdmin.from("obsidian_employes").update(patch).eq("id", id);
     if (!dbError && renamed) {
+      await logAudit(supabaseAdmin, (user as any)?.discord_name, "Employé renommé", old!.nom, `→ ${patch.nom}`);
       for (const t of TABLES_NOM) await supabaseAdmin.from(t).update({ membre: patch.nom }).eq("membre", old!.nom);
       await supabaseAdmin.from("obsidian_paiements").update({ employe: patch.nom }).eq("employe", old!.nom);
     }
@@ -44,13 +46,14 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const { authorized, supabaseAdmin, error } = await requirePatron();
+    const { authorized, supabaseAdmin, error, user } = await requirePatron();
     if (!authorized) return NextResponse.json({ error: error || "Seul le Patron peut supprimer un employé" }, { status: 403 });
 
     const { id } = await req.json();
     const { data: emp } = await supabaseAdmin.from("obsidian_employes").select("nom,discord_id").eq("id", id).maybeSingle();
     const { error: dbError } = await supabaseAdmin.from("obsidian_employes").delete().eq("id", id);
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
+    await logAudit(supabaseAdmin, (user as any)?.discord_name, "Employé supprimé", emp?.nom || String(id));
     // Ne pas le recréer automatiquement à la prochaine synchro.
     if (emp?.discord_id) await supabaseAdmin.from("site_logins").update({ employe_exclu: true }).eq("discord_id", emp.discord_id);
     else if (emp?.nom) await supabaseAdmin.from("site_logins").update({ employe_exclu: true }).ilike("discord_name", emp.nom);
