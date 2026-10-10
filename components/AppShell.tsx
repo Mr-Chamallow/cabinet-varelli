@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { PreviewBanner } from "@/components/PreviewBanner";
+import { QuickEntry } from "@/components/QuickEntry";
 
 // Gère l'ouverture/fermeture du menu mobile (hamburger + tiroir + overlay).
 // Remplace l'ancienne structure du layout qui n'offrait aucune adaptation mobile :
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <PreviewBanner />
         {children}
       </main>
+      <QuickEntry />
     </>
   );
 }

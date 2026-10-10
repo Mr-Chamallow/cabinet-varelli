@@ -4,6 +4,8 @@ import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { EmployeeRanking } from "@/components/stats/EmployeeRanking";
+import { WeeklyReport } from "@/components/stats/WeeklyReport";
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 export default function StatsPage(){
   const { user, loading: userLoading } = useCurrentUser();
@@ -60,6 +62,8 @@ export default function StatsPage(){
             <div style={{display:"flex",gap:"0.875rem",marginTop:"0.5rem",justifyContent:"center"}}><div style={{display:"flex",alignItems:"center",gap:"0.25rem"}}><div style={{width:10,height:10,background:"rgba(34,197,94,0.6)",borderRadius:2}}/><span style={{fontSize:"0.62rem",color:"var(--text-dim)"}}>Recettes</span></div><div style={{display:"flex",alignItems:"center",gap:"0.25rem"}}><div style={{width:10,height:10,background:"rgba(239,68,68,0.6)",borderRadius:2}}/><span style={{fontSize:"0.62rem",color:"var(--text-dim)"}}>Dépenses</span></div></div>
           </div>
         </div>
+        <EmployeeRanking />
+        <WeeklyReport />
       </>}
     </div>
   );

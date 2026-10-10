@@ -5,6 +5,9 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 import { hasPermission } from "@/lib/auth";
+import { useRealtimeTable } from "@/lib/useRealtimeTable";
+import { exportXlsx } from "@/lib/exportXlsx";
+import { useOpenOnNew } from "@/lib/useOpenOnNew";
 const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 const CATS_R=["Vente drogue","Vente arme","Braquage ATM","Braquage superette","Braquage banque","Blanchiment","Cotisation","Autre"];
 const CATS_D=["Achat véhicule","Achat matériel","Achat drogue","Amende","Corruption","Dépense opérationnelle","Autre"];
@@ -15,13 +18,20 @@ export default function ComptaPage(){
   const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_comptabilite"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [entries,setEntries]=useState<any[]>([]);
+  const [arrests,setArrests]=useState<any[]>([]);
   const [loading,setLoading]=useState(true);
   const [tab,setTab]=useState<"apercu"|"historique"|"saisie">("apercu");
   const [weekOffset,setWeekOffset]=useState(0);
   const [form,setForm]=useState({type:"recette",categorie:"Vente drogue",montant:0,type_argent:"sale",motif:"",membre:""});
   const [saving,setSaving]=useState(false);
   useEffect(()=>{load();},[]);
-  async function load(){if(!supabase){setLoading(false);return;}const{data}=await supabase.from("obsidian_comptabilite").select("*").order("created_at",{ascending:false});setEntries(data||[]);setLoading(false);}
+  useRealtimeTable(["obsidian_comptabilite","arrestations"], load);
+  async function load(){if(!supabase){setLoading(false);return;}
+    const[{data},{data:ar}]=await Promise.all([
+      supabase.from("obsidian_comptabilite").select("*").order("created_at",{ascending:false}),
+      supabase.from("arrestations").select("id,membre,amende,created_at"),
+    ]);
+    setEntries(data||[]);setArrests(ar||[]);setLoading(false);}
   async function save(){
   if(!form.motif||form.montant<=0)return;
   setSaving(true);
@@ -42,17 +52,28 @@ export default function ComptaPage(){
   if (!res.ok) { alert("❌ Erreur suppression"); return; }
   setEntries(e=>e.filter(x=>x.id!==id));
 }
+  useOpenOnNew(!userLoading&&!!user,()=>setTab("saisie"));
+  function exportCompta(){
+    exportXlsx("comptabilite",{
+      Operations:entries.map(e=>({Date:new Date(e.created_at).toLocaleString("fr-FR"),Type:e.type,Catégorie:e.categorie,Montant:e.montant,"Type argent":e.type_argent,Motif:e.motif||"",Membre:e.membre||"",Source:e.source||"manuel","Saisi par":e.created_by||"",Semaine:e.semaine})),
+      Amendes:arrests.filter(a=>Number(a.amende)>0).map(a=>({Date:new Date(a.created_at).toLocaleString("fr-FR"),Employé:a.membre,Amende:Number(a.amende)})),
+    });
+  }
   const weekStart=getWeekStart(weekOffset);
   const weekEntries=useMemo(()=>entries.filter(e=>e.semaine>=weekStart),[entries,weekStart]);
   const recettes=weekEntries.filter(e=>e.type==="recette").reduce((s,e)=>s+e.montant,0);
   const depenses=weekEntries.filter(e=>e.type==="dépense").reduce((s,e)=>s+e.montant,0);
   const solde=recettes-depenses;
+  // Amendes : suivies à part, JAMAIS déduites du solde.
+  const amendesWeek=useMemo(()=>arrests.filter(a=>(a.created_at||"").slice(0,10)>=weekStart&&Number(a.amende)>0),[arrests,weekStart]);
+  const totalAmendes=amendesWeek.reduce((s,a)=>s+Number(a.amende),0);
+  const amendesParEmploye=useMemo(()=>{const m:Record<string,{total:number,n:number}>={};amendesWeek.forEach(a=>{if(!m[a.membre])m[a.membre]={total:0,n:0};m[a.membre].total+=Number(a.amende);m[a.membre].n++;});return Object.entries(m).sort((a,b)=>b[1].total-a[1].total);},[amendesWeek]);
   const byCat=useMemo(()=>{const m:Record<string,{r:number,d:number}>={}; weekEntries.forEach(e=>{if(!m[e.categorie])m[e.categorie]={r:0,d:0};if(e.type==="recette")m[e.categorie].r+=e.montant;else m[e.categorie].d+=e.montant;});return Object.entries(m).sort((a,b)=>(b[1].r+b[1].d)-(a[1].r+a[1].d));},[weekEntries]);
   const maxBar=Math.max(...weekEntries.map(e=>e.montant),1);
   return(
     <div className="page-container">
       <a className="back-link" href="/obsidian">← Dashboard Obsidian</a>
-      <div className="page-header"><div><h1 className="page-title">💳 Comptabilité</h1><p className="page-subtitle">Recettes · Dépenses · Graphiques hebdomadaires</p><div className="gold-line"/></div><button className="btn btn-gold" onClick={()=>setTab("saisie")}>+ Saisie</button></div>
+      <div className="page-header"><div><h1 className="page-title">💳 Comptabilité</h1><p className="page-subtitle">Recettes · Dépenses · Graphiques hebdomadaires</p><div className="gold-line"/></div><div style={{display:"flex",gap:"0.5rem"}}><button className="btn btn-outline" onClick={exportCompta} disabled={entries.length===0}>⬇️ Excel</button><button className="btn btn-gold" onClick={()=>setTab("saisie")}>+ Saisie</button></div></div>
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem"}}>
         {[["apercu","📊 Aperçu"],["historique","📋 Historique"],["saisie","➕ Saisie"]].map(([k,l])=><button key={k} onClick={()=>setTab(k as any)} style={{padding:"0.5rem 1rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.82rem",fontWeight:tab===k?700:400,background:tab===k?"var(--gold-muted)":"var(--surface)",border:`1px solid ${tab===k?"rgba(var(--gold-rgb), 0.4)":"var(--border)"}`,color:tab===k?"var(--gold)":"var(--text-muted)"}}>{l}</button>)}
         <div style={{marginLeft:"auto",display:"flex",gap:"0.3rem"}}>
@@ -61,7 +82,7 @@ export default function ComptaPage(){
       </div>
       {tab==="apercu"&&<>
         <div className="stat-grid" style={{marginBottom:"1.5rem"}}>
-          {[{l:"Recettes",v:fmt(recettes),c:"var(--success)",i:"↑"},{l:"Dépenses",v:fmt(depenses),c:"var(--danger)",i:"↓"},{l:"Solde",v:fmt(solde),c:solde>=0?"var(--success)":"var(--danger)",i:"⚖️"},{l:"Opérations",v:String(weekEntries.length),c:"var(--text-muted)",i:"#"}].map(s=><div key={s.l} className="stat-card"><div className="stat-icon">{s.i}</div><div className="stat-value" style={{color:s.c,fontSize:"1.1rem"}}>{s.v}</div><div className="stat-label">{s.l}</div></div>)}
+          {[{l:"Recettes",v:fmt(recettes),c:"var(--success)",i:"↑"},{l:"Dépenses",v:fmt(depenses),c:"var(--danger)",i:"↓"},{l:"Solde",v:fmt(solde),c:solde>=0?"var(--success)":"var(--danger)",i:"⚖️"},{l:"Opérations",v:String(weekEntries.length),c:"var(--text-muted)",i:"#"},{l:"Amendes (hors solde)",v:fmt(totalAmendes),c:"var(--warning)",i:"🚔"}].map(s=><div key={s.l} className="stat-card"><div className="stat-icon">{s.i}</div><div className="stat-value" style={{color:s.c,fontSize:"1.1rem"}}>{s.v}</div><div className="stat-label">{s.l}</div></div>)}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1.25rem"}}>
           <div className="card"><div className="section-title" style={{marginBottom:"0.875rem"}}>Par catégorie</div>
@@ -72,8 +93,16 @@ export default function ComptaPage(){
             <div style={{display:"flex",flexDirection:"column",gap:"0.375rem"}}>{weekEntries.slice(0,8).map(e=><div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0.35rem 0.625rem",background:"var(--surface)",borderRadius:"var(--radius)",borderLeft:`3px solid ${e.type==="recette"?"var(--success)":"var(--danger)"}`}}><div style={{minWidth:0}}><div style={{fontSize:"0.78rem",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.motif||e.categorie}</div><div style={{fontSize:"0.62rem",color:"var(--text-dim)"}}>{e.categorie} · {e.type_argent}</div></div><span style={{fontWeight:700,color:e.type==="recette"?"var(--success)":"var(--danger)",flexShrink:0,marginLeft:"0.5rem"}}>{e.type==="recette"?"+":"-"}{fmt(e.montant)}</span></div>)}</div>
           </div>
         </div>
+        <div className="card" style={{marginTop:"1.25rem"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",flexWrap:"wrap",gap:"0.5rem",marginBottom:"0.75rem"}}>
+            <div className="section-title">🚔 Amendes par employé</div>
+            <div style={{fontSize:"0.78rem",color:"var(--text-muted)"}}>Total : <b style={{color:"var(--warning)"}}>{fmt(totalAmendes)}</b> · <i>non déduit du solde</i></div>
+          </div>
+          {amendesParEmploye.length===0?<div style={{color:"var(--text-dim)",textAlign:"center",padding:"0.75rem",fontSize:"0.82rem"}}>Aucune amende sur la période</div>:
+          <div style={{display:"flex",flexDirection:"column",gap:"0.35rem"}}>{amendesParEmploye.map(([nom,v])=><div key={nom} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0.4rem 0.7rem",background:"var(--surface)",borderRadius:"var(--radius)",borderLeft:"3px solid var(--warning)"}}><span style={{fontWeight:600,fontSize:"0.82rem"}}>{nom} <span style={{fontSize:"0.65rem",color:"var(--text-dim)",fontWeight:400}}>· {v.n} amende{v.n>1?"s":""}</span></span><span style={{fontWeight:700,color:"var(--warning)"}}>{fmt(v.total)}</span></div>)}</div>}
+        </div>
       </>}
-      {tab==="historique"&&<div style={{display:"flex",flexDirection:"column",gap:"0.375rem"}}>{entries.length===0?<div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">Aucune entrée</div></div>:entries.map(e=><div key={e.id} style={{display:"flex",alignItems:"center",gap:"0.875rem",padding:"0.625rem 1rem",background:"var(--card)",borderRadius:"var(--radius)",border:"1px solid var(--border)",borderLeft:`3px solid ${e.type==="recette"?"var(--success)":"var(--danger)"}`}}><div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:"0.82rem",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.motif||e.categorie}</div><div style={{fontSize:"0.65rem",color:"var(--text-dim)"}}>{e.categorie} · {e.type_argent} · {e.created_by} · {new Date(e.created_at).toLocaleDateString("fr-FR")}</div></div><div style={{fontWeight:700,color:e.type==="recette"?"var(--success)":"var(--danger)",flexShrink:0}}>{e.type==="recette"?"+":"-"}{fmt(e.montant)}</div><button className="btn btn-ghost btn-sm" onClick={()=>del(e.id)} style={{color:"var(--danger)",flexShrink:0}}>🗑️</button></div>)}</div>}
+      {tab==="historique"&&<div style={{display:"flex",flexDirection:"column",gap:"0.375rem"}}>{entries.length===0?<div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">Aucune entrée</div></div>:entries.map(e=><div key={e.id} style={{display:"flex",alignItems:"center",gap:"0.875rem",padding:"0.625rem 1rem",background:"var(--card)",borderRadius:"var(--radius)",border:"1px solid var(--border)",borderLeft:`3px solid ${e.type==="recette"?"var(--success)":"var(--danger)"}`}}><div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:"0.82rem",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.motif||e.categorie}</div><div style={{fontSize:"0.65rem",color:"var(--text-dim)"}}>{e.source==="action"?"🕶️ Action · ":e.source==="arrestation"?"🚔 Arrestation · ":""}{e.categorie} · {e.type_argent} · {e.created_by} · {new Date(e.created_at).toLocaleDateString("fr-FR")}</div></div><div style={{fontWeight:700,color:e.type==="recette"?"var(--success)":"var(--danger)",flexShrink:0}}>{e.type==="recette"?"+":"-"}{fmt(e.montant)}</div><button className="btn btn-ghost btn-sm" onClick={()=>del(e.id)} style={{color:"var(--danger)",flexShrink:0}}>🗑️</button></div>)}</div>}
       {tab==="saisie"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1.5rem"}}>
         <div className="card"><div className="section-title" style={{marginBottom:"1rem"}}>Nouvelle opération</div>
           <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem"}}>{["recette","dépense"].map(t=><button key={t} onClick={()=>setForm(f=>({...f,type:t,categorie:t==="recette"?"Vente drogue":"Achat matériel"}))} style={{flex:1,padding:"0.625rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:form.type===t?700:400,background:form.type===t?(t==="recette"?"rgba(34,197,94,0.12)":"rgba(239,68,68,0.12)"):"var(--surface)",border:`1px solid ${form.type===t?(t==="recette"?"rgba(34,197,94,0.4)":"rgba(239,68,68,0.4)"):"var(--border)"}`,color:form.type===t?(t==="recette"?"var(--success)":"var(--danger)"):"var(--text-muted)"}}>{t==="recette"?"↑ Recette":"↓ Dépense"}</button>)}</div>

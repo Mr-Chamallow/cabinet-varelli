@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission, firstAccessiblePath } from "@/lib/auth";
 import { CountUp } from "@/components/ui/CountUp";
+import { WeekOverview } from "@/components/dashboard/WeekOverview";
 
 const fmt = (n:number) => n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
 
@@ -111,7 +112,7 @@ export default function ObsidianDashboard() {
             {[
               { label: "Solde", value: <CountUp value={solde} format={fmt} />, icon: "⚖️", href: "/obsidian/comptabilite", color: solde>=0?"var(--success)":"var(--danger)" },
               { label: "Argent sale", value: <CountUp value={s.argSale} format={fmt} />, icon: "💰", href: "/obsidian/comptabilite", color: "var(--warning)" },
-              { label: "Stock armes", value: <CountUp value={s.nbArmes} format={(n)=>Math.round(n)+"u."} />, icon: "🔫", href: "/obsidian/armurerie", color: "var(--danger)" },
+              { label: "Stock armes", value: <CountUp value={s.nbArmes} format={(n)=>Math.round(n)+"u."} />, icon: "🔫", href: "/obsidian/stocks?cat=armurerie", color: "var(--danger)" },
               { label: "Stock drogues", value: <CountUp value={s.nbDrogues} format={(n)=>Math.round(n)+"u."} />, icon: "💊", href: "/obsidian/stocks", color: "#8b5cf6" },
             ].map((st) => (
               <a key={st.label} href={st.href} style={{ textDecoration: "none" }} className="stagger-item">
@@ -135,6 +136,8 @@ export default function ObsidianDashboard() {
               <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--danger)" }}><CountUp value={s.depenses} format={fmt} /></div>
             </div>
           </div>
+
+          <WeekOverview showActions={!!user && hasPermission(user, "obsidian_actions")} showArrests={!!user && hasPermission(user, "obsidian_arrestations")} />
 
           {/* Prochains événements + Accès rapide */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
@@ -184,8 +187,10 @@ export default function ObsidianDashboard() {
                 {[
                   ["/obsidian/prix","💲 Prix","var(--gold)"],
                   ["/obsidian/stocks","📦 Stocks","var(--info)"],
-                  ["/obsidian/armurerie","🔫 Armurerie","var(--danger)"],
+                  ["/obsidian/stocks?cat=armurerie","🔫 Armurerie","var(--danger)"],
                   ["/obsidian/comptabilite","💳 Compta","var(--success)"],
+                  ["/obsidian/actions-illegales","🕶️ Actions","#8b5cf6"],
+                  ["/obsidian/arrestations","🚔 Arrestations","var(--warning)"],
                   ["/obsidian/rdv","📅 Planning","var(--warning)"],
                   ["/obsidian/contrats","📋 Contrats","#8b5cf6"],
                   ["/obsidian/garage","🚗 Garage","var(--text-muted)"],

@@ -10,6 +10,8 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { CountUp } from "@/components/ui/CountUp";
 import { hasPermission, hasWriteAccess } from "@/lib/auth";
 import { timeAgo } from "@/lib/activity";
+import { exportXlsx } from "@/lib/exportXlsx";
+import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { ActionType, DEFAULT_ACTION_TYPES, rowToType, fmtDelai } from "@/lib/actionTypes";
 
 const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -50,6 +52,7 @@ export default function ActionsIllegalesPage() {
   const [filterMembre, setFilterMembre] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ action: DEFAULT_ACTION_TYPES[0].nom, membre: "", resultat: "gain", montant: "", date: localInputNow(), notes: "" });
 
   useEffect(() => { load(); }, []);
@@ -108,7 +111,21 @@ export default function ActionsIllegalesPage() {
     return { ...a, count: list.length, net: list.reduce((s, e) => s + e.montant, 0) };
   }).filter(a => a.count > 0);
 
+  useOpenOnNew(!userLoading && !!user && canWrite, () => openForm());
+
+  function openEdit(e: Entry) {
+    const d = new Date(e.created_at); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    setEditId(e.id);
+    setForm({ action: e.action, membre: e.membre, resultat: e.montant < 0 ? "perte" : "gain", montant: String(Math.abs(e.montant) || ""), date: d.toISOString().slice(0, 16), notes: e.notes || "" });
+    setShowForm(true);
+  }
+
+  function exportList() {
+    exportXlsx("actions-illegales", { Actions: visible.map(e => ({ Date: new Date(e.created_at).toLocaleString("fr-FR"), Personne: e.membre, Action: e.action, Montant: e.montant, Notes: e.notes || "", "Saisi par": e.created_by || "" })) });
+  }
+
   function openForm() {
+    setEditId(null);
     setForm({ action: activeTypes[0]?.nom || DEFAULT_ACTION_TYPES[0].nom, membre: (user as any)?.nom || "", resultat: "gain", montant: "", date: localInputNow(), notes: "" });
     setShowForm(true);
   }
@@ -125,20 +142,21 @@ export default function ActionsIllegalesPage() {
       created_by: (user as any)?.nom || null,
       created_at: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
     };
-    const { error } = await supabase.from("actions_illegales").insert([payload]);
+    const res = await fetch("/api/obsidian/actions", { method: editId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editId ? { ...payload, id: editId } : payload) });
+    const out = await res.json().catch(() => ({}));
     setSaving(false);
-    if (error) { showToast(`Erreur : ${error.message}`, "danger"); return; }
+    if (!res.ok) { showToast(`Erreur : ${out?.error || res.status}`, "danger"); return; }
     setShowForm(false);
-    showToast("Action enregistrée");
+    showToast(editId ? "Action modifiée (compta mise à jour)" : "Action enregistrée (ajoutée à la compta)");
     load();
   }
 
   async function del(id: string) {
-    if (!supabase) return;
-    const { error } = await supabase.from("actions_illegales").delete().eq("id", id);
-    if (error) { showToast(`Erreur : ${error.message}`, "danger"); return; }
+    const res = await fetch("/api/obsidian/actions", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok) { showToast(`Erreur : ${out?.error || res.status}`, "danger"); return; }
     setEntries(list => list.filter(e => e.id !== id));
-    showToast("Supprimé");
+    showToast("Supprimé (retiré aussi de la compta)");
   }
 
   const formRemaining = form.membre.trim() ? remainingMs(form.membre.trim(), form.action) : 0;
@@ -161,7 +179,10 @@ export default function ActionsIllegalesPage() {
           <p className="page-subtitle">Gains · Pertes · Délais par personne</p>
           <div className="gold-line" />
         </div>
-        {canWrite && <button className="btn btn-gold" onClick={openForm}>+ Enregistrer une action</button>}
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button className="btn btn-outline" onClick={exportList} disabled={visible.length === 0}>⬇️ Excel</button>
+          {canWrite && <button className="btn btn-gold" onClick={openForm}>+ Enregistrer une action</button>}
+        </div>
       </div>
 
       {/* Délais en cours */}
@@ -250,6 +271,9 @@ export default function ActionsIllegalesPage() {
                 </div>
                 <div style={{ fontWeight: 800, color: col, fontSize: "0.95rem" }}>{e.montant > 0 ? "+" : ""}{fmt(e.montant)}</div>
                 {(canDeleteAll || (canWrite && e.created_by === (user as any)?.nom)) && (
+                  <button className="btn btn-ghost btn-sm" onClick={() => openEdit(e)} title="Modifier">✏️</button>
+                )}
+                {(canDeleteAll || (canWrite && e.created_by === (user as any)?.nom)) && (
                   <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => del(e.id)}>🗑️</button>
                 )}
               </div>
@@ -260,7 +284,7 @@ export default function ActionsIllegalesPage() {
 
       {showForm && (
         <Modal
-          title="Enregistrer une action"
+          title={editId ? "Modifier l'action" : "Enregistrer une action"}
           onClose={() => setShowForm(false)}
           footer={<><button className="btn btn-outline" onClick={() => setShowForm(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.membre.trim()} onClick={save}>{saving ? "…" : "Enregistrer"}</button></>}
         >

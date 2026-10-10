@@ -83,11 +83,22 @@ export default function PaieObsidianPage() {
     // Stock/armurerie : sorties = ventes = revenu
     mouvements.forEach(m => {
       if (!inWeek(m.created_at, weekStart)) return;
+      // Les sorties dues à une arrestation (objets confisqués) ne sont PAS des ventes.
+      if (/^(Annulation )?arrestation/i.test(m.motif || "")) return;
       bump(m.membre || m.created_by, m.total || 0, 0);
     });
 
     // Compta manuelle Obsidian : recette = revenu, dépense = dépense perso
     compta.forEach(e => {
+      // Lignes créées automatiquement : une action illégale compte pour l'employé qui l'a
+      // faite (pas celui qui a saisi) ; l'argent saisi en arrestation n'impacte pas la paie.
+      if (e.source === "arrestation") return;
+      if (e.source === "action") {
+        if (!inWeek(e.created_at, weekStart)) return;
+        if (e.type === "recette") bump(e.membre || e.created_by, e.montant || 0, 0);
+        else bump(e.membre || e.created_by, 0, e.montant || 0);
+        return;
+      }
       if (e.semaine !== weekStartISO) return;
       if (e.type === "recette") bump(e.created_by, e.montant || 0, 0);
       else bump(e.created_by, 0, e.montant || 0);
