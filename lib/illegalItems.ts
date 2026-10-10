@@ -1,10 +1,9 @@
-// Listes de suggestions pour les stocks (saisie libre toujours possible : un nom inconnu crée un nouvel article).
-export interface Sugg { nom: string; emoji: string }
+// Suggestions pour la saisie d'un nom de stock (saisie libre toujours possible : un nom inconnu crée un nouvel article).
+export interface Sugg { nom: string; emoji: string; categorie: string }
+const I = (nom: string, emoji: string, categorie = "autre"): Sugg => ({ nom, emoji, categorie });
 export const ILLEGAL_ITEMS: Sugg[] = [
-  { nom: "Boîtier de piratage", emoji: "📟" }, { nom: "Boîtier Darknet", emoji: "🕸️" }, { nom: "Carte Fleeca", emoji: "💳" },
-  { nom: "Carte prépayée", emoji: "💳" }, { nom: "Encodeur", emoji: "🔌" }, { nom: "Disjoncteur modifié", emoji: "⚡" },
-  { nom: "Fausse plaque d'immatriculation", emoji: "🪪" }, { nom: "Outil de crochetage", emoji: "🗝️" }, { nom: "Serflex", emoji: "🔗" },
-  { nom: "Kevlar", emoji: "🦺" },
+  I("Boîtier de piratage", "📟"), I("Boîtier Darknet", "🕸️"), I("Carte Fleeca", "💳"), I("Carte prépayée", "💳"), I("Encodeur", "🔌"),
+  I("Disjoncteur modifié", "⚡"), I("Fausse plaque d'immatriculation", "🪪"), I("Outil de crochetage", "🗝️"), I("Serflex", "🔗"), I("Kevlar", "🦺", "gilet"),
 ];
 export const DRUG_COMPONENTS: Sugg[] = [
   "Graine de strawberry", "Fertilisant", "Kit de fabrication de meth", "Gaz BZ", "Poudre à canon", "B-Magic", "Acide sulfurique",
@@ -12,9 +11,5 @@ export const DRUG_COMPONENTS: Sugg[] = [
   "Éther", "Lithium", "Prométhazine", "Xylazine", "Belladone", "Datura", "Salvia", "Mexicana", "Blacktrip", "Spore X", "Oyster rouge",
   "Oyster bleu", "Amanita rouge", "Amanita vert", "Psilocybe vert", "Psilocybe rouge", "Psilocybe violet", "Moisissures spectrales",
   "Spores de veloceps", "Red fang", "Ma-huang", "Ladanum", "Acide acétylsalicylique",
-].map(nom => ({ nom, emoji: "🧪" }));
-export const SUGGESTIONS: Record<string, Sugg[]> = {
-  objet_illegal: [...ILLEGAL_ITEMS, ...DRUG_COMPONENTS],
-  composant: DRUG_COMPONENTS,
-  gilet: [{ nom: "Kevlar", emoji: "🦺" }],
-};
+].map(n => I(n, "🧪", "composant"));
+export const ALL_SUGG: Sugg[] = [...ILLEGAL_ITEMS, ...DRUG_COMPONENTS].sort((a, b) => a.nom.localeCompare(b.nom));

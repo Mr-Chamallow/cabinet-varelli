@@ -56,9 +56,9 @@ insert into obsidian_stocks (nom, categorie, emoji, quantite, seuil_alerte, unit
  ('Fusil à pompe','arme','🔫',5,3,'u',14000,'Démo','Démo'),('Munitions pistolet','munition','🔸',640,150,'boîte',220,'Démo','Démo'),
  ('Munitions SMG','munition','🔸',90,120,'boîte',310,'Démo — sous le seuil','Démo'),('Silencieux','accessoire','🔇',18,5,'u',2800,'Démo','Démo'),
  ('Kevlar','gilet','🦺',27,8,'u',1500,'Démo','Démo'),('Grenade','explosif','💣',14,4,'u',3200,'Démo','Démo'),
- ('Fertilisant','composant','🧪',300,80,'u',20,'Démo','Démo'),('Boîtier de piratage','objet_illegal','📟',9,3,'u',4200,'Démo','Démo'),
- ('Outil de crochetage','objet_illegal','🗝️',40,10,'u',350,'Démo','Démo'),('Fausse plaque d''immatriculation','objet_illegal','🪪',22,6,'u',900,'Démo','Démo'),
- ('Serflex','objet_illegal','🔗',150,40,'u',15,'Démo','Démo'),('Radio chiffrée','radio','📻',16,4,'u',1200,'Démo','Démo');
+ ('Fertilisant','composant','🧪',300,80,'u',20,'Démo','Démo'),('Boîtier de piratage','autre','📟',9,3,'u',4200,'Démo','Démo'),
+ ('Outil de crochetage','autre','🗝️',40,10,'u',350,'Démo','Démo'),('Fausse plaque d''immatriculation','autre','🪪',22,6,'u',900,'Démo','Démo'),
+ ('Serflex','autre','🔗',150,40,'u',15,'Démo','Démo'),('Radio chiffrée','radio','📻',16,4,'u',1200,'Démo','Démo');
 
 insert into obsidian_mouvements (stock_id, stock_nom, type, quantite, motif, membre, prix_unitaire, total, created_by, created_at)
 select s.id, s.nom, (array['entrée','sortie'])[1+floor(random()*2)::int], q.q,
@@ -83,11 +83,6 @@ insert into obsidian_comptabilite (type, categorie, montant, type_argent, motif,
 select case when montant > 0 then 'recette' else 'dépense' end, action, abs(montant), 'sale', action || ' — ' || membre, membre,
        date_trunc('week', created_at)::date, 'Démo', created_at, 'action', id
 from actions_illegales where created_by = 'Démo' and montant <> 0;
-
-insert into obsidian_comptabilite (type, categorie, montant, type_argent, motif, membre, semaine, created_by, created_at, source, source_id)
-select 'dépense', 'Arrestation (perte sèche)', argent_perdu, type_argent, 'Arrestation — ' || membre, membre,
-       date_trunc('week', created_at)::date, 'Démo', created_at, 'arrestation', id
-from arrestations where created_by = 'Démo' and argent_perdu > 0;
 
 insert into obsidian_comptabilite (type, categorie, montant, type_argent, motif, membre, semaine, created_by, created_at, source)
 select case when type='entrée' then 'recette' else 'dépense' end, (case when type='entrée' then 'Vente ' else 'Achat ' end) || categorie, montant, type_argent, motif, '',

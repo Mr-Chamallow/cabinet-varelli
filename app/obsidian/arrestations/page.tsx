@@ -57,7 +57,7 @@ export default function ArrestationsPage() {
   const visible = list.filter(a => !filterMembre || a.membre === filterMembre);
   const totalAmendes = visible.reduce((s, a) => s + a.amende, 0);
   const totalArgent = visible.reduce((s, a) => s + a.argent_perdu, 0);
-  const membres = useMemo(() => [...new Set(list.map(a => a.membre))].sort(), [list]);
+  const membres = useMemo(() => [...new Set([...employes, ...list.map(a => a.membre)])].filter(Boolean).sort((a, b) => a.localeCompare(b)), [list, employes]);
   const grouped = useMemo(() => {
     const m: Record<string, StockLite[]> = {};
     stocks.forEach(s => { (m[s.categorie] ??= []).push(s); });
@@ -101,7 +101,7 @@ export default function ArrestationsPage() {
     setSaving(false);
     if (!res.ok) { showToast(`Erreur : ${out?.error || res.status}`, "danger"); load(); return; }
     setShowForm(false);
-    showToast(editId ? "Arrestation modifiée (stock et prime recalculés)" : "Arrestation enregistrée (stock mis à jour, prime ajoutée à la paie)");
+    showToast(editId ? "Arrestation modifiée (stock et prime recalculés)" : "Arrestation enregistrée (stock mis à jour, amende = prime de paie)");
     load();
   }
 
@@ -122,7 +122,7 @@ export default function ArrestationsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">🚔 Arrestations</h1>
-          <p className="page-subtitle">Pertes · Amendes · Stock mis à jour · argent perdu = prime sur la paie de la semaine</p>
+          <p className="page-subtitle">Amende = prime de paie · argent perdu et objets saisis = notés sur le profil (pas en compta)</p>
           <div className="gold-line" />
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -205,7 +205,7 @@ export default function ArrestationsPage() {
               <input type="number" min="0" value={form.amende} onChange={e => setForm({ ...form, amende: e.target.value })} placeholder="0" />
             </div>
             <div>
-              <label>💵 Argent perdu ($) — prime sur la paie (sale ou propre)</label>
+              <label>💵 Argent perdu ($) — noté sur le profil, pas en compta</label>
               <input type="number" min="0" value={form.argent} onChange={e => setForm({ ...form, argent: e.target.value })} placeholder="0" />
             </div>
           </div>

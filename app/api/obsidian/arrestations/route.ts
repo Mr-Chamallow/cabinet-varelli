@@ -7,14 +7,14 @@ function arrestFields(row: any) {
   const items = (row.items || []).map((i: any) => `${i.emoji || ""} ${i.nom} × ${i.quantite}`).join("\n");
   return [
     { name: "Amende", value: usd(Number(row.amende) || 0), inline: true },
-    { name: "Prime paie (argent perdu)", value: `${usd(Number(row.argent_perdu) || 0)} · argent ${row.type_argent || "sale"}`, inline: true },
+    { name: "Argent perdu (profil uniquement)", value: `${usd(Number(row.argent_perdu) || 0)} · argent ${row.type_argent || "sale"}`, inline: true },
     { name: "Objets perdus", value: items || "—", inline: false },
   ];
 }
 
 // Une arrestation :
 //  - les objets perdus SORTENT du stock (mouvement "sortie" tracé),
-//  - l'argent perdu (sale / propre) n'est PAS déduit de la compta : il devient une PRIME sur la paie de la semaine,
+//  - l'argent perdu et les objets saisis sont notés sur le profil (stats), PAS en compta : ils étaient déjà comptés à l'achat / au gain. L'amende = PRIME sur la paie,
 //  - l'amende est seulement enregistrée (jamais déduite du solde).
 
 type Parsed = { membre: string; amende: number; argent: number; typeArgent: string; createdBy: string; createdAt: string; notes: string | null; photo: string | null; wanted: { stock_id: string; quantite: number }[] };
@@ -42,7 +42,7 @@ async function createArrest(db: any, p: Parsed): Promise<{ row?: any; error?: st
   for (const w of p.wanted) {
     const { data: st } = await db.from("obsidian_stocks").select("*").eq("id", w.stock_id).single();
     if (!st) return { error: "Objet de stock introuvable" };
-    items.push({ stock_id: st.id, nom: st.nom, emoji: st.emoji, categorie: st.categorie, unite: st.unite, quantite: w.quantite, retire: Math.min(st.quantite, w.quantite) });
+    items.push({ stock_id: st.id, nom: st.nom, emoji: st.emoji, categorie: st.categorie, unite: st.unite, quantite: w.quantite, retire: Math.min(st.quantite, w.quantite), valeur: Math.min(st.quantite, w.quantite) * (Number(st.prix_unitaire) || 0) });
   }
   const { data: row, error: e1 } = await db.from("arrestations").insert([{
     membre: p.membre, amende: p.amende, argent_perdu: p.argent, type_argent: p.typeArgent, items, notes: p.notes, photo_url: p.photo, created_by: p.createdBy, created_at: p.createdAt,

@@ -228,7 +228,7 @@ export default function ActionsIllegalesPage() {
         </select>
         <select value={filterMembre} onChange={e => setFilterMembre(e.target.value)} style={{ maxWidth: 190 }}>
           <option value="">Toutes les personnes</option>
-          {membres.map(m => <option key={m} value={m}>{m}</option>)}
+          {suggestions.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
       </div>
 
