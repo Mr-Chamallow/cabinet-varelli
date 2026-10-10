@@ -8,7 +8,7 @@ const day = () => new Date().toISOString().slice(0, 10);
 // Les notes privées ne sont JAMAIS exportées : le PDF est fait pour être partagé.
 export async function pdfFiche(f: any) {
   const m = metierInfo(f.metier);
-  const p = await Pdf.create({ kind: "fiche", title: f.nom, subtitle: `Fiche - ${m.label}${(f.sous_tags || []).length ? " - " + f.sous_tags.join(", ") : ""}`, classification: "Fiche - confidentiel" });
+  const p = await Pdf.create({ kind: "fiche", title: f.nom, subtitle: `Fiche - ${m.label}${(f.sous_tags || []).length ? " - " + f.sous_tags.join(", ") : ""}`, classification: "Fiche - confidentiel", signers: [`L'enqueteur|${f.created_by || ""}`, `La personne concernee|${f.nom || ""}`] });
   p.photos([{ url: f.photo_url, label: "Photo de la personne", w: 38, h: 47.5 }, { url: f.photo_id, label: "Carte d'identite", w: 72, h: 45 }]);
   p.section("Identite");
   p.kv([["Type", f.type], ["Priorite", f.priorite], ["Statut", f.statut], ["Metier", m.label], ["Organisation", f.organisation], ["Occupation", f.occupation],
@@ -23,7 +23,7 @@ export async function pdfFiche(f: any) {
 }
 
 export async function pdfDossier(d: any) {
-  const p = await Pdf.create({ kind: "tribunal", title: d.titre, subtitle: `Tribunal de l'Ombre - dossier ${d.statut}`, classification: "Niveau ecarlate" });
+  const p = await Pdf.create({ kind: "tribunal", title: d.titre, subtitle: `Tribunal de l'Ombre - dossier ${d.statut}`, classification: "Niveau ecarlate", signers: [`Le Juge|${d.juge || ""}`, `Le Procureur|${d.procureur || ""}`] });
   p.section("Dossier");
   p.kv([["Accuse", d.accuse], ["Organisation", d.organisation], ["Juge", d.juge], ["Procureur", d.procureur], ["Avocat commis d'office", d.avocat], ["Audience", fdate(d.date_audience)],
     ["Statut", d.statut], ["Verdict", d.verdict === "en_cours" ? "En cours" : d.verdict]]);
@@ -36,7 +36,7 @@ export async function pdfDossier(d: any) {
 }
 
 export async function pdfPacte(x: any) {
-  const p = await Pdf.create({ kind: "pacte", title: `Pacte d'Obsidienne - ${x.organisation}`, subtitle: `Statut : ${x.statut}`, classification: "Pacte - confidentiel" });
+  const p = await Pdf.create({ kind: "pacte", title: `Pacte d'Obsidienne - ${x.organisation}`, subtitle: `Statut : ${x.statut}`, classification: "Pacte - confidentiel", signers: [`Le signataire|${[x.signataire, x.organisation].filter(Boolean).join(" - ")}`, `Pour le Consortium|${x.created_by || "Obsidian Logistics"}`] });
   p.section("Parties et duree");
   p.kv([["Organisation", x.organisation], ["Signataire", x.signataire], ["Signe le", fday(x.date_signature)], ["Echeance", x.date_fin ? fday(x.date_fin) : "Sans echeance"]]);
   p.section("Clauses"); p.para(x.clauses || "Aucune clause renseignee.");
@@ -46,7 +46,7 @@ export async function pdfPacte(x: any) {
 }
 
 export async function pdfAudit(a: any) {
-  const p = await Pdf.create({ kind: "audit", title: `Audit de conformite - ${a.organisation}`, subtitle: `Note ${a.note}/10 - ${fdate(a.created_at)}`, classification: "Audit - confidentiel" });
+  const p = await Pdf.create({ kind: "audit", title: `Audit de conformite - ${a.organisation}`, subtitle: `Note ${a.note}/10 - ${fdate(a.created_at)}`, classification: "Audit - confidentiel", signers: [`L'auditeur|${a.created_by || ""}`, `L'organisation auditee|${a.organisation || ""}`] });
   p.section("Resultat");
   p.kv([["Organisation", a.organisation], ["Note", `${a.note}/10`], ["Realise par", a.created_by], ["Date", fdate(a.created_at)]]);
   p.section("Appreciation"); p.para(a.appreciation || "—");
@@ -57,7 +57,7 @@ export async function pdfAudit(a: any) {
 
 const TYPE_LABEL: any = { convoi: "Convoi", enchere: "Enchere", alerte: "Lanceur d'alerte", capture: "Capture" };
 export async function pdfEvenement(e: any) {
-  const p = await Pdf.create({ kind: "evenement", title: e.titre, subtitle: `${TYPE_LABEL[e.type] || "Evenement"} - ${e.statut}`, classification: "Operation - confidentiel" });
+  const p = await Pdf.create({ kind: "evenement", title: e.titre, subtitle: `${TYPE_LABEL[e.type] || "Evenement"} - ${e.statut}`, classification: "Operation - confidentiel", signers: [`Le responsable|${e.created_by || ""}`, `Le partenaire / la cible|${e.partenaire || ""}`] });
   p.section("Details");
   p.kv([["Type", TYPE_LABEL[e.type]], ["Statut", e.statut], ["Partenaire / cible", e.partenaire], ["Date", fdate(e.date_event)], ["Montant", e.montant ? fusd(e.montant) : "—"], ["Cree par", e.created_by]]);
   if ((e.lots || []).length) { p.section("Lots"); p.table(["Lot", "Depart", "Adjuge", "Gagnant"], e.lots.map((l: any) => [l.nom, fusd(l.mise_depart), l.mise_finale ? fusd(l.mise_finale) : "—", l.gagnant]), [70, 32, 32, 40]); }
@@ -68,7 +68,7 @@ export async function pdfEvenement(e: any) {
 // Dossier complet d'une organisation : tout ce que le Consortium sait, en un seul PDF.
 export async function pdfOrganisation(org: any, ctx: { pactes: any[]; audits: any[]; dossiers: any[]; evenements: any[]; history: any[]; fiches?: any[] }) {
   const score = scoreOf(ctx.history.map(h => h.delta)); const lab = scoreLabel(score);
-  const p = await Pdf.create({ kind: "organisation", title: `Dossier - ${org.nom}`, subtitle: `${org.categorie || "Organisation"} - reputation ${score}/100 (${lab.label})`, classification: "Dossier complet - confidentiel" });
+  const p = await Pdf.create({ kind: "organisation", title: `Dossier - ${org.nom}`, subtitle: `${org.categorie || "Organisation"} - reputation ${score}/100 (${lab.label})`, classification: "Dossier complet - confidentiel", signers: ["La Direction|Obsidian Logistics", `L'organisation|${org.nom || ""}`] });
   p.section("Synthese");
   p.kv([["Organisation", org.nom], ["Categorie", org.categorie], ["Reputation", `${score}/100 - ${lab.label}`], ["Pactes actifs", ctx.pactes.filter(x => x.statut === "actif").length],
     ["Audits", ctx.audits.length], ["Dossiers au tribunal", ctx.dossiers.length]]);
@@ -93,7 +93,7 @@ export async function pdfOrganisation(org: any, ctx: { pactes: any[]; audits: an
 }
 
 export async function pdfContrat(c: any) {
-  const p = await Pdf.create({ kind: "contrat", title: c.titre || "Contrat", subtitle: `${c.type || "Mission"} - ${c.statut || ""}`, classification: "Contrat - confidentiel" });
+  const p = await Pdf.create({ kind: "contrat", title: c.titre || "Contrat", subtitle: `${c.type || "Mission"} - ${c.statut || ""}`, classification: "Contrat - confidentiel", signers: [`Le donneur d'ordre|${c.created_by || "Obsidian Logistics"}`, `Le prestataire|${(c.membres_affectes || []).join(", ")}`] });
   p.section("Parties et conditions");
   p.kv([["Type", c.type], ["Difficulte", c.difficulte], ["Statut", c.statut], ["Recompense", c.recompense ? fusd(c.recompense) : "—"], ["Date cible", c.date_cible ? fdate(c.date_cible) : "—"], ["Employes affectes", (c.membres_affectes || []).join(", ") || "—"]]);
   if (c.description) { p.section("Objet du contrat"); p.para(c.description); }

@@ -21,7 +21,7 @@ const ENV_KEYS: Record<DiscordWebhookKind, string> = {
 };
 
 // Catégories obsidian_stocks considérées comme "armurerie" (voir app/obsidian/armurerie/page.tsx).
-export const ARMURERIE_CATEGORIES = ["arme", "munition", "accessoire", "explosif", "gilet", "radio"];
+export const ARMURERIE_CATEGORIES = ["arme", "munition", "accessoire", "explosif", "kev"];
 
 export interface DiscordEmbedField {
   name: string;

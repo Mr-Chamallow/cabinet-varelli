@@ -57,10 +57,10 @@ insert into obsidian_stocks (nom, categorie, emoji, quantite, seuil_alerte, unit
  ('Mexicana 50%','drogue','💊',35,60,'u',95,'Démo — sous le seuil','Démo'),('Pistolet lourd','arme','🔫',12,4,'u',9500,'Démo','Démo'),
  ('Fusil à pompe','arme','🔫',5,3,'u',14000,'Démo','Démo'),('Munitions pistolet','munition','🔸',640,150,'boîte',220,'Démo','Démo'),
  ('Munitions SMG','munition','🔸',90,120,'boîte',310,'Démo — sous le seuil','Démo'),('Silencieux','accessoire','🔇',18,5,'u',2800,'Démo','Démo'),
- ('Kevlar','gilet','🦺',27,8,'u',1500,'Démo','Démo'),('Grenade','explosif','💣',14,4,'u',3200,'Démo','Démo'),
- ('Fertilisant','composant','🧪',300,80,'u',20,'Démo','Démo'),('Boîtier de piratage','autre','📟',9,3,'u',4200,'Démo','Démo'),
- ('Outil de crochetage','autre','🗝️',40,10,'u',350,'Démo','Démo'),('Fausse plaque d''immatriculation','autre','🪪',22,6,'u',900,'Démo','Démo'),
- ('Serflex','autre','🔗',150,40,'u',15,'Démo','Démo'),('Radio chiffrée','radio','📻',16,4,'u',1200,'Démo','Démo');
+ ('Kevlar','kev','🦺',27,8,'u',1500,'Démo','Démo'),('Grenade','explosif','💣',14,4,'u',3200,'Démo','Démo'),
+ ('Fertilisant','composant','🧪',300,80,'u',20,'Démo','Démo'),('Boîtier de piratage','objet illégal','📟',9,3,'u',4200,'Démo','Démo'),
+ ('Outil de crochetage','objet illégal','🗝️',40,10,'u',350,'Démo','Démo'),('Fausse plaque d''immatriculation','objet illégal','🪪',22,6,'u',900,'Démo','Démo'),
+ ('Serflex','objet illégal','🔗',150,40,'u',15,'Démo','Démo'),('Radio chiffrée','objet légal','📻',16,4,'u',1200,'Démo','Démo');
 
 insert into obsidian_mouvements (stock_id, stock_nom, type, quantite, motif, membre, prix_unitaire, total, created_by, created_at)
 select s.id, s.nom, (array['entrée','sortie'])[1+floor(random()*2)::int], q.q,
@@ -94,12 +94,12 @@ from cahier_transactions where created_by = 'Démo';
 -- 6) Garage
 insert into obsidian_garage (modele, plaque, couleur, position, statut, assigne_a, valeur, notes, created_by) values
  ('Sultan RS','OBS-001','Noir','Garage Mission Row','Disponible','Marcus Reed',68000,'Démo','Démo'),
- ('Kuruma blindé','OBS-002','Gris','Entrepôt du port','En mission','Dante Cole',142000,'Démo','Démo'),
+ ('Kuruma blindé','OBS-002','Gris','Entrepôt du port','Sortie','Dante Cole',142000,'Démo','Démo'),
  ('Speedo Custom','OBS-003','Blanc','Garage Mission Row','Disponible','Tony Rizzo',34000,'Démo','Démo'),
- ('Buffalo S','OBS-004','Bleu nuit','Parking sécurisé','En réparation','Sam Fletcher',52000,'Démo','Démo'),
+ ('Buffalo S','OBS-004','Bleu nuit','Parking sécurisé','Endommagé','Sam Fletcher',52000,'Démo','Démo'),
  ('Zentorno','OBS-005','Rouge','Villa Vinewood','Disponible','Pierce Davenport',310000,'Démo','Démo'),
  ('Bison','OBS-006','Vert','Entrepôt du port','Disponible','',21000,'Démo','Démo'),
- ('Hexer','OBS-007','Noir','Garage Mission Row','En mission','Leo Martin',18000,'Démo','Démo');
+ ('Hexer','OBS-007','Noir','Garage Mission Row','Sortie','Leo Martin',18000,'Démo','Démo');
 
 -- 7) Contrats
 insert into obsidian_contrats (titre, type, difficulte, recompense, statut, membres_affectes, description, rapport, date_cible, created_by) values

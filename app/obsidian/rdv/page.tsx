@@ -120,7 +120,7 @@ export default function PlanningOperationsPage() {
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [weekRef, setWeekRef] = useState(today);
-  const [viewMode, setViewMode] = useState<"mois" | "semaine" | "global">("mois");
+  const [viewMode, setViewMode] = useState<"mois" | "semaine" | "global">("global");
   const [editOperation, setEditOperation] = useState<Operation | null>(null);
   const [filterMember, setFilterMember] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -444,7 +444,7 @@ async function saveOperation() {
           {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "1rem" }}>×</button>}
         </div>
         <div style={{ display: "flex", gap: "0.4rem" }}>
-          {(["mois", "semaine", "global"] as const).map(m => (
+          {(["global", "mois", "semaine"] as const).map(m => (
             <button key={m} onClick={() => setViewMode(m)} style={{
               padding: "0.5rem 1rem", borderRadius: "var(--radius)", cursor: "pointer",
               fontFamily: "'Inter',sans-serif", fontSize: "0.8rem", fontWeight: viewMode === m ? 700 : 400,

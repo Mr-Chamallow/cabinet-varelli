@@ -9,6 +9,7 @@ import { Toast } from "@/components/ui/Toast";
 import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
 import { hasPermission } from "@/lib/auth";
+import { EquivalentPanel } from "@/components/EquivalentPanel";
 import { BlanchimentPanel } from "@/components/BlanchimentPanel";
 import { weekStartOf } from "@/lib/weekStart";
 
@@ -48,7 +49,7 @@ interface FormState {
   type_argent: string;
 }
 
-type TabType = "apercu" | "historique" | "saisie" | "produits" | "blanchiment";
+type TabType = "apercu" | "historique" | "saisie" | "produits" | "blanchiment" | "equivalent";
 
 const CATEGORIES = ["drogue", "arme", "munition"];
 const TYPES_ARGENT = ["propre", "sale", "mixte"];
@@ -274,6 +275,7 @@ export default function CahierVentePage() {
           ["saisie", "➕ Saisie"],
           ["produits", "📦 Produits"],
           ["blanchiment", "🧼 Blanchiment"],
+          ["equivalent", "💊 Équivalent"],
         ] as [TabType, string][]).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} style={{
             padding: "0.55rem 1.25rem", borderRadius: "var(--radius)", cursor: "pointer",
@@ -577,6 +579,7 @@ export default function CahierVentePage() {
 
       {/* ── PRODUITS (issus du Stock) ── */}
       {tab === "blanchiment" && <BlanchimentPanel />}
+      {tab === "equivalent" && <EquivalentPanel />}
 
       {tab === "produits" && (
         <div>

@@ -38,7 +38,6 @@ export const PERMISSION_GUIDE: PermGroup[] = [
   ]},
   { titre: "Outils & ressources", icon: "🧰", perms: [
     { key: "juridique", read: "Consulter le code pénal.", write: "Modifier le code pénal." },
-    { key: "calculatrice", read: "Utiliser la calculatrice.", write: "Idem." },
     { key: "carte-enqueteur", read: "Voir la carte San Andreas.", write: "Poser/modifier des marqueurs." },
     { key: "utile_samp", read: "Voir les ressources utiles SAMP.", write: "Modifier le contenu." },
     { key: "h47", read: "Accéder à la section H-47.", write: "Modifier le contenu H-47." },

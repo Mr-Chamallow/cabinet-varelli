@@ -277,11 +277,13 @@ export class Pdf {
     d.text(`Fait a Los Santos, le ${new Date().toLocaleDateString("fr-FR", { dateStyle: "long" })}`, this.M, y0);
     const colW = 58; const xs = [this.M, this.M + colW + 10];
     const labels = [this.opts.signers?.[0] || this.t.signers[0], this.opts.signers?.[1] || this.t.signers[1]];
+    // Format "Rôle|Nom" : le nom réel de la personne qui signe est imprimé sous la ligne.
     xs.forEach((x, i) => {
       this.scribble(x + 4, y0 + 14, colW - 12, i + 1);
       d.setDrawColor(...INK); d.setLineWidth(0.3); d.line(x, y0 + 24, x + colW, y0 + 24);
-      d.setFont("helvetica", "bold"); d.setFontSize(7.5); d.setTextColor(...INK); d.text(clean(labels[i]).toUpperCase(), x, y0 + 28.5, { charSpace: 0.4 });
-      d.setFont("helvetica", "normal"); d.setFontSize(6.5); d.setTextColor(...MUTED); d.text("Lu et approuve - signature", x, y0 + 32);
+      d.setFont("helvetica", "bold"); d.setFontSize(7.5); d.setTextColor(...INK); d.text(clean(labels[i].split("|")[0]).toUpperCase(), x, y0 + 28.5, { charSpace: 0.4 });
+      const nm = clean((labels[i].split("|")[1] || "").trim()); const nmShort = nm.length > 38 ? nm.slice(0, 37) + "." : nm;
+      d.setFont("helvetica", nm ? "bold" : "normal"); d.setFontSize(nm ? 8 : 6.5); d.setTextColor(...(nm ? INK : MUTED)); d.text(nm ? nmShort : "Lu et approuve - signature", x, y0 + 32.5);
     });
     this.seal(this.W - this.M - 20, y0 + 16, 17);
     this.y = y0 + 38;

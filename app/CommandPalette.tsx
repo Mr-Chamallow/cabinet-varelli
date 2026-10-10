@@ -52,7 +52,6 @@ const ALL_PAGES: PageEntry[] = [
   { title: "Code pénal", subtitle: "Articles de loi", href: "/juridique", icon: "📖", permission: "juridique" },
   { title: "Utile SAMP", subtitle: "Intel police", href: "/utile-samp", icon: "🐈", permission: "utile_samp" },
   { title: "San Andreas", subtitle: "Points chauds, dossiers", href: "/carte-enqueteur", icon: "🗺️", permission: "carte-enqueteur" },
-  { title: "Calculatrice", subtitle: "Blanchiment", href: "/calculatrice", icon: "🧮", permission: "calculatrice" },
   { title: "Personnalisation", subtitle: "Thème, logo, couleurs", href: "/settings", icon: "🎨", permission: "admin" },
   { title: "Supervision", subtitle: "Vue d'ensemble", href: "/supervision", icon: "📡", permission: "supervision" },
   { title: "Admin", subtitle: "Membres, rôles, diagnostic", href: "/admin", icon: "🛡️", permission: "admin" },
