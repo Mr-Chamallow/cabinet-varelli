@@ -30,6 +30,7 @@ interface SiteLogin {
   discord_name: string;
   site_role: string;
   discord_role?: string;
+  nom_perso?: string;
   first_login?: string;
   last_login?: string;
   last_seen?: string;
@@ -104,6 +105,25 @@ export default function AdminPage() {
   const [banForm, setBanForm] = useState({ discord_id:"", nom:"", motif:"" });
   const [banningId, setBanningId] = useState<string | null>(null);
   const [showBansList, setShowBansList] = useState(false);
+  const isPatron = user?.role === "Associé / Patron";
+  const [renameForm, setRenameForm] = useState<{ discord_id: string; nom: string; actuel: string; employe: boolean } | null>(null);
+
+  async function confirmRename() {
+    if (!renameForm || !renameForm.nom.trim()) return;
+    const r = await apiRequest("/api/admin/membres", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: renameForm.discord_id, nom: renameForm.nom, renommer_employe: renameForm.employe }) });
+    if (!r.ok) { setFetchError(`Impossible de renommer : ${r.error}`); return; }
+    setRenameForm(null); await fetchAll();
+  }
+  async function kickMember(discordId: string, nom: string) {
+    if (!window.confirm(`VIRER « ${nom} » ? Il sera banni du site et retiré de la liste (tu pourras le débannir).`)) return;
+    const r = await apiRequest("/api/admin/membres", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ discord_id: discordId }) });
+    if (!r.ok) setFetchError(`Impossible de virer : ${r.error}`); else await fetchAll();
+  }
+  async function syncEmployesNow() {
+    const r = await apiRequest("/api/admin/membres", { method: "POST" });
+    setResyncMsg(r.ok ? `👥 Employés synchronisés : ${(r as any).data?.crees ?? 0} créé(s), ${(r as any).data?.lies ?? 0} relié(s).` : `❌ ${r.error}`);
+    setTimeout(() => setResyncMsg(""), 6000);
+  }
 
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [actLoading, setActLoading] = useState(false);
@@ -426,6 +446,7 @@ export default function AdminPage() {
                 <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap", marginBottom:"0.5rem" }}>
                   <input value={loginSearch} onChange={(e) => setLoginSearch(e.target.value)} placeholder="Rechercher un nom, un ID, un rôle..." style={{ flex:1, minWidth:180 }} />
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowBansList(v => !v)} style={bans.length ? { color:"var(--danger)" } : {}}>🚫 Bannis ({bans.length})</button>
+                  {isPatron && <button className="btn btn-outline btn-sm" onClick={syncEmployesNow} title="Crée les employés manquants à partir des membres">👥 Synchroniser les employés</button>}
                   <button className="btn btn-gold btn-sm" onClick={() => { setOverrideForm({ nom:"", discord_id:"", role:"" }); setCreateError(""); setShowCreateOverride(true); }}>+ Forcer un rôle</button>
                 </div>
                 {resyncMsg && <div className="card" style={{ padding:"0.5rem 0.9rem", marginBottom:"0.75rem", fontSize:"0.8rem" }}>{resyncMsg}</div>}
@@ -472,7 +493,7 @@ export default function AdminPage() {
                               <span title={online ? "En ligne" : "Hors ligne"} style={{ position:"absolute", bottom:-1, right:-1, width:10, height:10, borderRadius:"50%", background: online ? "var(--success)" : "var(--text-dim)", border:"2px solid var(--card)" }} />
                             </div>
                             <div style={{ flex:1, minWidth:130 }}>
-                              <div style={{ fontWeight:600, fontSize:"0.86rem" }}>{l.discord_name || "(sans nom)"}{banned && " 🚫"}</div>
+                              <div style={{ fontWeight:600, fontSize:"0.86rem" }}>{l.nom_perso || l.discord_name || "(sans nom)"}{banned && " 🚫"}{l.nom_perso && <span style={{ fontWeight:400, fontSize:"0.66rem", color:"var(--text-dim)" }}> ({l.discord_name})</span>}</div>
                               <div style={{ fontSize:"0.66rem", color:"var(--text-dim)", fontFamily:"var(--font-mono)" }}>{l.discord_id}</div>
                               {l.discord_role && <div style={{ fontSize:"0.66rem", color: ov && ov.role !== l.discord_role ? "var(--gold)" : "var(--text-dim)" }}>Discord : {l.discord_role}</div>}
                             </div>
@@ -488,6 +509,8 @@ export default function AdminPage() {
                             ) : (
                               <button className="btn btn-ghost btn-sm" title="Forcer un rôle" onClick={() => { setOverrideForm({ nom: l.discord_name || "", discord_id: l.discord_id, role: l.site_role || "" }); setCreateError(""); setShowCreateOverride(true); }}>🎭</button>
                             )}
+                            {isPatron && <button className="btn btn-ghost btn-sm" title="Renommer (Patron)" onClick={() => setRenameForm({ discord_id: l.discord_id, nom: l.nom_perso || l.discord_name || "", actuel: l.nom_perso || l.discord_name || "", employe: true })}>✏️</button>}
+                            {isPatron && l.discord_id !== user?.discord_id && <button className="btn btn-ghost btn-sm" title="Virer (Patron)" style={{ color:"var(--danger)" }} onClick={() => kickMember(l.discord_id, l.nom_perso || l.discord_name || l.discord_id)}>🚪</button>}
                             {banned ? (
                               <button className="btn btn-outline btn-sm" disabled={banningId === l.discord_id} onClick={() => unbanUser(l.discord_id, l.discord_name)}>{banningId === l.discord_id ? "…" : "✅"}</button>
                             ) : (
@@ -690,6 +713,12 @@ export default function AdminPage() {
         <DiagnosticTab />
       )}
 
+      {renameForm && (
+        <Modal title="Renommer le membre" onClose={() => setRenameForm(null)} footer={<><button className="btn btn-outline" onClick={() => setRenameForm(null)}>Annuler</button><button className="btn btn-gold" disabled={!renameForm.nom.trim()} onClick={confirmRename}>Renommer</button></>}>
+          <div className="form-group"><label>Nouveau nom</label><input autoFocus value={renameForm.nom} onChange={e => setRenameForm({ ...renameForm, nom: e.target.value })} /></div>
+          <label style={{ display:"flex", alignItems:"center", gap:"0.5rem", cursor:"pointer", fontSize:"0.82rem" }}><input type="checkbox" checked={renameForm.employe} onChange={e => setRenameForm({ ...renameForm, employe: e.target.checked })} style={{ width:16, height:16 }} />Renommer aussi l'employé lié (et tout son historique : actions, arrestations, compta, paie)</label>
+        </Modal>
+      )}
       {/* Modals */}
       {showCreateOverride && (
         <Modal title={<>Forcer un rôle</>} onClose={()=>setShowCreateOverride(false)} footer={<>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/serverAuth";
 import { postAlert, GREEN, ORANGE, BLUE } from "@/lib/alerts";
 import { fmtDelai } from "@/lib/actionTypes";
+import { syncEmployes } from "@/lib/syncEmployes";
 
 // À appeler toutes les 5 min (cron-job.org) avec l'en-tête  Authorization: Bearer <CRON_SECRET>.
 // 1) délais terminés (Go fast…)  2) stock bas  3) rappel d'opération (RDV) dans l'heure.
@@ -88,6 +89,9 @@ export async function GET(req: Request) {
     }
     out.sanctions = (aud || []).length;
   } catch (e: any) { out.sanctions = `erreur: ${e?.message || e}`; }
+
+  // 5) Membres du site -> employés
+  try { out.employes = await syncEmployes(db); } catch (e: any) { out.employes = `erreur: ${e?.message || e}`; }
 
   return NextResponse.json({ ok: true, ...out });
 }

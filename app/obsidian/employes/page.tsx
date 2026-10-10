@@ -34,8 +34,15 @@ export default function EmployesObsidianPage() {
   const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
   const [showInactifs, setShowInactifs] = useState(false);
 
+  const isPatron = (user as any)?.role === "Associé / Patron";
   useEffect(() => { load(); }, []);
   useRealtimeTable("obsidian_employes", load);
+  // Importe automatiquement les membres du site (rôles internes) qui ne sont pas encore employés.
+  useEffect(() => {
+    if (!user || !hasPermission(user, "obsidian_employes")) return;
+    fetch("/api/obsidian/employes/sync", { method: "POST" }).then(r => r.json()).then(d => { if (d?.crees || d?.lies) load(); }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   async function load() {
     if (!supabase) return;
@@ -138,7 +145,7 @@ export default function EmployesObsidianPage() {
                 {e.notes && <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginBottom: "0.75rem", fontStyle: "italic" }}>{e.notes}</div>}
                 <div style={{ display: "flex", gap: "0.4rem" }}>
                   <button className="btn btn-outline btn-sm" style={{ flex: 1 }} onClick={() => openEdit(e)}>✏️ Modifier</button>
-                  <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => remove(e.id)}>🗑️</button>
+                  {isPatron && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} title="Supprimer (Patron)" onClick={() => window.confirm(`Supprimer ${e.nom} ?`) && remove(e.id)}>🗑️</button>}
                 </div>
               </div>
             );
@@ -150,7 +157,7 @@ export default function EmployesObsidianPage() {
         <Modal title={<>{editId ? "Modifier l'employé" : "Nouvel employé"}</>} onClose={() => setShowForm(false)} footer={<>
               <button className="btn btn-outline" onClick={() => setShowForm(false)}>Annuler</button>
               <button className="btn btn-gold" onClick={save} disabled={saving || !form.nom.trim()}>{saving ? "…" : editId ? "Mettre à jour" : "Ajouter"}</button></>}>
-              <div className="form-group"><label>Nom *</label><input autoFocus value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} /></div>
+              <div className="form-group"><label>Nom *</label><input autoFocus value={form.nom} disabled={!!editId && !isPatron} title={!!editId && !isPatron ? "Seul le Patron peut renommer" : ""} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} />{!!editId && !isPatron && <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: 4 }}>Seul le Patron peut renommer un employé.</div>}</div>
               <div className="form-group">
                 <label>Rôle</label>
                 <input list="roles-list" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} placeholder="Ex: Agent logistique" />
