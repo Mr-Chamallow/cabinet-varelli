@@ -38,6 +38,7 @@ const NAV_SECTIONS = [
     { href: "/obsidian/audits",       label: "Audits",           icon: "🔎", permission: "gm_audits" },
     { href: "/obsidian/evenements",   label: "Convois & Enchères", icon: "🚚", permission: "gm_evenements" },
     { href: "/obsidian/reputation",   label: "Réputation",       icon: "⭐", permission: "gm_reputation" },
+    { href: "/obsidian/consortium",   label: "Stats Consortium", icon: "📈", permission: "gm_stats" },
   ]},
   { label: "Administration", items: [
     { href: "/settings",    label: "Personnalisation", icon: "🎨", permission: "admin" },

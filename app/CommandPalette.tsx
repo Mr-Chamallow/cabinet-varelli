@@ -42,6 +42,7 @@ const ALL_PAGES: PageEntry[] = [
   { title: "Audits de conformité", subtitle: "Notes et sanctions", href: "/obsidian/audits", icon: "🔎", permission: "gm_audits" },
   { title: "Convois / Enchères / Alertes", subtitle: "Événements GM", href: "/obsidian/evenements", icon: "🚚", permission: "gm_evenements" },
   { title: "Réputation des groupes", subtitle: "Scores et historique", href: "/obsidian/reputation", icon: "⭐", permission: "gm_reputation" },
+  { title: "Stats du Consortium", subtitle: "Chiffres clés GM", href: "/obsidian/consortium", icon: "📈", permission: "gm_stats" },
   { title: "Statistiques", subtitle: "Chiffres clés", href: "/obsidian/stats", icon: "📊", permission: "obsidian_stats" },
   { title: "Fiches", subtitle: "Personnes / organisations", href: "/obsidian/fiches", icon: "🗂️", permission: "obsidian_fiches" },
   { title: "Cahier de vente", subtitle: "Transactions", href: "/cahier-vente", icon: "🧮", permission: "cahier_vente" },

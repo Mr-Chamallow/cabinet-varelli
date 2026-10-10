@@ -16,7 +16,7 @@ export const ALL_PERMISSIONS = [
   "obsidian_garage", "obsidian_comptabilite", "obsidian_rdv", "obsidian_contrats", "obsidian_stats", "cahier_vente", "obsidian_paie",
   "obsidian_employes", "h47", "admin", "supervision", "delete_all", "edit_all",
   "juridique", "calculatrice", "carte-enqueteur", "utile_samp", "base_donnees", "obsidian_actions", "obsidian_arrestations",
-  "obsidian_fiches", "gm_tribunal", "gm_pactes", "gm_audits", "gm_evenements", "gm_reputation", "organigramme",
+  "obsidian_fiches", "gm_tribunal", "gm_pactes", "gm_audits", "gm_evenements", "gm_reputation", "organigramme", "gm_stats",
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
@@ -33,7 +33,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   utile_samp: "Utile SAMP", base_donnees: "Base de données",
   obsidian_actions: "Actions illégales", obsidian_arrestations: "Arrestations",
   obsidian_fiches: "Fiches", gm_tribunal: "Tribunal de l'Ombre", gm_pactes: "Pactes d'Obsidienne", gm_audits: "Audits de conformité",
-  gm_evenements: "Convois / Enchères / Alertes", gm_reputation: "Réputation des groupes", organigramme: "Organigramme",
+  gm_evenements: "Convois / Enchères / Alertes", gm_reputation: "Réputation des groupes", organigramme: "Organigramme", gm_stats: "Stats du Consortium",
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {

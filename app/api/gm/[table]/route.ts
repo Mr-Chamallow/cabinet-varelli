@@ -9,7 +9,7 @@ const TABLES: Record<string, { perm: string[]; cols: string[] }> = {
   tribunal_dossiers: { perm: ["gm_tribunal"], cols: ["titre", "accuse", "organisation", "statut", "juge", "procureur", "avocat", "date_audience", "acte_accusation", "defense", "preuves", "verdict", "sentence"] },
   gm_pactes: { perm: ["gm_pactes"], cols: ["organisation", "statut", "date_signature", "date_fin", "signataire", "clauses", "violations"] },
   gm_audits: { perm: ["gm_audits"], cols: ["organisation", "note", "appreciation", "sanction", "sanction_fin", "notes"] },
-  gm_evenements: { perm: ["gm_evenements"], cols: ["type", "titre", "statut", "partenaire", "date_event", "montant", "lots", "notes"] },
+  gm_evenements: { perm: ["gm_evenements"], cols: ["type", "titre", "statut", "partenaire", "date_event", "montant", "lots", "notes", "checklist"] },
   gm_reputation_log: { perm: ["gm_reputation"], cols: ["organisation", "delta", "motif"] },
   gm_organisations: { perm: ["gm_reputation", "gm_pactes", "gm_audits", "gm_tribunal", "gm_evenements"], cols: ["nom", "categorie", "notes"] },
 };

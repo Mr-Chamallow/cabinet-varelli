@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission, firstAccessiblePath } from "@/lib/auth";
 import { CountUp } from "@/components/ui/CountUp";
+import { PoleHome } from "@/components/dashboard/PoleHome";
 import { WeekOverview } from "@/components/dashboard/WeekOverview";
 
 const fmt = (n:number) => n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
@@ -82,6 +83,8 @@ export default function ObsidianDashboard() {
         </div>
         <div className="gold-line" style={{ marginTop: "0.8rem" }} />
       </div>
+
+      <PoleHome user={user} />
 
       {loading ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>

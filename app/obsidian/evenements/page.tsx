@@ -10,6 +10,13 @@ import { gmWrite } from "@/lib/gmApi";
 import { pdfEvenement } from "@/lib/pdfDocs";
 import { useGmAccess, useGroupes, GroupeSelect, Chip, Badge, fmtDT, toLocalInput, fromLocalInput, usd } from "@/components/gm/bits";
 
+type Check = { t: string; done: boolean };
+const MODELES: Record<string, string[]> = {
+  convoi: ["Itinéraire validé", "Escorte briefée", "Véhicules prêts", "Contact partenaire prévenu", "Départ confirmé", "Livraison / débrief"],
+  enchere: ["Lieu sécurisé", "Lots catalogués", "Invités confirmés", "Commissaire désigné", "Paiements encaissés", "Débrief"],
+  capture: ["Cible localisée", "Équipe Sécurité assignée", "Matériel prêt", "Capture effectuée", "Remise au Tribunal"],
+  alerte: ["Source vérifiée", "Groupe en tête informé", "Traque lancée", "Prime versée", "Clôture"],
+};
 type Lot = { nom: string; mise_depart: number; mise_finale: number; gagnant: string };
 const TYPES: Record<string, { label: string; icon: string; montantLabel: string; partenaireLabel: string; statuts: { k: string; label: string; color: string }[] }> = {
   convoi: { label: "Convois", icon: "🚚", montantLabel: "Valeur de la marchandise ($)", partenaireLabel: "Groupe chargé de l'escorte", statuts: [
@@ -21,7 +28,7 @@ const TYPES: Record<string, { label: string; icon: string; montantLabel: string;
   alerte: { label: "Lanceur d'alerte", icon: "🚨", montantLabel: "Prime ($)", partenaireLabel: "Groupe en tête de la traque", statuts: [
     { k: "ouverte", label: "Ouverte", color: "var(--danger)" }, { k: "traquee", label: "Traquée", color: "var(--warning)" }, { k: "resolue", label: "Résolue", color: "var(--success)" }, { k: "annulee", label: "Annulée", color: "var(--text-dim)" }] },
 };
-const empty = (type: string) => ({ type, titre: "", statut: TYPES[type].statuts[0].k, partenaire: "", date_event: "", montant: 0, lots: [] as Lot[], notes: "" });
+const empty = (type: string) => ({ type, titre: "", statut: TYPES[type].statuts[0].k, partenaire: "", date_event: "", montant: 0, lots: [] as Lot[], notes: "", checklist: [] as Check[] });
 
 export default function EvenementsPage() {
   const { canWrite } = useGmAccess("gm_evenements");
@@ -44,7 +51,7 @@ export default function EvenementsPage() {
     setList((data || []).map((e: any) => ({ ...e, montant: Number(e.montant) || 0 }))); setLoading(false);
   }
   function openNew() { setEditId(null); setForm(empty(tab)); setShow(true); }
-  function openEdit(e: any) { setEditId(e.id); setForm({ ...empty(e.type), ...e, partenaire: e.partenaire || "", notes: e.notes || "", date_event: toLocalInput(e.date_event), lots: e.lots || [] }); setShow(true); }
+  function openEdit(e: any) { setEditId(e.id); setForm({ ...empty(e.type), ...e, partenaire: e.partenaire || "", notes: e.notes || "", date_event: toLocalInput(e.date_event), lots: e.lots || [], checklist: e.checklist || [] }); setShow(true); }
   async function save() {
     if (!form.titre.trim()) return;
     setSaving(true);
@@ -63,6 +70,13 @@ export default function EvenementsPage() {
     if (!window.confirm(`Supprimer « ${e.titre} » ?`)) return;
     const r = await gmWrite("gm_evenements", "DELETE", { id: e.id });
     if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else { showToast("Supprimé"); load(); }
+  }
+  async function toggleCheck(e: any, i: number) {
+    if (!canWrite) return;
+    const checklist = (e.checklist || []).map((c: Check, j: number) => (j === i ? { ...c, done: !c.done } : c));
+    setList(l => l.map(x => (x.id === e.id ? { ...x, checklist } : x)));
+    const r = await gmWrite("gm_evenements", "PATCH", { id: e.id, checklist });
+    if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); load(); }
   }
   const setLot = (i: number, p: Partial<Lot>) => setForm((f: any) => ({ ...f, lots: f.lots.map((l: Lot, j: number) => (j === i ? { ...l, ...p } : l)) }));
   const visible = list.filter(e => e.type === tab);
@@ -98,6 +112,20 @@ export default function EvenementsPage() {
                     {e.lots.map((l: Lot, i: number) => <div key={i} style={{ fontSize: "0.76rem", display: "flex", gap: "0.6rem" }}><span style={{ flex: 1 }}>🔹 {l.nom}</span><span style={{ color: "var(--text-dim)" }}>départ {usd(l.mise_depart)}</span><b>{l.mise_finale ? usd(l.mise_finale) : "—"}</b><span style={{ color: "var(--gold)" }}>{l.gagnant || ""}</span></div>)}
                   </div>
                 )}
+                {(e.checklist || []).length > 0 && (() => {
+                  const cl: Check[] = e.checklist; const n = cl.filter(c => c.done).length; const pct = Math.round((n / cl.length) * 100);
+                  return (
+                    <div style={{ marginTop: "0.6rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.68rem", color: "var(--text-dim)", marginBottom: "0.3rem" }}>
+                        <span>📋 Plan · {n}/{cl.length}</span>
+                        <div style={{ flex: 1, height: 5, borderRadius: 3, background: "var(--surface)", overflow: "hidden" }}><div style={{ width: `${pct}%`, height: "100%", background: pct === 100 ? "var(--success)" : "var(--gold)", transition: "width .4s" }} /></div>
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+                        {cl.map((c, i) => <button key={i} type="button" onClick={() => toggleCheck(e, i)} style={{ cursor: canWrite ? "pointer" : "default", fontSize: "0.72rem", padding: "0.15rem 0.6rem", borderRadius: 999, fontFamily: "'Inter',sans-serif", border: `1px solid ${c.done ? "rgba(34,197,94,.4)" : "var(--border)"}`, background: c.done ? "rgba(34,197,94,.12)" : "transparent", color: c.done ? "var(--success)" : "var(--text-muted)", textDecoration: c.done ? "line-through" : "none" }}>{c.done ? "✓ " : "○ "}{c.t}</button>)}
+                      </div>
+                    </div>
+                  );
+                })()}
                 {e.notes && <div style={{ marginTop: "0.5rem", fontSize: "0.78rem", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>{e.notes}</div>}
               </div>
             );
@@ -130,6 +158,20 @@ export default function EvenementsPage() {
                 <button type="button" className="btn btn-outline btn-sm" onClick={() => setForm((f: any) => ({ ...f, lots: [...f.lots, { nom: "", mise_depart: 0, mise_finale: 0, gagnant: "" }] }))}>+ Lot</button>
               </div>
             )}
+            <div>
+              <label>📋 Plan de l'événement (checklist)</label>
+              {(form.checklist || []).map((c: Check, i: number) => (
+                <div key={i} style={{ display: "flex", gap: "0.35rem", marginBottom: "0.3rem" }}>
+                  <input type="checkbox" checked={c.done} onChange={() => setForm((f: any) => ({ ...f, checklist: f.checklist.map((x: Check, j: number) => (j === i ? { ...x, done: !x.done } : x)) }))} style={{ width: 16 }} />
+                  <input value={c.t} onChange={ev => setForm((f: any) => ({ ...f, checklist: f.checklist.map((x: Check, j: number) => (j === i ? { ...x, t: ev.target.value } : x)) }))} style={{ flex: 1 }} />
+                  <button type="button" className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => setForm((f: any) => ({ ...f, checklist: f.checklist.filter((_: any, j: number) => j !== i) }))}>✕</button>
+                </div>
+              ))}
+              <div style={{ display: "flex", gap: "0.35rem" }}>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => setForm((f: any) => ({ ...f, checklist: [...(f.checklist || []), { t: "", done: false }] }))}>+ Étape</button>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => setForm((f: any) => ({ ...f, checklist: [...(f.checklist || []), ...MODELES[f.type].map(t => ({ t, done: false }))] }))}>✨ Modèle {TYPES[form.type].label.toLowerCase()}</button>
+              </div>
+            </div>
             <div><label>Notes</label><textarea rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
             {form.type === "convoi" && <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>Convoi « Livré » = réputation du groupe +5 ; « Échec » = −5.</div>}
           </div>
