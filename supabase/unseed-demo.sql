@@ -1,3 +1,4 @@
+alter table obsidian_comptabilite disable trigger trg_compta_lock;
 -- Supprime toutes les données de démo (created_by = 'Démo')
 delete from obsidian_comptabilite where created_by = 'Démo';
 delete from obsidian_mouvements   where created_by = 'Démo';
@@ -17,3 +18,6 @@ delete from gm_pactes             where created_by = 'Démo';
 delete from gm_audits             where created_by = 'Démo';
 delete from tribunal_dossiers     where created_by = 'Démo';
 delete from gm_evenements         where created_by = 'Démo';
+alter table obsidian_comptabilite enable trigger trg_compta_lock;
+delete from obsidian_semaines;
+select obsidian_cloturer_semaines('unseed');

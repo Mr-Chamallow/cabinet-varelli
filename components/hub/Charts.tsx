@@ -1,5 +1,6 @@
 "use client";
 import { ReactNode } from "react";
+import { weekStartOf } from "@/lib/weekStart";
 
 export const fmt = (n: number) => (Number.isFinite(n) ? n : 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 export const fmtK = (n: number) => { const a = Math.abs(n); return (n < 0 ? "-" : "") + (a >= 1e6 ? (a / 1e6).toFixed(1) + " M$" : a >= 1e3 ? (a / 1e3).toFixed(1) + " k$" : Math.round(a) + " $"); };
@@ -159,7 +160,7 @@ export const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 export const mean = (a: number[]) => (a.length ? sum(a) / a.length : 0);
 export const median = (a: number[]) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 export const stdev = (a: number[]) => { if (a.length < 2) return 0; const m = mean(a); return Math.sqrt(mean(a.map(x => (x - m) ** 2))); };
-export function weekKey(d: string | Date) { const t = new Date(d); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return t.toISOString().slice(0, 10); }
-export function lastWeeks(n: number) { const out: string[] = []; const t = new Date(); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); for (let i = n - 1; i >= 0; i--) { const d = new Date(t); d.setDate(d.getDate() - i * 7); out.push(d.toISOString().slice(0, 10)); } return out; }
+export function weekKey(d: string | Date) { return weekStartOf(d); }
+export function lastWeeks(n: number) { const out: string[] = []; const t = new Date(weekStartOf() + "T12:00:00Z"); for (let i = n - 1; i >= 0; i--) { const d = new Date(t); d.setUTCDate(d.getUTCDate() - i * 7); out.push(d.toISOString().slice(0, 10)); } return out; }
 export const shortWeek = (w: string) => { const d = new Date(w); return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`; };
 export function linReg(y: number[]) { const n = y.length; if (n < 2) return { a: 0, b: y[0] || 0 }; const xs = y.map((_, i) => i); const mx = mean(xs), my = mean(y); const a = sum(xs.map((x, i) => (x - mx) * (y[i] - my))) / (sum(xs.map(x => (x - mx) ** 2)) || 1); return { a, b: my - a * mx }; }

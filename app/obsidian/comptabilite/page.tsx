@@ -8,13 +8,13 @@ import { exportXlsx } from "@/lib/exportXlsx";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { Kpi, Delta, Panel, Tabs, LineChart, BarChart, HBars, Donut, Heat, DataTable, fmt, fmtK, pct, sum, mean, median, stdev, weekKey, lastWeeks, shortWeek, linReg } from "@/components/hub/Charts";
 
-type Tab = "synthese" | "flux" | "categories" | "employes" | "sources" | "journal" | "expert";
+type Tab = "synthese" | "flux" | "categories" | "employes" | "sources" | "marges" | "semaines" | "journal" | "expert";
 const TABS: { k: Tab; label: string }[] = [
   { k: "synthese", label: "📊 Synthèse" }, { k: "flux", label: "📈 Flux & trésorerie" }, { k: "categories", label: "🗂️ Catégories" },
-  { k: "employes", label: "👥 Employés" }, { k: "sources", label: "🧬 Sources & argent" }, { k: "journal", label: "📜 Journal" }, { k: "expert", label: "🧠 Indicateurs experts" },
+  { k: "employes", label: "👥 Employés" }, { k: "sources", label: "🧬 Sources & argent" }, { k: "marges", label: "🏷️ Marges produits" }, { k: "semaines", label: "🔒 Semaines" }, { k: "journal", label: "📜 Journal" }, { k: "expert", label: "🧠 Indicateurs experts" },
 ];
 const PERIODS = [{ k: 1, label: "Semaine" }, { k: 4, label: "4 sem." }, { k: 12, label: "12 sem." }, { k: 0, label: "Tout" }];
-const SRC: Record<string, string> = { action: "🕶️ Action illégale", arrestation: "🚔 Arrestation (perte)", transaction: "🧮 Transaction", manuel: "✍️ Saisie historique" };
+const SRC: Record<string, string> = { action: "🕶️ Action illégale", arrestation: "🚔 Arrestation", transaction: "🧮 Transaction", stock: "📦 Achat de stock", paie: "💵 Paie & commissions", contrat: "📋 Contrat", "blanchiment-frais": "🧼 Frais de blanchiment", manuel: "✍️ Saisie historique" };
 const COL = { rec: "var(--success)", dep: "var(--danger)", gold: "var(--gold)", info: "var(--info)", warn: "var(--warning)" };
 const MONEY_COL: Record<string, string> = { sale: "var(--danger)", propre: "var(--success)", mixte: "var(--warning)" };
 
@@ -23,6 +23,11 @@ export default function ComptaHubPage() {
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_comptabilite"))) window.location.href = "/"; }, [user, userLoading]);
   const [entries, setEntries] = useState<any[]>([]);
   const [arrests, setArrests] = useState<any[]>([]);
+  const [raw, setRaw] = useState<any[]>([]);
+  const [mvts, setMvts] = useState<any[]>([]);
+  const [trans, setTrans] = useState<any[]>([]);
+  const [stocks, setStocks] = useState<any[]>([]);
+  const [semaines, setSemaines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("synthese");
   const [weeks, setWeeks] = useState(4);
@@ -30,15 +35,26 @@ export default function ComptaHubPage() {
   const [limit, setLimit] = useState(100);
 
   useEffect(() => { load(); }, []);
-  useRealtimeTable(["obsidian_comptabilite", "arrestations"], load);
+  useRealtimeTable(["obsidian_comptabilite", "arrestations", "obsidian_semaines"], load);
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const [{ data }, { data: ar }] = await Promise.all([
+    // Clôture automatique des semaines terminées (en plus du cron de la base) — silencieux.
+    await fetch("/api/obsidian/cloture", { method: "POST" }).catch(() => {});
+    const [{ data }, { data: ar }, { data: mv }, { data: tr }, { data: st }, { data: sw }] = await Promise.all([
       supabase.from("obsidian_comptabilite").select("*").order("created_at", { ascending: false }).limit(10000),
       supabase.from("arrestations").select("id,membre,amende,argent_perdu,created_at").limit(5000),
+      supabase.from("obsidian_mouvements").select("stock_nom,type,quantite,total,motif,created_at").limit(10000),
+      supabase.from("cahier_transactions").select("type,montant,quantite,produit_nom,categorie,created_at").limit(10000),
+      supabase.from("obsidian_stocks").select("nom,categorie,quantite,prix_unitaire").limit(2000),
+      supabase.from("obsidian_semaines").select("*").order("semaine", { ascending: false }).limit(200),
     ]);
-    setEntries((data || []).map((e: any) => ({ ...e, montant: Number(e.montant) || 0, source: e.source || "manuel" })));
-    setArrests(ar || []); setLoading(false);
+    const rows = (data || []).map((e: any) => ({ ...e, montant: Number(e.montant) || 0, source: e.source || "manuel" }));
+    setRaw(rows);
+    // Blanchiment = TRANSFERT sale → propre : seule la perte (frais) est une vraie dépense.
+    const by: Record<string, any[]> = {}; rows.filter(e => e.source === "blanchiment").forEach(e => (by[e.source_id || e.id] ??= []).push(e));
+    const frais = Object.values(by).map(g => { const out = g.find(x => x.type !== "recette"), inn = g.find(x => x.type === "recette"); const f = (out?.montant || 0) - (inn?.montant || 0); return { ...(out || g[0]), id: "bl-" + (out || g[0]).id, type: "dépense", categorie: "Frais de blanchiment", montant: Math.max(0, f), type_argent: "sale", source: "blanchiment-frais" }; });
+    setEntries([...rows.filter(e => e.source !== "blanchiment"), ...frais].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")));
+    setArrests(ar || []); setMvts(mv || []); setTrans(tr || []); setStocks(st || []); setSemaines(sw || []); setLoading(false);
   }
 
   const t0 = useMemo(() => { if (!weeks) return 0; const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) - (weeks - 1) * 7); return d.getTime(); }, [weeks]);
@@ -92,6 +108,21 @@ export default function ComptaHubPage() {
     });
   }
 
+  const cash = useMemo(() => { const m: Record<string, number> = { sale: 0, propre: 0, mixte: 0 }; raw.forEach(e => { m[e.type_argent || "sale"] = (m[e.type_argent || "sale"] || 0) + (e.type === "recette" ? 1 : -1) * e.montant; }); return m; }, [raw]);
+  const transferts = useMemo(() => raw.filter(e => e.source === "blanchiment" && e.type !== "recette"), [raw]);
+  const marges = useMemo(() => {
+    const m: Record<string, { qIn: number; cost: number; qOut: number; rev: number }> = {};
+    const g = (n: string) => (m[n] ??= { qIn: 0, cost: 0, qOut: 0, rev: 0 });
+    mvts.filter(x => /^(entrée|entree)$/.test(x.type) && !/^annulation/i.test(x.motif || "")).forEach(x => { const o = g(x.stock_nom); o.qIn += Number(x.quantite) || 0; o.cost += Number(x.total) || 0; });
+    trans.filter(x => x.type === "entrée" && x.produit_nom).forEach(x => { const o = g(x.produit_nom); o.qOut += Number(x.quantite) || 0; o.rev += Number(x.montant) || 0; });
+    return Object.entries(m).filter(([, v]) => v.qIn || v.qOut).map(([nom, v]) => { const pc = v.qIn ? v.cost / v.qIn : 0, pv = v.qOut ? v.rev / v.qOut : 0; const stock = stocks.find(s => s.nom === nom); return { nom, ...v, pc, pv, mu: v.qOut && v.qIn ? pv - pc : 0, mt: v.rev - v.qOut * pc, pct: v.rev ? ((v.rev - v.qOut * pc) / v.rev) * 100 : 0, stock: stock ? Number(stock.quantite) : 0 }; }).sort((a, b) => b.mt - a.mt);
+  }, [mvts, trans, stocks]);
+  const weeksTable = useMemo(() => {
+    const all = [...new Set([...raw.map(e => e.semaine), ...semaines.map(s => s.semaine)])].filter(Boolean).sort().reverse();
+    return all.map(w => { const l = raw.filter(e => e.semaine === w); const net = sum(l.map(e => (e.type === "recette" ? 1 : -1) * e.montant)); const cl = semaines.find(s => s.semaine === w); return { w, cl, net, paies: sum(l.filter(e => e.source === "paie").map(e => e.montant)), nb: l.length }; });
+  }, [raw, semaines]);
+  const isCEO = /^(CEO|Associé)/.test((user as any)?.role || "");
+  async function rouvrir(w: string) { if (!window.confirm(`Rouvrir la semaine du ${w} ? Elle redevient modifiable.`)) return; const r = await fetch("/api/obsidian/cloture", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ semaine: w }) }); if (!r.ok) alert("❌ " + (await r.json()).error); else load(); }
   const allCats = useMemo(() => [...new Set(entries.map(e => e.categorie))].filter(Boolean).sort(), [entries]);
   const allMembres = useMemo(() => [...new Set(entries.map(e => e.membre))].filter(Boolean).sort(), [entries]);
   const labels = byWeek.map(x => shortWeek(x.w));
@@ -143,10 +174,24 @@ export default function ComptaHubPage() {
         {tab === "sources" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
           <Panel title="Origine des écritures"><Donut parts={sources.map((s, i) => ({ nom: SRC[s.k] || s.k, value: s.r + s.d, color: ["var(--gold)", "var(--danger)", "var(--info)", "var(--text-dim)"][i % 4] }))} center={<>{cur.length}<br />écritures</>} />
             <div style={{ marginTop: "0.9rem" }}><DataTable head={["Source", "Recettes", "Dépenses", "Net"]} rows={sources.map(s => [SRC[s.k] || s.k, fmt(s.r), fmt(s.d), <b style={{ color: s.net >= 0 ? COL.rec : COL.dep }}>{fmt(s.net)}</b>])} /></div></Panel>
-          <Panel title="Argent sale / propre / mixte"><Donut parts={argent.map(a => ({ nom: a.k, value: a.r + a.d, color: MONEY_COL[a.k] || "var(--text-dim)" }))} />
+          <Panel title="Trésorerie par type d'argent (réelle)">
+            <div className="stat-grid" style={{ marginBottom: 10 }}><Kpi label="Argent sale en caisse" value={fmt(cash.sale)} color={COL.dep} /><Kpi label="Argent propre en caisse" value={fmt(cash.propre)} color={COL.rec} /><Kpi label="Mixte" value={fmt(cash.mixte)} /></div>
+            <p style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>Blanchi au total : <b>{fmt(sum(transferts.map(t => t.montant)))}</b> · frais : <b>{fmt(sum(entries.filter(e => e.source === "blanchiment-frais").map(e => e.montant)))}</b> ({transferts.length} opération{transferts.length > 1 ? "s" : ""}). Le blanchiment est un transfert : seul le coût est une dépense.</p>
+          </Panel>
+          <Panel title="Argent sale / propre / mixte (flux)"><Donut parts={argent.map(a => ({ nom: a.k, value: a.r + a.d, color: MONEY_COL[a.k] || "var(--text-dim)" }))} />
             <div style={{ marginTop: "0.9rem" }}><DataTable head={["Type", "Recettes", "Dépenses", "Net"]} rows={argent.map(a => [a.k, fmt(a.r), fmt(a.d), fmt(a.net)])} /></div>
             <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Ratio argent sale en recettes : <b>{R ? pct((sum(cur.filter(e => e.type === "recette" && e.type_argent === "sale").map(e => e.montant)) / R) * 100) : "—"}</b> — à blanchir.</p></Panel>
         </div>}
+
+        {tab === "marges" && <Panel title="Marge par produit" right={<small style={{ color: "var(--text-dim)" }}>coût = achats de stock · vente = Transactions</small>}>
+          <DataTable empty="Aucun achat ni vente de produit." head={["Produit", "Acheté", "Coût moyen", "Vendu", "Prix vente moy.", "Marge unit.", "Marge totale", "Marge %", "En stock"]} rows={marges.map(m => [m.nom, m.qIn, m.qIn ? fmt(m.pc) : "—", m.qOut, m.qOut ? fmt(m.pv) : "—", m.qOut && m.qIn ? <b style={{ color: m.mu >= 0 ? COL.rec : COL.dep }}>{fmt(m.mu)}</b> : "—", <b style={{ color: m.mt >= 0 ? COL.rec : COL.dep }}>{fmt(m.mt)}</b>, m.rev ? pct(m.pct) : "—", m.stock])} />
+          <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Marge totale = ventes − (quantité vendue × coût moyen d'achat). Saisis le « prix d'achat » lors d'une entrée de stock pour un coût fiable.</p>
+        </Panel>}
+
+        {tab === "semaines" && <Panel title="Clôtures hebdomadaires" right={<small style={{ color: "var(--text-dim)" }}>Clôture auto : chaque dimanche 23:59:59 (heure de Paris)</small>}>
+          <DataTable head={["Semaine", "Statut", "Écritures", "Net clôturé", "Net actuel", "Régularisation", "Paies versées", ""]} rows={weeksTable.map(x => [`Sem. du ${x.w.split("-").reverse().slice(0, 2).join("/")}`, x.cl ? `🔒 clôturée ${new Date(x.cl.cloturee_at).toLocaleDateString("fr-FR")}` : "🟢 ouverte", x.nb, x.cl ? fmt(Number(x.cl.net)) : "—", fmt(x.net), x.cl ? <b style={{ color: Math.round(x.net - Number(x.cl.net)) === 0 ? "var(--text-dim)" : COL.warn }}>{fmt(x.net - Number(x.cl.net))}</b> : "—", fmt(x.paies), x.cl && isCEO ? <button className="btn btn-ghost btn-sm" onClick={() => rouvrir(x.w)}>Rouvrir</button> : ""])} />
+          <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Une semaine clôturée est figée : plus aucune écriture. Seules les paies versées après coup s'y ajoutent (régularisation), dans la semaine travaillée.</p>
+        </Panel>}
 
         {tab === "journal" && <Panel title={`Journal des écritures (${journal.length})`}>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>

@@ -725,14 +725,8 @@ async function saveOperation() {
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {prochaines.filter(a => a.date > todayStr).map((a) => {
                   const daysUntil = Math.round((new Date(a.date + "T12:00:00").getTime() - new Date(todayStr + "T12:00:00").getTime()) / 86400000);
-                  const isThisWeek = daysUntil <= 7;
                   return (
                     <div key={a.id} style={{ position: "relative" }}>
-                      {isThisWeek && (
-                        <div style={{ position: "absolute", right: 6, top: 6, fontSize: "0.58rem", padding: "0.08rem 0.35rem", borderRadius: 999, background: "rgba(249,115,22,0.15)", color: "#f97316", border: "1px solid rgba(249,115,22,0.3)", fontWeight: 700, zIndex: 1 }}>
-                          J-{daysUntil}
-                        </div>
-                      )}
                       <div onClick={() => { setSelectedDate(a.date); setViewYear(Number(a.date.split("-")[0])); setViewMonth(Number(a.date.split("-")[1]) - 1); setViewMode("mois"); }} style={{ cursor: "pointer" }}>
                         <OperationCard a={a} compact />
                       </div>

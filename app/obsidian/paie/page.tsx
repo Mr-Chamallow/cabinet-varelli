@@ -100,7 +100,8 @@ export default function PaieObsidianPage() {
     compta.forEach(e => {
       // Lignes créées automatiquement : une action illégale compte pour l'employé qui l'a
       // faite (pas celui qui a saisi) ; l'argent saisi en arrestation n'impacte pas la paie.
-      if (e.source === "arrestation") return;
+      // Écritures qui ne sont pas du revenu/dépense « personnel » : arrestation, paie (sinon boucle), blanchiment (transfert), stock/contrat (hors paie), transaction (déjà lue via le cahier).
+      if (["arrestation", "paie", "blanchiment", "stock", "contrat", "transaction"].includes(e.source)) return;
       if (e.source === "action") {
         if (!inWeek(e.created_at, weekStart)) return;
         if (e.type === "recette") bump(e.membre || e.created_by, e.montant || 0, 0);

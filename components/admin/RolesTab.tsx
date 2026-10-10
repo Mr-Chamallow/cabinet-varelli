@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ALL_PERMISSIONS, PERMISSION_LABELS, loadRolesFromSupabase } from "@/lib/auth";
+import { PERMISSION_GUIDE } from "@/lib/permissionsInfo";
 import { setPreviewRole } from "@/lib/previewRole";
 import { apiRequest } from "@/lib/apiRequest";
 import { Modal } from "@/components/ui/Modal";
@@ -42,6 +43,9 @@ function cyclePermLvl(perms: string[], perm: string): string[] {
   if (current === "read") return [...stripped, perm];
   return stripped; // write → none
 }
+
+const ALL_INFO = PERMISSION_GUIDE.flatMap(g => g.perms);
+function permDesc(p: string, lvl: PermLvl) { const i = ALL_INFO.find(x => x.key === p); return i ? (lvl === "read" ? i.read : i.write) : ""; }
 
 export function RolesTab() {
   const router = useRouter();
@@ -135,6 +139,30 @@ export function RolesTab() {
         Ces rôles et permissions contrôlent réellement l'accès aux pages (calculé à chaque connexion Discord). Le nom du rôle doit correspondre exactement au rôle attribué (via Discord ou un override dans l'onglet Membres) pour s'appliquer.
       </p>
 
+
+      <details className="card" style={{ marginBottom: "1rem" }}>
+        <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: "0.85rem" }}>📖 Guide des permissions (ce que donne chaque accès)</summary>
+        <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", margin: "0.6rem 0" }}>
+          ○ Aucun = page cachée · 👁 Lecture seule = voir sans rien modifier (boutons d'action masqués, API refusée) · ✓ Écriture = tout faire sur la page.
+        </div>
+        {PERMISSION_GUIDE.map(g => (
+          <div key={g.titre} style={{ marginBottom: "0.9rem" }}>
+            <div className="section-title" style={{ margin: "0.4rem 0" }}>{g.icon} {g.titre}</div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", fontSize: "0.72rem", borderCollapse: "collapse" }}>
+                <thead><tr style={{ textAlign: "left", color: "var(--text-dim)" }}><th style={{ padding: "0.25rem 0.5rem" }}>Permission</th><th style={{ padding: "0.25rem 0.5rem" }}>👁 Lecture</th><th style={{ padding: "0.25rem 0.5rem" }}>✓ Écriture</th></tr></thead>
+                <tbody>{g.perms.map(x => (
+                  <tr key={x.key} style={{ borderTop: "1px solid var(--border)", verticalAlign: "top" }}>
+                    <td style={{ padding: "0.35rem 0.5rem", fontWeight: 600, whiteSpace: "nowrap" }}>{PERMISSION_LABELS[x.key] || x.key}</td>
+                    <td style={{ padding: "0.35rem 0.5rem" }}>{x.read}</td>
+                    <td style={{ padding: "0.35rem 0.5rem" }}>{x.write}</td>
+                  </tr>))}</tbody>
+              </table>
+            </div>
+          </div>
+        ))}
+      </details>
+
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {roles.length === 0 && (
           <div className="empty-state"><div className="empty-icon">🎭</div><div className="empty-title">Aucun rôle trouvé</div></div>
@@ -204,7 +232,7 @@ export function RolesTab() {
                       key={p}
                       disabled={!isEditing}
                       onClick={() => isEditing && setEditRolePerms(perms => cyclePermLvl(perms, p))}
-                      title={lvl === "write" ? "Écriture" : lvl === "read" ? "Lecture seule" : "Aucun accès"}
+                      title={(lvl === "write" ? "Écriture : " : lvl === "read" ? "Lecture seule : " : "Aucun accès. ") + permDesc(p, lvl)}
                       style={{
                         display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.3rem 0.55rem", borderRadius: 6,
                         background: lvl !== "none" ? color + "15" : "transparent",

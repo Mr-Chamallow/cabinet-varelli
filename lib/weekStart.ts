@@ -1,7 +1,8 @@
-// Même logique que la page Comptabilité (début de semaine), utilisable côté serveur.
+// Début de semaine (LUNDI) en heure de Paris, au format YYYY-MM-DD. Utilisable côté serveur et navigateur.
+// (L'ancienne version rangeait le dimanche dans la semaine suivante.)
 export function weekStartOf(date: Date | string = new Date()): string {
-  const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay() + 1);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().split("T")[0];
+  const ymd = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(date));
+  const d = new Date(ymd + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
 }

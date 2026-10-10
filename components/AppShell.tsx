@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { PreviewBanner } from "@/components/PreviewBanner";
-import { QuickEntry } from "@/components/QuickEntry";
 import { PdfPreviewHost } from "@/components/PdfPreviewHost";
 import { MotionFX } from "@/components/MotionFX";
 import { AmbientBg } from "@/components/AmbientBg";
@@ -51,7 +50,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <BottomBar onMenu={() => setOpen(o => !o)} />
-      <QuickEntry />
       <PdfPreviewHost />
       <MotionFX />
     </>

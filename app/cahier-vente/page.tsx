@@ -9,6 +9,8 @@ import { Toast } from "@/components/ui/Toast";
 import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
 import { hasPermission } from "@/lib/auth";
+import { BlanchimentPanel } from "@/components/BlanchimentPanel";
+import { weekStartOf } from "@/lib/weekStart";
 
 interface Transaction {
   id: string;
@@ -46,12 +48,12 @@ interface FormState {
   type_argent: string;
 }
 
-type TabType = "apercu" | "historique" | "saisie" | "produits";
+type TabType = "apercu" | "historique" | "saisie" | "produits" | "blanchiment";
 
 const CATEGORIES = ["drogue", "arme", "munition"];
 const TYPES_ARGENT = ["propre", "sale", "mixte"];
 
-const weekStartISO = () => { const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1); d.setHours(0, 0, 0, 0); return d.toISOString().split("T")[0]; };
+const weekStartISO = () => weekStartOf();
 const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const fmtDate = (s: string) => new Date(s).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
@@ -166,7 +168,7 @@ export default function CahierVentePage() {
       setProduits(ps => ps.map(x => x.id === prod.id ? { ...x, quantite: newQ } : x));
     }
     if (data) {
-      fetch("/api/obsidian/comptabilite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: form.type === "entrée" ? "recette" : "dépense", categorie: `${form.type === "entrée" ? "Vente" : "Achat"} ${form.categorie}`, montant: form.montant, type_argent: form.type_argent, motif, membre: "", semaine: weekStartISO(), created_by: user.nom }) }).catch(() => {});
+      fetch("/api/obsidian/comptabilite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: form.type === "entrée" ? "recette" : "dépense", categorie: `${form.type === "entrée" ? "Vente" : "Achat"} ${form.categorie}`, montant: form.montant, type_argent: form.type_argent, motif, membre: "", semaine: weekStartISO(), created_by: user.nom, source: "transaction" }) }).catch(() => {});
     }
     if (data) { 
       const record = data.type === "entrée" && transactions.some(t => t.type === "entrée") && Number(data.montant) > Math.max(...transactions.filter(t => t.type === "entrée").map(t => Number(t.montant) || 0));
@@ -271,6 +273,7 @@ export default function CahierVentePage() {
           ["historique", "📋 Historique"],
           ["saisie", "➕ Saisie"],
           ["produits", "📦 Produits"],
+          ["blanchiment", "🧼 Blanchiment"],
         ] as [TabType, string][]).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} style={{
             padding: "0.55rem 1.25rem", borderRadius: "var(--radius)", cursor: "pointer",
@@ -573,6 +576,8 @@ export default function CahierVentePage() {
       )}
 
       {/* ── PRODUITS (issus du Stock) ── */}
+      {tab === "blanchiment" && <BlanchimentPanel />}
+
       {tab === "produits" && (
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>

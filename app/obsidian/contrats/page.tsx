@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { hasPermission } from "@/lib/auth";
 import { notifyDiscordCreate, notifyDiscordUpdate, notifyDiscordDelete } from "@/lib/notifyDiscord";
 import { buildContratEmbed } from "@/lib/discordEmbeds";
+import { pdfContrat } from "@/lib/pdfDocs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 const TYPES=["Livraison","Surveillance","Intimidation","Récupération","Braquage","Autre"];
 const DIFFS=["Facile","Normale","Difficile","Extrême"];
@@ -59,6 +60,7 @@ export default function ContratsPage(){
             {c.rapport&&<div style={{fontSize:"0.72rem",color:"var(--success)",marginBottom:"0.5rem",background:"rgba(34,197,94,0.06)",borderRadius:"var(--radius)",padding:"0.4rem 0.625rem",borderLeft:"3px solid var(--success)"}}>📝 {c.rapport.slice(0,120)}{c.rapport.length>120?"…":""}</div>}
             <div style={{display:"flex",gap:"0.35rem",flexWrap:"wrap"}}>
               {STATUTS.filter(s=>s!==c.statut).slice(0,3).map(s=><button key={s} onClick={()=>changeStatut(c.id,s)} style={{padding:"0.2rem 0.5rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.65rem",background:"var(--surface)",border:"1px solid var(--border)",color:"var(--text-dim)"}}>→ {s}</button>)}
+              <button className="btn btn-ghost btn-sm" onClick={()=>pdfContrat(c)}>📄 PDF</button>
               <button className="btn btn-ghost btn-sm" onClick={()=>{setShowRapport(c);setRapport(c.rapport||"");}}>📝 Rapport</button>
               <button className="btn btn-ghost btn-sm" onClick={()=>{setForm({titre:c.titre,type:c.type,difficulte:c.difficulte,recompense:c.recompense,statut:c.statut,membres_affectes:c.membres_affectes||[],description:c.description||"",rapport:c.rapport||"",date_cible:c.date_cible||""});setMembresInput((c.membres_affectes||[]).join(", "));setEditId(c.id);setShowForm(true);}}>✏️</button>
               <button className="btn btn-ghost btn-sm" onClick={()=>del(c.id)} style={{color:"var(--danger)"}}>🗑️</button>

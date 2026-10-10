@@ -6,6 +6,8 @@
 -- Relançable sans doublon (nettoyage au début).
 -- ============================================================
 select setseed(0.42);
+-- (nécessite migration-lot14.sql) le verrou de clôture est levé le temps du remplissage
+alter table obsidian_comptabilite disable trigger trg_compta_lock;
 
 -- 0) Nettoyage d'un précédent seed
 delete from obsidian_comptabilite where created_by = 'Démo';
@@ -182,3 +184,8 @@ insert into gm_evenements (type, titre, statut, partenaire, date_event, montant,
  ('capture','Capture Diego Ramirez','a_faire','La Main de Minuit',now()+interval '1 day',25000,'Démo','Démo'),
  ('capture','Capture informateur','capturee','Ghost Chain',now()-interval '5 days',10000,'Démo','Démo'),
  ('alerte','Fuite chez un partenaire','traquee','Spartan',now()-interval '2 days',15000,'Démo','Démo');
+
+-- Fin : verrou remis, semaines recalculées
+alter table obsidian_comptabilite enable trigger trg_compta_lock;
+delete from obsidian_semaines;
+select obsidian_cloturer_semaines('seed');

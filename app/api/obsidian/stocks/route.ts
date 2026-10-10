@@ -9,6 +9,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { data, error: dbError } = await supabaseAdmin.from("obsidian_stocks").insert([body]).select().single();
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
+    // Stock initial = entrée valorisée (le trigger compta en fait une dépense « Achat stock »).
+    if (Number(data.quantite) > 0) {
+      await supabaseAdmin.from("obsidian_mouvements").insert([{ stock_id: data.id, stock_nom: data.nom, type: "entrée", quantite: data.quantite, motif: "Stock initial", membre: data.created_by || "", prix_unitaire: data.prix_unitaire || 0, total: Number(data.quantite) * (Number(data.prix_unitaire) || 0), created_by: data.created_by || "" }]);
+    }
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

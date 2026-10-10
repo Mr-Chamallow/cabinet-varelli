@@ -6,7 +6,7 @@ export async function POST(req: Request) {
     const { authorized, supabaseAdmin, error } = await requireAnyPermission(["obsidian_stocks", "obsidian_armurerie"]);
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
 
-    const { stock_id, type, quantite, motif, membre, created_by } = await req.json();
+    const { stock_id, type, quantite, motif, membre, created_by, prix_unitaire: prixBody } = await req.json();
     if (!stock_id || !quantite || quantite <= 0) {
       return NextResponse.json({ error: "stock_id et quantite (> 0) sont requis" }, { status: 400 });
     }
@@ -15,12 +15,13 @@ export async function POST(req: Request) {
     if (stockErr || !stock) return NextResponse.json({ error: stockErr?.message || "Stock introuvable" }, { status: 404 });
 
     const isEntree = type === "entrée" || type === "entree";
+    const pu = isEntree && Number(prixBody) >= 0 && prixBody !== undefined && prixBody !== null && prixBody !== "" ? Number(prixBody) : (stock.prix_unitaire || 0); // prix d'achat (entrée)
     const newQty = isEntree ? stock.quantite + quantite : Math.max(0, stock.quantite - quantite);
 
     const { error: mvtErr } = await supabaseAdmin.from("obsidian_mouvements").insert([{
       stock_id: stock.id, stock_nom: stock.nom, type, quantite, motif: motif || "",
-      membre: membre || created_by || "", prix_unitaire: stock.prix_unitaire || 0,
-      total: quantite * (stock.prix_unitaire || 0), created_by: created_by || membre || "",
+      membre: membre || created_by || "", prix_unitaire: pu,
+      total: quantite * pu, created_by: created_by || membre || "",
     }]);
     if (mvtErr) return NextResponse.json({ error: mvtErr.message }, { status: 400 });
 
