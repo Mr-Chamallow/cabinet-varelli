@@ -2,21 +2,21 @@
 
 :root {
 
-  --bg:           #0f0f1a; /* Background */
-  --surface:      #222244; /* Muted */
-  --card:         #1a1a2e; /* Card / Popover */
-  --card-hover:   #2d2b55; /* Secondary, utilisé comme état hover des cartes */
-  --border:       #303052; /* Border / Input */
-  --border-light: #303060; /* Accent, utilisé comme bordure "accentuée" */
+  --bg:           #100f0f; /* Background */
+  --surface:      #262425; /* Muted */
+  --card:         #1c1a1b; /* Card / Popover */
+  --card-hover:   #302d2d; /* Secondary, utilisé comme état hover des cartes */
+  --border:       #413c39; /* Border / Input */
+  --border-light: #544e49; /* Accent, utilisé comme bordure "accentuée" */
 
-  --gold:         #a48fff; /* Primary / Ring */
-  --gold-light:   #beaeff;
-  --gold-dark:    #8070c7;
-  --gold-muted:   rgba(164,143,255,0.08);
-  --gold-glow:    rgba(164,143,255,0.14);
-  --gold-rgb:     164,143,255; /* triplet RGB de --gold, pour composer rgba(var(--gold-rgb), X) — reste synchronisé avec la couleur choisie dans Personnalisation */
+  --gold:         #c9a24d; /* Primary / Ring */
+  --gold-light:   #d8bc7f;
+  --gold-dark:    #9d7e3c;
+  --gold-muted:   rgba(201,162,77,0.08);
+  --gold-glow:    rgba(201,162,77,0.14);
+  --gold-rgb:     201,162,77; /* triplet RGB de --gold, pour composer rgba(var(--gold-rgb), X) — reste synchronisé avec la couleur choisie dans Personnalisation */
 
-  --purple-obsidian: #303060; /* Accent */
+  --purple-obsidian: #484036; /* Accent */
 
   --text:         #eaedf5;
   --text-muted:   #8a92ab;
@@ -24,11 +24,11 @@
 
   --success:      #22c55e;
   --warning:      #eab308;
-  --danger:       #ff5470; /* Destructive */
+  --danger:       #e5484d; /* Destructive */
   --info:         #64b5f6; /* Chart 3 */
 
   /* Palette réservée aux graphiques (recharts est installé mais pas encore utilisé) */
-  --chart-1:      #a48fff;
+  --chart-1:      #c9a24d;
   --chart-2:      #7986cb;
   --chart-3:      #64b5f6;
   --chart-4:      #4db6ac;
@@ -43,10 +43,10 @@
   --radius-lg:    12px;
   --radius-xl:    18px;
 
-  --shadow-sm:    0 1px 4px rgba(5,5,15,0.4);
-  --shadow:       0 4px 24px rgba(5,5,15,0.55);
-  --shadow-lg:    0 16px 56px rgba(5,5,15,0.65);
-  --shadow-gold:  0 0 24px rgba(164,143,255,0.07);
+  --shadow-sm:    0 1px 4px rgba(0,0,0,0.45);
+  --shadow:       0 4px 24px rgba(0,0,0,0.6);
+  --shadow-lg:    0 16px 56px rgba(0,0,0,0.7);
+  --shadow-gold:  0 0 24px rgba(201,162,77,0.07);
 
   --ease:         cubic-bezier(0.22, 1, 0.36, 1);
   --t-fast:       0.15s;

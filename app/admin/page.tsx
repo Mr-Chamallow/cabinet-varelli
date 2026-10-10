@@ -657,7 +657,7 @@ export default function AdminPage() {
                   </div>
                   <div style={{ display:"flex", gap:"0.6rem", alignItems:"center" }}>
                     <input type="color" value={siteGold} onChange={e=>applySiteGold(e.target.value)} style={{ width:40,height:36,padding:0,border:"1px solid var(--border)",borderRadius:8,cursor:"pointer",background:"none" }}/>
-                    <input value={siteGoldInput} onChange={e=>setSiteGoldInput(e.target.value)} onBlur={()=>isValidHex(siteGoldInput)&&applySiteGold(siteGoldInput)} placeholder="#a48fff" style={{ flex:1, fontFamily: "var(--font-mono)" }}/>
+                    <input value={siteGoldInput} onChange={e=>setSiteGoldInput(e.target.value)} onBlur={()=>isValidHex(siteGoldInput)&&applySiteGold(siteGoldInput)} placeholder="#c9a24d" style={{ flex:1, fontFamily: "var(--font-mono)" }}/>
                     {siteSaving && <span style={{ fontSize:"0.72rem", color:"var(--text-dim)" }}>…</span>}
                   </div>
                 </div>

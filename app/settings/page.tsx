@@ -14,7 +14,7 @@ const SETTINGS_KEYS = [
 ];
 
 const PRESET_COLORS = [
-  "#a48fff", "#c9a84c", "#ef4444", "#3b82f6", "#22c55e",
+  "#c9a24d", "#a48fff", "#ef4444", "#3b82f6", "#22c55e",
   "#f97316", "#e11d48", "#06b6d4", "#ec4899", "#14b8a6",
 ];
 
@@ -126,7 +126,7 @@ export default function SettingsPage() {
                   onChange={(e) => setGoldInput(e.target.value)}
                   onBlur={() => isValidHex(goldInput) && applyGold(goldInput)}
                   onKeyDown={(e) => e.key === "Enter" && isValidHex(goldInput) && applyGold(goldInput)}
-                  placeholder="#a48fff"
+                  placeholder="#c9a24d"
                   style={{ flex: 1, fontFamily: "var(--font-mono)" }}
                 />
                 {saving && <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>…</span>}

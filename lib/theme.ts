@@ -1,4 +1,4 @@
-export const DEFAULT_GOLD = "#a48fff";
+export const DEFAULT_GOLD = "#c9a24d"; // or bruni — sur fond obsidienne
 export const DEFAULT_LOGO_URL = "https://i.imgur.com/Shh0rIn.png";
 export const DEFAULT_APP_NOM = "Obsidian Logistique";
 export const THEME_STORAGE_KEY = "obsidian_theme_gold";
@@ -52,6 +52,22 @@ export function deriveGoldPalette(hex: string): GoldPalette {
   };
 }
 
+// Toute la palette de surfaces (fond, cartes, bordures) est dérivée de la couleur choisie :
+// un noir « obsidienne » à peine teinté de l'accent, pour que le site entier suive la couleur.
+export function deriveSurfaces(hex: string) {
+  const base = isValidHex(hex) ? (hex.startsWith("#") ? hex : `#${hex}`) : DEFAULT_GOLD;
+  const t = (n: [number, number, number], amount: number) => mix(base, n, 1 - amount); // amount = part d'accent
+  return {
+    bg: t([10, 10, 13], 0.03),
+    card: t([19, 19, 24], 0.05),
+    surface: t([28, 28, 34], 0.06),
+    cardHover: t([35, 35, 42], 0.08),
+    border: t([46, 46, 54], 0.12),
+    borderLight: t([62, 62, 72], 0.16),
+    accentDeep: t([40, 40, 48], 0.2),
+  };
+}
+
 export function applyThemeToDocument(hex: string) {
   if (typeof document === "undefined") return;
   const p = deriveGoldPalette(hex);
@@ -62,6 +78,15 @@ export function applyThemeToDocument(hex: string) {
   root.setProperty("--gold-muted", p.goldMuted);
   root.setProperty("--gold-glow", p.goldGlow);
   root.setProperty("--gold-rgb", p.goldRgb);
+  const sf = deriveSurfaces(hex);
+  root.setProperty("--bg", sf.bg);
+  root.setProperty("--card", sf.card);
+  root.setProperty("--surface", sf.surface);
+  root.setProperty("--card-hover", sf.cardHover);
+  root.setProperty("--border", sf.border);
+  root.setProperty("--border-light", sf.borderLight);
+  root.setProperty("--purple-obsidian", sf.accentDeep);
+  root.setProperty("--shadow-gold", `0 0 24px rgba(${p.goldRgb},0.07)`);
   try {
     localStorage.setItem(THEME_STORAGE_KEY, p.gold);
   } catch {

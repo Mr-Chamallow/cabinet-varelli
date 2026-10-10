@@ -18,7 +18,7 @@ export function PreviewBanner() {
         flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem",
         padding: "0.5rem 1rem",
-        background: "linear-gradient(90deg, rgba(164,143,255,0.18), rgba(121,134,203,0.18))",
+        background: "linear-gradient(90deg, rgba(var(--gold-rgb),0.18), rgba(var(--gold-rgb),0.08))",
         borderBottom: "1px solid rgba(var(--gold-rgb),0.35)",
         fontSize: "0.8rem", color: "var(--gold)", fontWeight: 600,
       }}
