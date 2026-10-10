@@ -28,3 +28,19 @@ jobs:
           name: supabase-backup
           path: backup-*.sql.gz.gpg
           retention-days: 60
+
+      - name: Alerte Discord (succès)
+        if: success()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_ADMIN }}
+        run: |
+          [ -z "$WEBHOOK" ] && exit 0
+          curl -sS -H "Content-Type: application/json" -d '{"embeds":[{"title":"💾 Sauvegarde Supabase réussie","description":"Fichier chiffré disponible dans GitHub > Actions > Artifacts (60 jours).","color":2278750}]}' "$WEBHOOK"
+
+      - name: Alerte Discord (échec)
+        if: failure()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_ADMIN }}
+        run: |
+          [ -z "$WEBHOOK" ] && exit 0
+          curl -sS -H "Content-Type: application/json" -d '{"embeds":[{"title":"❌ Sauvegarde Supabase ÉCHOUÉE","description":"Voir GitHub > Actions pour le détail.","color":15680580}]}' "$WEBHOOK"

@@ -1,4 +1,5 @@
 import { NotifyEmbed } from "@/lib/notifyDiscord";
+import { metierInfo } from "@/lib/fichesMetiers";
 
 const v = (x: any) => (x === null || x === undefined || x === "" ? "—" : String(x));
 const fmtUSD = (n: number) => (n || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -12,6 +13,7 @@ export function buildFicheEmbed(f: any): NotifyEmbed {
     title: `🗂️ ${f.nom}`,
     color: PRIO_COLOR[f.priorite] ?? 0xa48fff,
     fields: [
+      { name: "Métier", value: `${metierInfo(f.metier).icon} ${metierInfo(f.metier).label}${f.sous_tags?.length ? " · " + f.sous_tags.join(", ") : ""}`, inline: false },
       { name: "Type", value: v(f.type), inline: true },
       { name: "Priorité", value: v(f.priorite), inline: true },
       { name: "Statut", value: v(f.statut), inline: true },

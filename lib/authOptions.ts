@@ -3,6 +3,7 @@ import DiscordProvider from "next-auth/providers/discord";
 import { DISCORD_SERVER_ID, getHighestRole } from "@/lib/discord-config";
 import { supabase } from "@/lib/supabase";
 import { sendSecurityAlert } from "@/lib/discordAlert";
+import { postAlert, GOLD, ORANGE, RED, GREEN } from "@/lib/alerts";
 
 const ADMIN_DISCORD_ID = process.env.ADMIN_DISCORD_ID || "";
 
@@ -71,10 +72,16 @@ async function consumeForceResync(discordId: string): Promise<boolean> {
 }
 
 // Met à jour la liste Admin > Membres après une synchro (rôle site + rôle Discord, flag remis à zéro).
-async function saveSyncState(discordId: string, siteRole: string, discordRole: string) {
+async function saveSyncState(discordId: string, siteRole: string, discordRole: string, inGuild = true) {
   if (!supabase) return;
   try {
+    const { data: prev } = await supabase.from("site_logins").select("discord_name,site_role").eq("discord_id", discordId).maybeSingle();
     await supabase.from("site_logins").update({ site_role: siteRole, discord_role: discordRole, force_resync: false }).eq("discord_id", discordId);
+    if (prev && (prev.site_role || "") !== (siteRole || "")) {
+      const nom = prev.discord_name || discordId;
+      if (!inGuild) await postAlert("membres", "🚪 Membre parti du serveur", `**${nom}** (\`${discordId}\`) n'est plus sur le Discord.\nAncien rôle : ${prev.site_role || "—"}`, RED);
+      else await postAlert("membres", "🔄 Changement de rôle", `**${nom}**\n${prev.site_role || "—"} → **${siteRole || "aucun"}**`, ORANGE);
+    }
   } catch {}
 }
 
@@ -150,6 +157,7 @@ async function recordLogin(discordId: string, discordName: string, role: string,
       await supabase.from("site_logins").update({ discord_name: discordName, site_role: role, discord_role: discordRole, last_login: new Date().toISOString(), force_resync: false }).eq("discord_id", discordId);
     } else {
       await supabase.from("site_logins").insert([{ discord_id: discordId, discord_name: discordName, site_role: role, discord_role: discordRole }]);
+      await postAlert("membres", "🆕 Nouveau membre sur le site", `**${discordName}** (\`${discordId}\`)\nRôle : **${role || "aucun"}**`, GREEN);
     }
   } catch {
     // La table n'existe peut-être pas encore (script SQL non exécuté) — ne bloque jamais la connexion pour ça.
@@ -264,7 +272,7 @@ export const authOptions: NextAuthOptions = {
         await logSession(token.discord_id as string, (token.discord_name as string) || "Membre", "connect");
       }
       if (syncedNow && token.discord_id) {
-        await saveSyncState(token.discord_id as string, (token.site_role as string) || "", (token.discord_role as string) || "");
+        await saveSyncState(token.discord_id as string, (token.site_role as string) || "", (token.discord_role as string) || "", token.in_guild !== false);
       }
       if (token.discord_id) {
         const ban = await checkBan(token.discord_id as string);

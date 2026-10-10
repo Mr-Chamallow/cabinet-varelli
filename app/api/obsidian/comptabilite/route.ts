@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
+import { postAlert, bigMoveAlert, usd, GREEN, RED } from "@/lib/alerts";
 
 export async function POST(req: Request) {
   try {
@@ -9,6 +10,14 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { data, error: dbError } = await supabaseAdmin.from("obsidian_comptabilite").insert([body]).select().single();
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
+    const m = Number(data.montant) || 0;
+    const signed = data.type === "recette" ? m : -m;
+    await postAlert("compta", `${data.type === "recette" ? "↑ Recette" : "↓ Dépense"} — ${usd(m)}`, `${data.motif || data.categorie}`, signed >= 0 ? GREEN : RED, [
+      { name: "Catégorie", value: data.categorie || "—", inline: true },
+      { name: "Argent", value: data.type_argent || "—", inline: true },
+      { name: "Saisi par", value: data.created_by || "—", inline: true },
+    ]);
+    await bigMoveAlert(supabaseAdmin, signed, `${data.categorie} — ${data.motif || ""}`, data.created_by || "");
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

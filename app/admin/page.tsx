@@ -78,6 +78,7 @@ const SITE_SETTINGS_KEYS = [
   { key: "app_nom", label: "Nom du site", placeholder: "Obsidian Logistique" },
   { key: "app_sous_nom", label: "Sous-titre", placeholder: "Consortium · Opérations · Logistique" },
   { key: "logo_url", label: "URL du logo", placeholder: "https://..." },
+  { key: "alert_seuil_gros", label: "Alerte Discord « gros mouvement » dès (en $, 0 = désactivé)", placeholder: "100000" },
 ];
 
 export default function AdminPage() {
@@ -656,10 +657,10 @@ export default function AdminPage() {
                 <div className="card">
                   <div className="section-title" style={{ marginBottom:"0.5rem" }}>🔔 Alertes Discord</div>
                   <p style={{ fontSize:"0.7rem", color:"var(--text-dim)", marginBottom:"0.875rem" }}>
-                    Chaque module a son propre webhook, configuré via variable d'environnement sur Vercel (DISCORD_WEBHOOK_STOCKS, _ARMURERIE, _RDV, _CONTRATS, _FICHES). Teste ici que chacun est bien branché.
+                    Chaque module a son propre webhook, configuré via variable d'environnement sur Vercel (DISCORD_WEBHOOK_STOCKS, _RDV, _CONTRATS, _FICHES, _BASE_DONNEES, _ARRESTATIONS, _ACTIONS, _COMPTA, _DELAIS, _MEMBRES, _ADMIN, _RAPPORT, _CONNEXIONS). Teste ici que chacun est bien branché.
                   </p>
                   <div style={{ display:"flex", flexDirection:"column", gap:"0.6rem" }}>
-                    {["stocks","armurerie","rdv","contrats","fiches"].map(kind => (
+                    {["stocks","rdv","contrats","fiches","base_donnees","arrestations","actions","compta","delais","membres","admin","rapport"].map(kind => (
                       <div key={kind} style={{ display:"flex", alignItems:"center", gap:"0.6rem" }}>
                         <span style={{ flex:1, fontSize:"0.8rem", textTransform:"capitalize" }}>{kind}</span>
                         {discordTestMsg[kind] && <span style={{ fontSize:"0.68rem", color:"var(--text-dim)" }}>{discordTestMsg[kind]}</span>}
