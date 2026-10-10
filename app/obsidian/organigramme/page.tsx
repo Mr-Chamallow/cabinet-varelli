@@ -15,6 +15,8 @@ const NODES: Record<string, { role: string; titre: string; desc: string }> = {
   op: { role: "Opérateur", titre: "Opérateur", desc: "Membre confirmé, pleinement intégré aux opérations et affecté à son pôle." },
   st: { role: "Opérateur stagiaire", titre: "Opérateur Stagiaire", desc: "Membre en période de test, sous surveillance de sa hiérarchie, avant titularisation." },
 };
+// Rôles du site qui comptent aussi pour un poste (le Patron = CEO).
+const EXTRA: Record<string, string[]> = { dg: ["Associé / Patron"] };
 const POLES = [
   { titre: "⚖️ Pôle Juridique", color: "#a78bfa", keys: ["rj", "aj"] },
   { titre: "📦 Pôle Logistique", color: "var(--gold)", keys: ["rl", "al"] },
@@ -34,7 +36,7 @@ export default function OrganigrammePage() {
   }, []);
 
   const Node = ({ k, color }: { k: string; color?: string }) => {
-    const n = NODES[k]; const who = members[n.role] || [];
+    const n = NODES[k]; const who = Array.from(new Set([n.role, ...(EXTRA[k] || [])].flatMap(r => members[r] || [])));
     return (
       <div className="card" style={{ padding: "0.75rem 0.9rem", borderTop: `3px solid ${color || "var(--gold)"}` }}>
         <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{n.titre}</div>

@@ -98,12 +98,12 @@ export default function ArrestationsPage() {
     setSaving(false);
     if (!res.ok) { showToast(`Erreur : ${out?.error || res.status}`, "danger"); load(); return; }
     setShowForm(false);
-    showToast(editId ? "Arrestation modifiée (stock et compta recalculés)" : "Arrestation enregistrée (stock et compta mis à jour)");
+    showToast(editId ? "Arrestation modifiée (stock et prime recalculés)" : "Arrestation enregistrée (stock mis à jour, prime ajoutée à la paie)");
     load();
   }
 
   async function del(a: Arrest) {
-    if (!window.confirm(`Annuler l'arrestation de ${a.membre} ? Les objets seront remis en stock et la dépense retirée de la compta.`)) return;
+    if (!window.confirm(`Annuler l'arrestation de ${a.membre} ? Les objets seront remis en stock et la prime de paie retirée.`)) return;
     const res = await fetch("/api/obsidian/arrestations", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: a.id }) });
     const out = await res.json().catch(() => ({}));
     if (!res.ok) { showToast(`Erreur : ${out?.error || res.status}`, "danger"); return; }
@@ -119,7 +119,7 @@ export default function ArrestationsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">🚔 Arrestations</h1>
-          <p className="page-subtitle">Pertes · Amendes · Stock et compta mis à jour automatiquement</p>
+          <p className="page-subtitle">Pertes · Amendes · Stock mis à jour · argent perdu = prime sur la paie de la semaine</p>
           <div className="gold-line" />
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -201,7 +201,7 @@ export default function ArrestationsPage() {
               <input type="number" min="0" value={form.amende} onChange={e => setForm({ ...form, amende: e.target.value })} placeholder="0" />
             </div>
             <div>
-              <label>💵 Argent perdu ($) — dépense en compta</label>
+              <label>💵 Argent perdu ($) — prime sur la paie (sale ou propre)</label>
               <input type="number" min="0" value={form.argent} onChange={e => setForm({ ...form, argent: e.target.value })} placeholder="0" />
             </div>
           </div>

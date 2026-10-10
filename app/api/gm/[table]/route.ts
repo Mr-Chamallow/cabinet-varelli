@@ -30,6 +30,22 @@ async function auth(table: string) {
   return { err: NextResponse.json({ error: last?.error || "Écriture non autorisée sur cet onglet" }, { status: 403 }) } as any;
 }
 
+// Le groupe doit exister dans Base de données → Groupes (carte_gangs) : on le relie par son id.
+const GROUP_FIELD: Record<string, { field: string; strict: boolean }> = {
+  tribunal_dossiers: { field: "organisation", strict: true }, gm_pactes: { field: "organisation", strict: true },
+  gm_audits: { field: "organisation", strict: true }, gm_reputation_log: { field: "organisation", strict: true },
+  gm_evenements: { field: "partenaire", strict: false },
+};
+async function linkGroupe(db: any, table: string, payload: any): Promise<string | null> {
+  const g = GROUP_FIELD[table]; if (!g || !(g.field in payload)) return null;
+  const name = String(payload[g.field] ?? "").trim();
+  if (!name) { payload.groupe_id = null; return null; }
+  const { data } = await db.from("carte_gangs").select("id,nom").ilike("nom", name).limit(1).maybeSingle();
+  if (data) { payload.groupe_id = data.id; payload[g.field] = data.nom; return null; }
+  payload.groupe_id = null;
+  return g.strict ? `Groupe « ${name} » introuvable : crée-le d'abord dans Base de données → Groupes.` : null;
+}
+
 const pick = (b: any, cols: string[]) => Object.fromEntries(Object.entries(b || {}).filter(([k]) => cols.includes(k)).map(([k, v]) => [k, v === "" ? null : v]));
 
 async function ensureOrg(db: any, nom?: string | null) {
@@ -109,6 +125,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ table: string 
     const a = await auth(table); if (a.err) return a.err;
     const body = await req.json();
     const payload: any = { ...pick(body, a.cfg.cols), created_by: a.who };
+    const le = await linkGroupe(a.db, table, payload); if (le) return NextResponse.json({ error: le }, { status: 400 });
     if (table === "gm_organisations" && !payload.nom) return NextResponse.json({ error: "Nom requis" }, { status: 400 });
     const { data, error } = await a.db.from(table).insert([payload]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -127,7 +144,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ table: string
     if (!body[key]) return NextResponse.json({ error: `${key} requis` }, { status: 400 });
     const { data: old } = await a.db.from(table).select("*").eq(key, body[key]).single();
     if (!old) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
-    const patch = pick(body, a.cfg.cols); delete (patch as any).nom;
+    const patch: any = pick(body, a.cfg.cols); delete patch.nom;
+    const le = await linkGroupe(a.db, table, patch); if (le) return NextResponse.json({ error: le }, { status: 400 });
     const { data, error } = await a.db.from(table).update(patch).eq(key, body[key]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await afterUpdate(a.db, table, old, data, a.who);

@@ -120,7 +120,11 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
       <SidebarPillTracker navRef={navRef} linkRefs={linkRefs} pathname={pathname} setPill={setPill} />
 
       <div className="sidebar-footer">
-        <span className="wandering-cat" aria-hidden="true">🐈</span>
+        <div className="sb-signal" aria-hidden="true">
+          <span className="sb-beam" />
+          <span className="sb-status"><i className="sb-dot" /><i className="sb-ping" />Système en ligne</span>
+          <span className="sb-eq"><u /><u /><u /><u /><u /></span>
+        </div>
         <button className="sidebar-user" onClick={() => {
           fetch("/api/presence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "logout" }) }).catch(() => {}).finally(() => {
             signOut({ callbackUrl: "/login" });

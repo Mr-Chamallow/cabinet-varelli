@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { gmWrite } from "@/lib/gmApi";
 import { pdfAudit } from "@/lib/pdfDocs";
-import { useGmAccess, useOrgs, Badge, fmtDT, toLocalInput, fromLocalInput } from "@/components/gm/bits";
+import { useGmAccess, useGroupes, GroupeSelect, Badge, fmtDT, toLocalInput, fromLocalInput } from "@/components/gm/bits";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 function cd(ms: number) { const s = Math.max(0, Math.floor(ms / 1000)); return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`; }
@@ -24,7 +24,7 @@ export default function AuditsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<any>(EMPTY);
   const [saving, setSaving] = useState(false);
-  const orgs = useOrgs(list.length);
+  const groupes = useGroupes();
 
   useEffect(() => { load(); const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
   useRealtimeTable("gm_audits", load);
@@ -96,7 +96,7 @@ export default function AuditsPage() {
       {show && (
         <Modal title={editId ? "Modifier l'audit" : "Nouvel audit"} onClose={() => setShow(false)}
           footer={<><button className="btn btn-outline" onClick={() => setShow(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.organisation.trim()} onClick={save}>{saving ? "…" : "Enregistrer"}</button></>}>
-          <div><label>Organisation *</label><input list="aud-orgs" value={form.organisation} onChange={e => setForm({ ...form, organisation: e.target.value })} /><datalist id="aud-orgs">{orgs.map(o => <option key={o} value={o} />)}</datalist></div>
+          <div><label>Organisation *</label><GroupeSelect value={form.organisation} groupes={groupes} onChange={v => setForm({ ...form, organisation: v })} /></div>
           <div><label>Note : {form.note}/10 <span style={{ color: "var(--text-dim)", fontSize: "0.68rem" }}>(5 = neutre ; réputation {Math.round((form.note - 5) * 4) >= 0 ? "+" : ""}{Math.round((form.note - 5) * 4)})</span></label>
             <input type="range" min={0} max={10} value={form.note} onChange={e => setForm({ ...form, note: Number(e.target.value) })} /></div>
           <div><label>Appréciation</label><input value={form.appreciation} onChange={e => setForm({ ...form, appreciation: e.target.value })} placeholder="Bilan, guerres récentes, respect des pactes…" /></div>

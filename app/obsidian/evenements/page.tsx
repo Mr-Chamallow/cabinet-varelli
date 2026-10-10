@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { gmWrite } from "@/lib/gmApi";
 import { pdfEvenement } from "@/lib/pdfDocs";
-import { useGmAccess, useOrgs, Chip, Badge, fmtDT, toLocalInput, fromLocalInput, usd } from "@/components/gm/bits";
+import { useGmAccess, useGroupes, GroupeSelect, Chip, Badge, fmtDT, toLocalInput, fromLocalInput, usd } from "@/components/gm/bits";
 
 type Lot = { nom: string; mise_depart: number; mise_finale: number; gagnant: string };
 const TYPES: Record<string, { label: string; icon: string; montantLabel: string; partenaireLabel: string; statuts: { k: string; label: string; color: string }[] }> = {
@@ -33,7 +33,7 @@ export default function EvenementsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<any>(empty("convoi"));
   const [saving, setSaving] = useState(false);
-  const orgs = useOrgs(list.length);
+  const groupes = useGroupes();
   const T = TYPES[tab];
 
   useEffect(() => { load(); }, []);
@@ -111,7 +111,7 @@ export default function EvenementsPage() {
             <div className="form-grid">
               <div><label>Titre *</label><input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} /></div>
               <div><label>Statut</label><select value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>{TYPES[form.type].statuts.map(s => <option key={s.k} value={s.k}>{s.label}</option>)}</select></div>
-              <div><label>{TYPES[form.type].partenaireLabel}</label><input list="evt-orgs" value={form.partenaire} onChange={e => setForm({ ...form, partenaire: e.target.value })} /><datalist id="evt-orgs">{orgs.map(o => <option key={o} value={o} />)}</datalist></div>
+              <div><label>{TYPES[form.type].partenaireLabel}</label><GroupeSelect value={form.partenaire} groupes={groupes} onChange={v => setForm({ ...form, partenaire: v })} placeholder="— Aucun —" /></div>
               <div><label>Date</label><input type="datetime-local" value={form.date_event} onChange={e => setForm({ ...form, date_event: e.target.value })} /></div>
               {form.type !== "enchere" && <div><label>{TYPES[form.type].montantLabel}</label><input type="number" min={0} value={form.montant || ""} onChange={e => setForm({ ...form, montant: e.target.value })} /></div>}
             </div>

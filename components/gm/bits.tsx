@@ -11,14 +11,31 @@ export function useGmAccess(perm: string) {
   return { user, loading, canWrite: !!user && hasWriteAccess(user, perm) };
 }
 
-// Liste des organisations (pour les listes déroulantes / suggestions).
-export function useOrgs(reload?: number) {
-  const [orgs, setOrgs] = useState<string[]>([]);
+// Référentiel UNIQUE des groupes illégaux : Base de données → onglet « Groupes » (table carte_gangs).
+export interface Groupe { id: string; nom: string; type: string }
+export function useGroupes(reload?: number) {
+  const [groupes, setGroupes] = useState<Groupe[]>([]);
   useEffect(() => {
     if (!supabase) return;
-    supabase.from("gm_organisations").select("nom").order("nom").then(({ data }) => setOrgs((data || []).map((o: any) => o.nom)));
+    supabase.from("carte_gangs").select("id,nom,type,sort_order").order("sort_order", { ascending: true }).order("nom").then(({ data }) => setGroupes((data || []) as Groupe[]));
   }, [reload]);
-  return orgs;
+  return groupes;
+}
+export function useOrgs(reload?: number) { return useGroupes(reload).map(g => g.nom); }
+
+// Liste déroulante des groupes (pas de saisie libre : on pointe vers le référentiel).
+export function GroupeSelect({ value, onChange, groupes, placeholder = "— Choisir un groupe —" }: { value: string; onChange: (nom: string) => void; groupes: Groupe[]; placeholder?: string }) {
+  const known = !value || groupes.some(g => g.nom === value);
+  return (
+    <div>
+      <select value={value} onChange={e => onChange(e.target.value)}>
+        <option value="">{placeholder}</option>
+        {!known && <option value={value}>{value} (hors référentiel)</option>}
+        {groupes.map(g => <option key={g.id} value={g.nom}>{g.nom} · {g.type === "pf" ? "PF" : g.type === "inde" ? "Indé" : "Orga"}</option>)}
+      </select>
+      <div style={{ fontSize: "0.65rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>Absent ? Crée-le dans <a href="/base-de-donnees" style={{ color: "var(--gold)" }}>Base de données → Groupes</a>.</div>
+    </div>
+  );
 }
 
 export const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (

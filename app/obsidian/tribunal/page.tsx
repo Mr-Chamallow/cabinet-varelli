@@ -8,7 +8,8 @@ import { Modal } from "@/components/ui/Modal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { gmWrite } from "@/lib/gmApi";
 import { pdfDossier } from "@/lib/pdfDocs";
-import { useGmAccess, useOrgs, Chip, Badge, fmtDT, toLocalInput, fromLocalInput } from "@/components/gm/bits";
+import { OrgLinks } from "@/components/gm/OrgLinks";
+import { useGmAccess, useGroupes, GroupeSelect, Chip, Badge, fmtDT, toLocalInput, fromLocalInput } from "@/components/gm/bits";
 
 const STATUTS = [
   { k: "instruction", label: "Instruction", color: "var(--info)" },
@@ -34,7 +35,7 @@ export default function TribunalPage() {
   const [show, setShow] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newProof, setNewProof] = useState({ texte: "", url: "" });
-  const orgs = useOrgs(list.length);
+  const groupes = useGroupes();
 
   useEffect(() => { load(); }, []);
   useRealtimeTable("tribunal_dossiers", load);
@@ -107,6 +108,7 @@ export default function TribunalPage() {
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: "0.5rem" }}>
                       <div><b>Juge</b><br />{d.juge || "—"}</div><div><b>Procureur</b><br />{d.procureur || "—"}</div><div><b>Avocat commis d'office</b><br />{d.avocat || "—"}</div><div><b>Organisation</b><br />{d.organisation || "—"}</div>
                     </div>
+                    {d.organisation && <OrgLinks organisation={d.organisation} excludeDossierId={d.id} />}
                     {d.acte_accusation && <div><b>📜 Acte d'accusation</b><div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{d.acte_accusation}</div></div>}
                     {d.defense && <div><b>🛡️ Défense</b><div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{d.defense}</div></div>}
                     {d.sentence && <div><b>🔨 Sentence</b><div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{d.sentence}</div></div>}
@@ -151,7 +153,7 @@ export default function TribunalPage() {
               <div><label>Titre *</label><input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} placeholder="Ex : Trahison du Pacte — Les Vagos" /></div>
               <div><label>Statut</label><select value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>{STATUTS.map(s => <option key={s.k} value={s.k}>{s.label}</option>)}</select></div>
               <div><label>Accusé (personne)</label><input value={form.accuse} onChange={e => setForm({ ...form, accuse: e.target.value })} /></div>
-              <div><label>Organisation</label><input list="trib-orgs" value={form.organisation} onChange={e => setForm({ ...form, organisation: e.target.value })} /><datalist id="trib-orgs">{orgs.map(o => <option key={o} value={o} />)}</datalist></div>
+              <div><label>Organisation</label><GroupeSelect value={form.organisation} groupes={groupes} onChange={v => setForm({ ...form, organisation: v })} placeholder="— Aucun / personne seule —" /></div>
               <div><label>Juge</label><input value={form.juge} onChange={e => setForm({ ...form, juge: e.target.value })} /></div>
               <div><label>Procureur</label><input value={form.procureur} onChange={e => setForm({ ...form, procureur: e.target.value })} /></div>
               <div><label>Avocat commis d'office</label><input value={form.avocat} onChange={e => setForm({ ...form, avocat: e.target.value })} /></div>

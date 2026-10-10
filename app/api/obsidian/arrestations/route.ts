@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { weekStartOf } from "@/lib/weekStart";
-import { postAlert, logAudit, bigMoveAlert, usd, ORANGE, RED, GREY } from "@/lib/alerts";
+import { postAlert, logAudit, usd, ORANGE, RED, GREY } from "@/lib/alerts";
 
 function arrestFields(row: any) {
   const items = (row.items || []).map((i: any) => `${i.emoji || ""} ${i.nom} × ${i.quantite}`).join("\n");
   return [
     { name: "Amende", value: usd(Number(row.amende) || 0), inline: true },
-    { name: "Argent perdu", value: `${usd(Number(row.argent_perdu) || 0)} (${row.type_argent || "sale"})`, inline: true },
+    { name: "Prime paie (argent perdu)", value: `${usd(Number(row.argent_perdu) || 0)} · argent ${row.type_argent || "sale"}`, inline: true },
     { name: "Objets perdus", value: items || "—", inline: false },
   ];
 }
 
 // Une arrestation :
 //  - les objets perdus SORTENT du stock (mouvement "sortie" tracé),
-//  - l'argent perdu devient une DÉPENSE dans la compta,
+//  - l'argent perdu (sale / propre) n'est PAS déduit de la compta : il devient une PRIME sur la paie de la semaine,
 //  - l'amende est seulement enregistrée (jamais déduite du solde).
 
 type Parsed = { membre: string; amende: number; argent: number; typeArgent: string; createdBy: string; createdAt: string; notes: string | null; wanted: { stock_id: string; quantite: number }[] };
@@ -58,14 +58,6 @@ async function createArrest(db: any, p: Parsed): Promise<{ row?: any; error?: st
       membre: p.membre, prix_unitaire: st.prix_unitaire || 0, total: it.retire * (st.prix_unitaire || 0), created_by: p.createdBy || p.membre,
     }]);
   }
-  if (p.argent > 0) {
-    const { error: e2 } = await db.from("obsidian_comptabilite").insert([{
-      type: "dépense", categorie: "Arrestation (saisie)", montant: p.argent, type_argent: p.typeArgent,
-      motif: `Argent saisi à l'arrestation — ${p.membre}`, membre: p.membre, semaine: weekStartOf(p.createdAt),
-      created_by: p.createdBy, created_at: p.createdAt, source: "arrestation", source_id: row.id,
-    }]);
-    if (e2) return { row, error: `Arrestation enregistrée, mais compta en erreur : ${e2.message}` };
-  }
   return { row };
 }
 
@@ -93,7 +85,6 @@ export async function POST(req: Request) {
     const r = await createArrest(supabaseAdmin, p);
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
     await postAlert("arrestations", `🚔 Arrestation — ${r.row.membre}`, r.row.notes || "Nouvelle arrestation enregistrée.", RED, arrestFields(r.row), ["RS"]);
-    await bigMoveAlert(supabaseAdmin, -(Number(r.row.argent_perdu) || 0), `Arrestation — ${r.row.membre}`, r.row.created_by || "");
     return NextResponse.json(r.row);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
@@ -126,7 +117,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: r.error || "Échec de la modification" }, { status: 400 });
     }
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
-    await postAlert("arrestations", `✏️ Arrestation modifiée — ${r.row.membre}`, r.row.notes || "Saisie corrigée (stock et compta recalculés).", ORANGE, arrestFields(r.row));
+    await postAlert("arrestations", `✏️ Arrestation modifiée — ${r.row.membre}`, r.row.notes || "Saisie corrigée (stock et prime recalculés).", ORANGE, arrestFields(r.row));
     return NextResponse.json(r.row);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
@@ -144,7 +135,7 @@ export async function DELETE(req: Request) {
     const { error: e } = await revertArrest(supabaseAdmin, row, (user as any)?.discord_name || "");
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
     await logAudit(supabaseAdmin, (user as any)?.discord_name, "Arrestation annulée", row.membre, `amende ${row.amende} $ · argent perdu ${row.argent_perdu} $`);
-    await postAlert("arrestations", `🗑️ Arrestation annulée — ${row.membre}`, "Stock remis, dépense retirée de la compta.", GREY, arrestFields(row));
+    await postAlert("arrestations", `🗑️ Arrestation annulée — ${row.membre}`, "Stock remis, prime de paie retirée.", GREY, arrestFields(row));
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

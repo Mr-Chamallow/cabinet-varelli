@@ -11,7 +11,6 @@ import { gmWrite, scoreOf, scoreLabel } from "@/lib/gmApi";
 import { pdfOrganisation } from "@/lib/pdfDocs";
 import { useGmAccess, Badge, fmtDT } from "@/components/gm/bits";
 
-const CATS = ["Gang", "Cartel", "Mafia", "Police / SAMP", "Gouvernement", "Entreprise", "Autre"];
 
 export default function ReputationPage() {
   const { canWrite } = useGmAccess("gm_reputation");
@@ -20,16 +19,14 @@ export default function ReputationPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<string | null>(null);
-  const [showOrg, setShowOrg] = useState(false);
-  const [orgForm, setOrgForm] = useState({ nom: "", categorie: "Gang", notes: "" });
   const [adj, setAdj] = useState<{ org: string; delta: string; motif: string } | null>(null);
 
   useEffect(() => { load(); }, []);
-  useRealtimeTable(["gm_organisations", "gm_reputation_log"], load);
+  useRealtimeTable(["carte_gangs", "gm_reputation_log"], load);
   async function load() {
     if (!supabase) { setLoading(false); return; }
     const [{ data: o }, { data: l }] = await Promise.all([
-      supabase.from("gm_organisations").select("*").order("nom"),
+      supabase.from("carte_gangs").select("id,nom,type").order("nom"),
       supabase.from("gm_reputation_log").select("*").order("created_at", { ascending: false }).limit(2000),
     ]);
     setOrgs(o || []); setLogs(l || []); setLoading(false);
@@ -39,12 +36,6 @@ export default function ReputationPage() {
     return { ...o, history: h, score: scoreOf(h.map(x => x.delta)) };
   }).sort((a, b) => b.score - a.score), [orgs, logs]);
 
-  async function addOrg() {
-    if (!orgForm.nom.trim()) return;
-    const r = await gmWrite("gm_organisations", "POST", orgForm);
-    if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); return; }
-    setShowOrg(false); setOrgForm({ nom: "", categorie: "Gang", notes: "" }); showToast("Organisation ajoutée"); load();
-  }
   async function saveAdj() {
     if (!adj) return; const d = Number(adj.delta);
     if (!d) return;
@@ -68,9 +59,9 @@ export default function ReputationPage() {
     if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else load();
   }
   async function delOrg(nom: string) {
-    if (!window.confirm(`Supprimer « ${nom} » et tout son historique de réputation ?`)) return;
+    if (!window.confirm(`Remettre à zéro la réputation de « ${nom} » (le groupe reste dans la Base de données) ?`)) return;
     const r = await gmWrite("gm_organisations", "DELETE", { nom });
-    if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else { showToast("Supprimée"); load(); }
+    if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else { showToast("Réputation réinitialisée"); load(); }
   }
 
   return (
@@ -78,9 +69,9 @@ export default function ReputationPage() {
       <a className="back-link" href="/">← Dashboard</a>
       <div className="page-header">
         <div><h1 className="page-title">⭐ Réputation des groupes</h1><p className="page-subtitle">Score 0–100 · alimenté par audits, pactes, tribunal et convois</p><div className="gold-line" /></div>
-        {canWrite && <button className="btn btn-gold" onClick={() => setShowOrg(true)}>+ Organisation</button>}
+        <a className="btn btn-outline" href="/base-de-donnees">🗄️ Gérer les groupes</a>
       </div>
-      {loading ? <LoadingBlock /> : rows.length === 0 ? <div className="empty-state"><div className="empty-icon">⭐</div><div className="empty-title">Aucune organisation</div><div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>Elles se créent aussi toutes seules via les audits, pactes et dossiers.</div></div> : (
+      {loading ? <LoadingBlock /> : rows.length === 0 ? <div className="empty-state"><div className="empty-icon">⭐</div><div className="empty-title">Aucune organisation</div><div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>Les groupes se créent dans Base de données → Groupes.</div></div> : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
           {rows.map(o => {
             const lab = scoreLabel(o.score); const isOpen = open === o.nom;
@@ -88,7 +79,7 @@ export default function ReputationPage() {
               <div key={o.nom} className="card" style={{ padding: "0.8rem 1rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.9rem", flexWrap: "wrap", cursor: "pointer" }} onClick={() => setOpen(isOpen ? null : o.nom)}>
                   <div style={{ flex: 1, minWidth: 170 }}>
-                    <div style={{ fontWeight: 700 }}>{o.nom} <span style={{ fontSize: "0.65rem", color: "var(--text-dim)", fontWeight: 400 }}>· {o.categorie}</span></div>
+                    <div style={{ fontWeight: 700 }}>{o.nom} <span style={{ fontSize: "0.65rem", color: "var(--text-dim)", fontWeight: 400 }}>· {o.type === "pf" ? "PF" : o.type === "inde" ? "Indé" : "Orga"}</span></div>
                     <div style={{ height: 6, borderRadius: 3, background: "var(--surface)", marginTop: 6, overflow: "hidden" }}><div style={{ width: `${o.score}%`, height: "100%", background: lab.color, transition: "width .6s var(--ease, ease)" }} /></div>
                   </div>
                   <div style={{ fontWeight: 800, fontSize: "1.3rem", color: lab.color, minWidth: 48, textAlign: "right" }}><CountUp value={o.score} /></div>
@@ -99,7 +90,7 @@ export default function ReputationPage() {
                     <div style={{ display: "flex", gap: "0.4rem", marginBottom: "0.6rem" }}>
                       <button className="btn btn-outline btn-sm" onClick={() => dossierPdf(o)}>📄 Dossier complet (PDF)</button>
                       {canWrite && <><button className="btn btn-outline btn-sm" onClick={() => setAdj({ org: o.nom, delta: "5", motif: "" })}>± Ajuster</button>
-                      <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => delOrg(o.nom)}>🗑️ Supprimer</button></>}
+                      <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => delOrg(o.nom)}>🧹 Remettre à zéro</button></>}
                     </div>
                     {o.history.length === 0 ? <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>Aucun mouvement (score de départ : 50)</div> :
                       o.history.slice(0, 30).map((h: any) => (
@@ -116,13 +107,6 @@ export default function ReputationPage() {
             );
           })}
         </div>
-      )}
-      {showOrg && (
-        <Modal title="Nouvelle organisation" onClose={() => setShowOrg(false)} footer={<><button className="btn btn-outline" onClick={() => setShowOrg(false)}>Annuler</button><button className="btn btn-gold" disabled={!orgForm.nom.trim()} onClick={addOrg}>Ajouter</button></>}>
-          <div><label>Nom *</label><input autoFocus value={orgForm.nom} onChange={e => setOrgForm({ ...orgForm, nom: e.target.value })} /></div>
-          <div><label>Catégorie</label><select value={orgForm.categorie} onChange={e => setOrgForm({ ...orgForm, categorie: e.target.value })}>{CATS.map(c => <option key={c}>{c}</option>)}</select></div>
-          <div><label>Notes</label><input value={orgForm.notes} onChange={e => setOrgForm({ ...orgForm, notes: e.target.value })} /></div>
-        </Modal>
       )}
       {adj && (
         <Modal title={`Ajuster — ${adj.org}`} onClose={() => setAdj(null)} footer={<><button className="btn btn-outline" onClick={() => setAdj(null)}>Annuler</button><button className="btn btn-gold" onClick={saveAdj}>Appliquer</button></>}>

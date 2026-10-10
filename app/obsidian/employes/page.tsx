@@ -9,10 +9,11 @@ import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
 import { hasPermission, DEFAULT_PERMISSIONS, getMemberColor } from "@/lib/auth";
 import { useRealtimeTable } from "@/lib/useRealtimeTable";
+import { EmployeeCardModalBody } from "@/components/EmployeeCard";
 
 interface Employe {
   id: string; nom: string; role: string; telephone: string; discord: string;
-  email: string; notes: string; actif: boolean; created_at: string;
+  email: string; notes: string; actif: boolean; created_at: string; photo_url?: string | null;
 }
 
 const EMPTY = { nom: "", role: "", telephone: "", discord: "", email: "", notes: "", actif: true };
@@ -33,6 +34,15 @@ export default function EmployesObsidianPage() {
   const [saving, setSaving] = useState(false);
   const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
   const [showInactifs, setShowInactifs] = useState(false);
+  const [cardId, setCardId] = useState<string | null>(null);
+  const cardEmp = employes.find(x => x.id === cardId) || null;
+  async function savePhoto(url: string | null) {
+    if (!cardEmp) return;
+    const r = await fetch("/api/obsidian/employes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: cardEmp.id, photo_url: url }) });
+    if (!r.ok) { const d = await r.json(); alert("❌ " + d.error); return; }
+    setEmployes(l => l.map(x => x.id === cardEmp.id ? { ...x, photo_url: url } : x));
+    showToast(url ? "Photo enregistrée" : "Photo retirée");
+  }
 
   const isPatron = (user as any)?.role === "Associé / Patron";
   useEffect(() => { load(); }, []);
@@ -128,7 +138,7 @@ export default function EmployesObsidianPage() {
               <div key={e.id} className="card" style={{ opacity: e.actif === false ? 0.55 : 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
                   <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: couleur + "20", border: `2px solid ${couleur}40`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display',serif", fontWeight: 700, color: couleur }}>
-                    {e.nom.charAt(0).toUpperCase()}
+                    {e.photo_url ? <img src={e.photo_url} alt="" referrerPolicy="no-referrer" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} /> : e.nom.charAt(0).toUpperCase()}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.nom}</div>
@@ -144,6 +154,7 @@ export default function EmployesObsidianPage() {
                 </div>
                 {e.notes && <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginBottom: "0.75rem", fontStyle: "italic" }}>{e.notes}</div>}
                 <div style={{ display: "flex", gap: "0.4rem" }}>
+                  <button className="btn btn-gold btn-sm" title="Carte pro" onClick={() => setCardId(e.id)}>🪪 Carte</button>
                   <button className="btn btn-outline btn-sm" style={{ flex: 1 }} onClick={() => openEdit(e)}>✏️ Modifier</button>
                   {isPatron && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} title="Supprimer (Patron)" onClick={() => window.confirm(`Supprimer ${e.nom} ?`) && remove(e.id)}>🗑️</button>}
                 </div>
@@ -173,6 +184,12 @@ export default function EmployesObsidianPage() {
                 <input type="checkbox" checked={form.actif} onChange={e => setForm(f => ({ ...f, actif: e.target.checked }))} style={{ width: 16, height: 16 }} />
                 <span style={{ fontSize: "0.82rem" }}>Actif</span>
               </label></Modal>
+      )}
+
+      {cardEmp && (
+        <Modal size="lg" title="🪪 Carte d'employé" onClose={() => setCardId(null)}>
+          <EmployeeCardModalBody e={cardEmp} canEdit onPhoto={savePhoto} />
+        </Modal>
       )}
 
       <UndoToast pending={pendingUndo} onUndo={undoDelete} />

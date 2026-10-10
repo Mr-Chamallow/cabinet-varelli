@@ -28,6 +28,10 @@ interface EmployeeRow {
   commission: number;
   dejaPaye: number;
   restant: number;
+  primeSale: number;
+  primePropre: number;
+  primeMixte: number;
+  prime: number;
 }
 
 export default function PaieObsidianPage() {
@@ -42,6 +46,7 @@ export default function PaieObsidianPage() {
   const [compta, setCompta] = useState<any[]>([]);
   const [cahier, setCahier] = useState<any[]>([]);
   const [paiements, setPaiements] = useState<any[]>([]);
+  const [arrests, setArrests] = useState<any[]>([]);
   const [pct, setPct] = useState(10);
   const [savingPct, setSavingPct] = useState(false);
   const [payAmount, setPayAmount] = useState<Record<string, number>>({});
@@ -54,13 +59,15 @@ export default function PaieObsidianPage() {
   async function load() {
     if (!supabase) return;
     setLoading(true);
-    const [{ data: m }, { data: c }, { data: cv }, { data: p }, { data: s }] = await Promise.all([
+    const [{ data: m }, { data: c }, { data: cv }, { data: p }, { data: s }, { data: ar }] = await Promise.all([
       supabase.from("obsidian_mouvements").select("*").eq("type", "sortie"),
       supabase.from("obsidian_comptabilite").select("*"),
       supabase.from("cahier_vente").select("*"),
       supabase.from("obsidian_paiements").select("*").order("created_at", { ascending: false }),
       supabase.from("obsidian_settings").select("*").eq("id", "default").maybeSingle(),
+      supabase.from("arrestations").select("membre,argent_perdu,type_argent,created_at"),
     ]);
+    setArrests(ar || []);
     setMouvements(m || []);
     setCompta(c || []);
     setCahier(cv || []);
@@ -111,20 +118,32 @@ export default function PaieObsidianPage() {
       else bump(t.created_by, 0, t.montant || 0);
     });
 
+    // Primes d'arrestation : l'argent perdu est remboursé en prime sur la paie (sale / propre).
+    const primes: Record<string, { sale: number; propre: number; mixte: number }> = {};
+    arrests.forEach(a => {
+      if (!inWeek(a.created_at, weekStart) || !a.membre || !(Number(a.argent_perdu) > 0)) return;
+      const k = a.type_argent === "propre" ? "propre" : a.type_argent === "mixte" ? "mixte" : "sale";
+      (primes[a.membre] ??= { sale: 0, propre: 0, mixte: 0 })[k] += Number(a.argent_perdu);
+      if (!map[a.membre]) map[a.membre] = { revenus: 0, depenses: 0 };
+    });
+
     return Object.entries(map).map(([nom, v]) => {
+      const pr = primes[nom] || { sale: 0, propre: 0, mixte: 0 };
+      const prime = pr.sale + pr.propre + pr.mixte;
       const benefice = v.revenus - v.depenses;
       const commission = Math.max(0, benefice) * (pct / 100);
       const dejaPaye = paiements
         .filter(p => p.employe === nom && p.semaine === weekStartISO)
         .reduce((s, p) => s + p.montant, 0);
-      return { nom, revenus: v.revenus, depenses: v.depenses, benefice, commission, dejaPaye, restant: Math.max(0, commission - dejaPaye) };
-    }).sort((a, b) => b.commission - a.commission);
-  }, [mouvements, compta, cahier, paiements, weekStart, weekStartISO, pct]);
+      return { nom, revenus: v.revenus, depenses: v.depenses, benefice, commission, dejaPaye, restant: Math.max(0, commission + prime - dejaPaye), primeSale: pr.sale, primePropre: pr.propre, primeMixte: pr.mixte, prime };
+    }).sort((a, b) => (b.commission + b.prime) - (a.commission + a.prime));
+  }, [mouvements, compta, cahier, paiements, arrests, weekStart, weekStartISO, pct]);
 
   const totaux = useMemo(() => ({
     revenus: rows.reduce((s, r) => s + r.revenus, 0),
     depenses: rows.reduce((s, r) => s + r.depenses, 0),
     commission: rows.reduce((s, r) => s + r.commission, 0),
+    prime: rows.reduce((s, r) => s + r.prime, 0),
     restant: rows.reduce((s, r) => s + r.restant, 0),
   }), [rows]);
 
@@ -178,11 +197,12 @@ export default function PaieObsidianPage() {
             <button className="btn btn-outline btn-sm" onClick={() => setWeekOffset(w => Math.max(0, w - 1))} disabled={weekOffset === 0}>Semaine suivante →</button>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "0.875rem", marginBottom: "1.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0.875rem", marginBottom: "1.5rem" }}>
             {[
               { l: "Revenus cumulés", v: fmt(totaux.revenus), c: "var(--success)" },
               { l: "Dépenses cumulées", v: fmt(totaux.depenses), c: "var(--danger)" },
               { l: "Commissions dues", v: fmt(totaux.commission), c: "var(--gold)" },
+              { l: "Primes arrestation", v: fmt(totaux.prime), c: "var(--info)" },
               { l: "Reste à payer", v: fmt(totaux.restant), c: totaux.restant > 0 ? "var(--warning)" : "var(--text-dim)" },
             ].map(s => (
               <div key={s.l} className="stat-card">
@@ -211,6 +231,12 @@ export default function PaieObsidianPage() {
                       <div style={{ fontWeight: 700, color: "var(--gold)", fontSize: "1.05rem" }}>{fmt(r.commission)}</div>
                       <div style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>commission ({pct}%)</div>
                     </div>
+                    {r.prime > 0 && (
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontWeight: 700, color: "var(--info)", fontSize: "0.9rem" }}>+ {fmt(r.prime)}</div>
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>prime arrestation{[r.primeSale > 0 && ` · sale ${fmt(r.primeSale)}`, r.primePropre > 0 && ` · propre ${fmt(r.primePropre)}`, r.primeMixte > 0 && ` · mixte ${fmt(r.primeMixte)}`].filter(Boolean).join("")}</div>
+                      </div>
+                    )}
                     {r.dejaPaye > 0 && (
                       <div style={{ textAlign: "right" }}>
                         <div style={{ fontWeight: 600, color: "var(--success)", fontSize: "0.85rem" }}>{fmt(r.dejaPaye)}</div>

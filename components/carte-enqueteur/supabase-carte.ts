@@ -136,6 +136,14 @@ export async function createGang(g: Omit<Gang, 'id'>): Promise<Gang> {
 }
 
 export async function updateGang(id: string, patch: Partial<Gang>): Promise<void> {
+  // Renommage : passe par le serveur pour propager le nouveau nom (tribunal, pactes, audits, fiches…).
+  if (patch.nom !== undefined) {
+    const { nom, ...rest } = patch;
+    const r = await fetch('/api/groupes/rename', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, nom }) });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'Renommage refusé');
+    patch = rest;
+    if (Object.keys(patch).length === 0) return;
+  }
   const { error } = await supabase.from('carte_gangs').update(patch).eq('id', id);
   if (error) throw error;
 }

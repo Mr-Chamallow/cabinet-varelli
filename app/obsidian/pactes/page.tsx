@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { gmWrite } from "@/lib/gmApi";
 import { pdfPacte } from "@/lib/pdfDocs";
-import { useGmAccess, useOrgs, Chip, Badge, fmtDT } from "@/components/gm/bits";
+import { useGmAccess, useGroupes, GroupeSelect, Chip, Badge, fmtDT } from "@/components/gm/bits";
 
 const STATUTS: Record<string, { label: string; color: string }> = {
   actif: { label: "Actif", color: "var(--success)" }, suspendu: { label: "Suspendu", color: "var(--warning)" },
@@ -27,7 +27,7 @@ export default function PactesPage() {
   const [form, setForm] = useState<any>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [viol, setViol] = useState<{ pact: any; texte: string } | null>(null);
-  const orgs = useOrgs(list.length);
+  const groupes = useGroupes();
 
   useEffect(() => { load(); }, []);
   useRealtimeTable("gm_pactes", load);
@@ -114,7 +114,7 @@ export default function PactesPage() {
         <Modal title={editId ? "Modifier le pacte" : "Nouveau pacte"} onClose={() => setShow(false)}
           footer={<><button className="btn btn-outline" onClick={() => setShow(false)}>Annuler</button><button className="btn btn-gold" disabled={saving || !form.organisation.trim()} onClick={save}>{saving ? "…" : "Enregistrer"}</button></>}>
           <div className="form-grid">
-            <div><label>Organisation *</label><input list="pact-orgs" value={form.organisation} onChange={e => setForm({ ...form, organisation: e.target.value })} /><datalist id="pact-orgs">{orgs.map(o => <option key={o} value={o} />)}</datalist></div>
+            <div><label>Organisation *</label><GroupeSelect value={form.organisation} groupes={groupes} onChange={v => setForm({ ...form, organisation: v })} /></div>
             <div><label>Statut</label><select value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>{Object.entries(STATUTS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}</select></div>
             <div><label>Date de signature</label><input type="date" value={form.date_signature} onChange={e => setForm({ ...form, date_signature: e.target.value })} /></div>
             <div><label>Fin (optionnel)</label><input type="date" value={form.date_fin} onChange={e => setForm({ ...form, date_fin: e.target.value })} /></div>
