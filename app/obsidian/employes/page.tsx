@@ -12,10 +12,11 @@ import { useRealtimeTable } from "@/lib/useRealtimeTable";
 import { EmployeeCard, EmployeeCardModalBody, sortByRole, roleKey, roleLabel } from "@/components/EmployeeCard";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { EmployeeDossier } from "@/components/EmployeeDossier";
+import { ProfilPsy, type Psy } from "@/components/ProfilPsy";
 
 interface Employe {
   id: string; nom: string; role: string; telephone: string; discord: string;
-  email: string; notes: string; rib?: string | null; histoire_url?: string | null; actif: boolean; created_at: string; photo_url?: string | null; genre?: string | null;
+  email: string; notes: string; rib?: string | null; histoire_url?: string | null; histoire_texte?: string | null; profil_psy?: Psy | null; actif: boolean; created_at: string; photo_url?: string | null; genre?: string | null;
 }
 
 const EMPTY = { nom: "", role: "", genre: "m", telephone: "", discord: "", email: "", notes: "", rib: "", actif: true };
@@ -51,17 +52,25 @@ export default function EmployesObsidianPage() {
   }
 
   const canPromote = /^(CEO|COO|Associé)/.test((user as any)?.role || "");
-  const [dTab, setDTab] = useState<"dossier" | "histoire">("dossier");
+  const [dTab, setDTab] = useState<"dossier" | "psy" | "histoire">("dossier");
   const [promoRole, setPromoRole] = useState("");
   const [promo, setPromo] = useState<{ nom: string; from: string; to: string; step: number } | null>(null);
   const [histUrl, setHistUrl] = useState("");
-  useEffect(() => { setHistUrl(cardEmp?.histoire_url || ""); setPromoRole(""); setDTab("dossier"); }, [cardId]); // eslint-disable-line
+  const [histTxt, setHistTxt] = useState("");
+  useEffect(() => { setHistUrl(cardEmp?.histoire_url || ""); setHistTxt(cardEmp?.histoire_texte || ""); setPromoRole(""); setDTab("dossier"); }, [cardId]); // eslint-disable-line
   async function saveHistoire() {
     if (!cardEmp) return;
-    const r = await fetch("/api/obsidian/employes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: cardEmp.id, histoire_url: histUrl.trim() || null }) });
+    const r = await fetch("/api/obsidian/employes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: cardEmp.id, histoire_url: histUrl.trim() || null, histoire_texte: histTxt.trim() || null }) });
     if (!r.ok) { const d = await r.json(); alert("❌ " + d.error); return; }
-    setEmployes(l => l.map(x => x.id === cardEmp.id ? { ...x, histoire_url: histUrl.trim() || null } : x));
+    setEmployes(l => l.map(x => x.id === cardEmp.id ? { ...x, histoire_url: histUrl.trim() || null, histoire_texte: histTxt.trim() || null } : x));
     showToast("Histoire enregistrée");
+  }
+  async function savePsy(psy: Psy) {
+    if (!cardEmp) return;
+    const r = await fetch("/api/obsidian/employes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: cardEmp.id, profil_psy: psy }) });
+    if (!r.ok) { const d = await r.json(); alert("❌ " + d.error + " (as-tu lancé migration-lot18.sql ?)"); return; }
+    setEmployes(l => l.map(x => x.id === cardEmp.id ? { ...x, profil_psy: psy } : x));
+    showToast("Profil psy enregistré");
   }
   async function promouvoir() {
     if (!cardEmp || !promoRole || promoRole === cardEmp.role) return;
@@ -227,17 +236,19 @@ export default function EmployesObsidianPage() {
             </div>
             <div>
               <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                {(["dossier", "histoire"] as const).map(t => <button key={t} className={`btn btn-sm ${dTab === t ? "btn-gold" : "btn-outline"}`} onClick={() => setDTab(t)}>{t === "dossier" ? "🗂️ Dossier" : "📖 Histoire"}</button>)}
+                {(["dossier", "psy", "histoire"] as const).map(t => <button key={t} className={`btn btn-sm ${dTab === t ? "btn-gold" : "btn-outline"}`} onClick={() => setDTab(t)}>{t === "dossier" ? "🗂️ Dossier" : t === "psy" ? "🧠 Profil psy" : "📖 Histoire"}</button>)}
               </div>
-              {dTab === "dossier" ? <EmployeeDossier e={cardEmp} /> : (
+              {dTab === "dossier" ? <EmployeeDossier e={cardEmp} /> : dTab === "psy" ? <ProfilPsy value={cardEmp.profil_psy} canEdit={true} onSave={savePsy} /> : (
                 <div className="card">
                   <div className="section-title" style={{ marginBottom: 8 }}>Histoire du personnage</div>
-                  <div className="form-group"><label>Lien Google Doc</label><input value={histUrl} onChange={e => setHistUrl(e.target.value)} placeholder="https://docs.google.com/document/d/…" /></div>
+                  <div className="form-group"><label>Texte de l'histoire</label><textarea rows={10} value={histTxt} onChange={e => setHistTxt(e.target.value)} placeholder="Écris ou colle le background du personnage…" /></div>
+                  <div className="form-group"><label>Lien Google Doc (optionnel)</label><input value={histUrl} onChange={e => setHistUrl(e.target.value)} placeholder="https://docs.google.com/document/d/…" /></div>
                   <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
                     <button className="btn btn-gold btn-sm" onClick={saveHistoire}>Enregistrer</button>
                     {cardEmp.histoire_url && <a className="btn btn-outline btn-sm" href={cardEmp.histoire_url} target="_blank" rel="noreferrer">Ouvrir ↗</a>}
                   </div>
-                  {cardEmp.histoire_url ? <iframe src={cardEmp.histoire_url.replace(/\/edit.*$/, "/preview")} style={{ width: "100%", height: 420, border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--surface)" }} /> : <div style={{ color: "var(--text-dim)", fontSize: "0.82rem" }}>Aucun lien enregistré.</div>}
+                  {cardEmp.histoire_texte && <div style={{ whiteSpace: "pre-wrap", fontSize: "0.86rem", lineHeight: 1.6, padding: "0.8rem 1rem", borderLeft: "3px solid var(--gold)", background: "var(--surface)", borderRadius: "var(--radius)", marginBottom: 10 }}>{cardEmp.histoire_texte}</div>}
+                  {cardEmp.histoire_url ? <iframe src={cardEmp.histoire_url.replace(/\/edit.*$/, "/preview")} style={{ width: "100%", height: 420, border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--surface)" }} /> : !cardEmp.histoire_texte && <div style={{ color: "var(--text-dim)", fontSize: "0.82rem" }}>Aucune histoire enregistrée.</div>}
                 </div>
               )}
             </div>
