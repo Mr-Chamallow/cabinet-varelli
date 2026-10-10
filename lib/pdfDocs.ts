@@ -9,7 +9,7 @@ const day = () => new Date().toISOString().slice(0, 10);
 // Les notes privées ne sont JAMAIS exportées : le PDF est fait pour être partagé.
 export async function pdfFiche(f: any) {
   const m = metierInfo(f.metier);
-  const p = await Pdf.create({ kind: "fiche", title: f.nom, subtitle: `Fiche - ${m.label}${(f.sous_tags || []).length ? " - " + f.sous_tags.join(", ") : ""}`, classification: "Fiche - confidentiel", signers: [`L'enqueteur|${f.created_by || ""}`, `La personne concernee|${f.nom || ""}`] });
+  const p = await Pdf.create({ kind: "fiche", title: f.nom, subtitle: `Fiche - ${m.label}${(f.sous_tags || []).length ? " - " + f.sous_tags.join(", ") : ""}`, classification: "Fiche - confidentiel", signers: [`L'enqueteur|${f.created_by || "Obsidian Logistics"}`, `La personne concernee|${f.nom || ""}`] });
   p.photos([{ url: f.photo_url, label: "Photo de la personne", w: 38, h: 47.5 }, { url: f.photo_id, label: "Carte d'identite", w: 72, h: 45 }]);
   p.section("Identite");
   p.kv([["Type", f.type], ["Priorite", f.priorite], ["Statut", f.statut], ["Metier", m.label], ["Organisation", f.organisation], ["Occupation", f.occupation],
@@ -47,7 +47,7 @@ export async function pdfPacte(x: any) {
 }
 
 export async function pdfAudit(a: any) {
-  const p = await Pdf.create({ kind: "audit", title: `Audit de conformite - ${a.organisation}`, subtitle: `Note ${a.note}/10 - ${fdate(a.created_at)}`, classification: "Audit - confidentiel", signers: [`L'auditeur|${a.created_by || ""}`, `L'organisation auditee|${a.organisation || ""}`] });
+  const p = await Pdf.create({ kind: "audit", title: `Audit de conformite - ${a.organisation}`, subtitle: `Note ${a.note}/10 - ${fdate(a.created_at)}`, classification: "Audit - confidentiel", signers: [`L'auditeur|${a.created_by || "Obsidian Logistics"}`, `L'organisation auditee|${a.organisation || ""}`] });
   p.section("Resultat");
   p.kv([["Organisation", a.organisation], ["Note", `${a.note}/10`], ["Realise par", a.created_by], ["Date", fdate(a.created_at)]]);
   p.section("Appreciation"); p.para(a.appreciation || "—");
@@ -58,7 +58,7 @@ export async function pdfAudit(a: any) {
 
 const TYPE_LABEL: any = { convoi: "Convoi", enchere: "Enchere", alerte: "Lanceur d'alerte", capture: "Capture" };
 export async function pdfEvenement(e: any) {
-  const p = await Pdf.create({ kind: "evenement", title: e.titre, subtitle: `${TYPE_LABEL[e.type] || "Evenement"} - ${e.statut}`, classification: "Operation - confidentiel", signers: [`Le responsable|${e.created_by || ""}`, `Le partenaire / la cible|${e.partenaire || ""}`] });
+  const p = await Pdf.create({ kind: "evenement", title: e.titre, subtitle: `${TYPE_LABEL[e.type] || "Evenement"} - ${e.statut}`, classification: "Operation - confidentiel", signers: [`Le responsable|${e.created_by || "Obsidian Logistics"}`, `Le partenaire / la cible|${e.partenaire || ""}`] });
   p.section("Details");
   p.kv([["Type", TYPE_LABEL[e.type]], ["Statut", e.statut], ["Partenaire / cible", e.partenaire], ["Date", fdate(e.date_event)], ["Montant", e.montant ? fusd(e.montant) : "—"], ["Cree par", e.created_by]]);
   if ((e.lots || []).length) { p.section("Lots"); p.table(["Lot", "Depart", "Adjuge", "Gagnant"], e.lots.map((l: any) => [l.nom, fusd(l.mise_depart), l.mise_finale ? fusd(l.mise_finale) : "—", l.gagnant]), [70, 32, 32, 40]); }
@@ -104,7 +104,7 @@ export async function pdfContrat(c: any) {
 
 export interface EnqueteItem { id: string; kind: "fiche" | "vehicule" | "note"; x: number; y: number; label: string; sub?: string; img?: string | null; prime?: number }
 export async function pdfEnquete(items: EnqueteItem[], links: { a: string; b: string; car?: boolean }[], auteur?: string) {
-  const p = await Pdf.create({ kind: "enquete", title: "Tableau d'enquete", subtitle: `${items.filter(i => i.kind === "fiche").length} personne(s) - ${items.filter(i => i.kind === "vehicule").length} vehicule(s) - ${links.length} lien(s)`, classification: "Enquete", signers: [`L'enqueteur|${auteur || ""}`, "Le responsable de dossier|"] });
+  const p = await Pdf.create({ kind: "enquete", title: "Tableau d'enquete", subtitle: `${items.filter(i => i.kind === "fiche").length} personne(s) - ${items.filter(i => i.kind === "vehicule").length} vehicule(s) - ${links.length} lien(s)`, classification: "Enquete", signers: [`L'enqueteur|${auteur || "Obsidian Logistics"}`, "Le responsable de dossier|Obsidian Logistics"] });
   const BW = 1500, BH = 920, PW = 124, PH = 150;
   const k = (p.W - 2 * p.M) / BW, H = BH * k;
   const byId = new Map(items.map(i => [i.id, i]));

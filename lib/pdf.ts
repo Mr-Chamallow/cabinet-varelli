@@ -136,17 +136,22 @@ export class Pdf {
     d.setLineWidth(0.4); d.setFillColor(...this.t.accent); star.forEach((pt, i) => { const q = star[(i + 1) % 10]; d.line(pt[0], pt[1], q[0], q[1]); });
   }
 
-  // Signature manuscrite générée (courbe pseudo-aléatoire stable pour ce document).
-  private scribble(x: number, y: number, w: number, salt: number) {
-    const d = this.doc; let seed = (this.hash + salt * 7919) >>> 0; const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
-    d.setDrawColor(28, 38, 92); d.setLineWidth(0.5);
-    let px = x, py = y; const steps = 7;
-    for (let i = 1; i <= steps; i++) {
-      const nx = x + (w * i) / steps, ny = y + (rnd() - 0.5) * 9;
-      d.lines([[ (nx - px) * 0.3, -(4 + rnd() * 6), (nx - px) * 0.7, (rnd() - 0.5) * 8, nx - px, ny - py ]], px, py, [1, 1], "S");
-      px = nx; py = ny;
-    }
-    d.setLineWidth(0.35); d.line(x + w * 0.1, y + 5.5, x + w * 0.9, y + 3.2);
+  // Signature manuscrite : le NOM du signataire est écrit en italique penché (encre bleue) avec un
+  // paraphe tracé d'après ce nom (stable). Sans nom, aucune fausse signature : la ligne reste à signer.
+  private scribble(x: number, y: number, w: number, name: string) {
+    const d = this.doc;
+    const txt = clean(name).split(" - ")[0].trim().slice(0, 30);
+    if (!txt) return;
+    let h = 2166136261; for (let i = 0; i < txt.length; i++) { h ^= txt.charCodeAt(i); h = Math.imul(h, 16777619); }
+    let seed = h >>> 0; const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+    d.setTextColor(28, 38, 92); d.setFont("times", "italic");
+    let size = 22; d.setFontSize(size);
+    while (d.getTextWidth(txt) > w - 4 && size > 9) { size -= 1; d.setFontSize(size); }
+    d.text(txt, x + 1, y + 6.5, { angle: 4 });
+    // paraphe : trait ondulé sous le nom, propre à chaque signataire
+    d.setDrawColor(28, 38, 92); d.setLineWidth(0.45);
+    const x0 = x + w * (0.05 + rnd() * 0.1), x1 = x + w * (0.8 + rnd() * 0.15), yb = y + 9.5;
+    d.lines([[(x1 - x0) * 0.3, -(1.5 + rnd() * 2.5), (x1 - x0) * 0.6, 2 + rnd() * 2, x1 - x0, -(rnd() * 3)]], x0, yb, [1, 1], "S");
   }
 
   private frame() {
@@ -284,7 +289,7 @@ export class Pdf {
     const labels = [this.opts.signers?.[0] || this.t.signers[0], this.opts.signers?.[1] || this.t.signers[1]];
     // Format "Rôle|Nom" : le nom réel de la personne qui signe est imprimé sous la ligne.
     xs.forEach((x, i) => {
-      this.scribble(x + 4, y0 + 14, colW - 12, i + 1);
+      this.scribble(x + 2, y0 + 10, colW - 6, labels[i].split("|")[1] || "");
       d.setDrawColor(...INK); d.setLineWidth(0.3); d.line(x, y0 + 24, x + colW, y0 + 24);
       d.setFont("helvetica", "bold"); d.setFontSize(7.5); d.setTextColor(...INK); d.text(clean(labels[i].split("|")[0]).toUpperCase(), x, y0 + 28.5, { charSpace: 0.4 });
       const nm = clean((labels[i].split("|")[1] || "").trim()); const nmShort = nm.length > 38 ? nm.slice(0, 37) + "." : nm;
