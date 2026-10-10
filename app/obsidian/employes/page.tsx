@@ -149,9 +149,8 @@ export default function EmployesObsidianPage() {
                 </div>
                 <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: "0.25rem", marginBottom: "0.75rem" }}>
                   {e.telephone && <span>📞 {e.telephone}</span>}
-                  {e.discord && <span>💬 {e.discord}</span>}
                   {e.email && <span>✉️ {e.email}</span>}
-                  {!e.telephone && !e.discord && !e.email && <span style={{ color: "var(--text-dim)", fontStyle: "italic" }}>Aucun contact renseigné</span>}
+                  {!e.telephone && !e.email && <span style={{ color: "var(--text-dim)", fontStyle: "italic" }}>Aucun contact renseigné</span>}
                 </div>
                 {e.notes && <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginBottom: "0.75rem", fontStyle: "italic" }}>{e.notes}</div>}
                 <div style={{ display: "flex", gap: "0.4rem" }}>
@@ -177,7 +176,6 @@ export default function EmployesObsidianPage() {
               </div>
               <div className="form-grid">
                 <div className="form-group"><label>Téléphone</label><input value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} /></div>
-                <div className="form-group"><label>Discord</label><input value={form.discord} onChange={e => setForm(f => ({ ...f, discord: e.target.value }))} /></div>
               </div>
               <div className="form-group"><label>Email</label><input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
               <div className="form-group"><label>Notes</label><textarea rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>

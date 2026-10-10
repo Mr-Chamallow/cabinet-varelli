@@ -11,7 +11,7 @@ export async function pdfFiche(f: any) {
   const p = await Pdf.create({ title: f.nom, subtitle: `Fiche - ${m.label}${(f.sous_tags || []).length ? " - " + f.sous_tags.join(", ") : ""}`, classification: "Fiche - confidentiel" });
   p.section("Identite");
   p.kv([["Type", f.type], ["Priorite", f.priorite], ["Statut", f.statut], ["Metier", m.label], ["Organisation", f.organisation], ["Occupation", f.occupation],
-    ["Origine", f.origine], ["Age", f.age ? `${f.age} ans` : ""], ["Telephone", f.telephone], ["Discord", f.discord]]);
+    ["Origine", f.origine], ["Age", f.age ? `${f.age} ans` : ""], ["Telephone", f.telephone]]);
   if ((f.tags || []).length) { p.section("Tags"); p.para((f.tags || []).join(", ")); }
   if (f.adresses) { p.section("Adresses"); p.para(f.adresses); }
   if (f.vehicules) { p.section("Vehicules"); p.para(f.vehicules); }

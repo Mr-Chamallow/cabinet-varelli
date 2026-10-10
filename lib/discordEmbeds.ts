@@ -22,7 +22,6 @@ export function buildFicheEmbed(f: any): NotifyEmbed {
       { name: "Origine", value: v(f.origine), inline: true },
       { name: "Âge", value: v(f.age), inline: true },
       { name: "Téléphone", value: v(f.telephone), inline: true },
-      { name: "Discord", value: v(f.discord), inline: true },
       { name: "Tags", value: f.tags?.length ? f.tags.join(", ") : "—", inline: false },
       { name: "Adresses", value: v(f.adresses), inline: false },
       { name: "Véhicules", value: v(f.vehicules), inline: false },

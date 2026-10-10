@@ -62,7 +62,7 @@ export default function PaieObsidianPage() {
     const [{ data: m }, { data: c }, { data: cv }, { data: p }, { data: s }, { data: ar }] = await Promise.all([
       supabase.from("obsidian_mouvements").select("*").eq("type", "sortie"),
       supabase.from("obsidian_comptabilite").select("*"),
-      supabase.from("cahier_vente").select("*"),
+      supabase.from("cahier_transactions").select("*"),
       supabase.from("obsidian_paiements").select("*").order("created_at", { ascending: false }),
       supabase.from("obsidian_settings").select("*").eq("id", "default").maybeSingle(),
       supabase.from("arrestations").select("membre,argent_perdu,type_argent,created_at"),

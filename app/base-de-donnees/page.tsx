@@ -14,6 +14,7 @@ import {
   fetchPoints,
   updatePoint,
 } from "@/components/carte-enqueteur/supabase-carte";
+import { syncBddToFiche } from "@/lib/ficheSync";
 import { WantedPoster } from "@/components/WantedPoster";
 import { gangTypeLabel } from "@/components/carte-enqueteur/types";
 import type { Gang, CartePoint } from "@/components/carte-enqueteur/types";
@@ -119,11 +120,11 @@ export default function BaseDeDonneesPage() {
     };
   }, [globalQuery, personnes, vehicules]);
 
-  // ─── Import rapide : détecte un doublon pendant la création (nom, tel, discord) ───
+  // ─── Import rapide : détecte un doublon pendant la création (nom, tel) ───
   const quickImportMatches = useMemo(() => {
     const q = quickImportQuery.trim().toLowerCase();
     if (!q || editPersonneId) return [];
-    return personnes.filter(p => `${fullName(p)} ${p.telephone || ""} ${p.discord || ""}`.toLowerCase().includes(q)).slice(0, 5);
+    return personnes.filter(p => `${fullName(p)} ${p.telephone || ""}`.toLowerCase().includes(q)).slice(0, 5);
   }, [quickImportQuery, personnes, editPersonneId]);
 
   function importPersonne(p: Personne) {
@@ -206,6 +207,7 @@ export default function BaseDeDonneesPage() {
       const { data, error } = await supabase.from("bdd_personnes").update(payload).eq("id", editPersonneId).select().single();
       if (error) { alert("❌ Erreur: " + error.message); setSavingPersonne(false); return; }
       setPersonnes(list => list.map(x => x.id === editPersonneId ? data : x));
+      if (data.fiche_id) await syncBddToFiche(supabase, data); // fiche liée mise à jour aussi
       showToast("Fiche mise à jour");
       if (before && before.statut !== data.statut) await logActivite(data.id, "statut", `Statut : ${before.statut || "—"} → ${data.statut || "—"}`);
       if (before && before.groupe_id !== data.groupe_id) await logActivite(data.id, "groupe", `Groupe : ${gangOf(before.groupe_id)?.nom || "aucun"} → ${gangOf(data.groupe_id)?.nom || "aucun"}`);
@@ -432,6 +434,7 @@ export default function BaseDeDonneesPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "0.35rem" }}>
+                  {(selectedPersonne as any).fiche_id && <a className="btn btn-outline btn-sm" href="/obsidian/fiches" title="Fiche liée">🗂️ Fiche</a>}
                   <button className="btn btn-outline btn-sm" title="Avis de recherche du Consortium" onClick={() => setWantedP(selectedPersonne)}>🧾 Recherché</button>
                   {canWrite && <button className="btn btn-outline btn-sm" onClick={() => openEditPersonne(selectedPersonne)}>✏️</button>}
                   {canWrite && <button className="btn btn-ghost btn-sm" onClick={() => deletePersonne(selectedPersonne.id)} style={{ color: "var(--danger)" }}>🗑️</button>}
@@ -441,7 +444,7 @@ export default function BaseDeDonneesPage() {
               {selectedPersonne.tags && selectedPersonne.tags.length > 0 && <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: "0.875rem" }}>{selectedPersonne.tags.map(t => <span key={t} style={{ fontSize: "0.65rem", padding: "0.08rem 0.5rem", borderRadius: 999, background: "var(--gold-muted)", color: "var(--gold)", border: "1px solid rgba(var(--gold-rgb), 0.3)" }}>{t}</span>)}</div>}
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem" }}>
-                {([["📞 Téléphone", selectedPersonne.telephone], ["💬 Discord", selectedPersonne.discord], ["🏢 Organisation", gangOf(selectedPersonne.groupe_id)?.nom || selectedPersonne.organisation], ["💼 Occupation", selectedPersonne.occupation], ["🌍 Origine", selectedPersonne.origine], ["🎂 Âge", selectedPersonne.age ? selectedPersonne.age + " ans" : ""]] as [string, string | undefined][]).map(([l, v]) => v ? <div key={l}><div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.15rem" }}>{l}</div><div style={{ fontSize: "0.82rem" }}>{v}</div></div> : null)}
+                {([["📞 Téléphone", selectedPersonne.telephone], ["🏢 Organisation", gangOf(selectedPersonne.groupe_id)?.nom || selectedPersonne.organisation], ["💼 Occupation", selectedPersonne.occupation], ["🌍 Origine", selectedPersonne.origine], ["🎂 Âge", selectedPersonne.age ? selectedPersonne.age + " ans" : ""]] as [string, string | undefined][]).map(([l, v]) => v ? <div key={l}><div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.15rem" }}>{l}</div><div style={{ fontSize: "0.82rem" }}>{v}</div></div> : null)}
               </div>
 
               {selectedPersonne.adresses && <div style={{ marginTop: "0.75rem" }}><div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.2rem" }}>📍 Adresses</div><div style={{ fontSize: "0.78rem", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>{selectedPersonne.adresses}</div></div>}
@@ -620,8 +623,8 @@ export default function BaseDeDonneesPage() {
             {!editPersonneId && (
               <div style={{ position: "relative", marginBottom: "1rem" }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>🔎 Import rapide — vérifier si la fiche existe déjà (nom, tel, Discord)</label>
-                  <input value={quickImportQuery} onChange={e => setQuickImportQuery(e.target.value)} placeholder="Taper un nom, un téléphone ou un pseudo Discord…" />
+                  <label>🔎 Import rapide — vérifier si la fiche existe déjà (nom, tel)</label>
+                  <input value={quickImportQuery} onChange={e => setQuickImportQuery(e.target.value)} placeholder="Taper un nom ou un téléphone…" />
                 </div>
                 {quickImportMatches.length > 0 && (
                   <div className="card" style={{ marginTop: 6, padding: "0.4rem" }}>
@@ -629,7 +632,6 @@ export default function BaseDeDonneesPage() {
                       <button key={p.id} onClick={() => importPersonne(p)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "0.45rem 0.6rem", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}>
                         <span>👤</span><span style={{ fontWeight: 600 }}>{fullName(p)}</span>
                         {p.telephone && <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>{p.telephone}</span>}
-                        {p.discord && <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>Discord: {p.discord}</span>}
                         <span style={{ marginLeft: "auto", fontSize: "0.68rem", color: "var(--gold)" }}>Ouvrir →</span>
                       </button>
                     ))}
@@ -650,7 +652,6 @@ export default function BaseDeDonneesPage() {
               <div className="form-group"><label>Statut</label><input value={personneForm.statut} onChange={e => setPersonneForm(f => ({ ...f, statut: e.target.value }))} /></div>
               <div className="form-group"><label>Groupe / Organisation</label><select value={personneForm.groupe_id || ""} onChange={e => setPersonneForm(f => ({ ...f, groupe_id: e.target.value || null }))}><option value="">Aucun</option>{gangs.map(g => <option key={g.id} value={g.id}>{g.nom}</option>)}</select></div>
               <div className="form-group"><label>📍 Point chaud (recensement)</label><select value={formPointId} onChange={e => setFormPointId(e.target.value)}><option value="">Aucun</option>{[...points].sort((a, b) => a.title.localeCompare(b.title)).map(pt => <option key={pt.id} value={pt.id}>{pt.title}</option>)}</select></div>
-              <div className="form-group"><label>Discord</label><input value={personneForm.discord} onChange={e => setPersonneForm(f => ({ ...f, discord: e.target.value }))} /></div>
               <div className="form-group"><label>Occupation</label><input value={personneForm.occupation} onChange={e => setPersonneForm(f => ({ ...f, occupation: e.target.value }))} /></div>
               <div className="form-group"><label>Origine</label><input value={personneForm.origine} onChange={e => setPersonneForm(f => ({ ...f, origine: e.target.value }))} /></div>
               <div className="form-group"><label>Âge</label><input type="number" value={personneForm.age || ""} onChange={e => setPersonneForm(f => ({ ...f, age: +e.target.value }))} /></div>

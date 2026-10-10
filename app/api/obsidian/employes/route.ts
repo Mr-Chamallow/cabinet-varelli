@@ -3,7 +3,7 @@ import { requirePermission, requirePatron } from "@/lib/serverAuth";
 import { logAudit } from "@/lib/alerts";
 
 // [table, colonne du nom] — toutes pointent vers l'employé par employe_id (rempli automatiquement en base).
-const TABLES_NOM: [string, string][] = [["actions_illegales", "membre"], ["arrestations", "membre"], ["obsidian_comptabilite", "membre"], ["obsidian_mouvements", "membre"], ["obsidian_paiements", "employe"], ["cahier_vente", "created_by"]];
+const TABLES_NOM: [string, string][] = [["actions_illegales", "membre"], ["arrestations", "membre"], ["obsidian_comptabilite", "membre"], ["obsidian_mouvements", "membre"], ["obsidian_paiements", "employe"], ["cahier_transactions", "created_by"]];
 
 export async function POST(req: Request) {
   try {
