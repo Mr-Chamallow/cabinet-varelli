@@ -251,10 +251,16 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
 
   // ---------- zones de groupe ----------
   const zones = useMemo(() => {
-    const m = new Map<string, Item[]>();
-    shown.filter(i => i.kind === "fiche").forEach(i => { const o = fById.get(i.ref!)?.organisation; if (o && norm(o)) { const k = norm(o); (m.get(k) || m.set(k, []).get(k)!).push(i); } });
+    const m = new Map<string, Item[]>(); const nomByKey = new Map<string, string>(); const nameOrg = new Map<string, string>(); fiches.forEach(f => { if (f.organisation) nameOrg.set(norm(f.nom), f.organisation); });
+    const orgOf = (i: Item): string | undefined => {
+      if (i.kind === "fiche") return fById.get(i.ref!)?.organisation || undefined;
+      if (i.kind === "vehicule") { const v = vById.get(i.ref!); if (!v) return; for (const n of v.owners?.length ? v.owners : [norm(v.assigne_a)]) { const o = nameOrg.get(n); if (o) return o; } return; }
+      if (i.kind === "dossier") { const d = dById.get(i.ref!); if (!d) return; const a = norm(d.accuse); for (const [n, o] of nameOrg) if (a.length >= 5 && (n === a || n.includes(a) || a.includes(n))) return o; return; }
+      if (i.kind === "pacte") return pcById.get(i.ref!)?.organisation || undefined;
+    };
+    shown.forEach(i => { const o = orgOf(i); if (o && norm(o)) { const k = norm(o); nomByKey.set(k, o); (m.get(k) || m.set(k, []).get(k)!).push(i); } });
     return [...m.entries()].filter(([, l]) => l.length >= 2).map(([k, l]) => {
-      const nom = fById.get(l[0].ref!)!.organisation!; const x0 = Math.min(...l.map(i => i.x)) - 28, y0 = Math.min(...l.map(i => i.y)) - 46, x1 = Math.max(...l.map(i => i.x)) + PW + 28, y1 = Math.max(...l.map(i => i.y)) + PH + 24;
+      const nom = nomByKey.get(k) || k; const x0 = Math.min(...l.map(i => i.x)) - 28, y0 = Math.min(...l.map(i => i.y)) - 46, x1 = Math.max(...l.map(i => i.x)) + PW + 28, y1 = Math.max(...l.map(i => i.y)) + PH + 24;
       return { k, nom, x: x0, y: y0, w: x1 - x0, h: y1 - y0, type: typeOfGroup(nom) };
     });
   }, [shown, fById, groupes]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -375,7 +381,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   async function exportPng() {
     const s = 0.7; const cv = document.createElement("canvas"); cv.width = W * s; cv.height = H * s; const g = cv.getContext("2d")!; g.scale(s, s);
     g.fillStyle = "#a87b4f"; g.fillRect(0, 0, W, H);
-    zones.forEach(zn => { g.fillStyle = (TYPE_COLOR[zn.type] || "#999") + "33"; g.strokeStyle = TYPE_COLOR[zn.type] || "#999"; g.lineWidth = 2; g.setLineDash([10, 6]); g.beginPath(); g.roundRect(zn.x, zn.y, zn.w, zn.h, 18); g.fill(); g.stroke(); g.setLineDash([]); g.fillStyle = "#2b1d0e"; g.font = "bold 18px sans-serif"; g.fillText(zn.nom, zn.x + 14, zn.y + 26); });
+    zones.forEach(zn => { g.strokeStyle = TYPE_COLOR[zn.type] || "#999"; g.lineWidth = 2; g.setLineDash([10, 6]); g.beginPath(); g.roundRect(zn.x, zn.y, zn.w, zn.h, 18); g.stroke(); g.setLineDash([]); g.fillStyle = "#2b1d0e"; g.font = "bold 18px sans-serif"; g.fillText(zn.nom, zn.x + 14, zn.y + 26); });
     const c = (id: string) => { const i = byId(id)!; return { x: i.x + PW / 2, y: i.y + 6 }; };
     links.forEach(l => { const a = c(l.a), b = c(l.b); g.strokeStyle = l.color; g.lineWidth = 3; g.setLineDash(l.dash ? [8, 6] : []); g.beginPath(); g.moveTo(a.x, a.y); g.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 + 30, b.x, b.y); g.stroke(); g.setLineDash([]); if (l.label) { g.fillStyle = "#2b1d0e"; g.font = "bold 14px sans-serif"; g.fillText(l.label, (a.x + b.x) / 2 - 20, (a.y + b.y) / 2 + 22); } });
     const load = (u: string) => new Promise<HTMLImageElement | null>(res => { const im = new Image(); im.crossOrigin = "anonymous"; im.onload = () => res(im); im.onerror = () => res(null); im.src = u; });
@@ -435,7 +441,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
         <div ref={vp} className="bd-viewport" style={{ height: "calc(100vh - 330px)", minHeight: 320, flex: 1, ...(over ? { outline: "3px dashed #e8c870", outlineOffset: -8 } : {}) }}
           onPointerDown={bgDown} onPointerMove={bgMove} onPointerUp={bgUp} onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={dropBoard}>
           <div className="board" style={{ width: W, height: H, transform: `translate(${pan.x}px,${pan.y}px) scale(${z})`, transformOrigin: "0 0" }}>
-            {zones.map(zn => <div key={zn.k} className="bd-zone" style={{ left: zn.x, top: zn.y, width: zn.w, height: zn.h, borderColor: TYPE_COLOR[zn.type], background: (TYPE_COLOR[zn.type] || "#999") + "22" }}><span style={{ color: "#fff" }}><GroupeLogo nom={zn.nom} type={zn.type} size={26} />{zn.nom}</span></div>)}
+            {zones.map(zn => <div key={zn.k} className="bd-zone" style={{ left: zn.x, top: zn.y, width: zn.w, height: zn.h, borderColor: TYPE_COLOR[zn.type], background: "transparent" }}><span style={{ color: "#fff" }}><GroupeLogo nom={zn.nom} type={zn.type} size={26} />{zn.nom}</span></div>)}
             <svg width={W} height={H}>
               {links.map((l, i) => {
                 const a = cpt(l.a), b = cpt(l.b); const sag = 28 + ((a.x + b.y) % 22); const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 + sag / 2 + 8; const hot = path?.keys.has(l.key); const dim = (!!path && path.nodes.length > 0 && !hot) || (keepSet ? !(keepSet.has(l.a) && keepSet.has(l.b)) : false);

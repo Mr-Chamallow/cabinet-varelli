@@ -1369,7 +1369,7 @@ html[data-theme="light"] .sidebar-overlay { background: rgba(60,40,10,.35); }
 .idc-nick { font-size: .66rem; font-style: italic; letter-spacing: .04em; color: var(--c); opacity: .85; margin: -1px 0 2px; }
 
 .bd-viewport { position: relative; overflow: hidden; touch-action: none; background: #2a1d10; border: 6px solid #5b4128; border-radius: 10px; cursor: grab; min-width: 0; }
-.bd-zone { position: absolute; border: 2px dashed rgba(255,255,255,.35); border-radius: 18px; pointer-events: none; background: rgba(255,255,255,.04); }
+.bd-zone { position: absolute; border: 3px dashed rgba(255,255,255,.55); border-radius: 18px; pointer-events: none; background: none; }
 .bd-zone span { position: absolute; top: -16px; left: 12px; display: flex; gap: 6px; align-items: center; background: #1b1209; color: #fff !important; font: 700 .95rem Inter, sans-serif; padding: 3px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,.4); white-space: nowrap; }
 .bd-lbl { font: 700 11px Inter, sans-serif; fill: #fff; paint-order: stroke; stroke: #000; stroke-width: 3px; }
 .pin.bd-sel { outline: 3px solid #38bdf8; z-index: 40; }
