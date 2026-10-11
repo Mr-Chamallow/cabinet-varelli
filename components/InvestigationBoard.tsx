@@ -37,7 +37,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   const [groupes, setGroupes] = useState<{ id: string; nom: string; type: string }[]>([]);
   const [pick, setPick] = useState(""); const [pickG, setPickG] = useState("");
   const [err, setErr] = useState("");
-  const [over, setOver] = useState(false);
+  const [over, setOver] = useState(false); const [showSide, setShowSide] = useState(false);
   const [z, setZ] = useState(0.6); const [pan, setPan] = useState({ x: 10, y: 10 });
   const [sel, setSel] = useState<Set<string>>(new Set()); const [selLink, setSelLink] = useState<string | null>(null);
   const [linkMode, setLinkMode] = useState(false); const [linkFrom, setLinkFrom] = useState<string | null>(null); const [draft, setDraft] = useState<{ a: string; b: string; type: string; label: string } | null>(null);
@@ -290,7 +290,9 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   function bgUp() {
     const p = panRef.current; panRef.current = null;
     if (p && !p.moved) { setSel(new Set()); setSelLink(null); if (linkMode) setLinkFrom(null); return; }
-    const d = dragRef.current; dragRef.current = null; if (!d || !d.moved) return;
+    const d = dragRef.current; dragRef.current = null;
+    if (d && !d.moved) { const c = clickRef.current; clickRef.current = null; if (c) { const now = Date.now(); const last = lastClick.current; lastClick.current = { id: c.it.id, t: now }; if (last && last.id === c.it.id && now - last.t < 350 && c.it.kind === "fiche" && c.it.ref && !linkMode && !pathMode) { onOpen(c.it.ref); return; } clickPin(c.it, c.shift); } return; }
+    clickRef.current = null; if (!d) return;
     const moves = d.ids.map(id => { const c = byId(id)!; return { id, from: d.start[id], to: { x: Math.round(c.x), y: Math.round(c.y) } }; });
     moves.forEach(m => dbw.update("obsidian_board", m.id, { x: m.to.x, y: m.to.y }));
     push({ undo: async () => { moves.forEach(m => setPos(R(m.id), m.from.x, m.from.y)); }, redo: async () => { moves.forEach(m => setPos(R(m.id), m.to.x, m.to.y)); } });
@@ -301,7 +303,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
     dragRef.current = { ids, start: Object.fromEntries(ids.map(id => [id, { x: byId(id)!.x, y: byId(id)!.y }])), px: q.x, py: q.y, moved: false };
     panRef.current = null; clickRef.current = { it, shift: e.shiftKey || e.ctrlKey || e.metaKey };
   }
-  const clickRef = useRef<{ it: Item; shift: boolean } | null>(null);
+  const clickRef = useRef<{ it: Item; shift: boolean } | null>(null); const lastClick = useRef<{ id: string; t: number } | null>(null);
   function pinUp(e: React.PointerEvent) {
     const d = dragRef.current; const c = clickRef.current; clickRef.current = null;
     if (!d || !c) return; if (d.moved) { bgUp(); return; } dragRef.current = null; clickPin(c.it, c.shift);
@@ -408,6 +410,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
         <button className="btn btn-gold btn-sm" onClick={submitGroup} disabled={!pickG.trim()}>➕ Groupe</button>
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap", alignItems: "center" }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => setShowSide(v => !v)} title="Légende">ℹ️ Légende</button>
         <button className={tb(linkMode)} onClick={() => { setLinkMode(m => !m); setLinkFrom(null); setPathMode(false); setPathA(null); setPathB(null); }}>🔗 Lier</button>
         <button className={tb(pathMode)} onClick={() => { setPathMode(m => !m); setPathA(null); setPathB(null); setLinkMode(false); setLinkFrom(null); }}>🧭 Chemin</button>
         <button className="btn btn-outline btn-sm" onClick={() => zoomBy(1.2)}>＋</button><button className="btn btn-outline btn-sm" onClick={() => zoomBy(0.83)}>－</button>
@@ -423,17 +426,11 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
         {items.length > 0 && <><button className="btn btn-outline btn-sm" onClick={exportPng}>🖼️ PNG</button><button className="btn btn-outline btn-sm" onClick={exportPdf}>📄 PDF</button><button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={clearAll}>🧹 Vider</button></>}
       </div>
       {err && <div style={{ color: "var(--danger)", fontSize: "0.78rem", marginBottom: 6 }}>{err}</div>}
-      {(linkMode || pathMode) && (
-        <div style={{ fontSize: "0.76rem", color: "var(--gold)", marginBottom: 6 }}>
-          {linkMode && (linkFrom ? `🔗 Clique sur la 2e pièce (de : ${labelOf(linkFrom)})` : "🔗 Clique sur la 1re pièce à relier (Échap pour quitter)")}
-          {pathMode && (path ? (path.nodes.length ? `🧭 ${path.nodes.map(labelOf).join(" → ")} (${path.nodes.length - 1} lien${path.nodes.length > 2 ? "s" : ""})` : "🧭 Aucun chemin entre ces deux pièces") : pathA ? `🧭 Départ : ${labelOf(pathA)}. Clique sur l'arrivée.` : "🧭 Clique sur la pièce de départ puis sur l'arrivée (Échap pour quitter)")}
-        </div>
-      )}
       <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
-        <div ref={vp} className="bd-viewport" style={{ height: "64vh", flex: 1, ...(over ? { outline: "3px dashed #e8c870", outlineOffset: -8 } : {}) }}
+        <div ref={vp} className="bd-viewport" style={{ height: "calc(100vh - 330px)", minHeight: 320, flex: 1, ...(over ? { outline: "3px dashed #e8c870", outlineOffset: -8 } : {}) }}
           onPointerDown={bgDown} onPointerMove={bgMove} onPointerUp={bgUp} onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={dropBoard}>
           <div className="board" style={{ width: W, height: H, transform: `translate(${pan.x}px,${pan.y}px) scale(${z})`, transformOrigin: "0 0" }}>
-            {zones.map(zn => <div key={zn.k} className="bd-zone" style={{ left: zn.x, top: zn.y, width: zn.w, height: zn.h, borderColor: TYPE_COLOR[zn.type], background: (TYPE_COLOR[zn.type] || "#999") + "22" }}><span style={{ color: "#2b1d0e" }}><GroupeLogo nom={zn.nom} type={zn.type} size={26} />{zn.nom}</span></div>)}
+            {zones.map(zn => <div key={zn.k} className="bd-zone" style={{ left: zn.x, top: zn.y, width: zn.w, height: zn.h, borderColor: TYPE_COLOR[zn.type], background: (TYPE_COLOR[zn.type] || "#999") + "22" }}><span style={{ color: "#fff" }}><GroupeLogo nom={zn.nom} type={zn.type} size={26} />{zn.nom}</span></div>)}
             <svg width={W} height={H}>
               {links.map((l, i) => {
                 const a = cpt(l.a), b = cpt(l.b); const sag = 28 + ((a.x + b.y) % 22); const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 + sag / 2 + 8; const hot = path?.keys.has(l.key); const dim = (!!path && path.nodes.length > 0 && !hot) || (keepSet ? !(keepSet.has(l.a) && keepSet.has(l.b)) : false);
@@ -455,7 +452,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
               const cls = `pin${f && Number(f.prime) > 0 ? " hot" : ""}${f?.surveille ? " eye" : ""}${sel.has(it.id) ? " bd-sel" : ""}${dim ? " bd-dim" : ""}${linkFrom === it.id || pathA === it.id || pathB === it.id ? " bd-pick" : ""}${d ? " k-dossier" : ""}${pc ? " k-pacte" : ""}`;
               const photo = it.kind === "note" ? it.img : (f?.photo_url || v?.photo_url);
               return (
-                <div key={it.id} className={cls} style={{ left: it.x, top: it.y, transform: rot }} onPointerDown={e => pinDown(e, it)} onPointerUp={pinUp} onDoubleClick={() => f && onOpen(f.id)}
+                <div key={it.id} className={cls} style={{ left: it.x, top: it.y, transform: rot }} onPointerDown={e => pinDown(e, it)} 
                   onDragOver={e => { e.preventDefault(); e.stopPropagation(); }} onDrop={e => dropPin(e, it)}>
                   <button className="pin-x" onPointerDown={e => e.stopPropagation()} onClick={() => removeAct([it.id])} title="Retirer du tableau">x</button>
                   {photo ? <img src={photo} alt="" draggable={false} referrerPolicy="no-referrer" /> : <div className="pin-no">{v ? "🚗" : d ? "⚖️" : pc ? "🤝" : "?"}</div>}
@@ -465,7 +462,12 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
               );
             })}
           </div>
-          {linkMode && !linkFrom && <div className="bd-hint">🔗 Mode liens : clique deux pièces</div>}
+          {(linkMode || pathMode) && (
+        <div className="bd-status" onPointerDown={e => e.stopPropagation()}>
+          {linkMode && (linkFrom ? `🔗 Clique sur la 2e pièce (de : ${labelOf(linkFrom)})` : "🔗 Clique sur la 1re pièce à relier (Échap pour quitter)")}
+          {pathMode && (path ? (path.nodes.length ? `🧭 ${path.nodes.map(labelOf).join(" → ")} (${path.nodes.length - 1} lien${path.nodes.length > 2 ? "s" : ""})` : "🧭 Aucun chemin entre ces deux pièces") : pathA ? `🧭 Départ : ${labelOf(pathA)}. Clique sur l'arrivée.` : "🧭 Clique sur la pièce de départ puis sur l'arrivée (Échap pour quitter)")}
+        </div>
+          )}
           {/* mini-carte */}
           <div className="bd-mini" style={{ width: 170, height: H * mm }} onPointerDown={e => { e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); const tx = (e.clientX - r.left) / mm, ty = (e.clientY - r.top) / mm; setPan({ x: vw / 2 - tx * z, y: vh / 2 - ty * z }); }}>
             {shown.map(i => <i key={i.id} style={{ left: i.x * mm, top: i.y * mm, width: Math.max(3, PW * mm), height: Math.max(4, PH * mm), background: i.kind === "fiche" ? TYPE_COLOR[typeOfGroup(fById.get(i.ref!)?.organisation)] || "#e8c870" : "#c9b88a" }} />)}
@@ -480,7 +482,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
             </div>
           )}
         </div>
-        <div className="bd-side">
+        {(showSide || selLinkObj || sel.size > 0) && <div className="bd-side"><button className="btn btn-ghost btn-sm" style={{ float: "right", padding: "0 6px" }} onClick={() => { setShowSide(false); setSel(new Set()); setSelLink(null); }}>✕</button>
           {selLinkObj ? (
             <>
               <b>🔗 Lien</b><div style={{ fontSize: "0.72rem" }}>{labelOf(selLinkObj.a)} → {labelOf(selLinkObj.b)}</div>
@@ -508,7 +510,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
               <div style={{ fontSize: "0.66rem", color: "var(--text-dim)", marginTop: 4 }}>Auto : rouge = même groupe / relations · pointillé orange = véhicule · bleu = dossier tribunal · or = pacte.</div>
               <div style={{ fontSize: "0.66rem", color: "var(--text-dim)" }}>Double-clic sur une fiche = ouvrir. Ctrl+Z / Ctrl+Y = annuler / rétablir.</div></>
           )}
-        </div>
+        </div>}
       </div>
       {timeline && (
         <div className="card" style={{ marginTop: 8, padding: "0.7rem 0.9rem", maxHeight: 220, overflow: "auto" }}>
