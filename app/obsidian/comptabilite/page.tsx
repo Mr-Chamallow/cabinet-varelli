@@ -224,7 +224,8 @@ export default function ComptaHubPage() {
             <Kpi icon="↑" label="Recettes" value={fmt(R)} color={COL.rec} sub={<>vs période préc. <Delta cur={R} prev={rec(prev)} /></>} />
             <Kpi icon="↓" label="Dépenses & pertes" value={fmt(D)} color={COL.dep} sub={<>vs période préc. <Delta cur={D} prev={dep(prev)} invert /></>} />
             <Kpi icon="⚖️" label="Résultat net" value={fmt(N)} color={N >= 0 ? COL.rec : COL.dep} sub={<>vs période préc. <Delta cur={N} prev={rec(prev) - dep(prev)} /></>} />
-            <Kpi icon="🏦" label="Trésorerie cumulée" value={fmt(soldeTotal)} color={soldeTotal >= 0 ? COL.rec : COL.dep} sub="depuis le début" />
+            <Kpi icon="💵" label="Caisse propre" value={fmt(budgetCalc.tPropre)} color={budgetCalc.tPropre >= 0 ? COL.rec : COL.dep} sub="paies, achats propres" />
+            <Kpi icon="🕶️" label="Caisse sale" value={fmt(budgetCalc.tSale)} color={budgetCalc.tSale >= 0 ? COL.rec : COL.dep} sub="à blanchir" />
             <Kpi icon="📐" label="Marge" value={R ? pct((N / R) * 100) : "-"} sub="net / recettes" />
             <Kpi icon="🚔" label="Amendes (primes de paie)" value={fmt(amendes)} color={COL.warn} sub={`${curArr.filter(a => Number(a.amende) > 0).length} amende(s)`} />
           </div>

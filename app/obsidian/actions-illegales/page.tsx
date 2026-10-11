@@ -23,7 +23,7 @@ const PERIODS = [
   { k: "month", label: "30 jours", ms: 30 * 86400_000 },
 ];
 
-interface Entry { id: string; membre: string; action: string; montant: number; notes?: string; created_by?: string; created_at: string; }
+interface Entry { id: string; membre: string; action: string; montant: number; type_argent?: string; notes?: string; created_by?: string; created_at: string; }
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
 function countdown(ms: number) {
@@ -54,7 +54,7 @@ export default function ActionsIllegalesPage() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState({ action: DEFAULT_ACTION_TYPES[0].nom, membre: "", resultat: "gain", montant: "", date: localInputNow(), notes: "" });
+  const [form, setForm] = useState({ action: DEFAULT_ACTION_TYPES[0].nom, membre: "", resultat: "gain", argent: "sale", montant: "", date: localInputNow(), notes: "" });
 
   useEffect(() => { load(); }, []);
   useRealtimeTable(["actions_illegales", "actions_illegales_types"], load);
@@ -117,7 +117,7 @@ export default function ActionsIllegalesPage() {
   function openEdit(e: Entry) {
     const d = new Date(e.created_at); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     setEditId(e.id);
-    setForm({ action: e.action, membre: e.membre, resultat: e.montant < 0 ? "perte" : "gain", montant: String(Math.abs(e.montant) || ""), date: d.toISOString().slice(0, 16), notes: e.notes || "" });
+    setForm({ action: e.action, membre: e.membre, resultat: e.montant < 0 ? "perte" : "gain", argent: e.type_argent === "propre" ? "propre" : "sale", montant: String(Math.abs(e.montant) || ""), date: d.toISOString().slice(0, 16), notes: e.notes || "" });
     setShowForm(true);
   }
 
@@ -127,7 +127,7 @@ export default function ActionsIllegalesPage() {
 
   function openForm() {
     setEditId(null);
-    setForm({ action: activeTypes[0]?.nom || DEFAULT_ACTION_TYPES[0].nom, membre: (user as any)?.nom || "", resultat: "gain", montant: "", date: localInputNow(), notes: "" });
+    setForm({ action: activeTypes[0]?.nom || DEFAULT_ACTION_TYPES[0].nom, membre: (user as any)?.nom || "", resultat: "gain", argent: "sale", montant: "", date: localInputNow(), notes: "" });
     setShowForm(true);
   }
 
@@ -139,6 +139,7 @@ export default function ActionsIllegalesPage() {
       membre: form.membre.trim(),
       action: form.action,
       montant: form.resultat === "perte" ? -abs : abs,
+      type_argent: form.argent,
       notes: form.notes.trim() || null,
       created_by: (user as any)?.nom || null,
       created_at: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
@@ -270,7 +271,7 @@ export default function ActionsIllegalesPage() {
                     {e.notes ? ` · ${e.notes}` : ""}
                   </div>
                 </div>
-                <div style={{ fontWeight: 800, color: col, fontSize: "0.95rem" }}>{e.montant > 0 ? "+" : ""}{fmt(e.montant)}</div>
+                <div style={{ textAlign: "right" }}><div style={{ fontWeight: 800, color: col, fontSize: "0.95rem" }}>{e.montant > 0 ? "+" : ""}{fmt(e.montant)}</div><div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>{e.type_argent === "propre" ? "💵 propre" : "🕶️ sale"}</div></div>
                 {(canDeleteAll || (canWrite && e.created_by === (user as any)?.nom)) && (
                   <button className="btn btn-ghost btn-sm" onClick={() => openEdit(e)} title="Modifier">✏️</button>
                 )}
@@ -306,6 +307,13 @@ export default function ActionsIllegalesPage() {
               <select value={form.resultat} onChange={e => setForm({ ...form, resultat: e.target.value })}>
                 <option value="gain">💰 Gain</option>
                 <option value="perte">📉 Perte</option>
+              </select>
+            </div>
+            <div>
+              <label>Argent</label>
+              <select value={form.argent} onChange={e => setForm({ ...form, argent: e.target.value })}>
+                <option value="sale">🕶️ Sale</option>
+                <option value="propre">💵 Propre</option>
               </select>
             </div>
             <div>

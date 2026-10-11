@@ -16,7 +16,7 @@ export const PERMISSION_GUIDE: PermGroup[] = [
   { titre: "Finances", icon: "💰", perms: [
     { key: "obsidian_comptabilite", read: "Hub compta complet : synthèse, flux, catégories, marges, semaines, journal, expert (lecture seule).", write: "Écriture réservée au blanchiment, à la clôture manuelle de semaine et à l'export. Aucune saisie manuelle : tout vient des autres onglets." },
     { key: "obsidian_paie", read: "Voir les paies, commissions et primes de la semaine.", write: "Marquer payé, saisir bonus/malus. Une paie payée devient une DÉPENSE dans la semaine du paiement." },
-    { key: "obsidian_dons", read: "Voir ses dons et leur statut.", write: "Faire un don (argent propre ou sale, photo de preuve). Le don est déduit de la paie une fois validé par la paie." },
+    { key: "obsidian_dons", read: "Voir ses dons et leur statut.", write: "Faire un don à l'entreprise (argent propre ou sale, photo de preuve). Une fois validé, il entre en caisse. Aucun effet sur la paie." },
     { key: "obsidian_stats", read: "Hub statistiques (équipe, activité, performance).", write: "Idem (page en lecture seule)." },
   ]},
   { titre: "Actions & terrain", icon: "🎯", perms: [

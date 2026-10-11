@@ -29,7 +29,6 @@ interface EmployeeRow {
   primeMixte: number;
   prime: number;
   primeFixe: number;
-  dons: number;
 }
 
 export default function PaieObsidianPage() {
@@ -109,9 +108,6 @@ export default function PaieObsidianPage() {
       if (!map[a.membre]) map[a.membre] = { revenus: 0, depenses: 0 };
     });
 
-    // Dons validés : déduits de la paie de la semaine choisie pour le don
-    dons.forEach(d => { if (d.statut === "valide" && d.semaine === weekStartISO && d.employe && !map[d.employe]) map[d.employe] = { revenus: 0, depenses: 0 }; });
-
     return Object.entries(map).map(([nom, v]) => {
       const pr = primes[nom] || { sale: 0, propre: 0, mixte: 0 };
       const prime = pr.sale + pr.propre + pr.mixte;
@@ -121,17 +117,16 @@ export default function PaieObsidianPage() {
       const dejaPaye = paiements
         .filter(p => p.employe === nom && p.semaine === weekStartISO)
         .reduce((s, p) => s + p.montant, 0);
-      const donsEmp = dons.filter(d => d.statut === "valide" && d.employe === nom && d.semaine === weekStartISO).reduce((s, d) => s + Number(d.montant), 0);
-      return { nom, revenus: v.revenus, depenses: v.depenses, benefice, commission, dejaPaye, restant: Math.max(0, commission + prime + fixe - donsEmp - dejaPaye), primeSale: pr.sale, primePropre: pr.propre, primeMixte: pr.mixte, prime, primeFixe: fixe, dons: donsEmp };
+      return { nom, revenus: v.revenus, depenses: v.depenses, benefice, commission, dejaPaye, restant: Math.max(0, commission + prime + fixe - dejaPaye), primeSale: pr.sale, primePropre: pr.propre, primeMixte: pr.mixte, prime, primeFixe: fixe };
     }).sort((a, b) => (b.commission + b.prime + b.primeFixe) - (a.commission + a.prime + a.primeFixe));
-  }, [compta, paiements, arrests, dons, weekStart, weekStartISO, pct, primeSeuil, primeFixe]);
+  }, [compta, paiements, arrests, weekStart, weekStartISO, pct, primeSeuil, primeFixe]);
 
   const totaux = useMemo(() => ({
     revenus: rows.reduce((s, r) => s + r.revenus, 0),
     depenses: rows.reduce((s, r) => s + r.depenses, 0),
     commission: rows.reduce((s, r) => s + r.commission, 0),
-    prime: rows.reduce((s, r) => s + r.prime + r.primeFixe, 0),
-    dons: rows.reduce((s, r) => s + r.dons, 0),
+    prime: rows.reduce((s, r) => s + r.prime, 0),
+    fixe: rows.reduce((s, r) => s + r.primeFixe, 0),
     restant: rows.reduce((s, r) => s + r.restant, 0),
   }), [rows]);
 
@@ -158,7 +153,7 @@ export default function PaieObsidianPage() {
     const res = await fetch("/api/obsidian/dons", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ok }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { alert("❌ " + (data.error || "Erreur")); return; }
-    showToast(ok ? "Don validé, déduit de la paie" : "Don refusé");
+    showToast(ok ? "Don validé, ajouté à la caisse" : "Don refusé");
     load();
   }
 
@@ -201,7 +196,7 @@ export default function PaieObsidianPage() {
 
           {!loading && budget && (tresoPropre < seuilTreso || tresoPropre < totaux.restant) && (
             <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.35)", borderRadius: "var(--radius-lg)", padding: "0.75rem 1rem", marginBottom: "1rem", fontSize: "0.8rem", color: "var(--danger)", fontWeight: 600 }}>
-              ⚠️ Trésorerie propre : {fmt(tresoPropre)}{seuilTreso > 0 ? ` (seuil minimum ${fmt(seuilTreso)})` : ""} · reste à payer cette semaine : {fmt(totaux.restant)}. Un paiement demandera une confirmation.
+              ⚠️ Trésorerie propre : {fmt(tresoPropre)}{seuilTreso > 0 ? ` (seuil minimum ${fmt(seuilTreso)})` : ""} · reste à payer cette semaine : {fmt(totaux.restant)}. Les paies sortent uniquement de la caisse propre : blanchis de l'argent sale si besoin. Un paiement demandera une confirmation.
             </div>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0.875rem", marginBottom: "1.5rem" }}>
@@ -209,8 +204,8 @@ export default function PaieObsidianPage() {
               { l: "Ventes (actions)", v: fmt(totaux.revenus), c: "var(--success)" },
               { l: "Pertes (actions)", v: fmt(totaux.depenses), c: "var(--danger)" },
               { l: "Commissions dues", v: fmt(totaux.commission), c: "var(--gold)" },
-              { l: "Primes", v: fmt(totaux.prime), c: "var(--info)" },
-              { l: "Dons déduits", v: fmt(totaux.dons), c: "var(--success)" },
+              { l: "Primes fixes", v: fmt(totaux.fixe), c: "var(--info)" },
+              { l: "Primes arrestation", v: fmt(totaux.prime), c: "var(--info)" },
               { l: "Reste à payer", v: fmt(totaux.restant), c: totaux.restant > 0 ? "var(--warning)" : "var(--text-dim)" },
             ].map(s => (
               <div key={s.l} className="stat-card">
@@ -251,12 +246,6 @@ export default function PaieObsidianPage() {
                         <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>prime fixe (ventes {'>='} {fmt(primeSeuil)})</div>
                       </div>
                     )}
-                    {r.dons > 0 && (
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontWeight: 700, color: "var(--success)", fontSize: "0.9rem" }}>- {fmt(r.dons)}</div>
-                        <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>dons</div>
-                      </div>
-                    )}
                     {r.dejaPaye > 0 && (
                       <div style={{ textAlign: "right" }}>
                         <div style={{ fontWeight: 600, color: "var(--success)", fontSize: "0.85rem" }}>{fmt(r.dejaPaye)}</div>
@@ -287,7 +276,7 @@ export default function PaieObsidianPage() {
             <div key={d.id} className="card" style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 180 }}>
                 <div style={{ fontWeight: 700 }}>{d.employe} · {fmt(d.montant)} · {d.type_argent === "propre" ? "💵 propre" : "🕶️ sale"}</div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>Paie du {d.semaine} · {new Date(d.created_at).toLocaleString("fr-FR")}{d.motif ? ` · ${d.motif}` : ""}</div>
+                <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>{new Date(d.created_at).toLocaleString("fr-FR")}{d.motif ? ` · ${d.motif}` : ""}</div>
               </div>
               {d.preuve_url && <a href={d.preuve_url} target="_blank" rel="noreferrer"><img src={d.preuve_url} alt="preuve" style={{ height: 52, borderRadius: 6, border: "1px solid var(--border)" }} /></a>}
               {d.statut === "en_attente" ? (

@@ -19,7 +19,11 @@ export function BlanchimentPanel({ onDone }: { onDone?: () => void }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const src = sens === "sale_propre" ? "sale" : "propre", dst = sens === "sale_propre" ? "propre" : "sale";
-  const propre = Math.round(montant * (1 - taux / 100));
+  const [recu, setRecu] = useState(0);
+  const propre = recu;
+  const setMontantSync = (m: number) => { setMontant(m); setRecu(Math.round(m * (1 - taux / 100))); };
+  const setTauxSync = (t: number) => { setTaux(t); setRecu(Math.round(montant * (1 - t / 100))); };
+  const setRecuSync = (r: number) => { setRecu(r); if (montant > 0) setTaux(Math.round((1 - r / montant) * 1000) / 10); };
 
   async function load() {
     if (!supabase) return;
@@ -30,10 +34,10 @@ export function BlanchimentPanel({ onDone }: { onDone?: () => void }) {
 
   async function go() {
     setBusy(true); setMsg("");
-    const r = await fetch("/api/obsidian/blanchiment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ montant, taux, membre, notes, sens, groupe, created_by: user?.nom }) });
+    const r = await fetch("/api/obsidian/blanchiment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ montant, taux, recu, membre, notes, sens, groupe, created_by: user?.nom }) });
     const d = await r.json(); setBusy(false);
     if (!r.ok) { setMsg("❌ " + d.error); return; }
-    setMsg(`✅ ${fmt(montant)} ${src}s -> ${fmt(d.propre)} ${dst}s (frais ${fmt(d.frais)})`); setMontant(0); setNotes(""); load(); onDone?.();
+    setMsg(`✅ ${fmt(montant)} ${src}s -> ${fmt(d.propre)} ${dst}s (frais ${fmt(d.frais)})`); setMontant(0); setRecu(0); setNotes(""); load(); onDone?.();
   }
 
   return (
@@ -44,9 +48,10 @@ export function BlanchimentPanel({ onDone }: { onDone?: () => void }) {
           {([["sale_propre", "Sale -> Propre"], ["propre_sale", "Propre -> Sale"]] as const).map(([k, l]) => <button key={k} type="button" onClick={() => setSens(k)} className={sens === k ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} style={{ flex: 1, justifyContent: "center" }}>{l}</button>)}
         </div>
         <div className="form-group"><label>Groupe qui blanchit pour nous (vide = nous-mêmes)</label><input list="bl-orgs" value={groupe} onChange={e => setGroupe(e.target.value)} placeholder="Ex: La Main de Minuit" /><datalist id="bl-orgs">{orgs.map(o => <option key={o} value={o} />)}</datalist></div>
-        <div className="form-group"><label>Montant d'argent {src} à donner ($) *</label><input type="number" min={0} value={montant || ""} onChange={e => setMontant(+e.target.value)} style={{ fontWeight: 700, fontSize: "1.1rem" }} /></div>
-        <div className="form-group"><label>Taux de perte (%)</label><input type="number" min={0} max={100} value={taux} onChange={e => setTaux(+e.target.value)} /></div>
-        <div className="form-group"><label>Employé</label><select value={membre} onChange={e => setMembre(e.target.value)}><option value=""> -  Aucun  - </option>{emps.map(n => <option key={n}>{n}</option>)}</select></div>
+        <div className="form-group"><label>Montant d'argent {src} à donner ($) *</label><input type="number" min={0} value={montant || ""} onChange={e => setMontantSync(+e.target.value)} style={{ fontWeight: 700, fontSize: "1.1rem" }} /></div>
+        <div className="form-group"><label>Montant {dst} reçu en échange ($) *</label><input type="number" min={0} value={recu || ""} onChange={e => setRecuSync(+e.target.value)} style={{ fontWeight: 700, fontSize: "1.1rem" }} /></div>
+        <div className="form-group"><label>Taux de perte (%)</label><input type="number" min={0} max={100} value={taux} onChange={e => setTauxSync(+e.target.value)} /></div>
+        <div className="form-group"><label>Employé</label><select value={membre} onChange={e => setMembre(e.target.value)}><option value="">- Aucun - </option>{emps.map(n => <option key={n}>{n}</option>)}</select></div>
         <div className="form-group"><label>Notes</label><input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Ex: via le Casino" /></div>
         <button className="btn btn-gold" disabled={busy || montant <= 0} onClick={go} style={{ width: "100%", justifyContent: "center" }}>{busy ? "..." : "🧼 Blanchir"}</button>
         {msg && <div style={{ marginTop: 10, fontSize: "0.82rem" }}>{msg}</div>}

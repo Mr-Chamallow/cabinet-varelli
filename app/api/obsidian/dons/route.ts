@@ -4,7 +4,7 @@ import { postAlert, GREEN, RED, GOLD } from "@/lib/alerts";
 import { weekStartOf } from "@/lib/weekStart";
 import { money } from "@/lib/money";
 
-// POST : un employé enregistre un don (propre ou sale) avec photo de preuve facultative.
+// POST : un employé remet de l'argent (propre ou sale) à l'entreprise, avec photo de preuve facultative. Aucun effet sur sa paie.
 export async function POST(req: Request) {
   try {
     const { authorized, supabaseAdmin, error, user } = await requirePermission("obsidian_dons");

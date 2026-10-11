@@ -14,11 +14,12 @@ export async function POST(req: Request) {
     const membre = String(b.membre || "").trim();
     const action = String(b.action || "").trim();
     const montant = Number(b.montant) || 0;
+    const argent = b.type_argent === "propre" ? "propre" : "sale";
     if (!membre || !action) return NextResponse.json({ error: "membre et action requis" }, { status: 400 });
     const createdAt = b.created_at ? new Date(b.created_at).toISOString() : new Date().toISOString();
 
     const { data: row, error: e1 } = await supabaseAdmin.from("actions_illegales").insert([{
-      membre, action, montant, notes: b.notes || null, created_by: b.created_by || null, created_at: createdAt,
+      membre, action, montant, type_argent: argent, notes: b.notes || null, created_by: b.created_by || null, created_at: createdAt,
     }]).select().single();
     if (e1) return NextResponse.json({ error: e1.message }, { status: 400 });
 
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
         type: montant > 0 ? "recette" : "dépense",
         categorie: action,
         montant: Math.abs(montant),
-        type_argent: "sale",
+        type_argent: argent,
         motif: `${action} - ${membre}${b.notes ? ` - ${b.notes}` : ""}`,
         membre,
         semaine: weekStartOf(createdAt),
@@ -79,17 +80,18 @@ export async function PATCH(req: Request) {
     const membre = String(b.membre || "").trim();
     const action = String(b.action || "").trim();
     const montant = Number(b.montant) || 0;
+    const argent = b.type_argent === "propre" ? "propre" : "sale";
     if (!id || !membre || !action) return NextResponse.json({ error: "id, membre et action requis" }, { status: 400 });
     const createdAt = b.created_at ? new Date(b.created_at).toISOString() : new Date().toISOString();
 
     const { data: row, error: e1 } = await supabaseAdmin.from("actions_illegales")
-      .update({ membre, action, montant, notes: b.notes || null, created_at: createdAt, delai_alerte: false }).eq("id", id).select().single();
+      .update({ membre, action, montant, type_argent: argent, notes: b.notes || null, created_at: createdAt, delai_alerte: false }).eq("id", id).select().single();
     if (e1) return NextResponse.json({ error: e1.message }, { status: 400 });
 
     await supabaseAdmin.from("obsidian_comptabilite").delete().eq("source", "action").eq("source_id", id);
     if (montant !== 0) {
       const { error: e2 } = await supabaseAdmin.from("obsidian_comptabilite").insert([{
-        type: montant > 0 ? "recette" : "dépense", categorie: action, montant: Math.abs(montant), type_argent: "sale",
+        type: montant > 0 ? "recette" : "dépense", categorie: action, montant: Math.abs(montant), type_argent: argent,
         motif: `${action} - ${membre}${b.notes ? ` - ${b.notes}` : ""}`, membre, semaine: weekStartOf(createdAt),
         created_by: row.created_by || b.created_by || "", created_at: createdAt, source: "action", source_id: id,
       }]);

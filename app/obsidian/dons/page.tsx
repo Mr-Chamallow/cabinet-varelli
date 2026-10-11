@@ -62,7 +62,7 @@ export default function DonsPage() {
   return (
     <div className="page-container">
       <a className="back-link" href="/obsidian">Obsidian Logistics</a>
-      <div className="page-header"><div><h1 className="page-title">🎁 Dons</h1><p className="page-subtitle">Donne une part de ta paie à l'entreprise · argent propre ou sale · validé puis déduit de ta paie</p><div className="gold-line" /></div></div>
+      <div className="page-header"><div><h1 className="page-title">🎁 Dons</h1><p className="page-subtitle">Remets de l'argent à l'entreprise · propre ou sale · ajouté à la caisse une fois validé</p><div className="gold-line" /></div></div>
 
       <div className="card" style={{ maxWidth: 480, marginBottom: "1.5rem" }}>
         <div className="section-title" style={{ marginBottom: "1rem" }}>Nouveau don</div>
@@ -78,7 +78,7 @@ export default function DonsPage() {
           {preview && <img src={preview} alt="preuve" style={{ marginTop: 8, maxWidth: "100%", maxHeight: 180, borderRadius: 8, border: "1px solid var(--border)" }} />}
         </div>
         <button className="btn btn-gold" onClick={envoyer} disabled={saving}>{saving ? "..." : "Envoyer le don"}</button>
-        <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.75rem" }}>Une fois validé par la paie, le montant est déduit de ta paie de la semaine et ajouté à la caisse (propre ou sale).</p>
+        <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.75rem" }}>Une fois validé, le montant est ajouté à la caisse (propre ou sale). Un don n'est pas déduit de ta paie.</p>
       </div>
 
       <div className="section-title" style={{ marginBottom: "0.75rem" }}>Mes dons · {money(valides)} validés</div>

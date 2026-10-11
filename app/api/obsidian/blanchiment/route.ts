@@ -12,13 +12,17 @@ export async function POST(req: Request) {
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
     const b = await req.json();
     const montant = Math.round(Number(b.montant) || 0);
-    const taux = Math.min(100, Math.max(0, Number(b.taux) || 0));
+    let taux = Math.min(100, Math.max(0, Number(b.taux) || 0));
     if (montant <= 0) return NextResponse.json({ error: "Montant > 0 requis" }, { status: 400 });
     // sens : "sale_propre" (sale -> propre) ou "propre_sale" (propre -> sale). groupe : groupe externe qui blanchit pour nous (optionnel).
     const sens = b.sens === "propre_sale" ? "propre_sale" : "sale_propre";
     const groupe = String(b.groupe || "").trim();
     const src = sens === "sale_propre" ? "sale" : "propre", dst = sens === "sale_propre" ? "propre" : "sale";
-    const propre = Math.round(montant * (1 - taux / 100)); // montant reçu après frais
+    // Montant reçu : saisi tel quel (valeur réelle notée par l'employé), sinon calculé depuis le taux.
+    const recuBody = Number(b.recu);
+    const propre = b.recu !== undefined && b.recu !== null && b.recu !== "" && recuBody >= 0 ? Math.round(recuBody) : Math.round(montant * (1 - taux / 100));
+    if (propre > montant) return NextResponse.json({ error: "Le montant reçu ne peut pas dépasser le montant donné" }, { status: 400 });
+    taux = Math.round((1 - propre / montant) * 1000) / 10;
     const membre = String(b.membre || "").trim();
     const by = (user as any)?.nom_perso || (user as any)?.discord_name || b.created_by || "";
     const sid = crypto.randomUUID();
