@@ -9,7 +9,7 @@ import { dbw } from "@/lib/dbw";
 // Choisir une personne l'ajoute avec tous ses liens : même organisation, noms cités dans « Relations » (dans les deux sens) et véhicules qui lui sont assignés.
 // Images déposées : sur une fiche = nouvelle photo ; sur le panneau = pièce libre. Tout est enregistré automatiquement.
 interface F { id: string; nom: string; organisation?: string | null; relations?: string | null; photo_url?: string | null; prime?: number | null; surveille?: boolean }
-interface V { id: string; modele: string; plaque?: string; assigne_a?: string | null; photo_url?: string | null }
+interface V { id: string; modele: string; plaque?: string; assigne_a?: string | null; photo_url?: string | null; owners?: string[]; bdd?: boolean }
 interface Item { id: string; kind: "fiche" | "vehicule" | "note"; ref: string | null; x: number; y: number; img?: string | null }
 const W = 1500, H = 920, PW = 124, PH = 150;
 const norm = (s?: string | null) => (s || "").trim().toLowerCase();
@@ -25,9 +25,22 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
 
   const load = useCallback(async () => {
     if (!supabase) return;
-    const [{ data: b, error }, { data: v }] = await Promise.all([supabase.from("obsidian_board").select("*").order("created_at"), supabase.from("obsidian_garage").select("id,modele,plaque,assigne_a,photo_url")]);
+    const [{ data: b, error }, { data: v }, { data: bv }, { data: bp }] = await Promise.all([
+      supabase.from("obsidian_board").select("*").order("created_at"),
+      supabase.from("obsidian_garage").select("id,modele,plaque,assigne_a,photo_url"),
+      supabase.from("bdd_vehicules").select("id,plaque,marque_modele,photos,proprietaire_id"),
+      supabase.from("bdd_personnes").select("id,nom,prenom"),
+    ]);
     if (error) setErr("Table obsidian_board absente : lance migration-lot16.sql dans Supabase.");
-    setItems((b || []) as Item[]); setVehicles((v || []) as V[]);
+    // Vehicules de la Base de donnees : relies a leur proprietaire (nom prenom OU prenom nom = nom de la fiche)
+    const pById = new Map((bp || []).map((p: any) => [p.id, p]));
+    const dbVeh: V[] = (bv || []).map((x: any) => {
+      const o: any = pById.get(x.proprietaire_id);
+      const a = o ? [o.prenom, o.nom].filter(Boolean).join(" ") : "";
+      const b2 = o ? [o.nom, o.prenom].filter(Boolean).join(" ") : "";
+      return { id: x.id, modele: x.marque_modele || "Véhicule", plaque: x.plaque, assigne_a: a || null, owners: o ? [norm(a), norm(b2)] : [], photo_url: Array.isArray(x.photos) ? x.photos[0] || null : null, bdd: true };
+    });
+    setItems((b || []) as Item[]); setVehicles([...((v || []) as V[]), ...dbVeh]);
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -41,7 +54,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   const relatedOf = (p: F) => {
     const cites = (x: F, y: F) => y.nom.length >= 3 && (x.relations || "").toLowerCase().includes(y.nom.toLowerCase());
     const people = fiches.filter(o => o.id !== p.id && ((p.organisation && p.organisation === o.organisation) || cites(p, o) || cites(o, p)));
-    const cars = vehicles.filter(v => norm(v.assigne_a) && norm(v.assigne_a) === norm(p.nom));
+    const cars = vehicles.filter(v => (v.owners?.length ? v.owners.includes(norm(p.nom)) : norm(v.assigne_a) && norm(v.assigne_a) === norm(p.nom)));
     return { people, cars };
   };
 
@@ -79,7 +92,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
       const cites = (x: F, y: F) => y.nom.length >= 3 && (x.relations || "").toLowerCase().includes(y.nom.toLowerCase());
       if ((a.organisation && a.organisation === b.organisation) || cites(a, b) || cites(b, a)) out.push({ a: fi[i].id, b: fi[j].id });
     }
-    vi.forEach(v => { const car = vById.get(v.ref!)!; fi.forEach(f => { if (norm(car.assigne_a) && norm(car.assigne_a) === norm(fById.get(f.ref!)!.nom)) out.push({ a: f.id, b: v.id, car: true }); }); });
+    vi.forEach(v => { const car = vById.get(v.ref!)!; fi.forEach(f => { const fn = norm(fById.get(f.ref!)!.nom); if (car.owners?.length ? car.owners.includes(fn) : (norm(car.assigne_a) && norm(car.assigne_a) === fn)) out.push({ a: f.id, b: v.id, car: true }); }); });
     return out;
   }, [shown, fById, vById]);
 
@@ -101,7 +114,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
     e.preventDefault(); e.stopPropagation(); setOver(null); const f = imgOf(e); if (!f) return;
     const url = await fileToPhoto(f, false);
     if (it.kind === "fiche") await onPhoto?.(it.ref!, url);
-    else if (it.kind === "vehicule") { await dbw.update("obsidian_garage", it.ref!, { photo_url: url }); setVehicles(l => l.map(v => v.id === it.ref ? { ...v, photo_url: url } : v)); }
+    else if (it.kind === "vehicule") { const cv = vById.get(it.ref!); if (cv?.bdd) await dbw.update("bdd_vehicules", it.ref!, { photos: [url] }); else await dbw.update("obsidian_garage", it.ref!, { photo_url: url }); setVehicles(l => l.map(v => v.id === it.ref ? { ...v, photo_url: url } : v)); }
   }
 
   async function exportPdf() {
