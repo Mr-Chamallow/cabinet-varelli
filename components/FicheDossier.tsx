@@ -1,4 +1,5 @@
 "use client";
+import { money } from "@/lib/money";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ObsLogo } from "@/components/ObsLogo";
@@ -40,7 +41,7 @@ export function FicheDossier({ f, showPrivate = true }: { f: any; showPrivate?: 
             <span className="fd-stamp" style={{ color: col, borderColor: col }}>{(f.priorite || "Normale").toUpperCase()}</span>
             <div className="fd-rows">{rows.filter(r => r[1]).map(([k, v]) => <div key={k}><b>{k}</b><i /><span>{v}</span></div>)}</div>
             {(f.tags || []).length > 0 && <div className="fd-tags">{f.tags.map((t: string) => <span key={t}>{t}</span>)}</div>}
-            {Number(f.prime) > 0 && <div className="fd-prime">PRIME : {Number(f.prime).toLocaleString("fr-FR")} $</div>}
+            {Number(f.prime) > 0 && <div className="fd-prime">PRIME : {money(f.prime)}</div>}
           </div>
         </div>
         {blocks.filter(b => b[1]).map(([k, v]) => <div className="fd-block" key={k}><b>{k}</b><p>{v}</p></div>)}

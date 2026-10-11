@@ -10,12 +10,13 @@ import { notifyDiscordCreate, notifyDiscordUpdate, notifyDiscordDelete } from "@
 import { buildContratEmbed } from "@/lib/discordEmbeds";
 import { pdfContrat } from "@/lib/pdfDocs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { money } from "@/lib/money";
 const TYPES=["Livraison","Surveillance","Intimidation","Récupération","Braquage","Autre"];
 const DIFFS=["Facile","Normale","Difficile","Extrême"];
 const STATUTS=["En attente","En cours","Terminé","Échoué","Annulé"];
 const SCOL:Record<string,string>={"En attente":"var(--text-dim)","En cours":"var(--warning)",Terminé:"var(--success)",Échoué:"var(--danger)",Annulé:"var(--text-dim)"};
 const DCOL:Record<string,string>={Facile:"var(--success)",Normale:"var(--info)",Difficile:"var(--warning)",Extrême:"var(--danger)"};
-const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
+const fmt=(n:number)=>money(n);
 const EMPTY={titre:"",type:"Livraison",difficulte:"Normale",recompense:0,statut:"En attente",membres_affectes:[] as string[],description:"",rapport:"",date_cible:""};
 export default function ContratsPage(){
   const { user, loading: userLoading } = useCurrentUser();

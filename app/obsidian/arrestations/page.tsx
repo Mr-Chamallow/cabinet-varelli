@@ -13,8 +13,9 @@ import { hasPermission } from "@/lib/auth";
 import { timeAgo } from "@/lib/activity";
 import { exportXlsx } from "@/lib/exportXlsx";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
+import { money } from "@/lib/money";
 
-const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmt = (n: number) => money(n);
 function localInputNow() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); }
 
 interface Arrest { id: string; membre: string; amende: number; argent_perdu: number; type_argent: string; items: any[]; notes?: string; created_by?: string; created_at: string; photo_url?: string | null; }
@@ -191,7 +192,7 @@ export default function ArrestationsPage() {
             <div>
               <label>Employé arrêté *</label>
               <select value={form.membre} onChange={e => setForm({ ...form, membre: e.target.value })}>
-                <option value=""> -  Choisir  - </option>
+                <option value="">- Choisir - </option>
                 {employes.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
               {employes.length === 0 && <div style={{ fontSize: "0.68rem", color: "var(--warning)", marginTop: 4 }}>Aucun employé : ajoute-les dans la page Employés.</div>}
@@ -228,7 +229,7 @@ export default function ArrestationsPage() {
                 return (
                   <div key={i} style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
                     <select value={r.stock_id} onChange={e => setRows(rs => rs.map((x, j) => j === i ? { ...x, stock_id: e.target.value } : x))} style={{ flex: 1 }}>
-                      <option value=""> -  Objet  - </option>
+                      <option value="">- Objet - </option>
                       {grouped.map(([cat, arr]) => (
                         <optgroup key={cat} label={cat}>
                           {arr.map(s => <option key={s.id} value={s.id}>{s.emoji} {s.nom} (stock : {s.quantite})</option>)}

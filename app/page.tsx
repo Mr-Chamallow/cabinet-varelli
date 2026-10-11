@@ -6,8 +6,9 @@ import { hasPermission, firstAccessiblePath } from "@/lib/auth";
 import { CountUp } from "@/components/ui/CountUp";
 import { PoleHome } from "@/components/dashboard/PoleHome";
 import { WeekOverview } from "@/components/dashboard/WeekOverview";
+import { money } from "@/lib/money";
 
-const fmt = (n:number) => n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
+const fmt = (n:number) => money(n);
 
 export default function ObsidianDashboard() {
   const { user, loading: userLoading } = useCurrentUser();

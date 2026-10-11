@@ -1,10 +1,11 @@
 "use client";
+import { money } from "@/lib/money";
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { exportXlsx } from "@/lib/exportXlsx";
 
-const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmt = (n: number) => money(n);
 const d2 = (d: Date) => d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
 
 function weekRange(offset: number) {

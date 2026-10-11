@@ -12,9 +12,10 @@ import { hasPermission } from "@/lib/auth";
 import { useRealtimeTable } from "@/lib/useRealtimeTable";
 import { usePriceItems, type PriceItem } from "@/lib/priceRef";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { money } from "@/lib/money";
 const ARMU=["arme","munition","accessoire","explosif","kev"]; // = ancienne page Armurerie
 const fmtN=(n:number)=>n.toLocaleString("fr-FR",{maximumFractionDigits:2});
-const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
+const fmt=(n:number)=>money(n);
 interface Stock{id:string;nom:string;categorie:string;emoji:string;quantite:number;seuil_alerte:number;unite:string;prix_unitaire:number;notes:string;}
 interface Mouvement{id:string;stock_nom:string;type:string;quantite:number;motif:string;membre:string;created_at:string;}
 export default function StocksPage(){
@@ -98,6 +99,7 @@ export default function StocksPage(){
     <div className="page-container">
       <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
       <div className="page-header"><div><h1 className="page-title">📦 Stocks</h1><p className="page-subtitle">Inventaire central (armurerie incluse) · Entrées & Sorties</p><div className="gold-line"/></div><button className="btn btn-gold" onClick={()=>setTab("ajouter")}>+ Nouveau stock</button></div>
+      {stocks.some(x=>Number(x.quantite)<0)&&<div style={{background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.5)",borderRadius:"var(--radius-lg)",padding:"0.75rem 1rem",marginBottom:"1rem",fontSize:"0.8rem",fontWeight:700,color:"var(--danger)"}}>🚨 Stock négatif : {stocks.filter(x=>Number(x.quantite)<0).map(x=>`${x.nom} (${fmtN(x.quantite)})`).join(", ")}. Corrige avec une entrée.</div>}
       {alerts.length>0&&<div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:"var(--radius-lg)",padding:"0.75rem 1rem",marginBottom:"1rem",display:"flex",gap:"0.5rem",flexWrap:"wrap",alignItems:"center"}}><span style={{fontSize:"0.72rem",fontWeight:700,color:"var(--danger)"}}>⚠️ Stocks bas :</span>{alerts.map(a=><span key={a.id} style={{fontSize:"0.72rem",padding:"0.15rem 0.5rem",borderRadius:999,background:"rgba(239,68,68,0.1)",color:"var(--danger)",border:"1px solid rgba(239,68,68,0.2)",fontWeight:600}}>{a.emoji} {a.nom} : {fmtN(a.quantite)} {a.unite}</span>)}</div>}
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem"}}>
         {[["stocks","📦 Inventaire"],["historique","🧾 Historique"],["ajouter","➕ Ajouter"]].map(([k,l])=><button key={k} onClick={()=>setTab(k as any)} style={{padding:"0.5rem 1rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.82rem",fontWeight:tab===k?700:400,background:tab===k?"var(--gold-muted)":"var(--surface)",border:`1px solid ${tab===k?"rgba(var(--gold-rgb), 0.4)":"var(--border)"}`,color:tab===k?"var(--gold)":"var(--text-muted)"}}>{l}</button>)}

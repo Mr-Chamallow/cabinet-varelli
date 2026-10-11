@@ -1,3 +1,4 @@
+import { money } from "@/lib/money";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { weekStartOf } from "@/lib/weekStart";
@@ -136,7 +137,7 @@ export async function DELETE(req: Request) {
     if (!row) return NextResponse.json({ error: "Arrestation introuvable" }, { status: 404 });
     const { error: e } = await revertArrest(supabaseAdmin, row, ((user as any)?.nom_perso || (user as any)?.discord_name || ""));
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
-    await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Arrestation annulée", row.membre, `amende ${row.amende} $ · argent perdu ${row.argent_perdu} $`);
+    await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Arrestation annulée", row.membre, `amende ${money(row.amende)} · argent perdu ${money(row.argent_perdu)}`);
     await syncAlert(supabaseAdmin, "arrestations", row, "arrestations", `🗑️ Arrestation annulée - ${row.membre}`, "Stock remis, prime de paie retirée.", GREY, arrestFields(row));
     return NextResponse.json({ ok: true });
   } catch (e: any) {

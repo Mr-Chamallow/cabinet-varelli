@@ -6,8 +6,9 @@ import { supabase } from "@/lib/supabase";
 import { canAccess, getMemberColor } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { fetchRecentActivity, ACTIVITY_CONFIG, timeAgo, ActivityItem } from "@/lib/activity";
+import { money } from "@/lib/money";
 
-const fmt = (n: number) => (n || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmt = (n: number) => money((n || 0));
 
 interface GlobalStats {
   caSale: number;

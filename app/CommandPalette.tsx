@@ -47,6 +47,7 @@ const ALL_PAGES: PageEntry[] = [
   { title: "Profil central", subtitle: "Vue unifiée d'une personne", href: "/obsidian/profil", icon: "🧬", permission: "obsidian_fiches" },
   { title: "Fiches", subtitle: "Personnes / organisations", href: "/obsidian/fiches", icon: "🗂️", permission: "obsidian_fiches" },
   { title: "Transaction", subtitle: "Transactions", href: "/cahier-vente", icon: "🧮", permission: "cahier_vente" },
+  { title: "Dons", subtitle: "Donner une part de sa paie", href: "/obsidian/dons", icon: "🎁", permission: "obsidian_dons" },
   { title: "Paie & Commissions", subtitle: "Salaires", href: "/obsidian/paie", icon: "💰", permission: "obsidian_paie" },
   { title: "Employés", subtitle: "Membres du personnel", href: "/obsidian/employes", icon: "🧑‍💼", permission: "obsidian_employes" },
   { title: "Code pénal", subtitle: "Articles de loi", href: "/juridique", icon: "📖", permission: "juridique" },

@@ -12,6 +12,7 @@ import { hasPermission } from "@/lib/auth";
 import { EquivalentPanel } from "@/components/EquivalentPanel";
 import { BlanchimentPanel } from "@/components/BlanchimentPanel";
 import { weekStartOf } from "@/lib/weekStart";
+import { money } from "@/lib/money";
 
 interface Transaction {
   id: string;
@@ -56,7 +57,7 @@ const CATEGORIES_ACHAT = [...CATEGORIES, "autre"];
 const TYPES_ARGENT = ["propre", "sale", "mixte"];
 
 const weekStartISO = () => weekStartOf();
-const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmt = (n: number) => money(n);
 const prixUnit = (p: { prix_propre: number; prix_sale: number }, argent: string) => (argent === "sale" && p.prix_sale > 0 ? p.prix_sale : p.prix_propre);
 const fmtDate = (s: string) => new Date(s).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
@@ -190,18 +191,15 @@ export default function CahierVentePage() {
     const prod = produits.find(p => normNom(p.nom) === normNom(form.produit_nom) && p.type === form.categorie);
     if (form.type === "entrée" && prod && (prod.quantite || 0) < form.quantite) { showToast(`Stock insuffisant (${prod.quantite || 0})`); setSaving(false); return; }
     const motif = form.motif.trim() || `${form.type === "entrée" ? "Vente" : "Achat"} ${form.quantite} x ${form.produit_nom}`;
-    const { data } = await supabase.from("cahier_transactions").insert([{
-      ...form, motif, created_by: user.nom,
-    }]).select().single();
-    if (data && prod) {
-      const delta = form.type === "entrée" ? -form.quantite : form.quantite;
-      const newQ = Math.max(0, (prod.quantite || 0) + delta);
-      await supabase.from("obsidian_stocks").update({ quantite: newQ }).eq("id", prod.id);
-      setProduits(ps => ps.map(x => x.id === prod.id ? { ...x, quantite: newQ } : x));
-    }
-    if (data) {
-      fetch("/api/obsidian/comptabilite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: form.type === "entrée" ? "recette" : "dépense", categorie: `${form.type === "entrée" ? "Vente" : "Achat"} ${form.categorie}`, montant: form.montant, type_argent: form.type_argent, motif, membre: "", semaine: weekStartISO(), created_by: user.nom, source: "transaction" }) }).catch(() => {});
-    }
+    // Une seule route serveur : transaction + stock + mouvement + compta + alertes (tout passe ou rien).
+    const res = await fetch("/api/obsidian/transaction", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...form, motif, stock_id: prod?.id || null, created_by: user.nom }),
+    });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok) { showToast(`❌ ${out.error || "Erreur"}`); setSaving(false); return; }
+    const data = out.transaction;
+    if (out.stock) setProduits(ps => ps.map(x => x.id === out.stock.id ? { ...x, quantite: Number(out.stock.quantite) || 0 } : x));
     if (data) { 
       const record = data.type === "entrée" && transactions.some(t => t.type === "entrée") && Number(data.montant) > Math.max(...transactions.filter(t => t.type === "entrée").map(t => Number(t.montant) || 0));
       setTransactions(ts => [data, ...ts]); 

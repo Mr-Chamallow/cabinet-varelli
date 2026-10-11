@@ -1,3 +1,4 @@
+import { money } from "@/lib/money";
 import { supabase } from "@/lib/supabase";
 
 export type ActivityType =
@@ -29,7 +30,7 @@ export const ACTIVITY_CONFIG: Record<ActivityType, { icon: string; color: string
   comptabilite: { icon: "🧾", color: "#ef4444", label: "Comptabilité" },
 };
 
-const fmt = (n: number) => (n || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmt = (n: number) => money(n);
 
 export function timeAgo(iso: string): string {
   if (!iso) return "-";

@@ -13,8 +13,9 @@ import { timeAgo } from "@/lib/activity";
 import { exportXlsx } from "@/lib/exportXlsx";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { ActionType, DEFAULT_ACTION_TYPES, rowToType, fmtDelai } from "@/lib/actionTypes";
+import { money } from "@/lib/money";
 
-const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmt = (n: number) => money(n);
 const PERIODS = [
   { k: "all", label: "Tout", ms: 0 },
   { k: "day", label: "24 h", ms: 86400_000 },

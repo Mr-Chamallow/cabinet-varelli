@@ -1,11 +1,12 @@
 "use client";
+import { money } from "@/lib/money";
 import { ObsLogo } from "@/components/ObsLogo";
 import { useLayoutEffect, useRef, useState } from "react";
 
 // Avis de recherche du Consortium : affiche papier vieilli, photo, récompense, tampon animé, recto/verso.
 export interface WantedData { nom: string; alias?: string | null; organisation?: string | null; priorite?: string | null; prime?: number | string | null; photo_url?: string | null; photo_id?: string | null; motif?: string | null; age?: number | string | null; origine?: string | null; occupation?: string | null; vehicules?: string | null; tags?: string[] | null }
 const BASE = 380;
-const usd = (n: any) => (Number(n) || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const usd = (n: any) => money(n);
 
 export function WantedPoster({ d }: { d: WantedData }) {
   const wrap = useRef<HTMLDivElement>(null); const [scale, setScale] = useState(1); const [back, setBack] = useState(false);

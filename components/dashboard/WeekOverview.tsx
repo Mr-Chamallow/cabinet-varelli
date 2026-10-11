@@ -1,4 +1,5 @@
 "use client";
+import { money } from "@/lib/money";
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -6,7 +7,7 @@ import { useRealtimeTable } from "@/lib/useRealtimeTable";
 import { CountUp } from "@/components/ui/CountUp";
 import { ActionType, DEFAULT_ACTION_TYPES, rowToType, fmtDelai } from "@/lib/actionTypes";
 
-const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmt = (n: number) => money(n);
 function pad(n: number) { return String(n).padStart(2, "0"); }
 function countdown(ms: number) { const s = Math.max(0, Math.floor(ms / 1000)); return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`; }
 function mondayISO() { const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); d.setHours(0, 0, 0, 0); return d.toISOString(); }

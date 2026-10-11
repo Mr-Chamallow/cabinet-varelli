@@ -1,9 +1,10 @@
 "use client";
+import { money } from "@/lib/money";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 interface Drogue { id: string; nom: string; emoji: string; prix_min: number; prix_max: number; semaines_revend: number; ordre?: number }
-const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmt = (n: number) => money(n);
 const fmtN = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 0 });
 
 // Onglet « Équivalent » (Transaction) : combien d'unités de chaque produit pour un montant d'argent propre. Prix = Tableau des prix.

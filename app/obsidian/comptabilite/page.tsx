@@ -6,22 +6,29 @@ import { hasPermission } from "@/lib/auth";
 import { useRealtimeTable } from "@/lib/useRealtimeTable";
 import { exportXlsx } from "@/lib/exportXlsx";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
+import { weekStartOf } from "@/lib/weekStart";
 import { Kpi, Delta, Panel, Tabs, LineChart, BarChart, HBars, Donut, Heat, DataTable, fmt, fmtK, pct, sum, mean, median, stdev, weekKey, lastWeeks, shortWeek, linReg } from "@/components/hub/Charts";
 
-type Tab = "synthese" | "flux" | "categories" | "employes" | "sources" | "marges" | "semaines" | "journal" | "expert";
+type Tab = "budget" | "synthese" | "flux" | "categories" | "employes" | "sources" | "marges" | "semaines" | "journal" | "expert";
 const TABS: { k: Tab; label: string }[] = [
-  { k: "synthese", label: "📊 Synthèse" }, { k: "flux", label: "📈 Flux & trésorerie" }, { k: "categories", label: "🗂️ Catégories" },
+  { k: "budget", label: "🚀 Budget de lancement" }, { k: "synthese", label: "📊 Synthèse" }, { k: "flux", label: "📈 Flux & trésorerie" }, { k: "categories", label: "🗂️ Catégories" },
   { k: "employes", label: "👥 Employés" }, { k: "sources", label: "🧬 Sources & argent" }, { k: "marges", label: "🏷️ Marges produits" }, { k: "semaines", label: "🔒 Semaines" }, { k: "journal", label: "📜 Journal" }, { k: "expert", label: "🧠 Indicateurs experts" },
 ];
 const PERIODS = [{ k: 1, label: "Semaine" }, { k: 4, label: "4 sem." }, { k: 12, label: "12 sem." }, { k: 0, label: "Tout" }];
-const SRC: Record<string, string> = { action: "🕶️ Action illégale", arrestation: "🚔 Arrestation", transaction: "🧮 Transaction", stock: "📦 Achat de stock", paie: "💵 Paie & commissions", contrat: "📋 Contrat", "blanchiment-frais": "🧼 Frais de blanchiment", manuel: "✍️ Saisie historique" };
+const SRC: Record<string, string> = { action: "🕶️ Action illégale", arrestation: "🚔 Arrestation", transaction: "🧮 Transaction", stock: "📦 Achat de stock", paie: "💵 Paie & commissions", contrat: "📋 Contrat", "blanchiment-frais": "🧼 Frais de blanchiment", manuel: "✍️ Saisie historique", don: "🎁 Don", investissement: "🏗️ Investissement" };
 const COL = { rec: "var(--success)", dep: "var(--danger)", gold: "var(--gold)", info: "var(--info)", warn: "var(--warning)" };
 const MONEY_COL: Record<string, string> = { sale: "var(--danger)", propre: "var(--success)", mixte: "var(--warning)" };
 
 export default function ComptaHubPage() {
   const { user, loading: userLoading } = useCurrentUser();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_comptabilite"))) window.location.href = "/"; }, [user, userLoading]);
-  const [entries, setEntries] = useState<any[]>([]);
+  const [allEntries, setAllEntries] = useState<any[]>([]);
+  const [argentF, setArgentF] = useState("");
+  const [bg, setBg] = useState<any>(null);
+  const [capital, setCapital] = useState(0);
+  const [seuil, setSeuil] = useState(0);
+  const [inv, setInv] = useState({ cat: "Véhicule", motif: "", montant: 0, argent: "propre" });
+  const [savingB, setSavingB] = useState(false);
   const [arrests, setArrests] = useState<any[]>([]);
   const [raw, setRaw] = useState<any[]>([]);
   const [mvts, setMvts] = useState<any[]>([]);
@@ -29,7 +36,7 @@ export default function ComptaHubPage() {
   const [stocks, setStocks] = useState<any[]>([]);
   const [semaines, setSemaines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("synthese");
+  const [tab, setTab] = useState<Tab>("budget");
   const [weeks, setWeeks] = useState(4);
   const [q, setQ] = useState(""); const [fType, setFType] = useState(""); const [fCat, setFCat] = useState(""); const [fMembre, setFMembre] = useState(""); const [fSrc, setFSrc] = useState("");
   const [limit, setLimit] = useState(100);
@@ -40,21 +47,59 @@ export default function ComptaHubPage() {
     if (!supabase) { setLoading(false); return; }
     // Clôture automatique des semaines terminées (en plus du cron de la base) - silencieux.
     await fetch("/api/obsidian/cloture", { method: "POST" }).catch(() => {});
-    const [{ data }, { data: ar }, { data: mv }, { data: tr }, { data: st }, { data: sw }] = await Promise.all([
+    const [{ data }, { data: ar }, { data: mv }, { data: tr }, { data: st }, { data: sw }, { data: bgd }, { data: stg }] = await Promise.all([
       supabase.from("obsidian_comptabilite").select("*").order("created_at", { ascending: false }).limit(10000),
       supabase.from("arrestations").select("id,membre,amende,argent_perdu,created_at").limit(5000),
       supabase.from("obsidian_mouvements").select("stock_nom,type,quantite,total,motif,created_at").limit(10000),
       supabase.from("cahier_transactions").select("type,montant,quantite,produit_nom,categorie,created_at").limit(10000),
       supabase.from("obsidian_stocks").select("nom,categorie,quantite,prix_unitaire").limit(2000),
       supabase.from("obsidian_semaines").select("*").order("semaine", { ascending: false }).limit(200),
+      supabase.rpc("obsidian_budget"),
+      supabase.from("obsidian_settings").select("capital_depart,seuil_tresorerie").eq("id", "default").maybeSingle(),
     ]);
+    setBg(bgd || null); setCapital(Number(stg?.capital_depart) || 0); setSeuil(Number(stg?.seuil_tresorerie) || 0);
     const rows = (data || []).map((e: any) => ({ ...e, montant: Number(e.montant) || 0, source: e.source || "manuel" }));
     setRaw(rows);
     // Blanchiment = TRANSFERT sale -> propre : seule la perte (frais) est une vraie dépense.
     const by: Record<string, any[]> = {}; rows.filter(e => e.source === "blanchiment").forEach(e => (by[e.source_id || e.id] ??= []).push(e));
     const frais = Object.values(by).map(g => { const out = g.find(x => x.type !== "recette"), inn = g.find(x => x.type === "recette"); const f = (out?.montant || 0) - (inn?.montant || 0); return { ...(out || g[0]), id: "bl-" + (out || g[0]).id, type: "dépense", categorie: "Frais de blanchiment", montant: Math.max(0, f), type_argent: "sale", source: "blanchiment-frais" }; });
-    setEntries([...rows.filter(e => e.source !== "blanchiment"), ...frais].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")));
+    setAllEntries([...rows.filter(e => e.source !== "blanchiment"), ...frais].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")));
     setArrests(ar || []); setMvts(mv || []); setTrans(tr || []); setStocks(st || []); setSemaines(sw || []); setLoading(false);
+  }
+
+  const entries = useMemo(() => (argentF ? allEntries.filter(e => (e.type_argent || "sale") === argentF) : allEntries), [allEntries, argentF]);
+
+  // --- Budget de lancement (indépendant du filtre d'argent) ---
+  const isInvest = (e: any) => e.type !== "recette" && /^investissement/i.test(e.categorie || "");
+  const budgetCalc = useMemo(() => {
+    const tPropre = capital + (Number(bg?.propre) || 0), tSale = Number(bg?.sale) || 0, tMixte = Number(bg?.mixte) || 0;
+    const reste = tPropre + tSale + tMixte;
+    const invests = allEntries.filter(isInvest);
+    const investTotal = Number(bg?.invest) || invests.reduce((a, e) => a + e.montant, 0);
+    const parCat: Record<string, number> = {};
+    invests.forEach(e => { const k = (e.categorie || "").replace(/^investissement\s*-?\s*/i, "") || "Autre"; parCat[k] = (parCat[k] || 0) + e.montant; });
+    const expl = allEntries.filter(e => !isInvest(e) && e.source !== "don");
+    const dons = allEntries.filter(e => e.source === "don").reduce((a, e) => a + e.montant, 0);
+    const w4 = lastWeeks(4);
+    const nets = w4.map(w => expl.filter(e => weekKey(e.created_at) === w).reduce((a, e) => a + (e.type === "recette" ? 1 : -1) * e.montant, 0));
+    const netMoy = nets.reduce((a, b) => a + b, 0) / (nets.length || 1);
+    const exploitation = expl.reduce((a, e) => a + (e.type === "recette" ? 1 : -1) * e.montant, 0);
+    const runway = netMoy < 0 ? reste / -netMoy : Infinity;
+    return { tPropre, tSale, tMixte, reste, investTotal, parCat, dons, netMoy, exploitation, runway, invests };
+  }, [allEntries, bg, capital]);
+  async function saveBudgetSettings() {
+    if (!supabase) return;
+    setSavingB(true);
+    await supabase.from("obsidian_settings").upsert([{ id: "default", capital_depart: capital, seuil_tresorerie: seuil, updated_at: new Date().toISOString() }]);
+    setSavingB(false); load();
+  }
+  async function addInvest() {
+    if (!user || !(inv.montant > 0)) return;
+    setSavingB(true);
+    const res = await fetch("/api/obsidian/comptabilite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "dépense", categorie: `Investissement - ${inv.cat}`, montant: inv.montant, type_argent: inv.argent, motif: inv.motif || inv.cat, membre: "", semaine: weekStartOf(), created_by: user.nom, source: "investissement" }) });
+    setSavingB(false);
+    if (!res.ok) { alert("❌ " + ((await res.json().catch(() => ({}))).error || "Erreur")); return; }
+    setInv({ ...inv, motif: "", montant: 0 }); load();
   }
 
   const t0 = useMemo(() => { if (!weeks) return 0; const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) - (weeks - 1) * 7); return d.getTime(); }, [weeks]);
@@ -134,11 +179,46 @@ export default function ComptaHubPage() {
         <div><h1 className="page-title">💰 Hub Comptabilité</h1><p className="page-subtitle">Lecture seule · alimenté automatiquement par les Actions illégales, Arrestations et Transactions</p><div className="gold-line" /></div>
         <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
           {PERIODS.map(p => <button key={p.k} className={`btn btn-sm ${weeks === p.k ? "btn-gold" : "btn-outline"}`} onClick={() => setWeeks(p.k)}>{p.label}</button>)}
+          <select value={argentF} onChange={e => setArgentF(e.target.value)} style={{ width: "auto" }} title="Filtre argent"><option value="">💰 Tout l'argent</option><option value="propre">💵 Propre</option><option value="sale">🕶️ Sale</option><option value="mixte">🔀 Mixte</option></select>
           <button className="btn btn-outline btn-sm" onClick={exportAll}>📥 Export Excel</button>
         </div>
       </div>
       <Tabs tabs={TABS} value={tab} onChange={k => setTab(k as Tab)} />
       {loading ? <LoadingBlock /> : <>
+        {tab === "budget" && <>
+          <div className="stat-grid" style={{ marginBottom: "1.25rem" }}>
+            <Kpi icon="🏁" label="Capital de départ" value={fmt(capital)} sub="réglable ci-dessous" />
+            <Kpi icon="🏗️" label="Investissements" value={fmt(budgetCalc.investTotal)} color={COL.warn} sub="véhicules, entrepôts, logements" />
+            <Kpi icon="📈" label="Résultat d'exploitation" value={fmt(budgetCalc.exploitation)} color={budgetCalc.exploitation >= 0 ? COL.rec : COL.dep} sub="hors investissements et dons" />
+            <Kpi icon="🎁" label="Dons reçus" value={fmt(budgetCalc.dons)} color={COL.rec} sub="propre + sale" />
+            <Kpi icon="🏦" label="Reste en caisse" value={fmt(budgetCalc.reste)} color={budgetCalc.reste >= 0 ? COL.rec : COL.dep} sub={seuil > 0 ? `seuil propre ${fmt(seuil)}` : "tout type d'argent"} />
+            <Kpi icon="⏳" label="Durée de tenue" value={Number.isFinite(budgetCalc.runway) ? (budgetCalc.runway > 0 ? budgetCalc.runway.toFixed(1) + " sem." : "épuisée") : "illimitée"} sub={budgetCalc.netMoy < 0 ? `perte moy. ${fmt(-budgetCalc.netMoy)} / sem.` : "exploitation rentable"} color={Number.isFinite(budgetCalc.runway) && budgetCalc.runway < 4 ? COL.dep : "var(--text)"} />
+          </div>
+          <div className="stat-grid" style={{ marginBottom: "1.25rem" }}>
+            <Kpi icon="💵" label="Caisse propre" value={fmt(budgetCalc.tPropre)} color={budgetCalc.tPropre >= seuil ? COL.rec : COL.dep} sub={seuil > 0 && budgetCalc.tPropre < seuil ? "sous le seuil, la paie demandera confirmation" : "capital inclus"} />
+            <Kpi icon="🕶️" label="Caisse sale" value={fmt(budgetCalc.tSale)} color={COL.dep} sub="à blanchir" />
+            <Kpi icon="🔀" label="Caisse mixte" value={fmt(budgetCalc.tMixte)} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
+            <Panel title="Réglages du budget">
+              <div className="form-group"><label>Capital de départ ($, argent propre)</label><input type="number" min={0} value={capital || ""} onChange={e => setCapital(+e.target.value)} placeholder="1.000.000" /></div>
+              <div className="form-group"><label>Seuil de trésorerie propre ($) : en dessous, la paie avertit</label><input type="number" min={0} value={seuil || ""} onChange={e => setSeuil(+e.target.value)} placeholder="50.000" /></div>
+              <button className="btn btn-gold btn-sm" onClick={saveBudgetSettings} disabled={savingB}>Enregistrer</button>
+              <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Ne saisis pas le capital en recette ailleurs : il serait compté deux fois.</p>
+            </Panel>
+            <Panel title="Ajouter un investissement">
+              <div className="form-group"><label>Type</label><select value={inv.cat} onChange={e => setInv({ ...inv, cat: e.target.value })}>{["Véhicule", "Entrepôt", "Logement", "Autre"].map(c => <option key={c}>{c}</option>)}</select></div>
+              <div className="form-group"><label>Libellé</label><input value={inv.motif} onChange={e => setInv({ ...inv, motif: e.target.value })} placeholder="Camion de livraison" /></div>
+              <div className="form-group"><label>Montant ($)</label><input type="number" min={0} value={inv.montant || ""} onChange={e => setInv({ ...inv, montant: +e.target.value })} /></div>
+              <div className="form-group"><label>Argent</label><select value={inv.argent} onChange={e => setInv({ ...inv, argent: e.target.value })}><option value="propre">Propre</option><option value="sale">Sale</option><option value="mixte">Mixte</option></select></div>
+              <button className="btn btn-gold btn-sm" onClick={addInvest} disabled={savingB}>Enregistrer l'investissement</button>
+              <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Visible en compta, mais jamais dans le calcul des paies.</p>
+            </Panel>
+            <Panel title="Investissements par type"><HBars color={COL.warn} rows={Object.entries(budgetCalc.parCat).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ label: k, value: v }))} /></Panel>
+            <Panel title="Détail des investissements"><DataTable empty="Aucun investissement." head={["Date", "Type", "Libellé", "Argent", "Montant"]} rows={budgetCalc.invests.slice(0, 50).map(e => [new Date(e.created_at).toLocaleDateString("fr-FR"), (e.categorie || "").replace(/^investissement\s*-?\s*/i, ""), e.motif || "-", e.type_argent || "sale", <b>{fmt(e.montant)}</b>])} /></Panel>
+          </div>
+        </>}
+
         {tab === "synthese" && <>
           <div className="stat-grid" style={{ marginBottom: "1.25rem" }}>
             <Kpi icon="↑" label="Recettes" value={fmt(R)} color={COL.rec} sub={<>vs période préc. <Delta cur={R} prev={rec(prev)} /></>} />

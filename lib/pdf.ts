@@ -1,4 +1,5 @@
 "use client";
+import { money } from "@/lib/money";
 // Gabarit PDF commun à tous les documents partageables (fiches, procès, pactes, audits, convois...).
 // Même en-tête, même classification, même pied de page : un seul style pour tout le Consortium.
 
@@ -17,7 +18,7 @@ export function clean(s: any): string {
 }
 export const fdate = (s?: string | null) => (s ? new Date(s).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }) : " - ");
 export const fday = (s?: string | null) => (s ? new Date(s).toLocaleDateString("fr-FR") : " - ");
-export const fusd = (n: number) => clean((n || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 }));
+export const fusd = (n: number) => clean(money(n));
 
 // Logo du Consortium (celui des réglages d'identité) en data-URL ; null si indisponible (CORS) -> emblème vectoriel.
 async function loadLogo(): Promise<string | null> {

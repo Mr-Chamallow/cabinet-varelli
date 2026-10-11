@@ -26,6 +26,7 @@ const NAV_SECTIONS = [
     { href: "/obsidian/profil",        label: "Profil central",  icon: "🧬", permission: "obsidian_fiches" },
     { href: "/cahier-vente",           label: "Transaction", icon: "🧮", permission: "cahier_vente" },
     { href: "/obsidian/paie",          label: "Paie & Commissions", icon: "💰", permission: "obsidian_paie" },
+    { href: "/obsidian/dons",          label: "Dons", icon: "🎁", permission: "obsidian_dons" },
     { href: "/obsidian/employes",      label: "Employés",        icon: "🧑‍💼", permission: "obsidian_employes" },
     { href: "/juridique",       label: "Code pénal",       icon: "📖", permission: "juridique" },
     { href: "/utile-samp",      label: "Utile SAMP",       icon: "🐈", permission: "utile_samp" },

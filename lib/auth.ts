@@ -13,7 +13,7 @@ export type User = AppUser;
 
 export const ALL_PERMISSIONS = [
   "obsidian_dashboard", "obsidian_prix", "obsidian_stocks", "obsidian_armurerie",
-  "obsidian_garage", "obsidian_comptabilite", "obsidian_rdv", "obsidian_contrats", "obsidian_stats", "cahier_vente", "obsidian_paie",
+  "obsidian_garage", "obsidian_comptabilite", "obsidian_rdv", "obsidian_contrats", "obsidian_stats", "cahier_vente", "obsidian_paie", "obsidian_dons",
   "obsidian_employes", "admin", "supervision", "delete_all", "edit_all",
   "juridique", "carte-enqueteur", "utile_samp", "base_donnees", "obsidian_actions", "obsidian_arrestations",
   "obsidian_fiches", "gm_tribunal", "gm_pactes", "gm_audits", "gm_evenements", "gm_reputation", "organigramme", "gm_stats",
@@ -26,7 +26,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   obsidian_comptabilite: "Comptabilité", obsidian_rdv: "Rendez-vous & calendrier",
   obsidian_contrats: "Contrats",
   obsidian_stats: "Statistiques", cahier_vente: "Transaction (vente, blanchiment, équivalent)",
-  obsidian_paie: "Paie & Commissions", obsidian_employes: "Employés",
+  obsidian_paie: "Paie & Commissions", obsidian_dons: "Dons", obsidian_employes: "Employés",
   admin: "Administration & Personnalisation", supervision: "Supervision",
   delete_all: "Suppression globale", edit_all: "Édition globale",
   juridique: "Code pénal", "carte-enqueteur": "San Andreas",
@@ -123,6 +123,7 @@ const LANDING_PRIORITY: { path: string; permission: string }[] = [
   { path: "/obsidian/fiches", permission: "obsidian_fiches" },
   { path: "/cahier-vente", permission: "cahier_vente" },
   { path: "/obsidian/paie", permission: "obsidian_paie" },
+  { path: "/obsidian/dons", permission: "obsidian_dons" },
   { path: "/obsidian/employes", permission: "obsidian_employes" },
   { path: "/juridique", permission: "juridique" },
   { path: "/utile-samp", permission: "utile_samp" },

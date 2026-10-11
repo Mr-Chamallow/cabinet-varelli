@@ -1,7 +1,8 @@
+import { money } from "@/lib/money";
 import { sendDiscordMessage, editDiscordMessage, DiscordWebhookKind, DiscordEmbedField } from "@/lib/discordAlert";
 import { mention, roleIds, RoleKey } from "@/lib/discordRoles";
 
-export const usd = (n: number) => (n || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+export const usd = (n: number) => money(n);
 export const GREEN = 0x22c55e, RED = 0xef4444, GOLD = 0xd4af37, ORANGE = 0xeab308, BLUE = 0x64b5f6, GREY = 0x555566;
 
 // Poste une alerte (embed) sans jamais faire échouer l'action métier.

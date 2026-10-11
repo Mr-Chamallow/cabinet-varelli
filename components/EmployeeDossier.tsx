@@ -1,4 +1,5 @@
 "use client";
+import { money } from "@/lib/money";
 import { roleRP } from "@/lib/rolesRP";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -31,7 +32,7 @@ export function EmployeeDossier({ e }: { e: CardEmploye }) {
         <div className="fd-block"><b>Accès autorisés</b><p>{p.acces.join(" · ")}</p></div>
         <div className="fd-block"><b>Mention</b><p>{p.fn}</p></div>
         <div className="fd-block"><b>Casier - {arr.length} arrestation{arr.length > 1 ? "s" : ""}</b>
-          {arr.length === 0 ? <p>Casier vierge.</p> : <div className="appar">{arr.map(a => <div key={a.id} className="appar-row"><small>{new Date(a.created_at).toLocaleDateString("fr-FR")}</small><span>Amende <b>{Number(a.amende || 0).toLocaleString("fr-FR")} $</b>{Number(a.argent_perdu) > 0 ? ` · perdu ${Number(a.argent_perdu).toLocaleString("fr-FR")} $` : ""}{a.notes ? ` - ${a.notes}` : ""}</span></div>)}</div>}
+          {arr.length === 0 ? <p>Casier vierge.</p> : <div className="appar">{arr.map(a => <div key={a.id} className="appar-row"><small>{new Date(a.created_at).toLocaleDateString("fr-FR")}</small><span>Amende <b>{money(a.amende || 0)}</b>{Number(a.argent_perdu) > 0 ? ` · perdu ${money(a.argent_perdu)}` : ""}{a.notes ? ` - ${a.notes}` : ""}</span></div>)}</div>}
         </div>
         {e.notes && <div className="fd-block"><b>Observations</b><p>{e.notes}</p></div>}
         <div className="fd-foot">Document interne - Consortium Obsidian</div>

@@ -6,20 +6,15 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 import { hasPermission } from "@/lib/auth";
+import { money } from "@/lib/money";
+import { weekStartOf } from "@/lib/weekStart";
 
-function getWeekStart(offset = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() - d.getDay() + 1 - offset * 7);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-function toISO(d: Date) { return d.toISOString().split("T")[0]; }
 function inWeek(dateStr: string, weekStart: Date) {
   const d = new Date(dateStr);
   const end = new Date(weekStart); end.setDate(end.getDate() + 7);
   return d >= weekStart && d < end;
 }
-const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmt = (n: number) => money(n);
 
 interface EmployeeRow {
   nom: string;
@@ -33,6 +28,8 @@ interface EmployeeRow {
   primePropre: number;
   primeMixte: number;
   prime: number;
+  primeFixe: number;
+  dons: number;
 }
 
 export default function PaieObsidianPage() {
@@ -40,45 +37,54 @@ export default function PaieObsidianPage() {
   const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_paie"))) { window.location.href = "/"; } }, [user, userLoading]);
 
-  const [tab, setTab] = useState<"apercu" | "reglages">("apercu");
+  const [tab, setTab] = useState<"apercu" | "dons" | "reglages">("apercu");
   const [weekOffset, setWeekOffset] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [mouvements, setMouvements] = useState<any[]>([]);
   const [compta, setCompta] = useState<any[]>([]);
-  const [cahier, setCahier] = useState<any[]>([]);
   const [paiements, setPaiements] = useState<any[]>([]);
   const [arrests, setArrests] = useState<any[]>([]);
-  const [pct, setPct] = useState(10);
+  const [dons, setDons] = useState<any[]>([]);
+  const [budget, setBudget] = useState<any>(null);
+  const [pct, setPct] = useState(20);
+  const [primeSeuil, setPrimeSeuil] = useState(20000);
+  const [primeFixe, setPrimeFixe] = useState(5000);
   const [savingPct, setSavingPct] = useState(false);
   const [payAmount, setPayAmount] = useState<Record<string, number>>({});
 
-  const weekStart = getWeekStart(weekOffset);
-  const weekStartISO = toISO(weekStart);
+  const weekStartISO = weekStartOf(new Date(Date.now() - weekOffset * 7 * 86400000));
+  const weekStart = useMemo(() => new Date(weekStartISO + "T00:00:00"), [weekStartISO]);
 
   useEffect(() => { load(); }, []);
 
   async function load() {
     if (!supabase) return;
     setLoading(true);
-    const [{ data: m }, { data: c }, { data: cv }, { data: p }, { data: s }, { data: ar }] = await Promise.all([
-      supabase.from("obsidian_mouvements").select("*").eq("type", "sortie"),
-      supabase.from("obsidian_comptabilite").select("*"),
-      supabase.from("cahier_transactions").select("*"),
+    const [{ data: c }, { data: p }, { data: s }, { data: ar }, { data: dn }, { data: bg }] = await Promise.all([
+      supabase.from("obsidian_comptabilite").select("*").eq("source", "action").range(0, 9999),
       supabase.from("obsidian_paiements").select("*").order("created_at", { ascending: false }),
       supabase.from("obsidian_settings").select("*").eq("id", "default").maybeSingle(),
       supabase.from("arrestations").select("membre,amende,argent_perdu,type_argent,created_at"),
+      supabase.from("obsidian_dons").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.rpc("obsidian_budget"),
     ]);
     setArrests(ar || []);
-    setMouvements(m || []);
     setCompta(c || []);
-    setCahier(cv || []);
     setPaiements(p || []);
-    if (s?.commission_pct != null) setPct(s.commission_pct);
+    setDons(dn || []);
+    setBudget(bg || null);
+    if (s?.commission_pct != null) setPct(Number(s.commission_pct));
+    if (s?.prime_seuil != null) setPrimeSeuil(Number(s.prime_seuil));
+    if (s?.prime_fixe != null) setPrimeFixe(Number(s.prime_fixe));
     setLoading(false);
   }
 
+  // Trésorerie propre (celle qui sert à payer) et seuil d'alerte
+  const tresoPropre = (Number(budget?.capital) || 0) + (Number(budget?.propre) || 0);
+  const seuilTreso = Number(budget?.seuil) || 0;
 
   // --- Agrégation par employé pour la semaine sélectionnée ---
+  // RÈGLE : seules les ACTIONS ILLÉGALES comptent pour la commission. Les ventes/achats
+  // (Transaction, Stocks) sont des opérations de l'entreprise : elles ne touchent pas la paie.
   const rows: EmployeeRow[] = useMemo(() => {
     const map: Record<string, { revenus: number; depenses: number }> = {};
     const bump = (nom: string, rev: number, dep: number) => {
@@ -88,36 +94,11 @@ export default function PaieObsidianPage() {
       map[nom].depenses += dep;
     };
 
-    // Stock/armurerie : sorties = ventes = revenu
-    mouvements.forEach(m => {
-      if (!inWeek(m.created_at, weekStart)) return;
-      // Les sorties dues à une arrestation (objets confisqués) ne sont PAS des ventes.
-      if (/^(Annulation )?arrestation/i.test(m.motif || "")) return;
-      bump(m.membre || m.created_by, m.total || 0, 0);
-    });
-
-    // Compta manuelle Obsidian : recette = revenu, dépense = dépense perso
     compta.forEach(e => {
-      // Lignes créées automatiquement : une action illégale compte pour l'employé qui l'a
-      // faite (pas celui qui a saisi) ; l'argent saisi en arrestation n'impacte pas la paie.
-      // Écritures qui ne sont pas du revenu/dépense « personnel » : arrestation, paie (sinon boucle), blanchiment (transfert), stock/contrat (hors paie), transaction (déjà lue via le cahier).
-      if (["arrestation", "paie", "blanchiment", "stock", "contrat", "transaction"].includes(e.source)) return;
-      if (e.source === "action") {
-        if (!inWeek(e.created_at, weekStart)) return;
-        if (e.type === "recette") bump(e.membre || e.created_by, e.montant || 0, 0);
-        else bump(e.membre || e.created_by, 0, e.montant || 0);
-        return;
-      }
-      if (e.semaine !== weekStartISO) return;
-      if (e.type === "recette") bump(e.created_by, e.montant || 0, 0);
-      else bump(e.created_by, 0, e.montant || 0);
-    });
-
-    // Cahier de vente H-47 : entrée = revenu, sortie = dépense
-    cahier.forEach(t => {
-      if (!inWeek(t.created_at, weekStart)) return;
-      if (t.type === "entrée") bump(t.created_by, t.montant || 0, 0);
-      else bump(t.created_by, 0, t.montant || 0);
+      if (e.source !== "action" || !inWeek(e.created_at, weekStart)) return;
+      if (/^investissement/i.test(e.categorie || "")) return;
+      if (e.type === "recette") bump(e.membre || e.created_by, e.montant || 0, 0);
+      else bump(e.membre || e.created_by, 0, e.montant || 0);
     });
 
     // Primes d'arrestation : seule l'amende est remboursée en prime sur la paie.
@@ -128,30 +109,42 @@ export default function PaieObsidianPage() {
       if (!map[a.membre]) map[a.membre] = { revenus: 0, depenses: 0 };
     });
 
+    // Dons validés : déduits de la paie de la semaine choisie pour le don
+    dons.forEach(d => { if (d.statut === "valide" && d.semaine === weekStartISO && d.employe && !map[d.employe]) map[d.employe] = { revenus: 0, depenses: 0 }; });
+
     return Object.entries(map).map(([nom, v]) => {
       const pr = primes[nom] || { sale: 0, propre: 0, mixte: 0 };
       const prime = pr.sale + pr.propre + pr.mixte;
       const benefice = v.revenus - v.depenses;
       const commission = Math.max(0, benefice) * (pct / 100);
+      const fixe = primeFixe > 0 && v.revenus >= primeSeuil ? primeFixe : 0;
       const dejaPaye = paiements
         .filter(p => p.employe === nom && p.semaine === weekStartISO)
         .reduce((s, p) => s + p.montant, 0);
-      return { nom, revenus: v.revenus, depenses: v.depenses, benefice, commission, dejaPaye, restant: Math.max(0, commission + prime - dejaPaye), primeSale: pr.sale, primePropre: pr.propre, primeMixte: pr.mixte, prime };
-    }).sort((a, b) => (b.commission + b.prime) - (a.commission + a.prime));
-  }, [mouvements, compta, cahier, paiements, arrests, weekStart, weekStartISO, pct]);
+      const donsEmp = dons.filter(d => d.statut === "valide" && d.employe === nom && d.semaine === weekStartISO).reduce((s, d) => s + Number(d.montant), 0);
+      return { nom, revenus: v.revenus, depenses: v.depenses, benefice, commission, dejaPaye, restant: Math.max(0, commission + prime + fixe - donsEmp - dejaPaye), primeSale: pr.sale, primePropre: pr.propre, primeMixte: pr.mixte, prime, primeFixe: fixe, dons: donsEmp };
+    }).sort((a, b) => (b.commission + b.prime + b.primeFixe) - (a.commission + a.prime + a.primeFixe));
+  }, [compta, paiements, arrests, dons, weekStart, weekStartISO, pct, primeSeuil, primeFixe]);
 
   const totaux = useMemo(() => ({
     revenus: rows.reduce((s, r) => s + r.revenus, 0),
     depenses: rows.reduce((s, r) => s + r.depenses, 0),
     commission: rows.reduce((s, r) => s + r.commission, 0),
-    prime: rows.reduce((s, r) => s + r.prime, 0),
+    prime: rows.reduce((s, r) => s + r.prime + r.primeFixe, 0),
+    dons: rows.reduce((s, r) => s + r.dons, 0),
     restant: rows.reduce((s, r) => s + r.restant, 0),
   }), [rows]);
+
+  const donsAttente = dons.filter(d => d.statut === "en_attente");
 
   async function marquerPaye(nom: string) {
     if (!user) return;
     const montant = payAmount[nom] ?? rows.find(r => r.nom === nom)?.restant ?? 0;
     if (montant <= 0) return;
+    if (tresoPropre - montant < seuilTreso) {
+      const ok = window.confirm(`⚠️ Trésorerie propre : ${fmt(tresoPropre)}\nSeuil minimum : ${fmt(seuilTreso)}\nAprès ce paiement : ${fmt(tresoPropre - montant)}\n\nPayer quand même ${fmt(montant)} à ${nom} ?`);
+      if (!ok) return;
+    }
     const res = await fetch("/api/obsidian/paie", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ employe: nom, semaine: weekStartISO, montant, paid_by: user.nom, paid_by_id: user.id }),
@@ -161,11 +154,19 @@ export default function PaieObsidianPage() {
     load();
   }
 
+  async function traiterDon(id: string, ok: boolean) {
+    const res = await fetch("/api/obsidian/dons", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ok }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { alert("❌ " + (data.error || "Erreur")); return; }
+    showToast(ok ? "Don validé, déduit de la paie" : "Don refusé");
+    load();
+  }
+
   async function savePct() {
     if (!supabase) return;
     setSavingPct(true);
-    await supabase.from("obsidian_settings").upsert([{ id: "default", commission_pct: pct, updated_at: new Date().toISOString() }]);
-    showToast("Taux de commission mis à jour");
+    await supabase.from("obsidian_settings").upsert([{ id: "default", commission_pct: pct, prime_seuil: primeSeuil, prime_fixe: primeFixe, updated_at: new Date().toISOString() }]);
+    showToast("Réglages de paie enregistrés");
     setSavingPct(false);
   }
 
@@ -177,15 +178,15 @@ export default function PaieObsidianPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Paie & Commissions</h1>
-          <p className="page-subtitle">Bénéfice net par employé · {pct}% de commission · Semaine du {weekLabel}</p>
+          <p className="page-subtitle">Actions illégales · {pct}% de commission · prime fixe {fmt(primeFixe)} dès {fmt(primeSeuil)} de ventes · Semaine du {weekLabel}</p>
           <div className="gold-line" />
         </div>
       </div>
 
       <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1.25rem" }}>
-        {(["apercu", "reglages"] as const).map(t => (
+        {(["apercu", "dons", "reglages"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{ padding: "0.4rem 0.875rem", borderRadius: "var(--radius)", cursor: "pointer", fontFamily: "'Inter',sans-serif", fontSize: "0.8rem", fontWeight: tab === t ? 700 : 400, background: tab === t ? "var(--gold-muted)" : "var(--surface)", border: `1px solid ${tab === t ? "rgba(var(--gold-rgb), 0.4)" : "var(--border)"}`, color: tab === t ? "var(--gold)" : "var(--text-muted)" }}>
-            {t === "apercu" ? "📊 Aperçu" : "⚙️ Réglages"}
+            {t === "apercu" ? "📊 Aperçu" : t === "dons" ? `🎁 Dons${donsAttente.length ? ` (${donsAttente.length})` : ""}` : "⚙️ Réglages"}
           </button>
         ))}
       </div>
@@ -198,12 +199,18 @@ export default function PaieObsidianPage() {
             <button className="btn btn-outline btn-sm" onClick={() => setWeekOffset(w => Math.max(0, w - 1))} disabled={weekOffset === 0}>Semaine suivante {'->'}</button>
           </div>
 
+          {!loading && budget && (tresoPropre < seuilTreso || tresoPropre < totaux.restant) && (
+            <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.35)", borderRadius: "var(--radius-lg)", padding: "0.75rem 1rem", marginBottom: "1rem", fontSize: "0.8rem", color: "var(--danger)", fontWeight: 600 }}>
+              ⚠️ Trésorerie propre : {fmt(tresoPropre)}{seuilTreso > 0 ? ` (seuil minimum ${fmt(seuilTreso)})` : ""} · reste à payer cette semaine : {fmt(totaux.restant)}. Un paiement demandera une confirmation.
+            </div>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0.875rem", marginBottom: "1.5rem" }}>
             {[
-              { l: "Revenus cumulés", v: fmt(totaux.revenus), c: "var(--success)" },
-              { l: "Dépenses cumulées", v: fmt(totaux.depenses), c: "var(--danger)" },
+              { l: "Ventes (actions)", v: fmt(totaux.revenus), c: "var(--success)" },
+              { l: "Pertes (actions)", v: fmt(totaux.depenses), c: "var(--danger)" },
               { l: "Commissions dues", v: fmt(totaux.commission), c: "var(--gold)" },
-              { l: "Primes arrestation", v: fmt(totaux.prime), c: "var(--info)" },
+              { l: "Primes", v: fmt(totaux.prime), c: "var(--info)" },
+              { l: "Dons déduits", v: fmt(totaux.dons), c: "var(--success)" },
               { l: "Reste à payer", v: fmt(totaux.restant), c: totaux.restant > 0 ? "var(--warning)" : "var(--text-dim)" },
             ].map(s => (
               <div key={s.l} className="stat-card">
@@ -225,7 +232,7 @@ export default function PaieObsidianPage() {
                     <div style={{ flex: 1, minWidth: 160 }}>
                       <div style={{ fontWeight: 700, marginBottom: "0.2rem" }}>{r.nom}</div>
                       <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
-                        Revenus {fmt(r.revenus)} · Dépenses {fmt(r.depenses)} · Bénéfice net {fmt(r.benefice)}
+                        Ventes {fmt(r.revenus)} · Pertes {fmt(r.depenses)} · Bénéfice net {fmt(r.benefice)}
                       </div>
                     </div>
                     <div style={{ textAlign: "right" }}>
@@ -236,6 +243,18 @@ export default function PaieObsidianPage() {
                       <div style={{ textAlign: "right" }}>
                         <div style={{ fontWeight: 700, color: "var(--info)", fontSize: "0.9rem" }}>+ {fmt(r.prime)}</div>
                         <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>prime arrestation{[r.primeSale > 0 && ` · sale ${fmt(r.primeSale)}`, r.primePropre > 0 && ` · propre ${fmt(r.primePropre)}`, r.primeMixte > 0 && ` · mixte ${fmt(r.primeMixte)}`].filter(Boolean).join("")}</div>
+                      </div>
+                    )}
+                    {r.primeFixe > 0 && (
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontWeight: 700, color: "var(--info)", fontSize: "0.9rem" }}>+ {fmt(r.primeFixe)}</div>
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>prime fixe (ventes {'>='} {fmt(primeSeuil)})</div>
+                      </div>
+                    )}
+                    {r.dons > 0 && (
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontWeight: 700, color: "var(--success)", fontSize: "0.9rem" }}>- {fmt(r.dons)}</div>
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>dons</div>
                       </div>
                     )}
                     {r.dejaPaye > 0 && (
@@ -260,16 +279,48 @@ export default function PaieObsidianPage() {
         </>
       )}
 
+      {tab === "dons" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          {dons.length === 0 ? (
+            <div className="empty-state"><div className="empty-icon">🎁</div><div className="empty-title">Aucun don</div></div>
+          ) : dons.slice(0, 100).map(d => (
+            <div key={d.id} className="card" style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <div style={{ fontWeight: 700 }}>{d.employe} · {fmt(d.montant)} · {d.type_argent === "propre" ? "💵 propre" : "🕶️ sale"}</div>
+                <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>Paie du {d.semaine} · {new Date(d.created_at).toLocaleString("fr-FR")}{d.motif ? ` · ${d.motif}` : ""}</div>
+              </div>
+              {d.preuve_url && <a href={d.preuve_url} target="_blank" rel="noreferrer"><img src={d.preuve_url} alt="preuve" style={{ height: 52, borderRadius: 6, border: "1px solid var(--border)" }} /></a>}
+              {d.statut === "en_attente" ? (
+                <div style={{ display: "flex", gap: "0.4rem" }}>
+                  <button className="btn btn-gold btn-sm" onClick={() => traiterDon(d.id, true)}>Valider</button>
+                  <button className="btn btn-outline btn-sm" onClick={() => traiterDon(d.id, false)}>Refuser</button>
+                </div>
+              ) : (
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: d.statut === "valide" ? "var(--success)" : "var(--danger)" }}>{d.statut === "valide" ? "✅ Validé" : "❌ Refusé"}{d.valide_par ? ` par ${d.valide_par}` : ""}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {tab === "reglages" && (
         <div className="card" style={{ maxWidth: 420 }}>
-          <div className="section-title" style={{ marginBottom: "1rem" }}>Taux de commission</div>
+          <div className="section-title" style={{ marginBottom: "1rem" }}>Commission & prime fixe</div>
           <div className="form-group">
-            <label>Pourcentage appliqué au bénéfice net (%)</label>
+            <label>Commission sur le bénéfice net des actions illégales (%)</label>
             <input type="number" min={0} max={100} value={pct} onChange={e => setPct(+e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Ventes minimum de l'employé pour la prime fixe ($)</label>
+            <input type="number" min={0} value={primeSeuil} onChange={e => setPrimeSeuil(+e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Montant de la prime fixe ($)</label>
+            <input type="number" min={0} value={primeFixe} onChange={e => setPrimeFixe(+e.target.value)} />
           </div>
           <button className="btn btn-gold" onClick={savePct} disabled={savingPct}>{savingPct ? "..." : "Enregistrer"}</button>
           <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.75rem" }}>
-            S'applique à tout le monde, pareil pour chaque employé. Le changement prend effet sur les calculs futurs (n'affecte pas les paiements déjà marqués).
+            Seules les actions illégales comptent. Les ventes et achats de produits (Transaction, Stocks) sont des opérations de l'entreprise et ne touchent pas la paie. Le seuil de trésorerie se règle dans Comptabilité, onglet Budget de lancement.
           </p>
         </div>
       )}

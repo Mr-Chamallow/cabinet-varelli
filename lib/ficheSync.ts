@@ -1,3 +1,4 @@
+import { money } from "@/lib/money";
 // Fiches (obsidian_fiches) <-> Base de données (bdd_personnes) : recherche, pré-remplissage et synchronisation.
 type Db = any;
 
@@ -99,7 +100,7 @@ export async function lookupPeople(db: Db, query: string): Promise<{ candidates:
     const { data: wf } = await db.from("obsidian_fiches").select("id,nom,personne_id,statut,prime,vehicules").is("deleted_at", null).or("prime.gt.0,statut.ilike.%recherch%");
     for (const c of out) {
       const hit = (wf || []).find((w: any) => (c.personne?.id && w.personne_id === c.personne.id) || (c.personne && fullNom(c.personne).toLowerCase() === String(w.nom || "").toLowerCase()) || (c.plaque && String(w.vehicules || "").toLowerCase().includes(c.plaque.toLowerCase())));
-      if (hit) { c.label = "🚨 RECHERCHÉ - " + c.label; c.detail = [hit.statut, Number(hit.prime) > 0 ? `prime ${Number(hit.prime).toLocaleString("fr-FR")} $` : ""].filter(Boolean).join(" · ") + (c.detail ? " · " + c.detail : ""); }
+      if (hit) { c.label = "🚨 RECHERCHÉ - " + c.label; c.detail = [hit.statut, Number(hit.prime) > 0 ? `prime ${money(hit.prime)}` : ""].filter(Boolean).join(" · ") + (c.detail ? " · " + c.detail : ""); }
     }
   } catch { /* alerte best-effort */ }
   return { candidates: out.slice(0, 12), fiches: fiches.data || [] };

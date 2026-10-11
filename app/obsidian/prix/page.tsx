@@ -7,7 +7,7 @@ import { Toast } from "@/components/ui/Toast";
 import { hasPermission } from "@/lib/auth";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 
-const fmt=(n:number)=>n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
+const fmt=(n:number)=>money(n);
 
 // Regroupe les drogues par famille (même nom de base, ex: "Cocaïne") et les
 // trie par % de pureté croissant à l'intérieur de chaque famille.
@@ -25,6 +25,7 @@ function sortDrogues(list:any[]){
 }
 
 import { ACCS } from "@/lib/priceRef";
+import { money } from "@/lib/money";
 
 export default function PrixPage() {
   const { user, loading: userLoading } = useCurrentUser();

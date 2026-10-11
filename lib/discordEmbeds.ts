@@ -1,8 +1,9 @@
 import { NotifyEmbed } from "@/lib/notifyDiscord";
 import { metierInfo } from "@/lib/fichesMetiers";
+import { money } from "@/lib/money";
 
 const v = (x: any) => (x === null || x === undefined || x === "" ? "-" : String(x));
-const fmtUSD = (n: number) => (n || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmtUSD = (n: number) => money((n || 0));
 
 const PRIO_COLOR: Record<string, number> = {
   Basse: 0x4c5470, Normale: 0x64b5f6, Haute: 0xeab308, Critique: 0xff5470, "Neutralisé": 0x22c55e,

@@ -16,7 +16,12 @@ export async function POST(req: Request) {
 
     const isEntree = type === "entrée" || type === "entree";
     const pu = isEntree && Number(prixBody) >= 0 && prixBody !== undefined && prixBody !== null && prixBody !== "" ? Number(prixBody) : (stock.prix_unitaire || 0); // prix d'achat (entrée)
-    const newQty = isEntree ? stock.quantite + quantite : Math.max(0, stock.quantite - quantite);
+    if (!isEntree && quantite > Number(stock.quantite)) {
+      const k = ARMURERIE_CATEGORIES.includes(stock.categorie) ? "armurerie" : "stocks";
+      await sendDiscordAlert(k, `⚠️ **Sortie refusée** sur **${stock.nom}** : ${quantite} demandé(s), ${stock.quantite} en stock (${membre || created_by || "inconnu"})`, { title: "📦 Stock insuffisant", color: 0xef4444 });
+      return NextResponse.json({ error: `Stock insuffisant : ${stock.quantite} disponible(s) pour ${stock.nom}` }, { status: 400 });
+    }
+    const newQty = isEntree ? stock.quantite + quantite : stock.quantite - quantite;
 
     const { error: mvtErr } = await supabaseAdmin.from("obsidian_mouvements").insert([{
       stock_id: stock.id, stock_nom: stock.nom, type, quantite, motif: motif || "",

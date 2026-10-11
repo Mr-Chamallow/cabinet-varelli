@@ -4,7 +4,8 @@ import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
-const fmt = (n:number) => n.toLocaleString("fr-FR",{style:"currency",currency:"USD",maximumFractionDigits:0});
+import { money } from "@/lib/money";
+const fmt = (n:number) => money(n);
 export default function ObsidianDashboard() {
   const { user, loading: userLoading } = useCurrentUser();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_dashboard"))) { window.location.href = "/"; } }, [user, userLoading]);

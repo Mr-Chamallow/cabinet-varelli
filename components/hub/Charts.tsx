@@ -1,9 +1,10 @@
 "use client";
+import { money } from "@/lib/money";
 import { ReactNode } from "react";
 import { weekStartOf } from "@/lib/weekStart";
 
-export const fmt = (n: number) => (Number.isFinite(n) ? n : 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-export const fmtK = (n: number) => { const a = Math.abs(n); return (n < 0 ? "-" : "") + (a >= 1e6 ? (a / 1e6).toFixed(1) + " M$" : a >= 1e3 ? (a / 1e3).toFixed(1) + " k$" : Math.round(a) + " $"); };
+export const fmt = (n: number) => money(Number.isFinite(n) ? n : 0);
+export const fmtK = (n: number) => { const a = Math.abs(n); return (n < 0 ? "-" : "") + (a >= 1e6 ? (a / 1e6).toFixed(1) + "M$" : a >= 1e3 ? (a / 1e3).toFixed(1) + "k$" : Math.round(a) + "$"); };
 export const pct = (n: number) => (Number.isFinite(n) ? n : 0).toFixed(1) + " %";
 
 export function Kpi({ label, value, sub, color = "var(--text)", icon }: { label: string; value: ReactNode; sub?: ReactNode; color?: string; icon?: string }) {

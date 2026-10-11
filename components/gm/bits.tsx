@@ -1,4 +1,5 @@
 "use client";
+import { money } from "@/lib/money";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -25,7 +26,7 @@ export function useGroupes(reload?: number) {
 export function useOrgs(reload?: number) { return useGroupes(reload).map(g => g.nom); }
 
 // Liste déroulante des groupes (pas de saisie libre : on pointe vers le référentiel).
-export function GroupeSelect({ value, onChange, groupes, placeholder = " -  Choisir un groupe  - " }: { value: string; onChange: (nom: string) => void; groupes: Groupe[]; placeholder?: string }) {
+export function GroupeSelect({ value, onChange, groupes, placeholder = "- Choisir un groupe - " }: { value: string; onChange: (nom: string) => void; groupes: Groupe[]; placeholder?: string }) {
   const known = !value || groupes.some(g => g.nom === value);
   return (
     <div>
@@ -56,4 +57,4 @@ export function toLocalInput(s?: string | null) {
   return d.toISOString().slice(0, 16);
 }
 export const fromLocalInput = (s: string) => (s ? new Date(s).toISOString() : null);
-export const usd = (n: number) => (n || 0).toLocaleString("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+export const usd = (n: number) => money(n);
