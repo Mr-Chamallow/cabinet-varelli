@@ -5,7 +5,7 @@ import { logAudit } from "@/lib/alerts";
 // Renommer un groupe : le référentiel (carte_gangs) fait foi, les noms copiés ailleurs suivent (via groupe_id).
 const TABLES: [string, string][] = [
   ["tribunal_dossiers", "organisation"], ["gm_pactes", "organisation"], ["gm_audits", "organisation"],
-  ["gm_reputation_log", "organisation"], ["gm_evenements", "partenaire"], ["obsidian_fiches", "organisation"],
+  ["gm_reputation_log", "organisation"], ["obsidian_fournisseurs", "groupe"], ["gm_evenements", "partenaire"], ["obsidian_fiches", "organisation"],
 ];
 
 export async function POST(req: Request) {

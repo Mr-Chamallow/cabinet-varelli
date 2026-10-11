@@ -11,6 +11,7 @@ import { useUndoAction } from "@/lib/useUndoAction";
 import { notifyDiscordCreate, notifyDiscordUpdate, notifyDiscordDelete } from "@/lib/notifyDiscord";
 import { CalendrierGlobal } from "@/components/CalendrierGlobal";
 import { buildRdvEmbed } from "@/lib/discordEmbeds";
+import { dbw } from "@/lib/dbw";
 
 interface Operation {
   id: string;
@@ -169,15 +170,15 @@ async function saveOperation() {
   setSaving(true);
   let error = null;
   if (editOperation) {
-    const res = await supabase.from("obsidian_rdv").update({ ...form }).eq("id", editOperation.id).select().single();
+    const res = await dbw.update("obsidian_rdv", editOperation.id, { ...form });
     error = res.error;
     if (!error && res.data) notifyDiscordUpdate("rdv", res.data.discord_message_id, buildRdvEmbed(res.data));
   } else {
-    const res = await supabase.from("obsidian_rdv").insert([{ ...form, created_by: user.nom, created_by_id: user.id }]).select().single();
+    const res = await dbw.insert("obsidian_rdv", { ...form, created_by: user.nom, created_by_id: user.id });
     error = res.error;
     if (!error && res.data) {
       notifyDiscordCreate("rdv", buildRdvEmbed(res.data)).then(msgId => {
-        if (msgId && supabase) supabase.from("obsidian_rdv").update({ discord_message_id: msgId }).eq("id", res.data!.id).then();
+        if (msgId && supabase) dbw.update("obsidian_rdv", res.data!.id, { discord_message_id: msgId }).then();
       });
     }
   }
@@ -202,7 +203,7 @@ async function saveOperation() {
     if (!op || !supabase) return;
     setOperations(ops => ops.filter(o => o.id !== id));
 
-    const { error } = await supabase.from("obsidian_rdv").delete().eq("id", id);
+    const { error } = await dbw.remove("obsidian_rdv", id);
     if (error) {
       setOperations(ops => [...ops, op]);
       return;
@@ -211,11 +212,11 @@ async function saveOperation() {
 
     scheduleDelete(`"${op.titre}" supprimée`, async () => {}, async () => {
       const { id: _id, created_at: _ca, discord_message_id: _dmid, ...rest } = op;
-      const { data } = await supabase!.from("obsidian_rdv").insert([rest]).select().single();
+      const { data } = await dbw.insert("obsidian_rdv", rest);
       if (data) {
         setOperations(ops => [...ops, data]);
         notifyDiscordCreate("rdv", buildRdvEmbed(data)).then(msgId => {
-          if (msgId && supabase) supabase.from("obsidian_rdv").update({ discord_message_id: msgId }).eq("id", data.id).then();
+          if (msgId && supabase) dbw.update("obsidian_rdv", data.id, { discord_message_id: msgId }).then();
         });
       }
     });
@@ -831,7 +832,7 @@ async function saveOperation() {
                 <div className="form-group">
                   <label>Employé</label>
                   <select value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))}>
-                    <option value=""> -  Aucun  - </option>
+                    <option value="">- Aucun - </option>
                     {form.client && !fiches.includes(form.client) && <option value={form.client}>{form.client} (hors annuaire)</option>}
                     {fiches.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>

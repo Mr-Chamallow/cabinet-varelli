@@ -9,6 +9,8 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { weekStartOf } from "@/lib/weekStart";
 import { usePriceTable, norm as normP } from "@/lib/fournisseurs";
 import { Kpi, Delta, Panel, Tabs, LineChart, BarChart, HBars, Donut, Heat, DataTable, fmt, fmtK, pct, sum, mean, median, stdev, weekKey, lastWeeks, shortWeek, linReg } from "@/components/hub/Charts";
+import { dbw } from "@/lib/dbw";
+import { fetchAll } from "@/lib/fetchAll";
 
 type Tab = "budget" | "synthese" | "flux" | "categories" | "employes" | "sources" | "marges" | "semaines" | "journal" | "expert";
 const TABS: { k: Tab; label: string }[] = [
@@ -49,11 +51,11 @@ export default function ComptaHubPage() {
     if (!supabase) { setLoading(false); return; }
     // Clôture automatique des semaines terminées (en plus du cron de la base) - silencieux.
     await fetch("/api/obsidian/cloture", { method: "POST" }).catch(() => {});
-    const [{ data }, { data: ar }, { data: mv }, { data: tr }, { data: st }, { data: sw }, { data: bgd }, { data: stg }] = await Promise.all([
-      supabase.from("obsidian_comptabilite").select("*").order("created_at", { ascending: false }).limit(10000),
-      supabase.from("arrestations").select("id,membre,amende,argent_perdu,created_at").limit(5000),
-      supabase.from("obsidian_mouvements").select("stock_nom,type,quantite,total,motif,created_at").limit(10000),
-      supabase.from("cahier_transactions").select("type,montant,quantite,produit_nom,categorie,created_at").limit(10000),
+    const [data, ar, mv, tr, { data: st }, { data: sw }, { data: bgd }, { data: stg }] = await Promise.all([
+      fetchAll((a, b) => supabase!.from("obsidian_comptabilite").select("*").order("created_at", { ascending: false }).order("id").range(a, b)),
+      fetchAll((a, b) => supabase!.from("arrestations").select("id,membre,amende,argent_perdu,created_at").order("created_at").order("id").range(a, b)),
+      fetchAll((a, b) => supabase!.from("obsidian_mouvements").select("stock_nom,type,quantite,total,motif,created_at").order("created_at").order("id").range(a, b)),
+      fetchAll((a, b) => supabase!.from("cahier_transactions").select("type,montant,quantite,produit_nom,categorie,created_at").order("created_at").order("id").range(a, b)),
       supabase.from("obsidian_stocks").select("nom,categorie,quantite,prix_unitaire").limit(2000),
       supabase.from("obsidian_semaines").select("*").order("semaine", { ascending: false }).limit(200),
       supabase.rpc("obsidian_budget"),
@@ -92,7 +94,7 @@ export default function ComptaHubPage() {
   async function saveBudgetSettings() {
     if (!supabase) return;
     setSavingB(true);
-    await supabase.from("obsidian_settings").upsert([{ id: "default", capital_depart: capital, seuil_tresorerie: seuil, updated_at: new Date().toISOString() }]);
+    await dbw.upsert("obsidian_settings", { id: "default", capital_depart: capital, seuil_tresorerie: seuil });
     setSavingB(false); load();
   }
   async function addInvest() {

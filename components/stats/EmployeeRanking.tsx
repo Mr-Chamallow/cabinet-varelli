@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRealtimeTable } from "@/lib/useRealtimeTable";
 import { exportXlsx } from "@/lib/exportXlsx";
+import { fetchAll } from "@/lib/fetchAll";
 
 const fmt = (n: number) => money(n);
 const PERIODS = [{ k: "week", label: "Semaine", days: 7 }, { k: "month", label: "30 jours", days: 30 }, { k: "all", label: "Tout", days: 0 }];
@@ -20,9 +21,9 @@ export function EmployeeRanking() {
 
   async function load() {
     if (!supabase) return;
-    const [{ data: a }, { data: r }] = await Promise.all([
-      supabase.from("actions_illegales").select("membre,montant,created_at").limit(5000),
-      supabase.from("arrestations").select("membre,amende,argent_perdu,created_at").limit(5000),
+    const [a, r] = await Promise.all([
+      fetchAll((x, y) => supabase!.from("actions_illegales").select("membre,montant,created_at").order("created_at").order("id").range(x, y)),
+      fetchAll((x, y) => supabase!.from("arrestations").select("membre,amende,argent_perdu,created_at").order("created_at").order("id").range(x, y)),
     ]);
     setActions(a || []); setArrests(r || []);
   }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logAudit } from "@/lib/alerts";
 import { requirePermission, requirePatron } from "@/lib/serverAuth";
 
 // POST : clôture toutes les semaines terminées (idempotent). DELETE (Patron) : rouvre une semaine.
@@ -14,11 +15,12 @@ export async function POST() {
 
 export async function DELETE(req: Request) {
   try {
-    const { authorized, supabaseAdmin, error } = await requirePatron();
+    const { authorized, supabaseAdmin, error, user } = await requirePatron();
     if (!authorized) return NextResponse.json({ error: error || "Réservé au CEO" }, { status: 403 });
     const { semaine } = await req.json();
     const { error: e } = await supabaseAdmin.from("obsidian_semaines").delete().eq("semaine", semaine);
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
+    await logAudit(supabaseAdmin, String((user as any)?.nom_perso || (user as any)?.discord_name || ""), "Semaine rouverte", String(semaine));
     return NextResponse.json({ ok: true });
   } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
 }

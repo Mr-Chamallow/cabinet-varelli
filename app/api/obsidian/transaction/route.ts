@@ -68,6 +68,7 @@ export async function DELETE(req: Request) {
     const { data, error: dbError } = await supabaseAdmin.rpc("obsidian_transaction_annuler", { p_id: id, p_user: who });
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     if (old) await logAudit(supabaseAdmin, who, "Transaction annulée", `${old.quantite} x ${old.produit_nom}`, `${old.type} ${money(old.montant)}`);
+    if (old) await postAlert("compta", `↩️ Transaction annulée - ${money(old.montant)}`, `${old.type === "entrée" ? "Vente" : "Achat"} de ${old.quantite} x ${old.produit_nom}\nPar ${who} · stock et compta remis à jour`, RED);
     return NextResponse.json({ stock: (data as any)?.stock || null });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

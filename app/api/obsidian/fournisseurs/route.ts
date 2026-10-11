@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
+import { logAudit } from "@/lib/alerts";
 
 const CATS = ["drogue", "arme", "accessoire"];
 const clean = (b: any) => ({
@@ -12,6 +13,16 @@ const clean = (b: any) => ({
   ...(b.prix_achat !== undefined ? { prix_achat: Math.round((Number(b.prix_achat) || 0) * 100) / 100 } : {}),
 });
 const normSql = (s: string) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
+
+// Le groupe est relie a la base (carte_gangs) quand il existe
+async function linkGroupe(db: any, row: any) {
+  if (row.groupe === undefined) return;
+  const n = String(row.groupe || "").trim();
+  if (!n) { row.groupe_id = null; return; }
+  const { data } = await db.from("carte_gangs").select("id,nom").ilike("nom", n).limit(1).maybeSingle();
+  if (data) { row.groupe_id = data.id; row.groupe = data.nom; } else row.groupe_id = null;
+}
+const who = (u: any) => String(u?.nom_perso || u?.discord_name || "");
 
 // Un seul "préféré" par produit
 async function unsetOthers(db: any, categorie: string, produit: string, exceptId: string) {
@@ -29,39 +40,47 @@ export async function POST(req: Request) {
     if (!CATS.includes(row.categorie)) return NextResponse.json({ error: "Catégorie invalide" }, { status: 400 });
     if (!row.produit || !row.qui) return NextResponse.json({ error: "Produit et nom du vendeur requis" }, { status: 400 });
     if (!(row.prix_achat > 0)) return NextResponse.json({ error: "Prix d'achat invalide" }, { status: 400 });
+    await linkGroupe(supabaseAdmin, row);
     row.prefere = !!b.prefere;
     row.created_by = String((user as any)?.nom_perso || (user as any)?.discord_name || "");
     const { data, error: e } = await supabaseAdmin.from("obsidian_fournisseurs").insert([row]).select().single();
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
     if (row.prefere) await unsetOthers(supabaseAdmin, row.categorie, row.produit, data.id);
+    await logAudit(supabaseAdmin, who(user), "Fournisseur ajoute", `${row.produit} : ${row.qui}`, `${row.prix_achat}$${row.groupe ? " · " + row.groupe : ""}`);
     return NextResponse.json({ fournisseur: data });
   } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
 }
 
 export async function PATCH(req: Request) {
   try {
-    const { authorized, supabaseAdmin, error } = await requirePermission("obsidian_prix");
+    const { authorized, supabaseAdmin, error, user } = await requirePermission("obsidian_prix");
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
     const b = await req.json();
     if (!b.id) return NextResponse.json({ error: "id requis" }, { status: 400 });
     const row: any = clean(b);
     if (row.prix_achat !== undefined && !(row.prix_achat > 0)) return NextResponse.json({ error: "Prix d'achat invalide" }, { status: 400 });
     if (b.prefere !== undefined) row.prefere = !!b.prefere;
+    await linkGroupe(supabaseAdmin, row);
+    const { data: before } = await supabaseAdmin.from("obsidian_fournisseurs").select("*").eq("id", b.id).maybeSingle();
     const { data, error: e } = await supabaseAdmin.from("obsidian_fournisseurs").update(row).eq("id", b.id).select().single();
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
     if (row.prefere) await unsetOthers(supabaseAdmin, data.categorie, data.produit, data.id);
+    const diff = Object.keys(row).filter(k => before && JSON.stringify(before[k]) !== JSON.stringify(row[k])).map(k => `${k}: ${String(before[k] ?? "")} -> ${String(row[k] ?? "")}`).join(" ; ");
+    if (diff) await logAudit(supabaseAdmin, who(user), "Fournisseur modifie", `${data.produit} : ${data.qui}`, diff.slice(0, 400));
     return NextResponse.json({ fournisseur: data });
   } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
 }
 
 export async function DELETE(req: Request) {
   try {
-    const { authorized, supabaseAdmin, error } = await requirePermission("obsidian_prix");
+    const { authorized, supabaseAdmin, error, user } = await requirePermission("obsidian_prix");
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
     const { id } = await req.json();
     if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
+    const { data: before } = await supabaseAdmin.from("obsidian_fournisseurs").select("*").eq("id", id).maybeSingle();
     const { error: e } = await supabaseAdmin.from("obsidian_fournisseurs").delete().eq("id", id);
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
+    if (before) await logAudit(supabaseAdmin, who(user), "Fournisseur supprime", `${before.produit} : ${before.qui}`, `${before.prix_achat}$`);
     return NextResponse.json({ ok: true });
   } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
 }

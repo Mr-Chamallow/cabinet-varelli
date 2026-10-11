@@ -92,7 +92,7 @@ export default function DonsPage() {
                 <div style={{ fontWeight: 700 }}>{money(d.montant)} · {d.type_argent === "propre" ? "💵 propre" : "🕶️ sale"}</div>
                 <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>{new Date(d.created_at).toLocaleString("fr-FR")}{d.motif ? ` · ${d.motif}` : ""}</div>
               </div>
-              {d.preuve_url && <a href={d.preuve_url} target="_blank" rel="noreferrer"><img src={d.preuve_url} alt="preuve" style={{ height: 44, borderRadius: 6, border: "1px solid var(--border)" }} /></a>}
+              {d.preuve_url && <a href={`/api/obsidian/dons/preuve?id=${d.id}`} target="_blank" rel="noreferrer"><img src={`/api/obsidian/dons/preuve?id=${d.id}`} alt="preuve" style={{ height: 44, borderRadius: 6, border: "1px solid var(--border)" }} /></a>}
               <span style={{ fontSize: "0.75rem", fontWeight: 700, color: STATUT[d.statut]?.c }}>{STATUT[d.statut]?.l || d.statut}</span>
             </div>
           ))}

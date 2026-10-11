@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { fileToPhoto } from "@/components/PhotoPicker";
 import { pdfEnquete } from "@/lib/pdfDocs";
+import { dbw } from "@/lib/dbw";
 
 // Tableau d'enquête (vide au départ, sauvegardé en base et partagé).
 // Choisir une personne l'ajoute avec tous ses liens : même organisation, noms cités dans « Relations » (dans les deux sens) et véhicules qui lui sont assignés.
@@ -60,14 +61,14 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
       const x = main ? c.x : c.x + Math.cos(a) * r, y = main ? c.y : c.y + Math.sin(a) * r * 0.75;
       return { ...t, x: Math.round(Math.max(10, Math.min(W - PW - 10, x))), y: Math.round(Math.max(10, Math.min(H - PH - 10, y))), created_by: user || null };
     });
-    const { data, error } = await supabase.from("obsidian_board").insert(rows).select();
+    const { data, error } = await dbw.insertMany("obsidian_board", rows);
     if (error) { setErr(error.message); return; }
     setItems(l => [...l, ...((data || []) as Item[])]);
   }
 
-  async function remove(id: string) { setItems(l => l.filter(i => i.id !== id)); await supabase?.from("obsidian_board").delete().eq("id", id); }
-  async function clearAll() { if (!window.confirm("Vider tout le tableau ? (les fiches ne sont pas supprimées)")) return; setItems([]); await supabase?.from("obsidian_board").delete().neq("id", "00000000-0000-0000-0000-000000000000"); }
-  const persistPos = async (id: string, x: number, y: number) => { await supabase?.from("obsidian_board").update({ x: Math.round(x), y: Math.round(y) }).eq("id", id); };
+  async function remove(id: string) { setItems(l => l.filter(i => i.id !== id)); await dbw.remove("obsidian_board", id); }
+  async function clearAll() { if (!window.confirm("Vider tout le tableau ? (les fiches ne sont pas supprimées)")) return; setItems([]); await dbw.removeAll("obsidian_board"); }
+  const persistPos = async (id: string, x: number, y: number) => { await dbw.update("obsidian_board", id, { x: Math.round(x), y: Math.round(y) }); };
 
   // -- Fils : entre personnes présentes (même orga / relations) et personne -> véhicule assigné --
   const links = useMemo(() => {
@@ -93,14 +94,14 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   async function dropBoard(e: React.DragEvent) {
     e.preventDefault(); setOver(null); const f = imgOf(e); if (!f || !supabase) return; const r = board.current!.getBoundingClientRect();
     const img = await fileToPhoto(f, false);
-    const { data, error } = await supabase.from("obsidian_board").insert([{ kind: "note", img, x: Math.round(Math.max(0, Math.min(W - PW, e.clientX - r.left - PW / 2))), y: Math.round(Math.max(0, Math.min(H - PH, e.clientY - r.top - 40))), created_by: user || null }]).select().single();
+    const { data, error } = await dbw.insert("obsidian_board", { kind: "note", img, x: Math.round(Math.max(0, Math.min(W - PW, e.clientX - r.left - PW / 2))), y: Math.round(Math.max(0, Math.min(H - PH, e.clientY - r.top - 40))), created_by: user || null });
     if (error) { setErr(error.message); return; } setItems(l => [...l, data as Item]);
   }
   async function dropPin(e: React.DragEvent, it: Item) {
     e.preventDefault(); e.stopPropagation(); setOver(null); const f = imgOf(e); if (!f) return;
     const url = await fileToPhoto(f, false);
     if (it.kind === "fiche") await onPhoto?.(it.ref!, url);
-    else if (it.kind === "vehicule") { await supabase?.from("obsidian_garage").update({ photo_url: url }).eq("id", it.ref!); setVehicles(l => l.map(v => v.id === it.ref ? { ...v, photo_url: url } : v)); }
+    else if (it.kind === "vehicule") { await dbw.update("obsidian_garage", it.ref!, { photo_url: url }); setVehicles(l => l.map(v => v.id === it.ref ? { ...v, photo_url: url } : v)); }
   }
 
   async function exportPdf() {

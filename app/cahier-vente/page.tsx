@@ -1,6 +1,6 @@
 "use client";
 
-import { loadPriceTable, norm } from "@/lib/fournisseurs";
+import { loadPriceTable, norm, useFournisseurs, fournisseursDe, refAchat } from "@/lib/fournisseurs";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -14,6 +14,8 @@ import { EquivalentPanel } from "@/components/EquivalentPanel";
 import { BlanchimentPanel } from "@/components/BlanchimentPanel";
 import { weekStartOf } from "@/lib/weekStart";
 import { money } from "@/lib/money";
+import { dbw } from "@/lib/dbw";
+import { fetchAll } from "@/lib/fetchAll";
 
 interface Transaction {
   id: string;
@@ -107,6 +109,7 @@ export default function CahierVentePage() {
   const [montantAuto, setMontantAuto] = useState(true); // le montant suit prix x quantité tant qu'il n'est pas saisi à la main
   const [horsStock, setHorsStock] = useState(false); // achat d'un produit absent du stock (saisie libre)
   const [saving, setSaving] = useState(false);
+  const { list: fournAll } = useFournisseurs();
   const { pending: pendingUndo, scheduleDelete, undo: undoDelete } = useUndoAction();
 
   // Produit rapide / CRUD
@@ -119,8 +122,8 @@ export default function CahierVentePage() {
   async function load() {
     setLoading(true);
     if (!supabase) { setLoading(false); return; }
-    const [{ data: t }, { data: p }, table] = await Promise.all([
-      supabase.from("cahier_transactions").select("*").order("created_at", { ascending: false }),
+    const [t, { data: p }, table] = await Promise.all([
+      fetchAll((a, b) => supabase!.from("cahier_transactions").select("*").order("created_at", { ascending: false }).order("id").range(a, b)),
       supabase.from("obsidian_stocks").select("id,nom,categorie,emoji,prix_unitaire,quantite,unite").order("categorie").order("nom"),
       loadPriceTable().catch(() => [] as Awaited<ReturnType<typeof loadPriceTable>>),
     ]);
@@ -232,7 +235,7 @@ export default function CahierVentePage() {
   async function saveProduit() {
     if (!produitForm.nom.trim() || !supabase) return;
     setSaving(true);
-    const { data } = await supabase.from("cahier_produits").insert([{ ...produitForm, ordre: produits.length + 1 }]).select().single();
+    const { data } = await dbw.insert("cahier_produits", { ...produitForm, ordre: produits.length + 1 });
     if (data) { 
       setProduits(ps => [...ps, data]); 
       showToast("Produit ajouté"); 
@@ -243,7 +246,7 @@ export default function CahierVentePage() {
 
   async function updateProduit(id: string) {
     if (!supabase) return;
-    await supabase.from("cahier_produits").update(editProduitForm).eq("id", id);
+    await dbw.update("cahier_produits", id, editProduitForm);
     setProduits(ps => ps.map(p => p.id === id ? { ...p, ...editProduitForm } as Produit : p));
     setEditProduitId(null); 
     showToast("Produit mis à jour");
@@ -259,7 +262,7 @@ export default function CahierVentePage() {
     if (!p || !supabase) return;
     setProduits(ps => ps.filter(x => x.id !== id));
 
-    const { error } = await supabase.from("cahier_produits").delete().eq("id", id);
+    const { error } = await dbw.remove("cahier_produits", id);
     if (error) {
       setProduits(ps => [...ps, p]);
       return;
@@ -267,7 +270,7 @@ export default function CahierVentePage() {
 
     scheduleDelete(`Produit "${p.nom}" supprimé`, async () => {}, async () => {
       const { id: _id, ...rest } = p;
-      const { data } = await supabase!.from("cahier_produits").insert([rest]).select().single();
+      const { data } = await dbw.insert("cahier_produits", rest);
       if (data) setProduits(ps => [...ps, data]);
     });
   }
@@ -522,6 +525,16 @@ export default function CahierVentePage() {
                 <datalist id="produits-stock">
                   {produits.filter(p => form.categorie === "autre" || p.type === form.categorie).map(p => <option key={p.id} value={p.nom}>{p.emoji} stock : {p.quantite}{p.unite ? " " + p.unite : ""}</option>)}
                 </datalist>
+                {form.type === "sortie" && (() => {
+                  const cat = form.categorie === "munition" || form.categorie === "autre" ? "" : form.categorie;
+                  const fl = cat ? fournisseursDe(fournAll, cat, form.produit_nom) : [];
+                  if (!fl.length) return null;
+                  const rf = refAchat(fl);
+                  return <select defaultValue="" style={{ marginTop: "0.35rem" }} onChange={e => { const f = fl.find(x => x.id === e.target.value); if (f) { setMontantAuto(false); setForm(v => ({ ...v, montant: f.prix_achat * (v.quantite || 1), motif: `Achat chez ${f.qui}${f.groupe ? " (" + f.groupe + ")" : ""}` })); } }}>
+                    <option value="">Fournisseur{rf ? ` (réf. : ${rf.qui})` : ""}</option>
+                    {fl.map(f => <option key={f.id} value={f.id}>{f.qui}{f.groupe ? " · " + f.groupe : ""} · {fmt(f.prix_achat)}{f.id === rf?.id ? " ★" : ""}</option>)}
+                  </select>;
+                })()}
                 {(() => {
                   const exact = produits.find(x => x.type === form.categorie && normNom(x.nom) === normNom(form.produit_nom));
                   if (exact) return <div style={{ fontSize: "0.72rem", color: "var(--green, #22c55e)", marginTop: "0.3rem" }}>Produit du stock : le stock sera mis à jour ({exact.quantite || 0} en stock).</div>;

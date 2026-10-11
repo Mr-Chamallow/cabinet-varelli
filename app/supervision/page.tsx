@@ -73,23 +73,22 @@ export default function SupervisionPage() {
     const today = new Date().toISOString().split("T")[0];
 
     const [
-      { data: compta },
+      { data: bud },
       { data: stocks },
       { data: employes },
       { data: rdvAVenir },
       { count: contratsEnCours },
     ] = await Promise.all([
-      supabase.from("obsidian_comptabilite").select("type,montant,type_argent"),
+      supabase.rpc("obsidian_budget"),
       supabase.from("obsidian_stocks").select("quantite,prix_unitaire"),
       supabase.from("obsidian_employes").select("nom,actif"),
       supabase.from("obsidian_rdv").select("id", { count: "exact", head: true }).gte("date", today),
       supabase.from("obsidian_contrats").select("*", { count: "exact", head: true }).eq("statut", "En cours"),
     ]);
 
-    const recettes = compta || [];
-    const caSale = recettes.filter((r: any) => r.type === "recette" && r.type_argent === "sale").reduce((s: number, r: any) => s + (r.montant || 0), 0);
-    const caPropre = recettes.filter((r: any) => r.type === "recette" && r.type_argent === "propre").reduce((s: number, r: any) => s + (r.montant || 0), 0);
-    const depenses = recettes.filter((r: any) => r.type === "depense").reduce((s: number, r: any) => s + (r.montant || 0), 0);
+    const caSale = Number(bud?.sale) || 0;
+    const caPropre = Number(bud?.propre) || 0;
+    const depenses = Number(bud?.depenses) || 0;
 
     const stockList = stocks || [];
     const stockTotal = stockList.reduce((s: number, r: any) => s + (r.quantite || 0), 0);

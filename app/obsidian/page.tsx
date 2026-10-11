@@ -12,22 +12,26 @@ export default function ObsidianDashboard() {
   const [stats, setStats] = useState({recettes:0,depenses:0,argSale:0,nbArmes:0,nbDrogues:0});
   const [events, setEvents] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [todo, setTodo] = useState({ propre: 0, sale: 0, seuil: 0, capital: 0, dons: 0, aVenir: 0 });
   const [loading, setLoading] = useState(true);
   useEffect(()=>{load();},[]);
   async function load() {
     if(!supabase){setLoading(false);return;}
-    const [{data:compta},{data:stocks},{data:rdv},{data:contrats}] = await Promise.all([
-      supabase.from("obsidian_comptabilite").select("type,montant,type_argent"),
+    const [{data:bud},{data:stocks},{data:rdv},{data:contrats}] = await Promise.all([
+      supabase.rpc("obsidian_budget"),
       supabase.from("obsidian_stocks").select("*"),
       supabase.from("obsidian_rdv").select("id,titre,type,date,statut").order("date").limit(5),
       supabase.from("obsidian_contrats").select("id,titre,statut,date_cible").eq("statut","En cours").limit(5),
     ]);
-    const r=(compta||[]).filter((c:any)=>c.type==="recette").reduce((s:number,c:any)=>s+c.montant,0);
-    const d=(compta||[]).filter((c:any)=>c.type==="dépense").reduce((s:number,c:any)=>s+c.montant,0);
-    const sal=(compta||[]).filter((c:any)=>c.type_argent==="sale").reduce((s:number,c:any)=>s+c.montant,0);
+    const r=Number(bud?.recettes)||0, d=Number(bud?.depenses)||0, sal=Number(bud?.sale)||0;
     setStats({recettes:r,depenses:d,argSale:sal,
       nbArmes:(stocks||[]).filter((s:any)=>s.categorie==="arme").reduce((a:number,x:any)=>a+x.quantite,0),
       nbDrogues:(stocks||[]).filter((s:any)=>s.categorie==="drogue").reduce((a:number,x:any)=>a+x.quantite,0)});
+    const [{count:dons},{count:aVenir}] = await Promise.all([
+      supabase.from("obsidian_dons").select("id",{count:"exact",head:true}).eq("statut","en_attente"),
+      supabase.from("obsidian_contrats").select("id",{count:"exact",head:true}).eq("statut","En attente"),
+    ]);
+    setTodo({ propre:(Number(bud?.capital)||0)+(Number(bud?.propre)||0), sale:Number(bud?.sale)||0, seuil:Number(bud?.seuil)||0, capital:Number(bud?.capital)||0, dons:dons||0, aVenir:aVenir||0 });
     setAlerts((stocks||[]).filter((s:any)=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte));
     setEvents([...(rdv||[]).map((r:any)=>({...r,_type:"RDV"})),...(contrats||[]).map((c:any)=>({...c,_type:"Contrat"}))].sort((a,b)=>(a.date||"").localeCompare(b.date||"")));
     setLoading(false);
@@ -47,6 +51,18 @@ export default function ObsidianDashboard() {
           {l:"Recettes",v:fmt(s.recettes),i:"↑",c:"var(--success)"},
           {l:"Dépenses",v:fmt(s.depenses),i:"↓",c:"var(--danger)"},
         ].map(x=><div key={x.l} className="stat-card"><div className="stat-icon">{x.i}</div><div className="stat-value" style={{color:x.c,fontSize:"1.1rem"}}>{x.v}</div><div className="stat-label">{x.l}</div></div>)}
+      </div>
+      <div className="card" style={{marginBottom:"1.25rem"}}>
+        <div className="section-title" style={{marginBottom:"0.75rem"}}>🧭 À traiter aujourd'hui</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:"0.5rem",fontSize:"0.8rem"}}>
+          {[
+            {t:`💵 Caisse propre : ${fmt(todo.propre)}`,bad:todo.seuil>0&&todo.propre<todo.seuil,href:"/obsidian/comptabilite",extra:todo.seuil>0&&todo.propre<todo.seuil?` · sous le seuil (${fmt(todo.seuil)})`:""},
+            {t:`🕶️ Caisse sale : ${fmt(todo.sale)}`,bad:todo.sale<0,href:"/obsidian/comptabilite",extra:todo.sale>0?" · à blanchir ?":""},
+            {t:`📦 ${alerts.length} stock(s) sous le seuil`,bad:alerts.length>0,href:"/obsidian/stocks",extra:""},
+            ...(user&&hasPermission(user,"obsidian_paie")?[{t:`🎁 ${todo.dons} don(s) à valider`,bad:todo.dons>0,href:"/obsidian/dons",extra:""}]:[]),
+            {t:`📄 ${todo.aVenir} contrat(s) en attente`,bad:false,href:"/obsidian/contrats",extra:""},
+          ].map(x=><a key={x.t} href={x.href} style={{textDecoration:"none",padding:"0.4rem 0.75rem",borderRadius:999,border:`1px solid ${x.bad?"rgba(239,68,68,0.4)":"var(--border)"}`,background:x.bad?"rgba(239,68,68,0.08)":"var(--surface)",color:x.bad?"var(--danger)":"var(--text)"}}>{x.t}{x.extra}</a>)}
+        </div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1.25rem"}}>
         <div className="card"><div className="section-title" style={{marginBottom:"0.875rem"}}>📅 Prochains événements</div>

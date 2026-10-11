@@ -123,7 +123,7 @@ export class Pdf {
     d.setLineWidth(0.3); c2.forEach((pt, i) => { const q = c2[(i + 1) % 4]; d.line(pt[0], pt[1], q[0], q[1]); });
     d.setFont("helvetica", "bold"); d.setFontSize(10.5);
     const tp = rot(0, 0.9); d.text(clean(text).toUpperCase(), tp[0], tp[1], { align: "center", angle });
-    d.setFontSize(6); const sp = rot(0, -3.6); d.text("OBSIDIAN LOGISTICS", sp[0], sp[1], { align: "center", angle, charSpace: 0.4 });
+    d.setFontSize(6); const sp = rot(0, -3.6); d.text("OBSIDIAN LOGISTICS", sp[0], sp[1], { align: "center", angle });
   }
 
   // Sceau officiel : double anneau, texte circulaire, étoile centrale.

@@ -11,6 +11,7 @@ import { PhotoPicker } from "@/components/PhotoPicker";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { money } from "@/lib/money";
 import { VEH_LIST, vehExact, vehSuggest } from "@/lib/vehicules";
+import { dbw } from "@/lib/dbw";
 const STATUTS=["Disponible","Sortie","Fourrière","Endommagé","Détruit"];
 const SCOL:Record<string,string>={Disponible:"var(--success)",Sortie:"var(--warning)",Fourrière:"var(--danger)",Endommagé:"#f97316",Détruit:"var(--text-dim)"};
 const fmt=(n:number)=>money(n);
@@ -31,9 +32,9 @@ export default function GaragePage(){
   const [filterStatut,setFilterStatut]=useState("");
   useEffect(()=>{load();},[]);
   async function load(){if(!supabase){setLoading(false);return;}const{data}=await supabase.from("obsidian_garage").select("*").order("statut").order("modele");setVeh(data||[]);setLoading(false);}
-  async function save(){if(!supabase||!form.modele||!form.plaque)return;setSaving(true);if(editId){const{data,error}=await supabase.from("obsidian_garage").update(form).eq("id",editId).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>v.map(x=>x.id===editId?data:x));showToast("Mis à jour");}else{const{data,error}=await supabase.from("obsidian_garage").insert([{...form,created_by:user?.nom||""}]).select().single();if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>[...v,data]);showToast("Ajouté");}setShowForm(false);setEditId(null);setForm({...EMPTY});setSaving(false);}
-  async function changeStatut(id:string,statut:string){if(!supabase)return;await supabase.from("obsidian_garage").update({statut}).eq("id",id);setVeh(v=>v.map(x=>x.id===id?{...x,statut}:x));}
-  async function del(id:string){if(!supabase)return;await supabase.from("obsidian_garage").delete().eq("id",id);setVeh(v=>v.filter(x=>x.id!==id));showToast("Supprimé");}
+  async function save(){if(!supabase||!form.modele||!form.plaque)return;setSaving(true);if(editId){const{data,error}=await dbw.update("obsidian_garage", editId, form);if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>v.map(x=>x.id===editId?data:x));showToast("Mis à jour");}else{const{data,error}=await dbw.insert("obsidian_garage", {...form,created_by:user?.nom||""});if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>[...v,data]);showToast("Ajouté");}setShowForm(false);setEditId(null);setForm({...EMPTY});setSaving(false);}
+  async function changeStatut(id:string,statut:string){if(!supabase)return;await dbw.update("obsidian_garage", id, {statut});setVeh(v=>v.map(x=>x.id===id?{...x,statut}:x));}
+  async function del(id:string){if(!supabase)return;await dbw.remove("obsidian_garage", id);setVeh(v=>v.filter(x=>x.id!==id));showToast("Supprimé");}
   const filtered=veh.filter(v=>!filterStatut||v.statut===filterStatut);
   return(
     <div className="page-container">

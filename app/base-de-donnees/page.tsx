@@ -22,6 +22,7 @@ import type { Gang, CartePoint } from "@/components/carte-enqueteur/types";
 import { PhotoSlot } from "@/components/base-de-donnees/PhotoSlot";
 import { PRIOS, PCOL, EMPTY_PERSONNE, EMPTY_VEHICULE, ACT_ICON, fullName } from "@/components/base-de-donnees/types";
 import type { Personne, Vehicule, Activite } from "@/components/base-de-donnees/types";
+import { dbw } from "@/lib/dbw";
 
 export default function BaseDeDonneesPage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -104,7 +105,7 @@ export default function BaseDeDonneesPage() {
   // --- Timeline d'activité ---
   async function logActivite(personneId: string, type: string, description: string) {
     if (!supabase) return;
-    await supabase.from("bdd_activites").insert([{ personne_id: personneId, type, description, created_by: user?.nom || "" }]);
+    await dbw.insert("bdd_activites", { personne_id: personneId, type, description, created_by: user?.nom || "" });
   }
   useEffect(() => {
     if (!supabase || !selectedPersonneId) { setActivites([]); return; }
@@ -172,13 +173,13 @@ export default function BaseDeDonneesPage() {
     for (const otherId of added) {
       const other = personnes.find(p => p.id === otherId);
       const otherLiens = Array.from(new Set([...(other?.liens_ids || []), personneId]));
-      await supabase.from("bdd_personnes").update({ liens_ids: otherLiens }).eq("id", otherId);
+      await dbw.update("bdd_personnes", otherId, { liens_ids: otherLiens });
       setPersonnes(list => list.map(p => p.id === otherId ? { ...p, liens_ids: otherLiens } : p));
     }
     for (const otherId of removed) {
       const other = personnes.find(p => p.id === otherId);
       const otherLiens = (other?.liens_ids || []).filter(id => id !== personneId);
-      await supabase.from("bdd_personnes").update({ liens_ids: otherLiens }).eq("id", otherId);
+      await dbw.update("bdd_personnes", otherId, { liens_ids: otherLiens });
       setPersonnes(list => list.map(p => p.id === otherId ? { ...p, liens_ids: otherLiens } : p));
     }
     if (added.length) {
@@ -206,7 +207,7 @@ export default function BaseDeDonneesPage() {
     const payload = { ...personneForm, organisation: gangOf(personneForm.groupe_id)?.nom || "", tags, updated_at: new Date().toISOString() };
     let savedId = editPersonneId;
     if (editPersonneId) {
-      const { data, error } = await supabase.from("bdd_personnes").update(payload).eq("id", editPersonneId).select().single();
+      const { data, error } = await dbw.update("bdd_personnes", editPersonneId, payload);
       if (error) { alert("❌ Erreur: " + error.message); setSavingPersonne(false); return; }
       setPersonnes(list => list.map(x => x.id === editPersonneId ? data : x));
       if (data.fiche_id) await syncBddToFiche(supabase, data); // fiche liée mise à jour aussi
@@ -217,7 +218,7 @@ export default function BaseDeDonneesPage() {
         await notifyDiscord("🚨 Priorité CRITIQUE", `**${fullName(data)}** est passé(e) en priorité Critique${user?.nom ? ` (par ${user.nom})` : ""}.`);
       }
     } else {
-      const { data, error } = await supabase.from("bdd_personnes").insert([{ ...payload, created_by: user?.nom || "" }]).select().single();
+      const { data, error } = await dbw.insert("bdd_personnes", { ...payload, created_by: user?.nom || "" });
       if (error) { alert("❌ Erreur: " + error.message); setSavingPersonne(false); return; }
       setPersonnes(list => [...list, data]);
       setSelectedPersonneId(data.id);
@@ -237,7 +238,7 @@ export default function BaseDeDonneesPage() {
 
   async function deletePersonne(id: string) {
     if (!supabase) return;
-    await supabase.from("bdd_personnes").delete().eq("id", id);
+    await dbw.remove("bdd_personnes", id);
     setPersonnes(list => list.filter(x => x.id !== id));
     if (selectedPersonneId === id) setSelectedPersonneId(null);
     showToast("Supprimé");
@@ -280,12 +281,12 @@ export default function BaseDeDonneesPage() {
     const payload = { ...vehiculeForm, updated_at: new Date().toISOString() };
     const doublonsAvant = autresFichesPourPlaque(vehiculeForm.plaque, editVehiculeId);
     if (editVehiculeId) {
-      const { data, error } = await supabase.from("bdd_vehicules").update(payload).eq("id", editVehiculeId).select().single();
+      const { data, error } = await dbw.update("bdd_vehicules", editVehiculeId, payload);
       if (error) { alert("❌ Erreur: " + error.message); setSavingVehicule(false); return; }
       setVehicules(list => list.map(x => x.id === editVehiculeId ? data : x));
       showToast("Véhicule mis à jour");
     } else {
-      const { data, error } = await supabase.from("bdd_vehicules").insert([payload]).select().single();
+      const { data, error } = await dbw.insert("bdd_vehicules", payload);
       if (error) { alert("❌ Erreur: " + error.message); setSavingVehicule(false); return; }
       setVehicules(list => [...list, data]);
       setSelectedVehiculeId(data.id);
@@ -300,7 +301,7 @@ export default function BaseDeDonneesPage() {
 
   async function deleteVehicule(id: string) {
     if (!supabase) return;
-    await supabase.from("bdd_vehicules").delete().eq("id", id);
+    await dbw.remove("bdd_vehicules", id);
     setVehicules(list => list.filter(x => x.id !== id));
     if (selectedVehiculeId === id) setSelectedVehiculeId(null);
     showToast("Supprimé");
@@ -337,13 +338,7 @@ export default function BaseDeDonneesPage() {
       );
       if (!ok) return;
     }
-    // Cascade : on détache les fiches liées (pas de suppression des personnes/véhicules eux-mêmes)
-    if (nbPersonnes > 0) {
-      await supabase.from("bdd_personnes").update({ groupe_id: null }).eq("groupe_id", id);
-    }
-    if (nbVehicules > 0) {
-      await supabase.from("bdd_vehicules").update({ groupe_id: null }).eq("groupe_id", id);
-    }
+    // Cascade (detacher personnes / vehicules) : geree cote serveur
     await deleteGang(id);
     setPersonnes(list => list.map(p => (p.groupe_id === id ? { ...p, groupe_id: null } : p)));
     setVehicules(list => list.map(v => (v.groupe_id === id ? { ...v, groupe_id: null } : v)));

@@ -8,6 +8,7 @@ import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 import { Panel, DataTable, Kpi, fmt } from "@/components/hub/Charts";
 import { roleLabel } from "@/components/EmployeeCard";
+import { dbw } from "@/lib/dbw";
 
 // Profil central : tout ce que le système sait d'une personne (employé, fiche, base de données, activité), photo partagée.
 function Inner() {
@@ -53,8 +54,8 @@ function Inner() {
   async function syncPhoto() {
     if (!supabase || !photo || !d) return;
     if (d.emp) await fetch("/api/obsidian/employes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: d.emp.id, photo_url: photo }) });
-    if (d.fiche) await supabase.from("obsidian_fiches").update({ photo_url: photo }).eq("id", d.fiche.id);
-    if (d.pers) await supabase.from("bdd_personnes").update({ photo_police: photo }).eq("id", d.pers.id);
+    if (d.fiche) await dbw.update("obsidian_fiches", d.fiche.id, { photo_url: photo });
+    if (d.pers) await dbw.update("bdd_personnes", d.pers.id, { photo_police: photo });
     showToast("Photo synchronisée partout"); load(d.q);
   }
 

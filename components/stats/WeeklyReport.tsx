@@ -4,6 +4,7 @@ import { money } from "@/lib/money";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { exportXlsx } from "@/lib/exportXlsx";
+import { fetchAll } from "@/lib/fetchAll";
 
 const fmt = (n: number) => money(n);
 const d2 = (d: Date) => d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
@@ -25,10 +26,10 @@ export function WeeklyReport() {
   useEffect(() => { load(); }, []);
   async function load() {
     if (!supabase) return;
-    const [{ data: c }, { data: a }, { data: r }] = await Promise.all([
-      supabase.from("obsidian_comptabilite").select("type,montant,categorie,created_at").limit(5000),
-      supabase.from("actions_illegales").select("membre,action,montant,created_at").limit(5000),
-      supabase.from("arrestations").select("membre,amende,argent_perdu,created_at").limit(5000),
+    const [c, a, r] = await Promise.all([
+      fetchAll((x, y) => supabase!.from("obsidian_comptabilite").select("type,montant,categorie,created_at").order("created_at").order("id").range(x, y)),
+      fetchAll((x, y) => supabase!.from("actions_illegales").select("membre,action,montant,created_at").order("created_at").order("id").range(x, y)),
+      fetchAll((x, y) => supabase!.from("arrestations").select("membre,amende,argent_perdu,created_at").order("created_at").order("id").range(x, y)),
     ]);
     setCompta(c || []); setActions(a || []); setArrests(r || []);
   }

@@ -8,6 +8,8 @@ import { Toast } from "@/components/ui/Toast";
 import { hasPermission } from "@/lib/auth";
 import { money } from "@/lib/money";
 import { weekStartOf } from "@/lib/weekStart";
+import { dbw } from "@/lib/dbw";
+import { fetchAll } from "@/lib/fetchAll";
 
 function inWeek(dateStr: string, weekStart: Date) {
   const d = new Date(dateStr);
@@ -58,11 +60,11 @@ export default function PaieObsidianPage() {
   async function load() {
     if (!supabase) return;
     setLoading(true);
-    const [{ data: c }, { data: p }, { data: s }, { data: ar }, { data: dn }, { data: bg }] = await Promise.all([
-      supabase.from("obsidian_comptabilite").select("*").eq("source", "action").range(0, 9999),
-      supabase.from("obsidian_paiements").select("*").order("created_at", { ascending: false }),
+    const [c, p, { data: s }, ar, { data: dn }, { data: bg }] = await Promise.all([
+      fetchAll((a, b) => supabase!.from("obsidian_comptabilite").select("*").eq("source", "action").order("created_at").order("id").range(a, b)),
+      fetchAll((a, b) => supabase!.from("obsidian_paiements").select("*").order("created_at", { ascending: false }).order("id").range(a, b)),
       supabase.from("obsidian_settings").select("*").eq("id", "default").maybeSingle(),
-      supabase.from("arrestations").select("membre,amende,argent_perdu,type_argent,created_at"),
+      fetchAll((a, b) => supabase!.from("arrestations").select("membre,amende,argent_perdu,type_argent,created_at").order("created_at").order("id").range(a, b)),
       supabase.from("obsidian_dons").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.rpc("obsidian_budget"),
     ]);
@@ -160,7 +162,7 @@ export default function PaieObsidianPage() {
   async function savePct() {
     if (!supabase) return;
     setSavingPct(true);
-    await supabase.from("obsidian_settings").upsert([{ id: "default", commission_pct: pct, prime_seuil: primeSeuil, prime_fixe: primeFixe, updated_at: new Date().toISOString() }]);
+    await dbw.upsert("obsidian_settings", { id: "default", commission_pct: pct, prime_seuil: primeSeuil, prime_fixe: primeFixe });
     showToast("Réglages de paie enregistrés");
     setSavingPct(false);
   }

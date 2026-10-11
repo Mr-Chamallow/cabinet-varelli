@@ -5,6 +5,7 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 import { hasPermission } from "@/lib/auth";
+import { dbw } from "@/lib/dbw";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 
 const fmt=(n:number)=>money(n);
@@ -26,6 +27,8 @@ function sortDrogues(list:any[]){
 
 import { ACCS } from "@/lib/priceRef";
 import { useFournisseurs, fournisseursDe, venteRef } from "@/lib/fournisseurs";
+import { GroupeInput } from "@/components/GroupeInput";
+import { useGroupes } from "@/lib/groupes";
 import { FournisseursPanel } from "@/components/FournisseursPanel";
 import { money } from "@/lib/money";
 
@@ -34,6 +37,7 @@ export default function PrixPage() {
   const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_prix"))) { window.location.href = "/"; } }, [user, userLoading]);
 
+  const groupes=useGroupes();
   const { list: fourn, reload: reloadFourn } = useFournisseurs();
   const fp=(cat:"drogue"|"arme"|"accessoire",nom:string,vente:number)=><FournisseursPanel categorie={cat} produit={nom} vente={vente} list={fournisseursDe(fourn,cat,nom)} onChange={reloadFourn}/>;
   const [tab,setTab]=useState<"drogues"|"armes"|"accessoires"|"zones">("drogues");
@@ -68,19 +72,19 @@ export default function PrixPage() {
   // -- Drogues --
   async function addDrogue(){
     if(!supabase||!newDrogue.nom)return;
-    const{data,error}=await supabase.from("obsidian_drogues").insert([{...newDrogue,ordre:drogues.length+1}]).select().single();
+    const{data,error}=await dbw.insert("obsidian_drogues",{...newDrogue,ordre:drogues.length+1});
     if(error){alert("❌ "+error.message);return;}
-    setDrogues(d=>[...d,data]);setNewDrogue({nom:"",emoji:"💊",prix_min:0,prix_max:0,semaines_revend:0});showToast("Drogue ajoutée");
+    setDrogues(d=>[...d,data as any]);setNewDrogue({nom:"",emoji:"💊",prix_min:0,prix_max:0,semaines_revend:0});showToast("Drogue ajoutée");
   }
   async function saveDrogue(id:string){
     if(!supabase)return;
-    const{error}=await supabase.from("obsidian_drogues").update(editDrogueForm).eq("id",id);
+    const{error}=await dbw.update("obsidian_drogues",id,editDrogueForm);
     if(error){alert("❌ "+error.message);return;}
     setDrogues(d=>d.map(x=>x.id===id?{...x,...editDrogueForm}:x));setEditDrogueId(null);showToast("Mis à jour");
   }
   async function delDrogue(id:string){
     if(!supabase)return;
-    const{error}=await supabase.from("obsidian_drogues").delete().eq("id",id);
+    const{error}=await dbw.remove("obsidian_drogues",id);
     if(error){alert("❌ "+error.message);return;}
     setDrogues(d=>d.filter(x=>x.id!==id));showToast("Supprimée");
   }
@@ -88,19 +92,19 @@ export default function PrixPage() {
   // -- Armes --
   async function addArme(){
     if(!supabase||!newArme.nom)return;
-    const{data,error}=await supabase.from("obsidian_armes_prix").insert([{...newArme,ordre:armes.length+1}]).select().single();
+    const{data,error}=await dbw.insert("obsidian_armes_prix",{...newArme,ordre:armes.length+1});
     if(error){alert("❌ "+error.message);return;}
-    setArmes(a=>[...a,data]);setNewArme({nom:"",prix:0});showToast("Arme ajoutée");
+    setArmes(a=>[...a,data as any]);setNewArme({nom:"",prix:0});showToast("Arme ajoutée");
   }
   async function saveArme(id:string){
     if(!supabase)return;
-    const{error}=await supabase.from("obsidian_armes_prix").update(editArmeForm).eq("id",id);
+    const{error}=await dbw.update("obsidian_armes_prix",id,editArmeForm);
     if(error){alert("❌ "+error.message);return;}
     setArmes(a=>a.map(x=>x.id===id?{...x,...editArmeForm}:x));setEditArmeId(null);showToast("Mis à jour");
   }
   async function delArme(id:string){
     if(!supabase)return;
-    const{error}=await supabase.from("obsidian_armes_prix").delete().eq("id",id);
+    const{error}=await dbw.remove("obsidian_armes_prix",id);
     if(error){alert("❌ "+error.message);return;}
     setArmes(a=>a.filter(x=>x.id!==id));showToast("Supprimée");
   }
@@ -108,19 +112,19 @@ export default function PrixPage() {
   // -- Zones --
   async function addZone(){
     if(!supabase||!newZone.nom)return;
-    const{data,error}=await supabase.from("obsidian_zones").insert([{...newZone,ordre:zones.length+1}]).select().single();
+    const{data,error}=await dbw.insert("obsidian_zones",{...newZone,ordre:zones.length+1});
     if(error){alert("❌ "+error.message);return;}
-    setZones(z=>[...z,data]);setNewZone({nom:"",bonus:"",drogue:"",revendique_par:""});showToast("Zone ajoutée");
+    setZones(z=>[...z,data as any]);setNewZone({nom:"",bonus:"",drogue:"",revendique_par:""});showToast("Zone ajoutée");
   }
   async function saveZone(id:string){
     if(!supabase)return;
-    const{error}=await supabase.from("obsidian_zones").update(editZoneForm).eq("id",id);
+    const{error}=await dbw.update("obsidian_zones",id,editZoneForm);
     if(error){alert("❌ "+error.message);return;}
     setZones(z=>z.map(x=>x.id===id?{...x,...editZoneForm}:x));setEditZoneId(null);showToast("Mis à jour");
   }
   async function delZone(id:string){
     if(!supabase)return;
-    const{error}=await supabase.from("obsidian_zones").delete().eq("id",id);
+    const{error}=await dbw.remove("obsidian_zones",id);
     if(error){alert("❌ "+error.message);return;}
     setZones(z=>z.filter(x=>x.id!==id));showToast("Supprimée");
   }
@@ -263,7 +267,7 @@ export default function PrixPage() {
                       <input placeholder="Nom" value={editZoneForm.nom} onChange={e=>setEditZoneForm((f:any)=>({...f,nom:e.target.value}))}/>
                       <input placeholder="Bonus" value={editZoneForm.bonus} onChange={e=>setEditZoneForm((f:any)=>({...f,bonus:e.target.value}))}/>
                       <input placeholder="Drogue" value={editZoneForm.drogue} onChange={e=>setEditZoneForm((f:any)=>({...f,drogue:e.target.value}))}/>
-                      <input placeholder="Revendiquée par" value={editZoneForm.revendique_par||""} onChange={e=>setEditZoneForm((f:any)=>({...f,revendique_par:e.target.value}))}/>
+                      <GroupeInput groupes={groupes} placeholder="Revendiquée par" value={editZoneForm.revendique_par||""} onChange={v=>setEditZoneForm((f:any)=>({...f,revendique_par:v}))}/>
                       <div style={{display:"flex",gap:"0.4rem"}}>
                         <button className="btn btn-gold btn-sm" onClick={()=>saveZone(z.id)} style={{flex:1}}>OK</button>
                         <button className="btn btn-ghost btn-sm" onClick={()=>setEditZoneId(null)}>✕</button>
@@ -295,7 +299,7 @@ export default function PrixPage() {
             </div>
             <div className="form-grid" style={{marginBottom:"0.75rem"}}>
               <input placeholder="Drogue associée" value={newZone.drogue} onChange={e=>setNewZone(f=>({...f,drogue:e.target.value}))}/>
-              <input placeholder="Revendiquée par (gang/orga)" value={newZone.revendique_par} onChange={e=>setNewZone(f=>({...f,revendique_par:e.target.value}))}/>
+              <GroupeInput groupes={groupes} placeholder="Revendiquée par (gang/orga)" value={newZone.revendique_par} onChange={v=>setNewZone(f=>({...f,revendique_par:v}))}/>
             </div>
             <button className="btn btn-gold" onClick={addZone} disabled={!newZone.nom} style={{width:"100%",justifyContent:"center"}}>+ Ajouter</button>
           </div>

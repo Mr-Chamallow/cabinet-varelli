@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logAudit } from "@/lib/alerts";
 import { requirePermission } from "@/lib/serverAuth";
 import { postAlert, GREEN, RED, GOLD } from "@/lib/alerts";
 import { weekStartOf } from "@/lib/weekStart";
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
       const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { error: upErr } = await supabaseAdmin.storage.from("dons-preuves").upload(path, Buffer.from(await f.arrayBuffer()), { contentType: f.type });
       if (upErr) return NextResponse.json({ error: `Photo non envoyée : ${upErr.message}` }, { status: 400 });
-      preuve_url = supabaseAdmin.storage.from("dons-preuves").getPublicUrl(path).data.publicUrl;
+      preuve_url = path; // bucket prive : lecture via /api/obsidian/dons/preuve
     }
 
     const { data, error: dbError } = await supabaseAdmin.from("obsidian_dons").insert([{
@@ -56,6 +57,7 @@ export async function PATCH(req: Request) {
     const { data, error: dbError } = await supabaseAdmin.rpc("obsidian_don_valider", { p_id: id, p_par: par, p_ok: !!ok });
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     const d: any = data;
+    await logAudit(supabaseAdmin, par, ok ? "Don valide" : "Don refuse", d.employe, `${d.montant}$ ${d.type_argent}`);
     await postAlert("compta", `${ok ? "✅ Don validé" : "❌ Don refusé"} - ${money(d.montant)}`, `${d.employe} · argent ${d.type_argent}\nPar ${par}`, ok ? GREEN : RED);
     return NextResponse.json(d);
   } catch (e: any) {

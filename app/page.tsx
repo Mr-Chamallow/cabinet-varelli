@@ -33,15 +33,13 @@ export default function ObsidianDashboard() {
 
   async function load() {
     if(!supabase){setLoading(false);return;}
-    const [{data:compta},{data:stocks},{data:rdv},{data:contrats}] = await Promise.all([
-      supabase.from("obsidian_comptabilite").select("type,montant,type_argent"),
+    const [{data:bud},{data:stocks},{data:rdv},{data:contrats}] = await Promise.all([
+      supabase.rpc("obsidian_budget"),
       supabase.from("obsidian_stocks").select("*"),
       supabase.from("obsidian_rdv").select("id,titre,type,date,statut").order("date").limit(5),
       supabase.from("obsidian_contrats").select("id,titre,statut,date_cible").eq("statut","En cours").limit(5),
     ]);
-    const r=(compta||[]).filter((c:any)=>c.type==="recette").reduce((s:number,c:any)=>s+c.montant,0);
-    const d=(compta||[]).filter((c:any)=>c.type==="dépense").reduce((s:number,c:any)=>s+c.montant,0);
-    const sal=(compta||[]).filter((c:any)=>c.type_argent==="sale").reduce((s:number,c:any)=>s+c.montant,0);
+    const r=Number(bud?.recettes)||0, d=Number(bud?.depenses)||0, sal=Number(bud?.sale)||0;
     setStats({
       recettes:r,depenses:d,argSale:sal,
       nbArmes:(stocks||[]).filter((s:any)=>s.categorie==="arme").reduce((a:number,x:any)=>a+x.quantite,0),

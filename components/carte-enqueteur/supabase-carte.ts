@@ -2,6 +2,7 @@
 // (celui déjà utilisé par Cabinet BullHead).
 import { supabase } from '@/lib/supabase';
 import type { CartePoint, Category, Dossier, Gang, Personne, Plaque, Preset } from './types';
+import { dbw } from "@/lib/dbw";
 
 export async function fetchPoints(): Promise<CartePoint[]> {
   const { data, error } = await supabase.from('carte_points').select('*');
@@ -16,32 +17,28 @@ export async function fetchDossiers(): Promise<Dossier[]> {
 }
 
 export async function createPoint(point: Omit<CartePoint, 'id' | 'created_at'>): Promise<CartePoint> {
-  const { data, error } = await supabase.from('carte_points').insert(point).select().single();
+  const { data, error } = await dbw.insert("carte_points", point);
   if (error) throw error;
   return data;
 }
 
 export async function updatePoint(id: string, patch: Partial<CartePoint>): Promise<void> {
-  const { error } = await supabase.from('carte_points').update(patch).eq('id', id);
+  const { error } = await dbw.update("carte_points", id, patch);
   if (error) throw error;
 }
 
 export async function deletePoint(id: string): Promise<void> {
   // La suppression du dossier lié est gérée par ON DELETE CASCADE côté SQL
-  const { error } = await supabase.from('carte_points').delete().eq('id', id);
+  const { error } = await dbw.remove("carte_points", id);
   if (error) throw error;
 }
 
 export async function upsertDossier(dossier: Dossier): Promise<Dossier> {
   // On ne renvoie jamais dossier.id (vide pour un nouveau dossier, ce qui
-  // ferait échouer l'upsert côté Postgres - bug qui empêchait la sauvegarde).
+  // ferait échouer l'upsert côté Postgres — bug qui empêchait la sauvegarde).
   // On upsert sur point_id (unique), qui identifie le dossier sans ambiguïté.
   const { id, ...payload } = dossier;
-  const { data, error } = await supabase
-    .from('carte_dossiers')
-    .upsert({ ...payload, updated_at: new Date().toISOString() }, { onConflict: 'point_id' })
-    .select()
-    .single();
+  const { data, error } = await dbw.upsert('carte_dossiers', { ...payload, point_id: dossier.point_id }, 'point_id');
   if (error) throw error;
   return data;
 }
@@ -53,18 +50,18 @@ export async function fetchCategories(): Promise<Category[]> {
 }
 
 export async function createCategory(category: Omit<Category, 'id'>): Promise<Category> {
-  const { data, error } = await supabase.from('carte_categories').insert(category).select().single();
+  const { data, error } = await dbw.insert("carte_categories", category);
   if (error) throw error;
   return data;
 }
 
 export async function updateCategory(id: string, patch: Partial<Category>): Promise<void> {
-  const { error } = await supabase.from('carte_categories').update(patch).eq('id', id);
+  const { error } = await dbw.update("carte_categories", id, patch);
   if (error) throw error;
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  const { error } = await supabase.from('carte_categories').delete().eq('id', id);
+  const { error } = await dbw.remove("carte_categories", id);
   if (error) throw error;
 }
 
@@ -75,18 +72,18 @@ export async function fetchPersonnes(): Promise<Personne[]> {
 }
 
 export async function createPersonne(p: Omit<Personne, 'id' | 'created_at'>): Promise<Personne> {
-  const { data, error } = await supabase.from('carte_personnes').insert(p).select().single();
+  const { data, error } = await dbw.insert("carte_personnes", p);
   if (error) throw error;
   return data;
 }
 
 export async function updatePersonne(id: string, patch: Partial<Personne>): Promise<void> {
-  const { error } = await supabase.from('carte_personnes').update(patch).eq('id', id);
+  const { error } = await dbw.update("carte_personnes", id, patch);
   if (error) throw error;
 }
 
 export async function deletePersonne(id: string): Promise<void> {
-  const { error } = await supabase.from('carte_personnes').delete().eq('id', id);
+  const { error } = await dbw.remove("carte_personnes", id);
   if (error) throw error;
 }
 
@@ -97,18 +94,18 @@ export async function fetchPlaques(): Promise<Plaque[]> {
 }
 
 export async function createPlaque(p: Omit<Plaque, 'id' | 'created_at'>): Promise<Plaque> {
-  const { data, error } = await supabase.from('carte_plaques').insert(p).select().single();
+  const { data, error } = await dbw.insert("carte_plaques", p);
   if (error) throw error;
   return data;
 }
 
 export async function updatePlaque(id: string, patch: Partial<Plaque>): Promise<void> {
-  const { error } = await supabase.from('carte_plaques').update(patch).eq('id', id);
+  const { error } = await dbw.update("carte_plaques", id, patch);
   if (error) throw error;
 }
 
 export async function deletePlaque(id: string): Promise<void> {
-  const { error } = await supabase.from('carte_plaques').delete().eq('id', id);
+  const { error } = await dbw.remove("carte_plaques", id);
   if (error) throw error;
 }
 
@@ -130,26 +127,18 @@ export async function fetchGangs(): Promise<Gang[]> {
 }
 
 export async function createGang(g: Omit<Gang, 'id'>): Promise<Gang> {
-  const { data, error } = await supabase.from('carte_gangs').insert(g).select().single();
+  const { data, error } = await dbw.insert("carte_gangs", g);
   if (error) throw error;
   return data;
 }
 
 export async function updateGang(id: string, patch: Partial<Gang>): Promise<void> {
-  // Renommage : passe par le serveur pour propager le nouveau nom (tribunal, pactes, audits, fiches...).
-  if (patch.nom !== undefined) {
-    const { nom, ...rest } = patch;
-    const r = await fetch('/api/groupes/rename', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, nom }) });
-    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'Renommage refusé');
-    patch = rest;
-    if (Object.keys(patch).length === 0) return;
-  }
-  const { error } = await supabase.from('carte_gangs').update(patch).eq('id', id);
+  const { error } = await dbw.update("carte_gangs", id, patch);
   if (error) throw error;
 }
 
 export async function deleteGang(id: string): Promise<void> {
-  const { error } = await supabase.from('carte_gangs').delete().eq('id', id);
+  const { error } = await dbw.remove("carte_gangs", id);
   if (error) throw error;
 }
 

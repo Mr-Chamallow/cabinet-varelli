@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { money } from "@/lib/money";
+import { GroupeInput } from "@/components/GroupeInput";
+import { useGroupes } from "@/lib/groupes";
 import { Fournisseur, refAchat, moinsCher, marge } from "@/lib/fournisseurs";
 
 // Fournisseurs (prix d'achat) d'un produit du Tableau des prix + marge par rapport au prix de vente de reference.
@@ -12,6 +14,7 @@ export function FournisseursPanel({ categorie, produit, vente, list, onChange, c
   const empty = { qui: "", groupe: "", telephone: "", prix_achat: "" as any, prefere: false };
   const [form, setForm] = useState<any>(empty);
   const [busy, setBusy] = useState(false);
+  const groupes = useGroupes();
   const ref = refAchat(list), cheap = moinsCher(list);
   const mg = ref ? marge(vente, ref.prix_achat) : null;
 
@@ -69,7 +72,7 @@ export function FournisseursPanel({ categorie, produit, vente, list, onChange, c
           <div style={col}>{edit ? "Modifier le fournisseur" : "+ Ajouter un fournisseur"}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.3rem" }}>
             <input placeholder="À qui (nom)" value={form.qui} onChange={e => setForm((f: any) => ({ ...f, qui: e.target.value }))} />
-            <input placeholder="Groupe" value={form.groupe} onChange={e => setForm((f: any) => ({ ...f, groupe: e.target.value }))} />
+            <GroupeInput groupes={groupes} value={form.groupe} onChange={v => setForm((f: any) => ({ ...f, groupe: v }))} />
             <input placeholder="Téléphone" value={form.telephone} onChange={e => setForm((f: any) => ({ ...f, telephone: e.target.value }))} />
             <input type="number" min={0} placeholder="Prix d'achat" value={form.prix_achat} onChange={e => setForm((f: any) => ({ ...f, prix_achat: e.target.value }))} />
           </div>
