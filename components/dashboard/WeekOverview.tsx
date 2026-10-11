@@ -43,7 +43,8 @@ export function WeekOverview({ showActions, showArrests }: { showActions: boolea
   // Délais en cours : par action avec délai, qui est encore en attente.
   const timers = useMemo(() => {
     const lastBy = new Map<string, number>();
-    last.forEach(e => { const k = `${e.action}||${e.membre}`; const t = new Date(e.created_at).getTime(); if (!lastBy.has(k) || t > (lastBy.get(k) as number)) lastBy.set(k, t); });
+    const groupeScope = new Set(types.filter(t => t.portee === "groupe").map(t => t.nom));
+    last.forEach(e => { const k = `${e.action}||${groupeScope.has(e.action) ? "Tout le groupe" : e.membre}`; const t = new Date(e.created_at).getTime(); if (!lastBy.has(k) || t > (lastBy.get(k) as number)) lastBy.set(k, t); });
     return types.filter(t => t.actif && t.delaiMin > 0).map(t => {
       const waiting: { membre: string; ms: number }[] = [];
       lastBy.forEach((ts, k) => {

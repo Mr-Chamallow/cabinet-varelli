@@ -1,4 +1,5 @@
 "use client";
+import { drogueAutorisee, drogueFamille, PRODUIT_DEFAUT, REVENDIQUE_DEFAUT } from "@/lib/regles";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -41,6 +42,9 @@ export default function PrixPage() {
   const { list: fourn, reload: reloadFourn } = useFournisseurs();
   const fp=(cat:"drogue"|"arme"|"accessoire",nom:string,vente:number)=><FournisseursPanel categorie={cat} produit={nom} vente={vente} list={fournisseursDe(fourn,cat,nom)} onChange={reloadFourn}/>;
   const [tab,setTab]=useState<"drogues"|"armes"|"accessoires"|"zones">("drogues");
+  const [prodL,setProdL]=useState<string[]>(PRODUIT_DEFAUT);
+  const [revL,setRevL]=useState<string[]>(REVENDIQUE_DEFAUT);
+  useEffect(()=>{if(!supabase)return;supabase.from("obsidian_settings").select("drogues_produites,drogues_revendiquees").eq("id","default").maybeSingle().then(({data})=>{if(Array.isArray(data?.drogues_produites))setProdL(data!.drogues_produites);if(Array.isArray(data?.drogues_revendiquees))setRevL(data!.drogues_revendiquees);});},[]);
   const [drogues,setDrogues]=useState<any[]>([]);
   const [armes,setArmes]=useState<any[]>([]);
   const [zones,setZones]=useState<any[]>([]);
@@ -173,7 +177,7 @@ export default function PrixPage() {
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"0.625rem"}}>
                         <div style={{display:"flex",alignItems:"center",gap:"0.5rem"}}>
                           <span style={{fontSize:"1.3rem"}}>{d.emoji}</span>
-                          <div><div style={{fontWeight:700}}>{d.nom}</div>{d.semaines_revend>0&&<div style={{fontSize:"0.65rem",color:"var(--success)"}}>+{d.semaines_revend} sem.</div>}</div>
+                          <div><div style={{fontWeight:700}}>{d.nom}</div>{(()=>{const f=drogueFamille(d.nom);if(!drogueAutorisee(d.nom))return <div title="Hors liste des drogues autorisées aux organisations (Cocaïne, Tranq, Meth Bleue, Mexicana)" style={{fontSize:"0.6rem",color:"var(--text-dim)"}}>non produisible (orga)</div>;if(f&&revL.includes(f))return <div style={{fontSize:"0.6rem",color:"var(--gold)"}}>★ produite et revendiquée</div>;if(f&&prodL.includes(f))return <div style={{fontSize:"0.6rem",color:"var(--success)"}}>produite par nous</div>;return <div title="Autorisée aux organisations mais pas dans nos 3 drogues produites" style={{fontSize:"0.6rem",color:"var(--text-dim)"}}>revente / achat seulement</div>;})()}{d.semaines_revend>0&&<div style={{fontSize:"0.65rem",color:"var(--success)"}}>+{d.semaines_revend} sem.</div>}</div>
                         </div>
                         <div style={{display:"flex",gap:"0.3rem"}}>
                           <button className="btn btn-ghost btn-sm" onClick={()=>{setEditDrogueId(d.id);setEditDrogueForm(d);}}>✏️</button>

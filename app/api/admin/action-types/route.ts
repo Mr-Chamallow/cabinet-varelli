@@ -16,6 +16,7 @@ export async function POST(req: Request) {
       delai_minutes: Math.max(0, Math.round(Number(b.delai_minutes) || 0)),
       ordre: Math.round(Number(b.ordre) || 0),
       actif: b.actif !== false,
+      ...(b.portee ? { portee: b.portee === "groupe" ? "groupe" : "personne" } : {}),
     };
     const { error: dbError } = await supabaseAdmin.from("actions_illegales_types").upsert(row);
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });

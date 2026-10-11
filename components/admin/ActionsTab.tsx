@@ -13,12 +13,12 @@ function splitDelai(min: number): { val: number; unit: string } {
   return { val: min, unit: "min" };
 }
 
-export function ActionsTab() {
+export function ActionsTab({ endpoint = "/api/admin/action-types" }: { endpoint?: string }) {
   const [types, setTypes] = useState<ActionType[]>([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
-  const [draft, setDraft] = useState({ nom: "", icon: "🕶️", val: 0, unit: "h" });
+  const [draft, setDraft] = useState({ nom: "", icon: "🕶️", val: 0, unit: "h", portee: "personne" });
 
   useEffect(() => { load(); }, []);
 
@@ -33,9 +33,9 @@ export function ActionsTab() {
   function flash(m: string) { setMsg(m); setTimeout(() => setMsg(""), 2500); }
 
   async function save(t: ActionType) {
-    const r = await apiRequest("/api/admin/action-types", {
+    const r = await apiRequest(endpoint, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nom: t.nom, icon: t.icon, delai_minutes: t.delaiMin, ordre: t.ordre, actif: t.actif }),
+      body: JSON.stringify({ nom: t.nom, icon: t.icon, delai_minutes: t.delaiMin, ordre: t.ordre, actif: t.actif, portee: t.portee || "personne" }),
     });
     if (!r.ok) { setErr(r.error || "Erreur"); return false; }
     setErr(""); flash("✅ Enregistré"); return true;
@@ -50,13 +50,13 @@ export function ActionsTab() {
     if (!nom) return;
     if (types.some(t => t.nom.toLowerCase() === nom.toLowerCase())) { setErr("Cette action existe déjà."); return; }
     const m = UNITS.find(u => u.k === draft.unit)?.m || 60;
-    const t: ActionType = { nom, icon: draft.icon || "🕶️", delaiMin: Math.max(0, Math.round(Number(draft.val) * m)), ordre: types.length + 1, actif: true };
-    if (await save(t)) { setDraft({ nom: "", icon: "🕶️", val: 0, unit: "h" }); load(); }
+    const t: ActionType = { nom, icon: draft.icon || "🕶️", delaiMin: Math.max(0, Math.round(Number(draft.val) * m)), ordre: types.length + 1, actif: true, portee: draft.portee as any };
+    if (await save(t)) { setDraft({ nom: "", icon: "🕶️", val: 0, unit: "h", portee: "personne" }); load(); }
   }
 
   async function remove(nom: string) {
     if (!window.confirm(`Supprimer « ${nom} » ? L'historique déjà enregistré est conservé.`)) return;
-    const r = await apiRequest("/api/admin/action-types", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nom }) });
+    const r = await apiRequest(endpoint, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nom }) });
     if (!r.ok) { setErr(r.error || "Erreur"); return; }
     setTypes(list => list.filter(t => t.nom !== nom)); flash("🗑️ Supprimé");
   }
@@ -70,7 +70,7 @@ export function ActionsTab() {
         {msg && <span style={{ fontSize: "0.8rem", color: "var(--success)" }}>{msg}</span>}
       </div>
       <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "1rem" }}>
-        Règle le délai de réutilisation (par personne) de chaque action, ou crées-en de nouvelles. « 0 » = sans délai.
+        Règle le délai de réutilisation (par personne ou pour tout le groupe) de chaque action, ou crées-en de nouvelles. « 0 » = sans délai.
         Le nom ne peut pas être modifié après création (il est lié à l'historique) : supprime et recrée si besoin.
       </p>
       {err && <div className="card" style={{ padding: "0.6rem 0.9rem", marginBottom: "0.75rem", color: "var(--danger)", fontSize: "0.8rem" }}>{err}</div>}
@@ -83,7 +83,7 @@ export function ActionsTab() {
               <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
                 <input value={t.icon} onChange={e => patch(t.nom, { icon: e.target.value })} onBlur={() => save(t)} style={{ width: 54, textAlign: "center", fontSize: "1.1rem" }} maxLength={4} />
                 <div style={{ flex: 1, minWidth: 130, fontWeight: 600 }}>{t.nom}
-                  <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", fontWeight: 400 }}>Délai : {fmtDelai(t.delaiMin)}</div>
+                  <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", fontWeight: 400 }}>Délai : {fmtDelai(t.delaiMin)} · {t.portee === "groupe" ? "pour tout le groupe" : "par personne"}</div>
                 </div>
                 <input type="number" min="0" value={val} style={{ width: 80 }}
                   onChange={e => { const m = UNITS.find(u => u.k === unit)?.m || 60; patch(t.nom, { delaiMin: Math.max(0, Math.round(Number(e.target.value) * m)) }); }}
@@ -91,6 +91,11 @@ export function ActionsTab() {
                 <select value={unit} style={{ width: 100 }}
                   onChange={e => { const m = UNITS.find(u => u.k === e.target.value)?.m || 60; const nt = { ...t, delaiMin: val * m }; patch(t.nom, { delaiMin: nt.delaiMin }); save(nt); }}>
                   {UNITS.map(u => <option key={u.k} value={u.k}>{u.label}</option>)}
+                </select>
+                <select value={t.portee || "personne"} style={{ width: 130 }} title="Le délai s'applique par personne ou pour tout le groupe"
+                  onChange={e => { const nt = { ...t, portee: e.target.value as any }; patch(t.nom, { portee: nt.portee }); save(nt); }}>
+                  <option value="personne">Par personne</option>
+                  <option value="groupe">Tout le groupe</option>
                 </select>
                 <label style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.75rem", color: "var(--text-muted)", cursor: "pointer" }}>
                   <input type="checkbox" checked={t.actif} style={{ width: "auto" }} onChange={e => { const nt = { ...t, actif: e.target.checked }; patch(t.nom, { actif: e.target.checked }); save(nt); }} /> Active
@@ -111,6 +116,10 @@ export function ActionsTab() {
           <input type="number" min="0" value={draft.val} onChange={e => setDraft({ ...draft, val: Number(e.target.value) })} style={{ width: 80 }} />
           <select value={draft.unit} onChange={e => setDraft({ ...draft, unit: e.target.value })} style={{ width: 100 }}>
             {UNITS.map(u => <option key={u.k} value={u.k}>{u.label}</option>)}
+          </select>
+          <select value={draft.portee} onChange={e => setDraft({ ...draft, portee: e.target.value })} style={{ width: 130 }}>
+            <option value="personne">Par personne</option>
+            <option value="groupe">Tout le groupe</option>
           </select>
           <button className="btn btn-gold" disabled={!draft.nom.trim()} onClick={add}>Ajouter</button>
         </div>

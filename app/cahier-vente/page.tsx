@@ -1,4 +1,5 @@
 "use client";
+import { drogueAutorisee, armeLourdeOuAuto, estKevlar } from "@/lib/regles";
 
 import { loadPriceTable, norm, useFournisseurs, fournisseursDe, refAchat } from "@/lib/fournisseurs";
 import { useEffect, useState, useMemo } from "react";
@@ -496,6 +497,18 @@ export default function CahierVentePage() {
                 ))}
               </div>
             </div>
+
+            {(() => {
+              const w: string[] = []; const nom = form.produit_nom || "";
+              if (form.type === "entrée" && form.categorie === "drogue") {
+                w.push("Vente de drogue : une organisation ne vend pas aux PNJ (sauf drogues d'événement). Clients possibles : gangs, indépendants, événements.");
+                if (nom && !drogueAutorisee(nom)) w.push(`« ${nom} » n'est pas dans la liste des drogues autorisées aux organisations (Cocaïne, Tranq, Meth Bleue, Mexicana).`);
+              }
+              if (form.type === "entrée" && (form.categorie === "arme" || form.categorie === "munition") && armeLourdeOuAuto(nom)) w.push("Arme automatique ou lourde : interdite à la vente aux petites frappes et aux indépendants.");
+              if (form.type === "entrée" && estKevlar({ nom, categorie: form.categorie })) w.push("Kevlar / GPB : vente aux organisations et gangs uniquement, 150.000 $ minimum (+20% max en sale), jamais aux indépendants.");
+              if (form.type === "entrée" && form.categorie === "accessoire") w.push("Accessoires d'armes : jamais aux indépendants ; petites frappes : tous sauf chargeurs.");
+              return w.length ? <div style={{ margin: "-0.25rem 0 0.9rem", display: "flex", flexDirection: "column", gap: "0.25rem" }}>{w.map((x, i) => <div key={i} style={{ fontSize: "0.76rem", color: "var(--warning)" }}>⚠️ {x}</div>)}</div> : null;
+            })()}
 
             <div className="form-group">
               <label>Montant ($) *</label>

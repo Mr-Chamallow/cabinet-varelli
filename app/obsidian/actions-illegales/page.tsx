@@ -14,6 +14,8 @@ import { exportXlsx } from "@/lib/exportXlsx";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { ActionType, DEFAULT_ACTION_TYPES, rowToType, fmtDelai } from "@/lib/actionTypes";
 import { money } from "@/lib/money";
+import { ActionsTab } from "@/components/admin/ActionsTab";
+import { RANCON_MAX_OTAGE, RANCON_MAX_PRISE } from "@/lib/regles";
 
 const fmt = (n: number) => money(n);
 const PERIODS = [
@@ -52,6 +54,7 @@ export default function ActionsIllegalesPage() {
   const [filterAction, setFilterAction] = useState("");
   const [filterMembre, setFilterMembre] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showTypes, setShowTypes] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ action: DEFAULT_ACTION_TYPES[0].nom, membre: "", resultat: "gain", argent: "sale", montant: "", date: localInputNow(), notes: "" });
@@ -79,9 +82,8 @@ export default function ActionsIllegalesPage() {
   const lastByKey = useMemo(() => {
     const m = new Map<string, number>();
     entries.forEach(e => {
-      const k = `${e.membre}||${e.action}`;
       const t = new Date(e.created_at).getTime();
-      if (!m.has(k) || t > (m.get(k) as number)) m.set(k, t);
+      for (const k of [`${e.membre}||${e.action}`, `__groupe||${e.action}`]) if (!m.has(k) || t > (m.get(k) as number)) m.set(k, t);
     });
     return m;
   }, [entries]);
@@ -92,7 +94,7 @@ export default function ActionsIllegalesPage() {
   function remainingMs(membre: string, action: string) {
     const info = actionInfo(action);
     if (!info.delaiMin) return 0;
-    const last = lastByKey.get(`${membre}||${action}`);
+    const last = lastByKey.get(`${info.portee === "groupe" ? "__groupe" : membre}||${action}`);
     if (!last) return 0;
     return Math.max(0, last + info.delaiMin * 60_000 - now);
   }
@@ -183,6 +185,7 @@ export default function ActionsIllegalesPage() {
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button className="btn btn-outline" onClick={exportList} disabled={visible.length === 0}>⬇️ Excel</button>
+          {canWrite && <button className="btn btn-outline" onClick={() => setShowTypes(true)}>⚙️ Gérer les actions</button>}
           {canWrite && <button className="btn btn-gold" onClick={openForm}>+ Enregistrer une action</button>}
         </div>
       </div>
@@ -193,9 +196,17 @@ export default function ActionsIllegalesPage() {
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem", flexWrap: "wrap" }}>
             <span style={{ fontSize: "1.1rem" }}>{a.icon}</span>
             <span style={{ fontWeight: 700 }}>{a.nom}</span>
-            <span style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>1 fois toutes les {fmtDelai(a.delaiMin)} par personne</span>
+            <span style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>1 fois toutes les {fmtDelai(a.delaiMin)} {a.portee === "groupe" ? "pour tout le groupe" : "par personne"}</span>
           </div>
-          {membres.length === 0 ? (
+          {a.portee === "groupe" ? (() => {
+            const rem = remainingMs("", a.nom); const done = lastByKey.has(`__groupe||${a.nom}`); const ready = rem === 0;
+            return (
+              <div style={{ display: "inline-block", minWidth: 220, border: `1px solid ${ready ? "rgba(34,197,94,0.25)" : "rgba(234,179,8,0.3)"}`, background: ready ? "rgba(34,197,94,0.06)" : "rgba(234,179,8,0.07)", borderRadius: "var(--radius)", padding: "0.5rem 0.75rem" }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.15rem" }}>Tout le groupe</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: ready ? "0.8rem" : "1.05rem", fontWeight: 700, color: ready ? "var(--success)" : "var(--warning)" }}>{ready ? (done ? "✅ Disponible" : "✅ Jamais fait") : `⏳ ${countdown(rem)}`}</div>
+              </div>
+            );
+          })() : membres.length === 0 ? (
             <div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>Aucune action enregistrée pour le moment.</div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: "0.5rem" }}>
@@ -329,11 +340,21 @@ export default function ActionsIllegalesPage() {
             <label>Notes (optionnel)</label>
             <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Détails, équipe, butin..." />
           </div>
+          {/\b(otage|rançon|rancon)/i.test(form.action) && Number(form.montant) > RANCON_MAX_PRISE && (
+            <div style={{ fontSize: "0.8rem", color: "var(--warning)" }}>
+              ⚠️ Rançon au-dessus du plafond du règlement ({RANCON_MAX_OTAGE.toLocaleString("fr-FR")} $ par otage, {RANCON_MAX_PRISE.toLocaleString("fr-FR")} $ par prise d'otages). Tu peux enregistrer quand même.
+            </div>
+          )}
           {formRemaining > 0 && (
             <div style={{ fontSize: "0.8rem", color: "var(--warning)" }}>
               ⚠️ {form.membre.trim()} est encore en délai pour « {form.action} » ({countdown(formRemaining)} restant).
             </div>
           )}
+        </Modal>
+      )}
+      {showTypes && (
+        <Modal title="⚙️ Actions illégales et délais" size="lg" onClose={() => { setShowTypes(false); load(); }}>
+          <div style={{ maxHeight: "65vh", overflowY: "auto" }}><ActionsTab endpoint="/api/obsidian/action-types" /></div>
         </Modal>
       )}
       <Toast toast={toast} />

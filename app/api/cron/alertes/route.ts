@@ -26,21 +26,24 @@ export async function GET(req: Request) {
 
   // 1) Délais terminés
   try {
-    const { data: types } = await db.from("actions_illegales_types").select("nom,icon,delai_minutes").eq("actif", true).gt("delai_minutes", 0);
+    const { data: types } = await db.from("actions_illegales_types").select("nom,icon,delai_minutes,portee").eq("actif", true).gt("delai_minutes", 0);
     let n = 0;
     for (const t of types || []) {
       const limit = new Date(now - t.delai_minutes * 60_000).toISOString();
       const { data: rows } = await db.from("actions_illegales").select("id,membre,created_at").eq("action", t.nom).eq("delai_alerte", false).lte("created_at", limit);
       if (!rows || rows.length === 0) continue;
       const byMembre = new Map<string, any[]>();
-      rows.forEach((r: any) => byMembre.set(r.membre, [...(byMembre.get(r.membre) || []), r]));
+      const parGroupe = t.portee === "groupe";
+      rows.forEach((r: any) => byMembre.set(parGroupe ? "Le groupe" : r.membre, [...(byMembre.get(parGroupe ? "Le groupe" : r.membre) || []), r]));
       for (const [membre, list] of byMembre) {
         // seulement si c'est bien la DERNIÈRE fois que la personne a fait cette action
-        const { data: newer } = await db.from("actions_illegales").select("id").eq("action", t.nom).eq("membre", membre).gt("created_at", limit).limit(1);
+        let q = db.from("actions_illegales").select("id").eq("action", t.nom).gt("created_at", limit);
+        if (!parGroupe) q = q.eq("membre", membre);
+        const { data: newer } = await q.limit(1);
         if (!newer || newer.length === 0) {
-          const { data: emp } = await db.from("obsidian_employes").select("discord_id").ilike("nom", membre).maybeSingle();
+          const { data: emp } = parGroupe ? { data: null as any } : await db.from("obsidian_employes").select("discord_id").ilike("nom", membre).maybeSingle();
           const uid: string | undefined = emp?.discord_id || undefined;
-          await postAlert("delais", `⏳ ${t.icon || "🕶️"} ${t.nom} de nouveau disponible`, `**${membre}** peut refaire « ${t.nom} » (délai : ${fmtDelai(t.delai_minutes)}).`, GREEN, undefined, undefined, uid ? [uid] : undefined);
+          await postAlert("delais", `⏳ ${t.icon || "🕶️"} ${t.nom} de nouveau disponible`, `**${parGroupe ? "Le groupe" : membre}** peut refaire « ${t.nom} » (délai : ${fmtDelai(t.delai_minutes)}).`, GREEN, undefined, undefined, uid ? [uid] : undefined);
           n++;
         }
       }

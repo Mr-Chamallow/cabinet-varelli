@@ -37,6 +37,12 @@ export const PERMISSION_GUIDE: PermGroup[] = [
     { key: "gm_reputation", read: "Voir la réputation des groupes.", write: "Modifier organisations et réputations ; dossier PDF." },
     { key: "gm_stats", read: "Voir les stats du Consortium.", write: "Réinitialiser les stats du consortium." },
   ]},
+  { titre: "Organisation FlashBackFA", icon: "📘", perms: [
+    { key: "obsidian_reglement", read: "Consulter le règlement des organisations (effectifs, drogues, armes, véhicules, guerre...).", write: "Modifier les réglages de conformité (drogues produites/revendiquées, effectif max, kevlar max)." },
+    { key: "obsidian_taxes", read: "Voir les accords de taxe avec les groupes et leurs paiements.", write: "Créer/modifier les taxes, enregistrer un paiement (devient une RECETTE « Taxe » en compta)." },
+    { key: "obsidian_recrutement", read: "Voir les fiches de recrutement (conditions du règlement).", write: "Créer/modifier les fiches, copier le format Discord." },
+    { key: "obsidian_guerres", read: "Voir les guerres / GDT, trêves et cooldowns.", write: "Ouvrir, terminer et modifier les guerres." },
+  ]},
   { titre: "Outils & ressources", icon: "🧰", perms: [
     { key: "juridique", read: "Consulter le code pénal.", write: "Modifier le code pénal." },
     { key: "carte-enqueteur", read: "Voir la carte San Andreas.", write: "Poser/modifier des marqueurs." },

@@ -9,6 +9,7 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { fireConfetti } from "@/lib/confetti";
 import { gmWrite } from "@/lib/gmApi";
 import { pdfEvenement } from "@/lib/pdfDocs";
+import { EVENTS_PAR_MOIS, debutMois } from "@/lib/regles";
 import { useGmAccess, useGroupes, GroupeSelect, Chip, Badge, fmtDT, toLocalInput, fromLocalInput, usd } from "@/components/gm/bits";
 
 type Check = { t: string; done: boolean };
@@ -106,6 +107,10 @@ export default function EvenementsPage() {
   }
   const setLot = (i: number, p: Partial<Lot>) => setForm((f: any) => ({ ...f, lots: f.lots.map((l: Lot, j: number) => (j === i ? { ...l, ...p } : l)) }));
   const visible = list.filter(e => e.type === tab);
+  // Compteur auto : evenements du mois (hors annules) - le reglement impose 2 par mois.
+  const m0 = debutMois().getTime();
+  const duMois = list.filter(e => !/annul/.test(e.statut) && new Date(e.date_event || e.created_at).getTime() >= m0 && new Date(e.date_event || e.created_at).getTime() < new Date(debutMois().getFullYear(), debutMois().getMonth() + 1, 1).getTime());
+  const faits = duMois.filter(e => /livre|cloturee|capturee|resolue/.test(e.statut)).length;
 
   return (
     <div className="page-container">
@@ -113,6 +118,11 @@ export default function EvenementsPage() {
       <div className="page-header">
         <div><h1 className="page-title">🚚 Convois · Enchères · Alertes</h1><p className="page-subtitle">Événements du Maître du Jeu</p><div className="gold-line" /></div>
         {canWrite && <button className="btn btn-gold" onClick={openNew}>+ {T.label.replace(/s$/, "")}</button>}
+      </div>
+      <div className="card" style={{ padding: "0.6rem 1rem", marginBottom: "1rem", display: "flex", gap: "0.8rem", alignItems: "center", flexWrap: "wrap", borderLeft: `3px solid ${duMois.length >= EVENTS_PAR_MOIS ? "var(--success)" : "var(--warning)"}` }}>
+        <span style={{ fontWeight: 700 }}>📅 Ce mois : {duMois.length} / {EVENTS_PAR_MOIS} événements</span>
+        <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>{faits} terminé{faits > 1 ? "s" : ""} · compté automatiquement à chaque création (hors annulés)</span>
+        {duMois.length < EVENTS_PAR_MOIS && <span style={{ fontSize: "0.72rem", color: "var(--warning)" }}>⚠️ Le règlement demande {EVENTS_PAR_MOIS} événements par mois.</span>}
       </div>
       <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1rem" }}>
         {Object.entries(TYPES).map(([k, t]) => <Chip key={k} active={tab === k} onClick={() => setTab(k)}>{t.icon} {t.label} ({list.filter(e => e.type === k).length})</Chip>)}
@@ -165,7 +175,7 @@ export default function EvenementsPage() {
             <div className="form-grid">
               <div><label>Titre *</label><input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} /></div>
               <div><label>Statut</label><select value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>{TYPES[form.type].statuts.map(s => <option key={s.k} value={s.k}>{s.label}</option>)}</select></div>
-              <div><label>{TYPES[form.type].partenaireLabel}</label><GroupeSelect value={form.partenaire} groupes={groupes} onChange={v => setForm({ ...form, partenaire: v })} placeholder=" -  Aucun  - " /></div>
+              <div><label>{TYPES[form.type].partenaireLabel}</label><GroupeSelect value={form.partenaire} groupes={groupes} onChange={v => setForm({ ...form, partenaire: v })} placeholder="- Aucun - " /></div>
               <div><label>Date</label><input type="datetime-local" value={form.date_event} onChange={e => setForm({ ...form, date_event: e.target.value })} /></div>
               {form.type !== "enchere" && <div><label>{TYPES[form.type].montantLabel}</label><input type="number" min={0} value={form.montant || ""} onChange={e => setForm({ ...form, montant: e.target.value })} /></div>}
             </div>

@@ -25,7 +25,10 @@ const TABLES: Record<string, { perm: string[]; audit?: string; label?: string }>
   carte_categories: { perm: ["carte-enqueteur"] },
   cahier_produits: { perm: ["cahier_vente"] },
   obsidian_board: { perm: ["carte-enqueteur", "juridique", "base_donnees"] },
-  obsidian_settings: { perm: ["obsidian_paie", "obsidian_comptabilite"], audit: "id", label: "Reglages" },
+  obsidian_taxes: { perm: ["obsidian_taxes"], audit: "groupe", label: "Taxe" },
+  obsidian_recrutement: { perm: ["obsidian_recrutement"], audit: "nom_rp", label: "Recrutement" },
+  obsidian_guerres: { perm: ["obsidian_guerres"], audit: "adversaire", label: "Guerre" },
+  obsidian_settings: { perm: ["obsidian_paie", "obsidian_comptabilite", "obsidian_reglement"], audit: "id", label: "Reglages" },
 };
 const STRIP = ["id", "created_at"]; // jamais fournis par le client sauf upsert explicite
 

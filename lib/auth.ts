@@ -17,6 +17,7 @@ export const ALL_PERMISSIONS = [
   "obsidian_employes", "admin", "supervision", "delete_all", "edit_all",
   "juridique", "carte-enqueteur", "utile_samp", "base_donnees", "obsidian_actions", "obsidian_arrestations",
   "obsidian_fiches", "gm_tribunal", "gm_pactes", "gm_audits", "gm_evenements", "gm_reputation", "organigramme", "gm_stats",
+  "obsidian_reglement", "obsidian_taxes", "obsidian_recrutement", "obsidian_guerres",
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
@@ -34,20 +35,21 @@ export const PERMISSION_LABELS: Record<string, string> = {
   obsidian_actions: "Actions illégales", obsidian_arrestations: "Arrestations",
   obsidian_fiches: "Fiches & Profil central", gm_tribunal: "Tribunal de l'Ombre", gm_pactes: "Pactes d'Obsidienne", gm_audits: "Audits de conformité",
   gm_evenements: "Convois / Enchères / Alertes", gm_reputation: "Réputation des groupes", organigramme: "Organigramme", gm_stats: "Stats du Consortium",
+  obsidian_reglement: "Règlement FlashBackFA", obsidian_taxes: "Taxes", obsidian_recrutement: "Recrutement", obsidian_guerres: "Guerres & GDT",
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   "Associé / Patron":               [...ALL_PERMISSIONS], // LA CLÉ QUI MANQUAIT
   "CEO - Directeur général":        [...ALL_PERMISSIONS],
   "COO - Directrice opérationnel":  ALL_PERMISSIONS.filter(p => p !== "delete_all"),
-  "Responsable juridique":          ["obsidian_dashboard","obsidian_rdv","obsidian_contrats","obsidian_stats","juridique","utile_samp","carte-enqueteur"],
-  "Agent juridique":                ["obsidian_dashboard","obsidian_rdv","juridique","utile_samp","carte-enqueteur"],
-  "Responsable logistique":         ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_stats","cahier_vente","obsidian_paie","obsidian_employes","carte-enqueteur","obsidian_actions","obsidian_arrestations"],
-  "Agent logistique":               ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_rdv","cahier_vente","carte-enqueteur","obsidian_actions","obsidian_arrestations"],
-  "Responsable sécurité":           ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","carte-enqueteur","juridique","utile_samp","obsidian_arrestations","obsidian_stocks"],
-  "Agent de sécurité":              ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","carte-enqueteur","obsidian_arrestations","obsidian_stocks"],
-  "Opérateur":                      ["obsidian_dashboard","obsidian_rdv","carte-enqueteur","obsidian_actions","obsidian_arrestations"],
-  "Opérateur stagiaire":            ["obsidian_dashboard"],
+  "Responsable juridique":          ["obsidian_dashboard","obsidian_rdv","obsidian_contrats","obsidian_stats","juridique","utile_samp","carte-enqueteur","obsidian_reglement:read"],
+  "Agent juridique":                ["obsidian_dashboard","obsidian_rdv","juridique","utile_samp","carte-enqueteur","obsidian_reglement:read"],
+  "Responsable logistique":         ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_stats","cahier_vente","obsidian_paie","obsidian_employes","carte-enqueteur","obsidian_actions","obsidian_arrestations","obsidian_reglement:read"],
+  "Agent logistique":               ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_rdv","cahier_vente","carte-enqueteur","obsidian_actions","obsidian_arrestations","obsidian_reglement:read"],
+  "Responsable sécurité":           ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","carte-enqueteur","juridique","utile_samp","obsidian_arrestations","obsidian_stocks","obsidian_reglement:read"],
+  "Agent de sécurité":              ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","carte-enqueteur","obsidian_arrestations","obsidian_stocks","obsidian_reglement:read"],
+  "Opérateur":                      ["obsidian_dashboard","obsidian_rdv","carte-enqueteur","obsidian_actions","obsidian_arrestations","obsidian_reglement:read"],
+  "Opérateur stagiaire":            ["obsidian_dashboard","obsidian_reglement:read"],
   // Rôle externe (site "Légal Service") - accès à la carte enquêteur uniquement, en lecture seule.
   "Légal Service":                  ["carte-enqueteur"],
 };
@@ -136,6 +138,10 @@ const LANDING_PRIORITY: { path: string; permission: string }[] = [
   { path: "/obsidian/evenements", permission: "gm_evenements" },
   { path: "/obsidian/reputation", permission: "gm_reputation" },
   { path: "/obsidian/consortium", permission: "gm_stats" },
+  { path: "/obsidian/reglement", permission: "obsidian_reglement" },
+  { path: "/obsidian/taxes", permission: "obsidian_taxes" },
+  { path: "/obsidian/recrutement", permission: "obsidian_recrutement" },
+  { path: "/obsidian/guerres", permission: "obsidian_guerres" },
   { path: "/admin", permission: "admin" },
   { path: "/supervision", permission: "supervision" },
 ];

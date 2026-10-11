@@ -1,4 +1,4 @@
-export interface ActionType { nom: string; icon: string; delaiMin: number; ordre: number; actif: boolean; }
+export interface ActionType { nom: string; icon: string; delaiMin: number; ordre: number; actif: boolean; portee?: "personne" | "groupe"; }
 
 // Valeurs de secours si la table n'existe pas encore (migration non exécutée).
 export const DEFAULT_ACTION_TYPES: ActionType[] = [
@@ -9,10 +9,12 @@ export const DEFAULT_ACTION_TYPES: ActionType[] = [
   { nom: "Cambriolage", icon: "🏚️", delaiMin: 0, ordre: 5, actif: true },
   { nom: "Human Labs", icon: "🧪", delaiMin: 0, ordre: 6, actif: true },
   { nom: "Pacific Bank", icon: "🏦", delaiMin: 0, ordre: 7, actif: true },
+  { nom: "Plateforme pétrolière", icon: "🛢️", delaiMin: 10080, ordre: 8, actif: true, portee: "groupe" },
+  { nom: "Pêche du chat", icon: "🎣", delaiMin: 1440, ordre: 9, actif: true },
 ];
 
 export function rowToType(r: any): ActionType {
-  return { nom: r.nom, icon: r.icon || "🕶️", delaiMin: Number(r.delai_minutes) || 0, ordre: Number(r.ordre) || 0, actif: r.actif !== false };
+  return { nom: r.nom, icon: r.icon || "🕶️", delaiMin: Number(r.delai_minutes) || 0, ordre: Number(r.ordre) || 0, actif: r.actif !== false, portee: r.portee === "groupe" ? "groupe" : "personne" };
 }
 
 export function fmtDelai(min: number): string {
