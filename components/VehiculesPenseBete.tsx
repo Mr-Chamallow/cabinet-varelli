@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { vehAutorises, vehInterdits, vehNote } from "@/lib/regles";
-import { VEH_LIST } from "@/lib/vehicules";
+import { VEH_LIST, vehInfo, fmtPrix } from "@/lib/vehicules";
 
 // Pense-bete : vehicules qu'on peut acheter (organisation, lore mixte) et ceux a eviter.
 export function VehiculesPenseBete({ onClose, onPick }: { onClose: () => void; onPick?: (nom: string) => void }) {
@@ -30,7 +30,7 @@ export function VehiculesPenseBete({ onClose, onPick }: { onClose: () => void; o
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
               {list.filter(x => x.v.cat === c).map(({ v, note }) => {
                 const col = note?.niveau === "interdit" ? "var(--danger)" : note?.niveau === "attention" ? "var(--warning)" : "var(--text-muted)";
-                return <button key={v.code} type="button" title={note?.texte || v.code} onClick={() => onPick?.(v.nom)} style={{ cursor: onPick ? "pointer" : "default", fontSize: "0.7rem", padding: "0.12rem 0.55rem", borderRadius: 999, background: "transparent", border: `1px solid ${note ? col : "var(--border)"}`, color: col, fontFamily: "inherit" }}>{v.nom}</button>;
+                return <button key={v.code} type="button" title={[note?.texte || v.code, vehInfo(v.code)?.vitesse ? `${vehInfo(v.code)!.vitesse} km/h · coffre ${vehInfo(v.code)!.coffre} kg · ${vehInfo(v.code)!.places} pl.` : ""].filter(Boolean).join(" · ")} onClick={() => onPick?.(v.nom)} style={{ cursor: onPick ? "pointer" : "default", fontSize: "0.7rem", padding: "0.12rem 0.55rem", borderRadius: 999, background: "transparent", border: `1px solid ${note ? col : "var(--border)"}`, color: col, fontFamily: "inherit" }}>{v.nom}{vehInfo(v.code) && <span style={{ opacity: 0.6 }}> · {fmtPrix(vehInfo(v.code)!.prix)}</span>}</button>;
               })}
             </div>
           </div>
