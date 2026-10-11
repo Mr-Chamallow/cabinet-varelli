@@ -28,6 +28,10 @@ export interface Gang {
   sort_order?: number;
 }
 
+export function gangTypeLong(type: string): string {
+  return type === 'pf' ? 'Petite frappe' : type === 'inde' ? 'Indépendant' : type === 'gang' ? 'Gang' : 'Organisation';
+}
+
 export function gangTypeLabel(type: string): string {
   return type === 'pf' ? 'PF' : type === 'inde' ? 'Indé' : type === 'gang' ? 'Gang' : 'Orga';
 }

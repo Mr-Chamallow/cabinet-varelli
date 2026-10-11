@@ -18,7 +18,8 @@ import {
 } from "@/components/carte-enqueteur/supabase-carte";
 import { syncBddToFiche } from "@/lib/ficheSync";
 import { WantedPoster } from "@/components/WantedPoster";
-import { gangTypeLabel } from "@/components/carte-enqueteur/types";
+import { gangTypeLabel, gangTypeLong } from "@/components/carte-enqueteur/types";
+import { GroupeLogo, TYPE_COLOR } from "@/components/GroupeLogo";
 import type { Gang, CartePoint } from "@/components/carte-enqueteur/types";
 import { PhotoSlot } from "@/components/base-de-donnees/PhotoSlot";
 import { PRIOS, PCOL, EMPTY_PERSONNE, EMPTY_VEHICULE, ACT_ICON, fullName } from "@/components/base-de-donnees/types";
@@ -42,6 +43,8 @@ export default function BaseDeDonneesPage() {
   useDeepLink("personne", personnes.length > 0, (v) => { const p = personnes.find(x => x.id === v || `${(x as any).prenom || ""} ${x.nom}`.trim().toLowerCase() === v.toLowerCase()); if (p) { setTab("personnes"); setSelectedPersonneId(p.id); } });
   const [selectedVehiculeId, setSelectedVehiculeId] = useState<string | null>(null);
   const [selectedGroupeId, setSelectedGroupeId] = useState<string | null>(null);
+  const [groupeSearch, setGroupeSearch] = useState("");
+  const [groupeFiltre, setGroupeFiltre] = useState<string>("tout");
 
   const [search, setSearch] = useState("");
   const [globalQuery, setGlobalQuery] = useState("");
@@ -573,45 +576,64 @@ export default function BaseDeDonneesPage() {
       )}
 
       {/* --- Onglet Groupes --- */}
-      {tab === "groupes" && (
-        <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "1.25rem", alignItems: "start" }}>
+      {tab === "groupes" && (() => {
+        const q = groupeSearch.trim().toLowerCase();
+        const vis = gangs.filter(g => (groupeFiltre === "tout" || g.type === groupeFiltre) && (!q || g.nom.toLowerCase().includes(q)));
+        const SECTIONS: { type: string; titre: string }[] = [{ type: "orga", titre: "Organisations" }, { type: "gang", titre: "Gangs" }, { type: "pf", titre: "Petites frappes" }, { type: "inde", titre: "Indépendants" }];
+        return (
           <div>
-            {canWrite && <div style={{ marginBottom: "0.75rem" }}><button className="btn btn-gold btn-sm" onClick={() => setShowGroupeForm(true)}>+ Nouveau groupe</button></div>}
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
-              {gangs.map(g => {
-                const isSel = selectedGroupeId === g.id;
-                return (
-                  <button key={g.id} onClick={() => setSelectedGroupeId(g.id)} style={{ display: "flex", alignItems: "center", gap: "0.625rem", padding: "0.625rem 0.75rem", borderRadius: "var(--radius-lg)", background: isSel ? "var(--gold-muted)" : "var(--card)", border: `1px solid ${isSel ? "rgba(var(--gold-rgb), 0.4)" : "var(--border)"}`, cursor: "pointer", textAlign: "left", width: "100%" }}>
-                    <span>🛡️</span>
-                    <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600, fontSize: "0.82rem" }}>{g.nom}</div><div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>{gangTypeLabel(g.type)}</div></div>
-                  </button>
-                );
-              })}
-              {gangs.length === 0 && <div style={{ color: "var(--text-dim)", textAlign: "center", padding: "1.5rem 0", fontSize: "0.82rem" }}>Aucun groupe</div>}
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center", marginBottom: "1rem" }}>
+              <input value={groupeSearch} onChange={e => setGroupeSearch(e.target.value)} placeholder="🔎 Rechercher un groupe..." style={{ maxWidth: 260 }} />
+              {[["tout", `Tous (${gangs.length})`], ...SECTIONS.map(x => [x.type, `${x.titre} (${gangs.filter(g => g.type === x.type).length})`])].filter(([k]) => k === "tout" || gangs.some(g => g.type === k)).map(([k, l]) => (
+                <button key={k} className={groupeFiltre === k ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} onClick={() => setGroupeFiltre(k)}>{l}</button>
+              ))}
+              {canWrite && <button className="btn btn-gold btn-sm" style={{ marginLeft: "auto" }} onClick={() => setShowGroupeForm(true)}>+ Nouveau groupe</button>}
             </div>
+            {vis.length === 0 && <div className="empty-state"><div className="empty-icon">🛡️</div><div className="empty-title">Aucun groupe</div></div>}
+            {SECTIONS.map(sec => {
+              const list = vis.filter(g => g.type === sec.type);
+              if (!list.length) return null;
+              const col = TYPE_COLOR[sec.type];
+              return (
+                <div key={sec.type} style={{ marginBottom: "1.6rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.7rem" }}>
+                    <span style={{ width: 4, height: 18, background: col, borderRadius: 2 }} />
+                    <span style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: "1.05rem" }}>{sec.titre}</span>
+                    <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>{list.length}</span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "0.7rem" }}>
+                    {list.map(g => {
+                      const nm = membresDe(g.id).length, nv = vehiculesGroupe(g.id).length;
+                      return (
+                        <button key={g.id} onClick={() => setSelectedGroupeId(g.id)} className="card" data-tilt style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", padding: "0.9rem 0.6rem", cursor: "pointer", textAlign: "center", borderTop: `2px solid ${col}` }}>
+                          <GroupeLogo nom={g.nom} type={g.type} size={72} />
+                          <div style={{ fontWeight: 700, fontSize: "0.8rem", lineHeight: 1.2, minHeight: "2em", display: "flex", alignItems: "center" }}>{g.nom}</div>
+                          <div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>👤 {nm} · 🚗 {nv}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-
-          {selectedGroupe ? (
-            <div className="card">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
-                <div><h2 style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: "1.2rem", margin: 0 }}>🛡️ {selectedGroupe.nom}</h2><div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>{gangTypeLabel(selectedGroupe.type)}</div></div>
-                {canWrite && <button className="btn btn-ghost btn-sm" onClick={() => removeGroupe(selectedGroupe.id)} style={{ color: "var(--danger)" }}>🗑️</button>}
-              </div>
-
-              <div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.35rem" }}>👤 Membres ({membresDe(selectedGroupe.id).length})</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: "1rem" }}>
-                {membresDe(selectedGroupe.id).map(p => <button key={p.id} onClick={() => gotoPersonne(p.id)} className="card" style={{ padding: "0.4rem 0.7rem", cursor: "pointer", fontSize: "0.78rem" }}>{fullName(p)}</button>)}
-                {membresDe(selectedGroupe.id).length === 0 && <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>Aucun membre</div>}
-              </div>
-
-              <div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.35rem" }}>🚗 Véhicules ({vehiculesGroupe(selectedGroupe.id).length})</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {vehiculesGroupe(selectedGroupe.id).map(v => <button key={v.id} onClick={() => gotoVehicule(v.id)} className="card" style={{ padding: "0.4rem 0.7rem", cursor: "pointer", fontSize: "0.78rem", fontFamily: "var(--font-mono)", fontWeight: 700 }}>{v.plaque}</button>)}
-                {vehiculesGroupe(selectedGroupe.id).length === 0 && <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>Aucun véhicule</div>}
-              </div>
-            </div>
-          ) : <div className="empty-state" style={{ alignSelf: "start", padding: "3rem" }}><div className="empty-icon">🛡️</div><div className="empty-title">Sélectionnez un groupe</div></div>}
-        </div>
+        );
+      })()}
+      {selectedGroupe && (
+        <Modal title={<span style={{ display: "inline-flex", alignItems: "center", gap: "0.7rem" }}><GroupeLogo nom={selectedGroupe.nom} type={selectedGroupe.type} size={44} />{selectedGroupe.nom}</span>} size="lg" onClose={() => setSelectedGroupeId(null)}
+          footer={canWrite ? <button className="btn btn-ghost btn-sm" onClick={() => removeGroupe(selectedGroupe.id)} style={{ color: "var(--danger)", marginRight: "auto" }}>🗑️ Supprimer le groupe</button> : undefined}>
+          <div style={{ fontSize: "0.78rem", color: TYPE_COLOR[selectedGroupe.type], marginBottom: "1rem", fontWeight: 600 }}>{gangTypeLong(selectedGroupe.type)}</div>
+          <div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.35rem" }}>👤 Membres ({membresDe(selectedGroupe.id).length})</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: "1rem" }}>
+            {membresDe(selectedGroupe.id).map(p => <button key={p.id} onClick={() => { setSelectedGroupeId(null); gotoPersonne(p.id); }} className="card" style={{ padding: "0.4rem 0.7rem", cursor: "pointer", fontSize: "0.78rem" }}>{fullName(p)}</button>)}
+            {membresDe(selectedGroupe.id).length === 0 && <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>Aucun membre</div>}
+          </div>
+          <div style={{ fontSize: "0.6rem", color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.35rem" }}>🚗 Véhicules ({vehiculesGroupe(selectedGroupe.id).length})</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {vehiculesGroupe(selectedGroupe.id).map(v => <button key={v.id} onClick={() => { setSelectedGroupeId(null); gotoVehicule(v.id); }} className="card" style={{ padding: "0.4rem 0.7rem", cursor: "pointer", fontSize: "0.78rem", fontFamily: "var(--font-mono)", fontWeight: 700 }}>{v.plaque}</button>)}
+            {vehiculesGroupe(selectedGroupe.id).length === 0 && <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>Aucun véhicule</div>}
+          </div>
+        </Modal>
       )}
 
       {/* --- Modale Personne --- */}

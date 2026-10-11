@@ -414,7 +414,7 @@ from actions_illegales where id::text like 'a0000001-%';
 -- Taxes (accords avec des groupes) + paiements + recettes compta
 insert into obsidian_taxes (id,groupe,groupe_id,raison,type,taux_pct,montant,periodicite_jours,date_debut,duree_jours,type_argent,statut,notes,created_by,created_at) values
 ('b0000001-0000-4000-8000-000000000001','Black Diamond Society',(select id from carte_gangs where nom='Black Diamond Society'),'Point de vente Vespucci','vente',25,18000,7,(SELECT w0 FROM _w)-21,60,'propre','actif','Accord oral valide en voc','Démo',now()-interval '21 days'),
-('b0000001-0000-4000-8000-000000000002','VenTa',(select id from carte_gangs where nom='VenTa'),'Point de recolte Paleto','recolte',null,30000,7,(SELECT w0 FROM _w)-14,45,'propre','actif','Sous le plafond de 50 000 $ par semaine','Démo',now()-interval '14 days'),
+('b0000001-0000-4000-8000-000000000002','Strada Nostra',(select id from carte_gangs where nom='Strada Nostra'),'Point de recolte Paleto','recolte',null,30000,7,(SELECT w0 FROM _w)-14,45,'propre','actif','Sous le plafond de 50 000 $ par semaine','Démo',now()-interval '14 days'),
 ('b0000001-0000-4000-8000-000000000003','La Main de Minuit',(select id from carte_gangs where nom='La Main de Minuit'),'Zone de vente Davis','vente',20,12000,7,(SELECT w0 FROM _w)-28,30,'sale','actif','','Démo',now()-interval '28 days'),
 ('b0000001-0000-4000-8000-000000000004','Ghost Chain',(select id from carte_gangs where nom='Ghost Chain'),'Ancien accord Sandy Shores','vente',30,9000,7,(SELECT w0 FROM _w)-35,21,'propre','termine','Termine, pas renouvele','Démo',now()-interval '35 days');
 insert into obsidian_taxes_paiements (id,taxe_id,montant,type_argent,note,created_by,created_at) values
@@ -451,14 +451,14 @@ where r.created_by = 'Démo';
 
 -- Guerres / GDT
 insert into obsidian_guerres (adversaire,groupe_id,type,enjeu,date_debut,date_fin,statut,issue,perte,notes,created_by,created_at) values
-('The Black Order',(select id from carte_gangs where nom='The Black Order'),'Conflit','Tirs au port, zone neutre',current_date-22,current_date-15,'terminee','nulle','aucune','Regle par mediation du Tribunal','Démo',now()-interval '22 days'),
+('Devils Sons',(select id from carte_gangs where nom='Devils Sons'),'Conflit','Tirs au port, zone neutre',current_date-22,current_date-15,'terminee','nulle','aucune','Regle par mediation du Tribunal','Démo',now()-interval '22 days'),
 ('Spartan',(select id from carte_gangs where nom='Spartan'),'GDT','Revendication de la zone industrielle',current_date-9,null,'en_cours',null,null,'GDT demandee pour respecter le reglement','Démo',now()-interval '9 days'),
 ('Lost Verity',(select id from carte_gangs where nom='Lost Verity'),'GDT','Defense du point de recolte',current_date-30,current_date-26,'terminee','victoire','aucune','Defense legitime, aucune perte','Démo',now()-interval '30 days');
 
 -- Base de donnees : personnes + vehicules
 insert into bdd_personnes (nom, prenom, surnom, telephone, age, origine, occupation, organisation, statut, priorite, notes_publiques, notes_privees, created_by) values
  ('Moretti','Vincenzo','Le Comptable','555-0142',44,'Italie','Banquier','Black Diamond Society','Actif','Haute','Blanchiment présumé.','Démo','Démo'),
- ('Okafor','Daniel','Dany','555-0177',31,'Nigeria','Chauffeur','VenTa','Actif','Normale','Convoyeur régulier.','Démo','Démo'),
+ ('Okafor','Daniel','Dany','555-0177',31,'Nigeria','Chauffeur','Strada Nostra','Actif','Normale','Convoyeur régulier.','Démo','Démo'),
  ('Kowalski','Anna','Ghost','555-0120',27,'Pologne','Hackeuse','Ghost Chain','Surveillé','Haute','Piratage ATM.','Démo','Démo'),
  ('Ramirez','Diego','El Gato','555-0199',36,'Mexique','Dealer','La Main de Minuit','Recherché','Haute','Trafic de stupéfiants.','Démo','Démo'),
  ('Whitaker','Joe','Whit','555-0166',52,'USA','Garagiste','','Actif','Basse','Contact fiable.','Démo','Démo'),
@@ -481,29 +481,29 @@ select id, nom, 'Fiche créée', created_by from obsidian_fiches where 'démo' =
 insert into gm_reputation_log (organisation, delta, motif, source, created_by, created_at)
 select o, (array[-15,-8,-3,4,6,10,12])[1+floor(random()*7)::int], (array['Respect d''un pacte','Incident en zone neutre','Livraison honorée','Violation de territoire','Aide ponctuelle','Retard de paiement'])[1+floor(random()*6)::int],
        'manuel', 'Démo', now() - (random()*30 || ' days')::interval
-from generate_series(1,40) g, lateral (select (array['La Main de Minuit','WBS','VenTa','Ghost Chain','Black Diamond Society','The Black Order','Spartan','Lost Verity'])[1+floor(random()*8)::int] o) x;
+from generate_series(1,40) g, lateral (select (array['La Main de Minuit','WBS','Strada Nostra','Ghost Chain','Black Diamond Society','Devils Sons','Spartan','Lost Verity'])[1+floor(random()*8)::int] o) x;
 insert into gm_pactes (organisation, statut, date_signature, date_fin, signataire, clauses, violations, created_by) values
  ('Black Diamond Society','actif',current_date-30,current_date+60,'Pierce Davenport','Non-agression, partage de routes.','[]'::jsonb,'Démo'),
- ('VenTa','actif',current_date-20,current_date+40,'Elena Moretti','Escorte mutuelle.','[{"texte":"Retard de livraison","date":"2026-09-28T20:00:00Z"}]'::jsonb,'Démo'),
- ('The Black Order','suspendu',current_date-50,current_date+10,'Pierce Davenport','Zone neutre au port.','[{"texte":"Tir en zone neutre","date":"2026-10-01T22:00:00Z"},{"texte":"Non-respect du couvre-feu","date":"2026-10-03T23:00:00Z"}]'::jsonb,'Démo'),
+ ('Strada Nostra','actif',current_date-20,current_date+40,'Elena Moretti','Escorte mutuelle.','[{"texte":"Retard de livraison","date":"2026-09-28T20:00:00Z"}]'::jsonb,'Démo'),
+ ('Devils Sons','suspendu',current_date-50,current_date+10,'Pierce Davenport','Zone neutre au port.','[{"texte":"Tir en zone neutre","date":"2026-10-01T22:00:00Z"},{"texte":"Non-respect du couvre-feu","date":"2026-10-03T23:00:00Z"}]'::jsonb,'Démo'),
  ('Ghost Chain','rompu',current_date-80,current_date-5,'Elena Moretti','Échange d''informations.','[{"texte":"Fuite d''informations","date":"2026-09-20T19:00:00Z"}]'::jsonb,'Démo'),
  ('La Main de Minuit','actif',current_date-12,current_date+75,'Pierce Davenport','Achat exclusif de Mexicana.','[]'::jsonb,'Démo');
 insert into gm_audits (organisation, note, appreciation, notes, created_by, created_at)
 select o, n, (case when n >= 8 then 'Excellent' when n >= 5 then 'Correct' else 'Insuffisant' end), 'Audit de démonstration.', 'Démo', now() - (random()*28 || ' days')::interval
-from (values ('La Main de Minuit',8),('WBS',6),('VenTa',9),('Ghost Chain',4),('Black Diamond Society',7),('The Black Order',3),('Lost Verity',5),('Spartan',8)) v(o,n);
+from (values ('La Main de Minuit',8),('WBS',6),('Strada Nostra',9),('Ghost Chain',4),('Black Diamond Society',7),('Devils Sons',3),('Lost Verity',5),('Spartan',8)) v(o,n);
 insert into tribunal_dossiers (titre, accuse, organisation, statut, juge, procureur, avocat, date_audience, acte_accusation, defense, verdict, sentence, created_by) values
  ('Affaire du convoi détourné','Diego Ramirez','La Main de Minuit','verdict','Adrian Vance','Lucas Bennett','Camille Roux',now()-interval '8 days','Détournement d''un convoi.','Alibi contesté.','coupable','Amende 40 000 $ + interdiction de zone.','Démo'),
  ('Fuite d''informations','Anna Kowalski','Ghost Chain','defense','Adrian Vance','Lucas Bennett','Camille Roux',now()+interval '3 days','Divulgation de données.','Nie les faits.','en_cours','','Démo'),
- ('Tir en zone neutre','Membre anonyme','The Black Order','instruction','Adrian Vance','Lucas Bennett','',null,'Tirs au port.','','en_cours','','Démo'),
+ ('Tir en zone neutre','Membre anonyme','Devils Sons','instruction','Adrian Vance','Lucas Bennett','',null,'Tirs au port.','','en_cours','','Démo'),
  ('Retard de paiement','Vincenzo Moretti','Black Diamond Society','verdict','Adrian Vance','Lucas Bennett','Camille Roux',now()-interval '15 days','Impayé de 30 000 $.','Erreur comptable.','innocent','Relaxe.','Démo');
 insert into gm_evenements (type, titre, statut, partenaire, date_event, montant, notes, created_by) values
- ('convoi','Convoi Fleeca #12','livre','VenTa',date_trunc('month', now())+interval '3 days 21 hours',60000,'Démo','Démo'),
+ ('convoi','Convoi Fleeca #12','livre','Strada Nostra',date_trunc('month', now())+interval '3 days 21 hours',60000,'Démo','Démo'),
  ('enchere','Enchère véhicules de luxe','cloturee','Vinewood',date_trunc('month', now())+interval '8 days 20 hours',230000,'Démo','Démo'),
  ('convoi','Convoi Pacific #3','livre','Black Diamond Society',now()-interval '24 days',85000,'Démo','Démo'),
  ('convoi','Convoi Sandy #7','echec','WBS',now()-interval '17 days',40000,'Démo','Démo'),
  ('capture','Capture informateur','capturee','Ghost Chain',now()-interval '5 days',10000,'Démo','Démo'),
  ('alerte','Fuite chez un partenaire','traquee','Spartan',now()-interval '2 days',15000,'Démo','Démo'),
- ('convoi','Convoi Port #15','planifie','VenTa',now()+interval '4 days',70000,'Démo','Démo'),
+ ('convoi','Convoi Port #15','planifie','Strada Nostra',now()+interval '4 days',70000,'Démo','Démo'),
  ('enchere','Enchère œuvres d''art','annoncee','Vinewood',now()+interval '9 days',0,'Démo','Démo');
 update gm_pactes set groupe_id=(select id from carte_gangs c where c.nom=organisation) where created_by='Démo' and groupe_id is null;
 update gm_audits set groupe_id=(select id from carte_gangs c where c.nom=organisation) where created_by='Démo' and groupe_id is null;
