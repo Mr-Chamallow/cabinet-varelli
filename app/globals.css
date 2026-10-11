@@ -1216,10 +1216,10 @@ a:active > .card, button.card:active { transform: translateY(-1px) scale(0.99); 
 .ambient { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .main-content { position: relative; z-index: 1; }
 .amb-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(var(--gold-rgb), .045) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--gold-rgb), .045) 1px, transparent 1px); background-size: 56px 56px; -webkit-mask-image: radial-gradient(ellipse at 60% 40%, #000 0, transparent 75%); mask-image: radial-gradient(ellipse at 60% 40%, #000 0, transparent 75%); }
-.amb-orb { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .5; }
-.amb-orb.a { width: 520px; height: 520px; left: 18%; top: -160px; background: rgba(var(--gold-rgb), .13); animation: ambA 26s ease-in-out infinite alternate; }
-.amb-orb.b { width: 460px; height: 460px; right: -120px; bottom: 5%; background: rgba(121,134,203,.10); animation: ambB 32s ease-in-out infinite alternate; }
-.amb-orb.c { width: 380px; height: 380px; left: 40%; bottom: -160px; background: rgba(var(--gold-rgb), .08); animation: ambA 38s ease-in-out infinite alternate-reverse; }
+.amb-orb { position: absolute; border-radius: 50%; opacity: .5; will-change: transform; }
+.amb-orb.a { width: 520px; height: 520px; left: 18%; top: -160px; background: radial-gradient(circle, rgba(var(--gold-rgb), .20) 0%, rgba(var(--gold-rgb), 0) 68%); animation: ambA 26s ease-in-out infinite alternate; }
+.amb-orb.b { width: 460px; height: 460px; right: -120px; bottom: 5%; background: radial-gradient(circle, rgba(121,134,203,.16) 0%, rgba(121,134,203,0) 68%); animation: ambB 32s ease-in-out infinite alternate; }
+.amb-orb.c { width: 380px; height: 380px; left: 40%; bottom: -160px; background: radial-gradient(circle, rgba(var(--gold-rgb), .12) 0%, rgba(var(--gold-rgb), 0) 68%); animation: ambA 38s ease-in-out infinite alternate-reverse; }
 @keyframes ambA { to { transform: translate(120px, 90px) scale(1.15); } } @keyframes ambB { to { transform: translate(-140px, -80px) scale(1.2); } }
 .amb-logo { position: absolute !important; right: 3%; bottom: 4%; opacity: .045; filter: grayscale(1) contrast(1.1); animation: ambLogo 9s ease-in-out infinite alternate; }
 @keyframes ambLogo { to { opacity: .075; transform: translateY(-10px) rotate(-2deg); } }

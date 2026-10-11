@@ -5,7 +5,6 @@ import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
 import { useRealtimeTable } from "@/lib/useRealtimeTable";
-import { exportXlsx } from "@/lib/exportXlsx";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { weekStartOf } from "@/lib/weekStart";
 import { usePriceTable, norm as normP } from "@/lib/fournisseurs";
@@ -149,15 +148,6 @@ export default function ComptaHubPage() {
     return { wN, mu, sd, med: median(amounts), anomalies, proj, burn, runway, hhi, bestI, worstI, grid, top3: sum(cats.filter(c => c.r > 0).slice(0, 3).map(c => c.r)) / (R || 1) * 100, vol: stdev(wN), growth: wN.length > 1 ? (mean(wN.slice(-2)) - mean(wN.slice(0, 2))) : 0 };
   }, [byWeek, cur, cats, R, soldeTotal]);
 
-  function exportAll() {
-    exportXlsx("comptabilite", {
-      Journal: entries.map(e => ({ Date: new Date(e.created_at).toLocaleString("fr-FR"), Type: e.type, Catégorie: e.categorie, Montant: e.montant, Argent: e.type_argent, Motif: e.motif || "", Employé: e.membre || "", Source: e.source, "Saisi par": e.created_by || "" })),
-      Catégories: group(entries, e => e.categorie).map(c => ({ Catégorie: c.k, Recettes: c.r, Dépenses: c.d, Net: c.net, Opérations: c.n })),
-      Employés: group(entries.filter(e => e.membre), e => e.membre).map(c => ({ Employé: c.k, Recettes: c.r, Pertes: c.d, Net: c.net, Opérations: c.n })),
-      Semaines: byWeek.map((x, i) => ({ Semaine: x.w, Recettes: x.r, Dépenses: x.d, Net: x.r - x.d, Solde: solde[i] })),
-    });
-  }
-
   const cash = useMemo(() => { const m: Record<string, number> = { sale: 0, propre: 0, mixte: 0 }; raw.forEach(e => { m[e.type_argent || "sale"] = (m[e.type_argent || "sale"] || 0) + (e.type === "recette" ? 1 : -1) * e.montant; }); return m; }, [raw]);
   const transferts = useMemo(() => raw.filter(e => e.source === "blanchiment" && e.type !== "recette"), [raw]);
   const marges = useMemo(() => {
@@ -185,7 +175,6 @@ export default function ComptaHubPage() {
         <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
           {PERIODS.map(p => <button key={p.k} className={`btn btn-sm ${weeks === p.k ? "btn-gold" : "btn-outline"}`} onClick={() => setWeeks(p.k)}>{p.label}</button>)}
           <select value={argentF} onChange={e => setArgentF(e.target.value)} style={{ width: "auto" }} title="Filtre argent"><option value="">💰 Tout l'argent</option><option value="propre">💵 Propre</option><option value="sale">🕶️ Sale</option><option value="mixte">🔀 Mixte</option></select>
-          <button className="btn btn-outline btn-sm" onClick={exportAll}>📥 Export Excel</button>
         </div>
       </div>
       <Tabs tabs={TABS} value={tab} onChange={k => setTab(k as Tab)} />

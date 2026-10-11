@@ -12,7 +12,6 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { CountUp } from "@/components/ui/CountUp";
 import { hasPermission } from "@/lib/auth";
 import { timeAgo } from "@/lib/activity";
-import { exportXlsx } from "@/lib/exportXlsx";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { money } from "@/lib/money";
 
@@ -77,13 +76,6 @@ export default function ArrestationsPage() {
     setShowForm(true);
   }
 
-  function exportList() {
-    exportXlsx("arrestations", { Arrestations: visible.map(a => ({
-      Date: new Date(a.created_at).toLocaleString("fr-FR"), Employé: a.membre, Amende: a.amende, "Argent perdu": a.argent_perdu, "Type argent": a.type_argent,
-      Objets: (a.items || []).map((i: any) => `${i.nom} x${i.quantite}`).join(", "), Notes: a.notes || "", "Saisi par": a.created_by || "",
-    })) });
-  }
-
   async function save() {
     if (!form.membre) return;
     setSaving(true);
@@ -128,7 +120,6 @@ export default function ArrestationsPage() {
           <div className="gold-line" />
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button className="btn btn-outline" onClick={exportList} disabled={visible.length === 0}>⬇️ Excel</button>
           <button className="btn btn-gold" onClick={openForm}>+ Nouvelle arrestation</button>
         </div>
       </div>

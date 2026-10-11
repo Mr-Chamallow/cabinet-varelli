@@ -3,7 +3,6 @@ import { money } from "@/lib/money";
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { exportXlsx } from "@/lib/exportXlsx";
 import { fetchAll } from "@/lib/fetchAll";
 
 const fmt = (n: number) => money(n);
@@ -15,7 +14,7 @@ function weekRange(offset: number) {
   return { start, end };
 }
 
-// Rapport hebdomadaire prêt à copier (ex: pour Discord) + export Excel.
+// Rapport hebdomadaire prêt à copier (ex: pour Discord).
 export function WeeklyReport() {
   const [offset, setOffset] = useState(0);
   const [compta, setCompta] = useState<any[]>([]);
@@ -78,11 +77,6 @@ export function WeeklyReport() {
             {[0, 1, 2, 3, 4, 5, 6, 7].map(i => { const r = weekRange(i); return <option key={i} value={i}>{i === 0 ? "Cette semaine" : `Semaine du ${d2(r.start)}`}</option>; })}
           </select>
           <button className="btn btn-gold btn-sm" onClick={copy}>{copied ? "✅ Copié" : "📋 Copier"}</button>
-          <button className="btn btn-outline btn-sm" onClick={() => exportXlsx("rapport-hebdo", {
-            Résumé: [{ Recettes: report.rec, Dépenses: report.dep, Solde: report.rec - report.dep, "Amendes (hors solde)": report.amendes, "Argent perdu (arrestations)": report.perdu }],
-            Actions: report.a.map(e => ({ Date: new Date(e.created_at).toLocaleString("fr-FR"), Employé: e.membre, Action: e.action, "Montant ($)": e.montant })),
-            Arrestations: report.ar.map(e => ({ Date: new Date(e.created_at).toLocaleString("fr-FR"), Employé: e.membre, "Amende ($)": e.amende, "Argent perdu ($)": e.argent_perdu })),
-          })}>⬇️ Excel</button>
         </div>
       </div>
       <pre style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-mono)", fontSize: "0.78rem", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "0.875rem", margin: 0, color: "var(--text-muted)" }}>{report.text}</pre>

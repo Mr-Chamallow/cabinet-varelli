@@ -11,7 +11,6 @@ import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { CountUp } from "@/components/ui/CountUp";
 import { hasPermission, hasWriteAccess } from "@/lib/auth";
 import { timeAgo } from "@/lib/activity";
-import { exportXlsx } from "@/lib/exportXlsx";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { ActionType, DEFAULT_ACTION_TYPES, rowToType, fmtDelai } from "@/lib/actionTypes";
 import { money } from "@/lib/money";
@@ -124,10 +123,6 @@ export default function ActionsIllegalesPage() {
     setShowForm(true);
   }
 
-  function exportList() {
-    exportXlsx("actions-illegales", { Actions: visible.map(e => ({ Date: new Date(e.created_at).toLocaleString("fr-FR"), Personne: e.membre, Action: e.action, Montant: e.montant, Notes: e.notes || "", "Saisi par": e.created_by || "" })) });
-  }
-
   function openForm() {
     setEditId(null);
     setForm({ action: activeTypes[0]?.nom || DEFAULT_ACTION_TYPES[0].nom, membre: (user as any)?.nom || "", resultat: "gain", argent: "sale", montant: "", date: localInputNow(), notes: "" });
@@ -185,7 +180,6 @@ export default function ActionsIllegalesPage() {
           <div className="gold-line" />
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button className="btn btn-outline" onClick={exportList} disabled={visible.length === 0}>⬇️ Excel</button>
           {canWrite && <button className="btn btn-outline" onClick={() => setShowTypes(true)}>⚙️ Gérer les actions</button>}
           {canWrite && <button className="btn btn-gold" onClick={openForm}>+ Enregistrer une action</button>}
         </div>

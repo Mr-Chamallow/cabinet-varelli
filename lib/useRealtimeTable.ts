@@ -14,14 +14,15 @@ export function useRealtimeTable(tables: string | string[], onChange: () => void
 
   useEffect(() => {
     if (!supabase) return;
+    // Regroupe les rafales d'evenements (ex: seed, import) en un seul rechargement.
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const fire = () => { if (timer) clearTimeout(timer); timer = setTimeout(() => cbRef.current(), 350); };
     const channel = supabase.channel(`realtime-${key}-${Math.random().toString(36).slice(2)}`);
     list.forEach((table) => {
-      channel.on("postgres_changes" as any, { event: "*", schema: "public", table }, () => {
-        cbRef.current();
-      });
+      channel.on("postgres_changes" as any, { event: "*", schema: "public", table }, fire);
     });
     channel.subscribe();
-    return () => { supabase!.removeChannel(channel); };
+    return () => { if (timer) clearTimeout(timer); supabase!.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 }

@@ -4,7 +4,6 @@ import { money } from "@/lib/money";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRealtimeTable } from "@/lib/useRealtimeTable";
-import { exportXlsx } from "@/lib/exportXlsx";
 import { fetchAll } from "@/lib/fetchAll";
 
 const fmt = (n: number) => money(n);
@@ -51,7 +50,6 @@ export function EmployeeRanking() {
         <div className="section-title" style={{ marginBottom: 0 }}>🏅 Classement par employé</div>
         <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", alignItems: "center" }}>
           {PERIODS.map(p => <button key={p.k} onClick={() => setPeriod(p.k)} style={chip(period === p.k)}>{p.label}</button>)}
-          <button className="btn btn-outline btn-sm" onClick={() => exportXlsx("classement-employes", { Classement: rows.map(r => ({ Employé: r.nom, "Nb actions": r.nbActions, "Net actions ($)": r.net, "Nb arrestations": r.nbArrests, "Amendes ($)": r.amendes, "Argent perdu ($)": r.perdu })) })}>⬇️ Excel</button>
         </div>
       </div>
       {rows.length === 0 ? (
