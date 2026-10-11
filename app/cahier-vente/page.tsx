@@ -211,27 +211,17 @@ export default function CahierVentePage() {
     setSaving(false);
   }
 
-  // ⚠️ La vraie suppression (appel Supabase) se fait IMMÉDIATEMENT, pas après le
-  // délai du toast "Annuler" : un refresh pendant les 5s du toast tuerait le
-  // setTimeout avant son exécution, donc la transaction ne serait jamais réellement
-  // supprimée en base et réapparaîtrait au rechargement. Le toast ne sert plus qu'à
-  // proposer de RECRÉER la transaction (nouvel id) si on clique "Annuler" à temps.
   async function deleteTransaction(id: string) {
     const tx = transactions.find(t => t.id === id);
     if (!tx || !supabase) return;
+    if (!window.confirm(`Annuler cette transaction ?\nLe stock sera remis et l'écriture de compta retirée.`)) return;
+    // Suppression immédiate côté serveur : annule le stock, l'historique et la compta d'un seul bloc.
+    const res = await fetch("/api/obsidian/transaction", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok) { showToast(`❌ ${out.error || "Erreur"}`); return; }
     setTransactions(ts => ts.filter(t => t.id !== id));
-
-    const { error } = await supabase.from("cahier_transactions").delete().eq("id", id);
-    if (error) {
-      setTransactions(ts => [tx, ...ts]);
-      return;
-    }
-
-    scheduleDelete(`Transaction "${tx.produit_nom || tx.motif}" supprimée`, async () => {}, async () => {
-      const { id: _id, ...rest } = tx;
-      const { data } = await supabase!.from("cahier_transactions").insert([rest]).select().single();
-      if (data) setTransactions(ts => [data, ...ts]);
-    });
+    if (out.stock) setProduits(ps => ps.map(x => x.id === out.stock.id ? { ...x, quantite: Number(out.stock.quantite) || 0 } : x));
+    showToast(`Transaction "${tx.produit_nom || tx.motif}" annulée, stock remis`);
   }
 
   async function saveProduit() {

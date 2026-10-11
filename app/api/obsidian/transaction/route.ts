@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { sendDiscordAlert, ARMURERIE_CATEGORIES } from "@/lib/discordAlert";
-import { postAlert, bigMoveAlert, GREEN, RED } from "@/lib/alerts";
+import { postAlert, bigMoveAlert, logAudit, GREEN, RED } from "@/lib/alerts";
 import { money } from "@/lib/money";
 
 // Vente / achat : transaction + stock + mouvement + compta en UN seul bloc SQL (tout passe ou rien).
@@ -51,6 +51,24 @@ export async function POST(req: Request) {
     ]);
     await bigMoveAlert(supabaseAdmin, vente ? montant : -montant, `${vente ? "Vente" : "Achat"} ${b.categorie || ""} - ${motif}`, who);
     return NextResponse.json({ transaction: tx, stock });
+  } catch (e: any) {
+    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  }
+}
+
+// DELETE : annule complètement une transaction (stock remis, historique et compta retirés).
+export async function DELETE(req: Request) {
+  try {
+    const { authorized, supabaseAdmin, error, user } = await requirePermission("cahier_vente");
+    if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
+    const { id } = await req.json();
+    if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
+    const who = String((user as any)?.nom_perso || (user as any)?.discord_name || "");
+    const { data: old } = await supabaseAdmin.from("cahier_transactions").select("type,montant,produit_nom,quantite").eq("id", id).maybeSingle();
+    const { data, error: dbError } = await supabaseAdmin.rpc("obsidian_transaction_annuler", { p_id: id, p_user: who });
+    if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
+    if (old) await logAudit(supabaseAdmin, who, "Transaction annulée", `${old.quantite} x ${old.produit_nom}`, `${old.type} ${money(old.montant)}`);
+    return NextResponse.json({ stock: (data as any)?.stock || null });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
   }
