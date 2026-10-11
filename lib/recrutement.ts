@@ -33,8 +33,10 @@ export function formatDiscord(f: any): string {
     `• Heures de jeu : ${Number(f.heures_jeu) || 0} h (min. ${HEURES_MIN} h, armes lourdes ${HEURES_ARME_LOURDE} h)`,
     `• Ancien groupe : ${f.ancien_groupe || "aucun"}${f.date_depart_ancien ? ` (départ le ${new Date(f.date_depart_ancien).toLocaleDateString("fr-FR")})` : ""}`,
     `• Sanctions vérifiées : ${yn(f.sanctions_verifiees)}${f.sanctions_notes ? ` (${f.sanctions_notes})` : ""}`,
+    f.gdoc_url ? `• Gdoc : ${f.gdoc_url}` : "",
+    f.histoire ? `• Histoire : ${String(f.histoire).slice(0, 300)}${String(f.histoire).length > 300 ? "..." : ""}` : "",
     `• Statut : ${(STATUTS_RECRUTEMENT[f.statut] || { label: f.statut }).label}`,
     pr.length ? `⚠️ À régler : ${pr.join(" ; ")}` : "✅ Conditions du règlement remplies",
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
