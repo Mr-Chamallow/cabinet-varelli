@@ -263,14 +263,19 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   const vpSize = () => { const r = vp.current?.getBoundingClientRect(); return { w: r?.width || 900, h: r?.height || 500 }; };
   function fitTo(list: Item[]) {
     const l = list.length ? list : shown; const { w, h } = vpSize();
-    if (!l.length) { setZ(Math.min(1, w / W + 0.1)); setPan({ x: 10, y: 10 }); return; }
+    if (!l.length) { setZ(Math.max(w / W, h / H)); setPan({ x: 0, y: 0 }); return; }
     const x0 = Math.min(...l.map(i => i.x)) - 40, y0 = Math.min(...l.map(i => i.y)) - 60, x1 = Math.max(...l.map(i => i.x)) + PW + 40, y1 = Math.max(...l.map(i => i.y)) + PH + 40;
-    const nz = clamp(Math.min(w / (x1 - x0), h / (y1 - y0), 1), 0.2, 1.6); setZ(nz); setPan({ x: (w - (x1 - x0) * nz) / 2 - x0 * nz, y: (h - (y1 - y0) * nz) / 2 - y0 * nz });
+    const nz = clamp(Math.min(w / (x1 - x0), h / (y1 - y0), 1), Math.max(w / W, h / H), 1.6); setZ(nz); setPan({ x: (w - (x1 - x0) * nz) / 2 - x0 * nz, y: (h - (y1 - y0) * nz) / 2 - y0 * nz });
   }
   function zoomBy(f: number, cx?: number, cy?: number) {
-    const { z: oz, pan: op } = view.current; const nz = clamp(oz * f, 0.2, 1.6); const { w, h } = vpSize(); const px = cx ?? w / 2, py = cy ?? h / 2;
+    const { z: oz, pan: op } = view.current; const nz = clamp(oz * f, Math.max(vpSize().w / W, vpSize().h / H), 1.6); const { w, h } = vpSize(); const px = cx ?? w / 2, py = cy ?? h / 2;
     setZ(nz); setPan({ x: px - (px - op.x) * (nz / oz), y: py - (py - op.y) * (nz / oz) });
   }
+  useEffect(() => {
+    const { w, h } = vpSize(); const mz = Math.max(w / W, h / H); const nz = Math.max(z, mz);
+    const nx = clamp(pan.x, Math.min(0, w - W * nz), 0), ny = clamp(pan.y, Math.min(0, h - H * nz), 0);
+    if (nz !== z) setZ(nz); if (nx !== pan.x || ny !== pan.y) setPan({ x: nx, y: ny });
+  }, [z, pan, boardId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const el = vp.current; if (!el) return;
     const fn = (e: WheelEvent) => { e.preventDefault(); const r = el.getBoundingClientRect(); zoomBy(e.deltaY < 0 ? 1.12 : 0.89, e.clientX - r.left, e.clientY - r.top); };
