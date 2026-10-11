@@ -24,6 +24,8 @@ const TABLES: Record<string, { perm: string[]; audit?: string; label?: string }>
   carte_plaques: { perm: ["carte-enqueteur", "base_donnees"] },
   carte_categories: { perm: ["carte-enqueteur"] },
   cahier_produits: { perm: ["cahier_vente"] },
+  obsidian_boards: { perm: ["carte-enqueteur", "juridique", "base_donnees"], audit: "nom", label: "Tableau d'enquete" },
+  obsidian_board_links: { perm: ["carte-enqueteur", "juridique", "base_donnees"] },
   obsidian_board: { perm: ["carte-enqueteur", "juridique", "base_donnees"] },
   obsidian_taxes: { perm: ["obsidian_taxes"], audit: "groupe", label: "Taxe" },
   obsidian_recrutement: { perm: ["obsidian_recrutement"], audit: "nom_rp", label: "Recrutement" },

@@ -105,7 +105,7 @@ export async function pdfContrat(c: any) {
 export interface EnqueteItem { id: string; kind: "fiche" | "vehicule" | "note"; x: number; y: number; label: string; sub?: string; img?: string | null; prime?: number }
 export async function pdfEnquete(items: EnqueteItem[], links: { a: string; b: string; car?: boolean }[], auteur?: string) {
   const p = await Pdf.create({ kind: "enquete", title: "Tableau d'enquete", subtitle: `${items.filter(i => i.kind === "fiche").length} personne(s) - ${items.filter(i => i.kind === "vehicule").length} vehicule(s) - ${links.length} lien(s)`, classification: "Enquete", signers: [`L'enqueteur|${auteur || "Obsidian Logistics"}`, "Le responsable de dossier|Obsidian Logistics"] });
-  const BW = 1500, BH = 920, PW = 124, PH = 150;
+  const BW = 2400, BH = 1500, PW = 124, PH = 150;
   const k = (p.W - 2 * p.M) / BW, H = BH * k;
   const byId = new Map(items.map(i => [i.id, i]));
   p.section("Vue d'ensemble du tableau");
