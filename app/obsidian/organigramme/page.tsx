@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Modal } from "@/components/ui/Modal";
@@ -77,7 +78,7 @@ export default function OrganigrammePage() {
   const over = effectif != null && effectif > effMax;
   return (
     <div className="page-container">
-      <a className="back-link" href="/">Dashboard</a>
+      <Link className="back-link" href="/">Dashboard</Link>
       <div className="page-header"><div><h1 className="page-title">🏛️ Organigramme</h1><p className="page-subtitle">Direction & gouvernance · Obsidian Logistics</p><div className="gold-line" /></div><button className="btn btn-outline" onClick={() => setGallery(true)}>🪪 Cartes par grade</button></div>
       <div className="card" style={{ padding: "0.7rem 1rem", marginBottom: "1.2rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "0.35rem" }}>

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/lib/useToast";
@@ -101,7 +102,7 @@ export default function TaxesPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">Dashboard</a>
+      <Link className="back-link" href="/">Dashboard</Link>
       <div className="page-header">
         <div><h1 className="page-title">💸 Taxes</h1><p className="page-subtitle">Accords avec les groupes · Paiements · Durée</p><div className="gold-line" /></div>
         {canWrite && <button className="btn btn-gold" onClick={openNew}>+ Nouvelle taxe</button>}

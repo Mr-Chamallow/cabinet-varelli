@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -61,7 +62,7 @@ function Inner() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
+      <Link className="back-link" href="/obsidian">Dashboard Obsidian</Link>
       <div className="page-header"><div><h1 className="page-title">🧬 Profil central</h1><p className="page-subtitle">Une personne = un seul profil : employé, fiche, base de données, activité</p><div className="gold-line" /></div></div>
       <div style={{ display: "flex", gap: 8, marginBottom: "1.25rem", flexWrap: "wrap" }}>
         <input list="profil-names" placeholder="Nom Prénom..." value={nom} onChange={e => setNom(e.target.value)} style={{ maxWidth: 360 }} />
@@ -93,7 +94,7 @@ function Inner() {
             <Panel title="Contrats"><DataTable empty="Aucun contrat." head={["Contrat", "Statut", "Récompense"]} rows={d.contrats.map((c: any) => [c.titre, c.statut, fmt(Number(c.recompense))])} /></Panel>
             <Panel title="Rendez-vous"><DataTable empty="Aucun RDV." head={["RDV", "Date"]} rows={d.rdv.map((r: any) => [r.titre, `${r.date || ""} ${r.heure || ""}`])} /></Panel>
             <Panel title="Véhicules"><DataTable empty="Aucun véhicule." head={["Modèle", "Plaque"]} rows={d.garage.map((g: any) => [g.modele, g.plaque])} /></Panel>
-            {d.fiche && <Panel title="Fiche"><a className="btn btn-outline btn-sm" href="/obsidian/fiches">Ouvrir dans Fiches {'->'}</a></Panel>}
+            {d.fiche && <Panel title="Fiche"><Link className="btn btn-outline btn-sm" href="/obsidian/fiches">Ouvrir dans Fiches {'->'}</Link></Panel>}
           </div>
         </>}
       <Toast toast={toast} />

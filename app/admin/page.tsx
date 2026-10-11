@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DEFAULT_PERMISSIONS, loadRolesFromSupabase, canAccess } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -351,7 +352,7 @@ export default function AdminPage() {
           <div className="empty-icon">🔒</div>
           <div className="empty-title">Session non détectée</div>
           <p style={{ fontSize: "0.82rem", color: "var(--text-dim)", marginTop: "0.5rem" }}>
-            Essaie de te <a href="/login" style={{ color: "var(--gold)" }}>reconnecter</a>. Si ça persiste après reconnexion,
+            Essaie de te <Link href="/login" style={{ color: "var(--gold)" }}>reconnecter</Link>. Si ça persiste après reconnexion,
             le problème vient de la config NextAuth côté serveur (NEXTAUTH_URL / NEXTAUTH_SECRET sur Vercel).
           </p>
         </div>
@@ -372,7 +373,7 @@ export default function AdminPage() {
             Si ce rôle devrait avoir accès, ajoute la permission "admin" à ce rôle dans l'onglet Rôles,
             ou force le rôle "CEO - Directeur général" pour ce membre via un override.
           </p>
-          <a href="/" className="btn btn-outline btn-sm" style={{ marginTop: "1rem", display: "inline-block" }}>Retour au tableau de bord</a>
+          <Link href="/" className="btn btn-outline btn-sm" style={{ marginTop: "1rem", display: "inline-block" }}>Retour au tableau de bord</Link>
         </div>
       </div>
     );
@@ -698,7 +699,7 @@ export default function AdminPage() {
                 </div>
 
                 <p style={{ fontSize:"0.75rem", color:"var(--text-dim)" }}>
-                  Réglages détaillés (police, sous-titre complet...) {'->'} <a href="/settings" style={{ color:"var(--gold)" }}>page Personnalisation</a>.
+                  Réglages détaillés (police, sous-titre complet...) {'->'} <Link href="/settings" style={{ color:"var(--gold)" }}>page Personnalisation</Link>.
                 </p>
               </div>
 

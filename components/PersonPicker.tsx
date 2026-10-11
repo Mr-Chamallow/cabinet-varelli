@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -18,7 +19,7 @@ export function usePersonnes() {
   return list;
 }
 
-export function PersonPicker({ value, onChange, placeholder = " -  Aucune personne  - " }: { value: string; onChange: (nom: string) => void; placeholder?: string }) {
+export function PersonPicker({ value, onChange, placeholder = "- Aucune personne - " }: { value: string; onChange: (nom: string) => void; placeholder?: string }) {
   const list = usePersonnes();
   const [q, setQ] = useState("");
   const known = !value || list.some(p => p.nom === value);
@@ -32,13 +33,13 @@ export function PersonPicker({ value, onChange, placeholder = " -  Aucune person
         {["Base de données", "Fiches"].map(src => { const l = shown.filter(p => p.source === src); return l.length ? <optgroup key={src} label={src}>{l.map(p => <option key={p.nom} value={p.nom}>{p.nom}</option>)}</optgroup> : null; })}
       </select>
       {value && list.find(p => p.nom === value) && <a href={list.find(p => p.nom === value)!.href} target="_blank" rel="noreferrer" className="btn btn-outline btn-sm" style={{ marginTop: 6 }}>↗ Ouvrir le profil</a>}
-      <div style={{ fontSize: "0.65rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>Absent ? Crée-la dans <a href="/base-de-donnees" style={{ color: "var(--gold)" }}>Base de données</a> ou <a href="/obsidian/fiches" style={{ color: "var(--gold)" }}>Fiches</a>.</div>
+      <div style={{ fontSize: "0.65rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>Absent ? Crée-la dans <Link href="/base-de-donnees" style={{ color: "var(--gold)" }}>Base de données</Link> ou <Link href="/obsidian/fiches" style={{ color: "var(--gold)" }}>Fiches</Link>.</div>
     </div>
   );
 }
 
 // Choix d'un membre (employé) : juge, procureur, avocat... plus de saisie libre.
-export function EmployeePicker({ value, onChange, placeholder = " -  Choisir un membre  - " }: { value: string; onChange: (nom: string) => void; placeholder?: string }) {
+export function EmployeePicker({ value, onChange, placeholder = "- Choisir un membre - " }: { value: string; onChange: (nom: string) => void; placeholder?: string }) {
   const [list, setList] = useState<{ nom: string; role: string }[]>([]);
   useEffect(() => { if (!supabase) return; supabase.from("obsidian_employes").select("nom,role,actif").order("nom").then(({ data }) => setList((data || []).filter((e: any) => e.actif !== false))); }, []);
   const known = !value || list.some(e => e.nom === value);

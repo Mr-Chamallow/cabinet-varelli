@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -150,7 +151,7 @@ export default function EmployesObsidianPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">Obsidian Logistics</a>
+      <Link className="back-link" href="/obsidian">Obsidian Logistics</Link>
       <div className="page-header">
         <div>
           <h1 className="page-title">Employés</h1>
@@ -194,7 +195,7 @@ export default function EmployesObsidianPage() {
               <div className="form-group">
                 <label>Rôle</label>
                 <select value={form.role} disabled={!!editId && !canPromote} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
-                  <option value=""> -  Choisir un rôle  - </option>
+                  <option value="">- Choisir un rôle - </option>
                   {form.role && !ROLES_LOGISTIQUE.includes(form.role) && <option value={form.role}>{form.role}</option>}
                   {ROLES_LOGISTIQUE.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
@@ -227,7 +228,7 @@ export default function EmployesObsidianPage() {
                 <div className="card" style={{ marginTop: "0.9rem", padding: "0.8rem" }}>
                   <div style={{ fontSize: "0.72rem", fontWeight: 700, marginBottom: 6 }}>⬆️ Promotion (CEO / COO)</div>
                   <select value={promoRole} onChange={e => setPromoRole(e.target.value)}>
-                    <option value=""> -  Nouveau rôle  - </option>
+                    <option value="">- Nouveau rôle - </option>
                     {ROLES_LOGISTIQUE.filter(r => r !== cardEmp.role).map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                   <button className="btn btn-gold btn-sm" style={{ width: "100%", marginTop: 6 }} disabled={!promoRole} onClick={promouvoir}>Promouvoir</button>

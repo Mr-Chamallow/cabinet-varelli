@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 // --- DONNÉES ---
@@ -185,7 +186,7 @@ export default function UtileSampPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">Tableau de bord</a>
+      <Link className="back-link" href="/">Tableau de bord</Link>
 
       <div className="page-header">
         <div>

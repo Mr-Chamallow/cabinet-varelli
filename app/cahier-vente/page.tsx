@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { drogueAutorisee, armeLourdeOuAuto, estKevlar } from "@/lib/regles";
 
 import { loadPriceTable, norm, useFournisseurs, fournisseursDe, refAchat } from "@/lib/fournisseurs";
@@ -285,7 +286,7 @@ export default function CahierVentePage() {
       <Toast toast={toast} />
       <UndoToast pending={pendingUndo} onUndo={undoDelete} />
 
-      <a className="back-link" href="/">Tableau de bord</a>
+      <Link className="back-link" href="/">Tableau de bord</Link>
       <div className="page-header">
         <div>
           <h1 className="page-title">Transaction</h1>
@@ -652,7 +653,7 @@ export default function CahierVentePage() {
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
             <div className="section-title">Produits - synchronisés avec les Stocks</div>
-            <a className="btn btn-outline btn-sm" href="/obsidian/stocks">📦 Gérer dans Stocks</a>
+            <Link className="btn btn-outline btn-sm" href="/obsidian/stocks">📦 Gérer dans Stocks</Link>
           </div>
           {produits.length === 0 ? (
             <div className="empty-state"><div className="empty-icon">📦</div><div className="empty-title">Aucun article en stock</div><div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>Ajoute-les dans Stocks : ils apparaissent ici automatiquement.</div></div>

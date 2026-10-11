@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
@@ -57,7 +58,7 @@ export default function ConsortiumStatsPage() {
 
   return (
     <div className="page-container no-fx">
-      <a className="back-link" href="/">Dashboard</a>
+      <Link className="back-link" href="/">Dashboard</Link>
       <div className="page-header"><div><h1 className="page-title">📈 Stats du Consortium</h1><p className="page-subtitle">Réputation · Pactes · Audits · Tribunal · Événements</p><div className="gold-line" /></div></div>
       {!k ? <LoadingBlock /> : (
         <>

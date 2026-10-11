@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/lib/useToast";
@@ -114,7 +115,7 @@ export default function EvenementsPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">Dashboard</a>
+      <Link className="back-link" href="/">Dashboard</Link>
       <div className="page-header">
         <div><h1 className="page-title">🚚 Convois · Enchères · Alertes</h1><p className="page-subtitle">Événements du Maître du Jeu</p><div className="gold-line" /></div>
         {canWrite && <button className="btn btn-gold" onClick={openNew}>+ {T.label.replace(/s$/, "")}</button>}

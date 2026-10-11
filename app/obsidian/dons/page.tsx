@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -61,7 +62,7 @@ export default function DonsPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">Obsidian Logistics</a>
+      <Link className="back-link" href="/obsidian">Obsidian Logistics</Link>
       <div className="page-header"><div><h1 className="page-title">🎁 Dons</h1><p className="page-subtitle">Remets de l'argent à l'entreprise · propre ou sale · ajouté à la caisse une fois validé</p><div className="gold-line" /></div></div>
 
       <div className="card" style={{ maxWidth: 480, marginBottom: "1.5rem" }}>

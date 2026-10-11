@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -156,7 +157,7 @@ export default function SupervisionPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">Tableau de bord</a>
+      <Link className="back-link" href="/">Tableau de bord</Link>
       <div className="page-header">
         <div>
           <h1 className="page-title">📡 Supervision</h1>

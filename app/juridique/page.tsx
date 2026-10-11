@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useMemo } from "react";
 import { CODE_COMPLET as ARTICLES, CATEGORIES_INFRACTIONS } from "@/lib/code-penal";
 
@@ -167,7 +168,7 @@ export default function JuridiqueePage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">Tableau de bord</a>
+      <Link className="back-link" href="/">Tableau de bord</Link>
 
       <div className="page-header">
         <div>

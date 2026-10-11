@@ -52,7 +52,9 @@ export function BootScreen() {
   }, [visible]);
   useEffect(() => { if (visible && t >= END) close(); }, [t, visible]);
   useEffect(() => { if (!visible) return; const k = (e: KeyboardEvent) => { if (e.key === "Escape" || e.key === "Enter") close(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [visible]);
-  function close() { setLeaving(true); setTimeout(() => setVisible(false), 500); }
+  // L'intro ne se joue qu'une fois par session de navigateur (pas a chaque rechargement ou changement de page).
+  useEffect(() => { try { if (sessionStorage.getItem("obs-boot-seen") === "1") setVisible(false); } catch {} }, []);
+  function close() { try { sessionStorage.setItem("obs-boot-seen", "1"); } catch {} setLeaving(true); setTimeout(() => setVisible(false), 500); }
   if (!visible) return null;
 
   // Boîte « demande d'accès » : 2700->6000

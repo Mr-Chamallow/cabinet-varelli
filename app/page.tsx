@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -99,11 +100,11 @@ export default function ObsidianDashboard() {
               <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--danger)", marginBottom: "0.4rem" }}>⚠️ Stock bas</div>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 {alerts.map((a:any) => (
-                  <a key={a.id} href="/obsidian/stocks" style={{ textDecoration: "none" }}>
+                  <Link key={a.id} href="/obsidian/stocks" style={{ textDecoration: "none" }}>
                     <span style={{ fontSize: "0.75rem", padding: "0.2rem 0.65rem", borderRadius: 999, background: "rgba(239,68,68,0.12)", color: "var(--danger)", border: "1px solid rgba(239,68,68,0.25)", fontWeight: 600 }}>
                       {a.emoji} {a.nom} : {a.quantite}/{a.seuil_alerte}
                     </span>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -149,7 +150,7 @@ export default function ObsidianDashboard() {
                   <div className="section-title">Prochaines opérations</div>
                   <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.15rem" }}>Agenda partagé</div>
                 </div>
-                <a href="/obsidian/rdv" className="btn btn-ghost btn-sm">Planning complet {'->'}</a>
+                <Link href="/obsidian/rdv" className="btn btn-ghost btn-sm">Planning complet {'->'}</Link>
               </div>
 
               {events.length === 0 ? (
@@ -178,9 +179,9 @@ export default function ObsidianDashboard() {
                 </div>
               )}
 
-              <a href="/obsidian/rdv" className="btn btn-outline btn-sm" style={{ width: "100%", justifyContent: "center", marginTop: "1rem" }}>
+              <Link href="/obsidian/rdv" className="btn btn-outline btn-sm" style={{ width: "100%", justifyContent: "center", marginTop: "1rem" }}>
                 + Planifier une opération
-              </a>
+              </Link>
             </div>
 
             <div className="card">

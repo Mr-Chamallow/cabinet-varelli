@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { deriveGoldPalette, applyThemeToDocument, DEFAULT_GOLD, isValidHex } from "@/lib/theme";
@@ -75,7 +76,7 @@ export default function SettingsPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">Tableau de bord</a>
+      <Link className="back-link" href="/">Tableau de bord</Link>
 
       <div className="page-header">
         <div>

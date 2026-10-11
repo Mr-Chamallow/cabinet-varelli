@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useDeepLink } from "@/lib/deeplink";
 import { supabase } from "@/lib/supabase";
@@ -351,7 +352,7 @@ export default function BaseDeDonneesPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
+      <Link className="back-link" href="/obsidian">Dashboard Obsidian</Link>
       <div className="page-header">
         <div><h1 className="page-title">🗄️ Base de données</h1><p className="page-subtitle">Recensements · Véhicules · Groupes - tout au même endroit</p><div className="gold-line" /></div>
       </div>
@@ -426,12 +427,12 @@ export default function BaseDeDonneesPage() {
                       <span style={{ fontSize: "0.62rem", padding: "0.08rem 0.4rem", borderRadius: 999, background: (PCOL[selectedPersonne.priorite || "Normale"] || "var(--text-dim)") + "15", color: PCOL[selectedPersonne.priorite || "Normale"] || "var(--text-dim)", border: `1px solid ${(PCOL[selectedPersonne.priorite || "Normale"] || "var(--text-dim)")}25`, fontWeight: 600 }}>{selectedPersonne.priorite || "Normale"}</span>
                       {selectedPersonne.statut && <span style={{ fontSize: "0.62rem", padding: "0.08rem 0.4rem", borderRadius: 999, background: "rgba(34,197,94,0.1)", color: "var(--success)", border: "1px solid rgba(34,197,94,0.2)" }}>{selectedPersonne.statut}</span>}
                       {gangOf(selectedPersonne.groupe_id) && <span style={{ fontSize: "0.62rem", padding: "0.08rem 0.4rem", borderRadius: 999, background: "var(--gold-muted)", color: "var(--gold)", border: "1px solid rgba(var(--gold-rgb), 0.3)" }}>🛡️ {gangOf(selectedPersonne.groupe_id)!.nom}</span>}
-                      {pointOf(selectedPersonne.id) && <a href={`/carte-enqueteur?point=${pointOf(selectedPersonne.id)!.id}`} style={{ fontSize: "0.62rem", padding: "0.08rem 0.4rem", borderRadius: 999, background: "rgba(100,181,246,0.12)", color: "var(--info)", border: "1px solid rgba(100,181,246,0.3)", textDecoration: "none" }}>📍 {pointOf(selectedPersonne.id)!.title}</a>}
+                      {pointOf(selectedPersonne.id) && <Link href={`/carte-enqueteur?point=${pointOf(selectedPersonne.id)!.id}`} style={{ fontSize: "0.62rem", padding: "0.08rem 0.4rem", borderRadius: 999, background: "rgba(100,181,246,0.12)", color: "var(--info)", border: "1px solid rgba(100,181,246,0.3)", textDecoration: "none" }}>📍 {pointOf(selectedPersonne.id)!.title}</Link>}
                     </div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "0.35rem" }}>
-                  {(selectedPersonne as any).fiche_id && <a className="btn btn-outline btn-sm" href="/obsidian/fiches" title="Fiche liée">🗂️ Fiche</a>}
+                  {(selectedPersonne as any).fiche_id && <Link className="btn btn-outline btn-sm" href="/obsidian/fiches" title="Fiche liée">🗂️ Fiche</Link>}
                   <button className="btn btn-outline btn-sm" title="Avis de recherche du Consortium" onClick={() => setWantedP(selectedPersonne)}>🧾 Recherché</button>
                   {canWrite && <button className="btn btn-outline btn-sm" onClick={() => openEditPersonne(selectedPersonne)}>✏️</button>}
                   {canWrite && <button className="btn btn-ghost btn-sm" onClick={() => deletePersonne(selectedPersonne.id)} style={{ color: "var(--danger)" }}>🗑️</button>}

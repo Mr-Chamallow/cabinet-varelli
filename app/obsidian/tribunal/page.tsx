@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/lib/useToast";
@@ -82,7 +83,7 @@ export default function TribunalPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">Dashboard</a>
+      <Link className="back-link" href="/">Dashboard</Link>
       <div className="page-header">
         <div><h1 className="page-title">⚖️ Tribunal de l'Ombre</h1><p className="page-subtitle">Instruction · Accusation · Défense · Verdict</p><div className="gold-line" /></div>
         {canWrite && <button className="btn btn-gold" onClick={openNew}>+ Nouveau dossier</button>}
@@ -155,7 +156,7 @@ export default function TribunalPage() {
               <div><label>Titre *</label><input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} placeholder="Ex : Trahison du Pacte - Les Vagos" /></div>
               <div><label>Statut</label><select value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>{STATUTS.map(s => <option key={s.k} value={s.k}>{s.label}</option>)}</select></div>
               <div><label>Accusé (personne)</label><PersonPicker value={form.accuse} onChange={v => setForm({ ...form, accuse: v })} /></div>
-              <div><label>Organisation</label><GroupeSelect value={form.organisation} groupes={groupes} onChange={v => setForm({ ...form, organisation: v })} placeholder=" -  Aucun / personne seule  - " /></div>
+              <div><label>Organisation</label><GroupeSelect value={form.organisation} groupes={groupes} onChange={v => setForm({ ...form, organisation: v })} placeholder="- Aucun / personne seule - " /></div>
               <div><label>Juge</label><EmployeePicker value={form.juge} onChange={v => setForm({ ...form, juge: v })} /></div>
               <div><label>Procureur</label><EmployeePicker value={form.procureur} onChange={v => setForm({ ...form, procureur: v })} /></div>
               <div><label>Avocat commis d'office</label><EmployeePicker value={form.avocat} onChange={v => setForm({ ...form, avocat: v })} /></div>

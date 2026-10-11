@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -178,7 +179,7 @@ export default function ComptaHubPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
+      <Link className="back-link" href="/obsidian">Dashboard Obsidian</Link>
       <div className="page-header">
         <div><h1 className="page-title">💰 Hub Comptabilité</h1><p className="page-subtitle">Lecture seule · alimenté automatiquement par les Actions illégales, Arrestations et Transactions</p><div className="gold-line" /></div>
         <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>

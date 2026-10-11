@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -58,7 +59,7 @@ export default function StatsHubPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
+      <Link className="back-link" href="/obsidian">Dashboard Obsidian</Link>
       <div className="page-header">
         <div><h1 className="page-title">📊 Hub Statistiques</h1><p className="page-subtitle">Activité · Performance · Risques - lecture seule, calculé en direct</p><div className="gold-line" /></div>
         <div style={{ display: "flex", gap: "0.4rem" }}>{[4, 8, 12, 26].map(n => <button key={n} className={`btn btn-sm ${nW === n ? "btn-gold" : "btn-outline"}`} onClick={() => setNW(n)}>{n} sem.</button>)}</div>

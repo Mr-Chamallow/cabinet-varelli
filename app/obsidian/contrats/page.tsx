@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -44,7 +45,7 @@ export default function ContratsPage(){
   const filtered=contrats.filter(c=>!filterStatut||c.statut===filterStatut);
   return(
     <div className="page-container">
-      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
+      <Link className="back-link" href="/obsidian">Dashboard Obsidian</Link>
       <div className="page-header"><div><h1 className="page-title">📋 Contrats</h1><p className="page-subtitle">Missions · Opérations · Rapports</p><div className="gold-line"/></div><button className="btn btn-gold" onClick={()=>{setForm({...EMPTY});setEditId(null);setMembresInput("");setShowForm(true);}}>+ Nouveau contrat</button></div>
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem",flexWrap:"wrap"}}>
         {["","En attente","En cours","Terminé","Échoué","Annulé"].map(s=><button key={s||"all"} onClick={()=>setFilterStatut(s)} style={{padding:"0.25rem 0.75rem",borderRadius:999,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.75rem",fontWeight:filterStatut===s?700:400,background:filterStatut===s?"var(--gold-muted)":"var(--surface)",border:`1px solid ${filterStatut===s?"rgba(var(--gold-rgb), 0.4)":"var(--border)"}`,color:filterStatut===s?"var(--gold)":"var(--text-muted)"}}>{s||"Tous"}</button>)}

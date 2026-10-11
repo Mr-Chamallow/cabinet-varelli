@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { money } from "@/lib/money";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -35,7 +36,7 @@ export function GroupeSelect({ value, onChange, groupes, placeholder = "- Choisi
         {!known && <option value={value}>{value} (hors référentiel)</option>}
         {groupes.map(g => <option key={g.id} value={g.nom}>{g.nom} · {gangTypeLabel(g.type)}</option>)}
       </select>
-      <div style={{ fontSize: "0.65rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>Absent ? Crée-le dans <a href="/base-de-donnees" style={{ color: "var(--gold)" }}>Base de données {'->'} Groupes</a>.</div>
+      <div style={{ fontSize: "0.65rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>Absent ? Crée-le dans <Link href="/base-de-donnees" style={{ color: "var(--gold)" }}>Base de données {'->'} Groupes</Link>.</div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/lib/useToast";
@@ -60,7 +61,7 @@ export default function ReglementPage() {
   const card: React.CSSProperties = { padding: "0.85rem 1rem" };
   return (
     <div className="page-container">
-      <a className="back-link" href="/">Dashboard</a>
+      <Link className="back-link" href="/">Dashboard</Link>
       <div className="page-header">
         <div><h1 className="page-title">📘 Règlement FlashBackFA</h1><p className="page-subtitle">Tout ce qui concerne notre organisation · vu le {REGLES_VU_LE}</p><div className="gold-line" /></div>
       </div>

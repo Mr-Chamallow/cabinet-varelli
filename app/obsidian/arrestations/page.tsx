@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -119,7 +120,7 @@ export default function ArrestationsPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
+      <Link className="back-link" href="/obsidian">Dashboard Obsidian</Link>
       <div className="page-header">
         <div>
           <h1 className="page-title">🚔 Arrestations</h1>

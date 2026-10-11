@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useReferentiel } from "@/lib/referentiel";
@@ -401,7 +402,7 @@ async function saveOperation() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">Tableau de bord</a>
+      <Link className="back-link" href="/">Tableau de bord</Link>
 
       <div className="page-header">
         <div>

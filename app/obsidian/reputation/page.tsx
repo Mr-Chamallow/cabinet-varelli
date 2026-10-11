@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { gangTypeLabel } from "@/components/carte-enqueteur/types";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -81,10 +82,10 @@ export default function ReputationPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/">Dashboard</a>
+      <Link className="back-link" href="/">Dashboard</Link>
       <div className="page-header">
         <div><h1 className="page-title">⭐ Réputation des groupes</h1><p className="page-subtitle">Échelle nommée (de « Banni » à « Partenaire du Directoire ») · alimentée par audits, pactes, tribunal et convois</p><div className="gold-line" /></div>
-        <a className="btn btn-outline" href="/base-de-donnees">🗄️ Gérer les groupes</a>
+        <Link className="btn btn-outline" href="/base-de-donnees">🗄️ Gérer les groupes</Link>
       </div>
       <details className="card" style={{ marginBottom: "0.8rem", padding: "0.6rem 1rem" }}>
         <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: "0.82rem" }}>📊 Échelle de réputation du Consortium</summary>

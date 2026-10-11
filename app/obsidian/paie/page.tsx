@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { Stamp } from "@/components/Stamp";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
@@ -171,7 +172,7 @@ export default function PaieObsidianPage() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/obsidian">Obsidian Logistics</a>
+      <Link className="back-link" href="/obsidian">Obsidian Logistics</Link>
       <div className="page-header">
         <div>
           <h1 className="page-title">Paie & Commissions</h1>

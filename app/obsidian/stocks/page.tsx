@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { ALL_SUGG, DEFAULT_TAGS } from "@/lib/illegalItems";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
@@ -103,7 +104,7 @@ export default function StocksPage(){
   const CAT_COL:Record<string,string>={drogue:"#7c3aed",arme:"var(--danger)",munition:"#f97316",explosif:"#ef4444",kev:"#64b5f6","objet légal":"#4db6ac",accessoire:"var(--warning)",composant:"var(--info)","objet illégal":"var(--gold)",autre:"var(--text-muted)"};
   return(
     <div className="page-container">
-      <a className="back-link" href="/obsidian">Dashboard Obsidian</a>
+      <Link className="back-link" href="/obsidian">Dashboard Obsidian</Link>
       <div className="page-header"><div><h1 className="page-title">📦 Stocks</h1><p className="page-subtitle">Inventaire central (armurerie incluse) · Entrées & Sorties</p><div className="gold-line"/></div><button className="btn btn-gold" onClick={()=>setTab("ajouter")}>+ Nouveau stock</button></div>
       {stocks.some(x=>Number(x.quantite)<0)&&<div style={{background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.5)",borderRadius:"var(--radius-lg)",padding:"0.75rem 1rem",marginBottom:"1rem",fontSize:"0.8rem",fontWeight:700,color:"var(--danger)"}}>🚨 Stock négatif : {stocks.filter(x=>Number(x.quantite)<0).map(x=>`${x.nom} (${fmtN(x.quantite)})`).join(", ")}. Corrige avec une entrée.</div>}
       {kevTotal>0&&<div style={{background:kevTotal>kevMax?"rgba(234,179,8,0.12)":"rgba(100,181,246,0.08)",border:`1px solid ${kevTotal>kevMax?"rgba(234,179,8,0.5)":"rgba(100,181,246,0.3)"}`,borderRadius:"var(--radius-lg)",padding:"0.6rem 1rem",marginBottom:"1rem",fontSize:"0.78rem",color:kevTotal>kevMax?"var(--warning)":"var(--text-muted)"}}>🦺 Kevlar : <b>{kevTotal} / {kevMax}</b> (règlement : réservé aux organisations, une pièce par joueur){kevTotal>kevMax?" - au-dessus du maximum, vérifie avant de continuer.":""}</div>}
