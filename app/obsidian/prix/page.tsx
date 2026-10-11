@@ -25,6 +25,8 @@ function sortDrogues(list:any[]){
 }
 
 import { ACCS } from "@/lib/priceRef";
+import { useFournisseurs, fournisseursDe, venteRef } from "@/lib/fournisseurs";
+import { FournisseursPanel } from "@/components/FournisseursPanel";
 import { money } from "@/lib/money";
 
 export default function PrixPage() {
@@ -32,6 +34,8 @@ export default function PrixPage() {
   const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_prix"))) { window.location.href = "/"; } }, [user, userLoading]);
 
+  const { list: fourn, reload: reloadFourn } = useFournisseurs();
+  const fp=(cat:"drogue"|"arme"|"accessoire",nom:string,vente:number)=><FournisseursPanel categorie={cat} produit={nom} vente={vente} list={fournisseursDe(fourn,cat,nom)} onChange={reloadFourn}/>;
   const [tab,setTab]=useState<"drogues"|"armes"|"accessoires"|"zones">("drogues");
   const [drogues,setDrogues]=useState<any[]>([]);
   const [armes,setArmes]=useState<any[]>([]);
@@ -126,7 +130,7 @@ export default function PrixPage() {
   return (
     <div className="page-container">
       <a className="back-link" href="/">Dashboard Obsidian</a>
-      <div className="page-header"><div><h1 className="page-title">💲 Tableau des prix</h1><p className="page-subtitle">Drogues · Armes · Accessoires · Zones - Personnalisable</p><div className="gold-line"/></div></div>
+      <div className="page-header"><div><h1 className="page-title">💲 Tableau des prix</h1><p className="page-subtitle">Prix de vente · Fournisseurs et prix d'achat · Marges</p><div className="gold-line"/></div></div>
 
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem",flexWrap:"wrap"}}>
         {[["drogues","💊 Drogues"],["armes","🔫 Armes"],["accessoires","🔧 Accessoires"],["zones","🗺️ Zones"]].map(([k,l])=>
@@ -172,7 +176,10 @@ export default function PrixPage() {
                           <button className="btn btn-ghost btn-sm" onClick={()=>delDrogue(d.id)} style={{color:"var(--danger)"}}>🗑️</button>
                         </div>
                       </div>
+                      <div style={{fontSize:"0.62rem",color:"var(--text-dim)"}}>Prix de vente PNJ</div>
                       <div style={{fontFamily:"'Playfair Display',serif",fontWeight:900,color:"var(--gold)"}}>{fmt(d.prix_min)} - {fmt(d.prix_max)}</div>
+                      <div style={{fontSize:"0.68rem",color:"var(--text-dim)"}}>Moyenne : {fmt(venteRef(d.prix_min,d.prix_max))}</div>
+                      {fp("drogue",d.nom,venteRef(d.prix_min,d.prix_max))}
                     </>
                   )}
                 </div>
@@ -202,7 +209,8 @@ export default function PrixPage() {
             {armes.map(a=>{
               const isEdit=editArmeId===a.id;
               return (
-                <div key={a.id} style={{display:"flex",alignItems:"center",gap:"0.75rem",padding:"0.625rem 1rem",background:"var(--card)",borderRadius:"var(--radius)",border:"1px solid var(--border)"}}>
+                <div key={a.id} style={{padding:"0.625rem 1rem",background:"var(--card)",borderRadius:"var(--radius)",border:"1px solid var(--border)"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"0.75rem"}}>
                   {isEdit ? (
                     <>
                       <input value={editArmeForm.nom} onChange={e=>setEditArmeForm((f:any)=>({...f,nom:e.target.value}))} style={{flex:1}}/>
@@ -218,6 +226,8 @@ export default function PrixPage() {
                       <button className="btn btn-ghost btn-sm" onClick={()=>delArme(a.id)} style={{color:"var(--danger)"}}>🗑️</button>
                     </>
                   )}
+                  </div>
+                  {!isEdit&&fp("arme",a.nom,Number(a.prix)||0)}
                 </div>
               );
             })}
@@ -236,7 +246,7 @@ export default function PrixPage() {
       {/* -- ACCESSOIRES (statique, comme avant) -- */}
       {tab==="accessoires" && (
         <div style={{display:"flex",flexDirection:"column",gap:"0.375rem"}}>
-          {ACCS.map(a=><div key={a.nom} style={{display:"flex",justifyContent:"space-between",padding:"0.625rem 1rem",background:"var(--card)",borderRadius:"var(--radius)",border:"1px solid var(--border)"}}><span style={{fontWeight:500}}>{a.nom}</span><span style={{fontWeight:700,color:"var(--gold)"}}>{fmt(a.prix)}</span></div>)}
+          {ACCS.map(a=><div key={a.nom} style={{padding:"0.625rem 1rem",background:"var(--card)",borderRadius:"var(--radius)",border:"1px solid var(--border)"}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontWeight:500}}>{a.nom}</span><span style={{fontWeight:700,color:"var(--gold)"}}>{fmt(a.prix)}</span></div>{fp("accessoire",a.nom,a.prix)}</div>)}
         </div>
       )}
 

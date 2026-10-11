@@ -32,7 +32,11 @@ export async function POST(req: Request) {
 
     const { data: updated, error: updErr } = await supabaseAdmin
       .from("obsidian_stocks")
-      .update({ quantite: newQty, updated_at: new Date().toISOString() })
+      .update({
+        quantite: newQty, updated_at: new Date().toISOString(),
+        // Cout moyen pondere : le prix du stock suit les prix d'achat reels
+        ...(isEntree && pu > 0 ? { prix_unitaire: Math.round((Number(stock.quantite) > 0 && Number(stock.prix_unitaire) > 0 ? (Number(stock.quantite) * Number(stock.prix_unitaire) + quantite * pu) / (Number(stock.quantite) + quantite) : pu) * 100) / 100 } : {}),
+      })
       .eq("id", stock.id)
       .select()
       .single();

@@ -7,6 +7,7 @@ import { useRealtimeTable } from "@/lib/useRealtimeTable";
 import { exportXlsx } from "@/lib/exportXlsx";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { weekStartOf } from "@/lib/weekStart";
+import { usePriceTable, norm as normP } from "@/lib/fournisseurs";
 import { Kpi, Delta, Panel, Tabs, LineChart, BarChart, HBars, Donut, Heat, DataTable, fmt, fmtK, pct, sum, mean, median, stdev, weekKey, lastWeeks, shortWeek, linReg } from "@/components/hub/Charts";
 
 type Tab = "budget" | "synthese" | "flux" | "categories" | "employes" | "sources" | "marges" | "semaines" | "journal" | "expert";
@@ -32,6 +33,7 @@ export default function ComptaHubPage() {
   const [arrests, setArrests] = useState<any[]>([]);
   const [raw, setRaw] = useState<any[]>([]);
   const [mvts, setMvts] = useState<any[]>([]);
+  const priceTable = usePriceTable();
   const [trans, setTrans] = useState<any[]>([]);
   const [stocks, setStocks] = useState<any[]>([]);
   const [semaines, setSemaines] = useState<any[]>([]);
@@ -160,8 +162,8 @@ export default function ComptaHubPage() {
     const g = (n: string) => (m[n] ??= { qIn: 0, cost: 0, qOut: 0, rev: 0 });
     mvts.filter(x => /^(entrée|entree)$/.test(x.type) && !/^annulation/i.test(x.motif || "")).forEach(x => { const o = g(x.stock_nom); o.qIn += Number(x.quantite) || 0; o.cost += Number(x.total) || 0; });
     trans.filter(x => x.type === "entrée" && x.produit_nom).forEach(x => { const o = g(x.produit_nom); o.qOut += Number(x.quantite) || 0; o.rev += Number(x.montant) || 0; });
-    return Object.entries(m).filter(([, v]) => v.qIn || v.qOut).map(([nom, v]) => { const pc = v.qIn ? v.cost / v.qIn : 0, pv = v.qOut ? v.rev / v.qOut : 0; const stock = stocks.find(s => s.nom === nom); return { nom, ...v, pc, pv, mu: v.qOut && v.qIn ? pv - pc : 0, mt: v.rev - v.qOut * pc, pct: v.rev ? ((v.rev - v.qOut * pc) / v.rev) * 100 : 0, stock: stock ? Number(stock.quantite) : 0 }; }).sort((a, b) => b.mt - a.mt);
-  }, [mvts, trans, stocks]);
+    return Object.entries(m).filter(([, v]) => v.qIn || v.qOut).map(([nom, v]) => { const pc = v.qIn ? v.cost / v.qIn : 0, pv = v.qOut ? v.rev / v.qOut : 0; const stock = stocks.find(s => s.nom === nom); const pr = priceTable.find(r => normP(r.nom) === normP(nom)); const ra = pr?.achat || 0, rv = pr?.vente || 0; return { nom, ...v, ra, rv, rm: ra && rv ? rv - ra : 0, rp: ra && rv ? ((rv - ra) / rv) * 100 : 0, pc, pv, mu: v.qOut && v.qIn ? pv - pc : 0, mt: v.rev - v.qOut * pc, pct: v.rev ? ((v.rev - v.qOut * pc) / v.rev) * 100 : 0, stock: stock ? Number(stock.quantite) : 0 }; }).sort((a, b) => b.mt - a.mt);
+  }, [mvts, trans, stocks, priceTable]);
   const weeksTable = useMemo(() => {
     const all = [...new Set([...raw.map(e => e.semaine), ...semaines.map(s => s.semaine)])].filter(Boolean).sort().reverse();
     return all.map(w => { const l = raw.filter(e => e.semaine === w); const net = sum(l.map(e => (e.type === "recette" ? 1 : -1) * e.montant)); const cl = semaines.find(s => s.semaine === w); return { w, cl, net, paies: sum(l.filter(e => e.source === "paie").map(e => e.montant)), nb: l.length }; });
@@ -264,8 +266,8 @@ export default function ComptaHubPage() {
             <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Ratio argent sale en recettes : <b>{R ? pct((sum(cur.filter(e => e.type === "recette" && e.type_argent === "sale").map(e => e.montant)) / R) * 100) : "-"}</b> - à blanchir.</p></Panel>
         </div>}
 
-        {tab === "marges" && <Panel title="Marge par produit" right={<small style={{ color: "var(--text-dim)" }}>coût = achats de stock · vente = Transactions</small>}>
-          <DataTable empty="Aucun achat ni vente de produit." head={["Produit", "Acheté", "Coût moyen", "Vendu", "Prix vente moy.", "Marge unit.", "Marge totale", "Marge %", "En stock"]} rows={marges.map(m => [m.nom, m.qIn, m.qIn ? fmt(m.pc) : "-", m.qOut, m.qOut ? fmt(m.pv) : "-", m.qOut && m.qIn ? <b style={{ color: m.mu >= 0 ? COL.rec : COL.dep }}>{fmt(m.mu)}</b> : "-", <b style={{ color: m.mt >= 0 ? COL.rec : COL.dep }}>{fmt(m.mt)}</b>, m.rev ? pct(m.pct) : "-", m.stock])} />
+        {tab === "marges" && <Panel title="Marge par produit" right={<small style={{ color: "var(--text-dim)" }}>réf. = Tableau des prix (fournisseur préféré ou moins cher, vente = moyenne min-max) · coût = achats réels · vente = Transactions</small>}>
+          <DataTable empty="Aucun achat ni vente de produit." head={["Produit", "Achat réf.", "Vente réf.", "Marge réf.", "Acheté", "Coût moyen", "Vendu", "Prix vente moy.", "Marge unit.", "Marge totale", "Marge %", "En stock"]} rows={marges.map(m => [m.nom, m.ra ? fmt(m.ra) : "-", m.rv ? fmt(m.rv) : "-", m.ra && m.rv ? <b style={{ color: m.rm >= 0 ? COL.rec : COL.dep }}>{fmt(m.rm)} ({pct(m.rp)})</b> : "-", m.qIn, m.qIn ? fmt(m.pc) : "-", m.qOut, m.qOut ? fmt(m.pv) : "-", m.qOut && m.qIn ? <b style={{ color: m.mu >= 0 ? COL.rec : COL.dep }}>{fmt(m.mu)}</b> : "-", <b style={{ color: m.mt >= 0 ? COL.rec : COL.dep }}>{fmt(m.mt)}</b>, m.rev ? pct(m.pct) : "-", m.stock])} />
           <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Marge totale = ventes - (quantité vendue x coût moyen d'achat). Saisis le « prix d'achat » lors d'une entrée de stock pour un coût fiable.</p>
         </Panel>}
 

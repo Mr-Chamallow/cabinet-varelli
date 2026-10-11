@@ -1,5 +1,6 @@
 "use client";
 
+import { loadPriceTable, norm } from "@/lib/fournisseurs";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -38,6 +39,7 @@ interface Produit {
   ordre: number;
   quantite?: number;
   unite?: string;
+  achat?: number; // cout moyen du stock
 }
 
 interface FormState {
@@ -59,6 +61,7 @@ const TYPES_ARGENT = ["propre", "sale", "mixte"];
 const weekStartISO = () => weekStartOf();
 const fmt = (n: number) => money(n);
 const prixUnit = (p: { prix_propre: number; prix_sale: number }, argent: string) => (argent === "sale" && p.prix_sale > 0 ? p.prix_sale : p.prix_propre);
+const prixAchatUnit = (p: { achat?: number; prix_propre: number }) => (p.achat && p.achat > 0 ? p.achat : p.prix_propre);
 const fmtDate = (s: string) => new Date(s).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 const EMPTY_FORM: FormState = { type: "entrée", montant: 0, categorie: "drogue", motif: "", produit_nom: "", quantite: 0, type_argent: "propre" };
@@ -116,13 +119,15 @@ export default function CahierVentePage() {
   async function load() {
     setLoading(true);
     if (!supabase) { setLoading(false); return; }
-    const [{ data: t }, { data: p }] = await Promise.all([
+    const [{ data: t }, { data: p }, table] = await Promise.all([
       supabase.from("cahier_transactions").select("*").order("created_at", { ascending: false }),
       supabase.from("obsidian_stocks").select("id,nom,categorie,emoji,prix_unitaire,quantite,unite").order("categorie").order("nom"),
+      loadPriceTable().catch(() => [] as Awaited<ReturnType<typeof loadPriceTable>>),
     ]);
+    const venteDe = new Map<string, number>(table.map(r => [norm(r.nom), r.vente] as [string, number]));
     setTransactions(t || []);
     // Produits = uniquement les articles du Stock (une seule source de vérité).
-    setProduits((p || []).map((x: any, i: number) => ({ id: x.id, nom: x.nom, type: x.categorie || "", emoji: x.emoji || "📦", prix_propre: Number(x.prix_unitaire) || 0, prix_sale: Number(x.prix_unitaire) || 0, actif: true, ordre: i, quantite: Number(x.quantite) || 0, unite: x.unite || "" })));
+    setProduits((p || []).map((x: any, i: number) => ({ id: x.id, nom: x.nom, type: x.categorie || "", emoji: x.emoji || "📦", prix_propre: venteDe.get(norm(x.nom)) || Number(x.prix_unitaire) || 0, prix_sale: venteDe.get(norm(x.nom)) || Number(x.prix_unitaire) || 0, achat: Number(x.prix_unitaire) || 0, actif: true, ordre: i, quantite: Number(x.quantite) || 0, unite: x.unite || "" })));
     setLoading(false);
   }
 
@@ -165,9 +170,9 @@ export default function CahierVentePage() {
   const qteForm = form.quantite > 0 ? form.quantite : 1;
   useEffect(() => {
     if (!montantAuto || !prodForm) return;
-    const total = prixUnit(prodForm, form.type_argent) * qteForm;
+    const total = (form.type === "sortie" ? prixAchatUnit(prodForm) : prixUnit(prodForm, form.type_argent)) * qteForm;
     if (total > 0 && total !== form.montant) setForm(f => ({ ...f, montant: total }));
-  }, [montantAuto, prodForm, qteForm, form.type_argent]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [montantAuto, prodForm, qteForm, form.type_argent, form.type]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function quickSell(p: Produit) {
     const q = tab === "saisie" && form.quantite > 0 ? form.quantite : 1;
@@ -513,7 +518,7 @@ export default function CahierVentePage() {
               <div className="form-group">
                 <label>Produit *</label>
                 <input list="produits-stock" value={form.produit_nom} placeholder="Écris librement (ex : Matériel, Véhicule, Cocaïne 50%...)" autoComplete="off"
-                  onChange={e => { const v = e.target.value; const pr = produits.find(x => x.type === form.categorie && normNom(x.nom) === normNom(v)); setForm(f => ({ ...f, produit_nom: pr ? pr.nom : v, ...(pr && !f.montant ? { montant: pr.prix_propre * (f.quantite || 1) } : {}) })); }}/>
+                  onChange={e => { const v = e.target.value; const pr = produits.find(x => x.type === form.categorie && normNom(x.nom) === normNom(v)); setForm(f => ({ ...f, produit_nom: pr ? pr.nom : v, ...(pr && !f.montant ? { montant: (f.type === "sortie" ? prixAchatUnit(pr) : pr.prix_propre) * (f.quantite || 1) } : {}) })); }}/>
                 <datalist id="produits-stock">
                   {produits.filter(p => form.categorie === "autre" || p.type === form.categorie).map(p => <option key={p.id} value={p.nom}>{p.emoji} stock : {p.quantite}{p.unite ? " " + p.unite : ""}</option>)}
                 </datalist>
@@ -524,7 +529,7 @@ export default function CahierVentePage() {
                   return <>
                     {proches.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center", marginTop: "0.35rem", fontSize: "0.72rem", color: "var(--text-dim)" }}>
                       Voulais-tu dire :
-                      {proches.map(x => <button key={x.id} type="button" className="btn btn-outline btn-sm" onClick={() => setForm(f => ({ ...f, produit_nom: x.nom, categorie: x.type, ...(!f.montant ? { montant: x.prix_propre * (f.quantite || 1) } : {}) }))}>{x.emoji} {x.nom} (stock : {x.quantite || 0})</button>)}
+                      {proches.map(x => <button key={x.id} type="button" className="btn btn-outline btn-sm" onClick={() => setForm(f => ({ ...f, produit_nom: x.nom, categorie: x.type, ...(!f.montant ? { montant: (f.type === "sortie" ? prixAchatUnit(x) : x.prix_propre) * (f.quantite || 1) } : {}) }))}>{x.emoji} {x.nom} (stock : {x.quantite || 0})</button>)}
                     </div>}
                     {form.produit_nom.trim() && <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: "0.3rem" }}>Hors stock : enregistré en compta sans modifier les stocks.</div>}
                   </>;
@@ -575,7 +580,7 @@ export default function CahierVentePage() {
                   <span style={{ fontWeight: 700, color: form.type === "entrée" ? "var(--success)" : "var(--danger)", fontSize: "1.1rem" }}>{form.type === "entrée" ? "+" : "-"}{fmt(form.montant)}</span>
                 </div>
                 {prodForm && <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "0.35rem" }}>
-                  <span style={{ color: "var(--text-dim)" }}>Calcul</span><span>{prodForm.emoji} {prodForm.nom} : {fmt(prixUnit(prodForm, form.type_argent))} x {qteForm}{!montantAuto && prixUnit(prodForm, form.type_argent) * qteForm !== form.montant ? " (montant modifié)" : ""}</span>
+                  <span style={{ color: "var(--text-dim)" }}>Calcul</span><span>{prodForm.emoji} {prodForm.nom} : {fmt(form.type === "sortie" ? prixAchatUnit(prodForm) : prixUnit(prodForm, form.type_argent))} x {qteForm}{!montantAuto && (form.type === "sortie" ? prixAchatUnit(prodForm) : prixUnit(prodForm, form.type_argent)) * qteForm !== form.montant ? " (montant modifié)" : ""}</span>
                 </div>}
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "0.35rem" }}>
                   <span style={{ color: "var(--text-dim)" }}>Catégorie</span><span>{form.categorie}</span>
