@@ -54,6 +54,9 @@ exception when others then
 end $$;
 delete from obsidian_journal;
 
+-- Groupes de demo hors liste officielle (les groupes de la liste officielle ne sont jamais touches)
+delete from carte_gangs where nom in ('VenTa', 'The Black Order');
+
 update obsidian_settings set capital_depart = 0, seuil_tresorerie = 0, updated_at = now() where id = 'default';
 alter table obsidian_comptabilite enable trigger trg_compta_lock;
 

@@ -19,22 +19,22 @@ on conflict (id) do update set commission_pct = 20, prime_seuil = 20000, prime_f
 -- Fournisseurs (prix d'achat) : plusieurs par produit. Reference = prefere, sinon le moins cher.
 delete from obsidian_fournisseurs where created_by = 'Démo';
 insert into obsidian_fournisseurs (categorie,produit,qui,groupe,telephone,prix_achat,prefere,created_by) values
-('drogue','Cannabis 70%','Rico Alvarez','Los Vagos','555-0142',200,false,'Démo'),
+('drogue','Cannabis 70%','Rico Alvarez','Los Malditos','555-0142',200,false,'Démo'),
 ('drogue','Cannabis 70%','Tommy Vance','Families','555-0177',215,false,'Démo'),
-('drogue','Cannabis 70%','Sasha Petrov','Bratva','555-0199',230,false,'Démo'),
-('drogue','Cocaïne 50%','Vlad Orlov','Bratva','555-0121',165,true,'Démo'),
-('drogue','Cocaïne 50%','Maria Santos','Cartel Santos','555-0163',160,false,'Démo'),
-('drogue','Cocaïne 50%','Dimitri Volkov','Bratva','555-0135',175,false,'Démo'),
-('drogue','Mexicana 50%','Carlos Mendez','Cartel Santos','555-0188',165,false,'Démo'),
-('drogue','Mexicana 50%','Rico Alvarez','Los Vagos','555-0142',180,false,'Démo'),
+('drogue','Cannabis 70%','Sasha Petrov','Anatolie Crime Syndicate','555-0199',230,false,'Démo'),
+('drogue','Cocaïne 50%','Vlad Orlov','Anatolie Crime Syndicate','555-0121',165,true,'Démo'),
+('drogue','Cocaïne 50%','Maria Santos','Los Reyes Colombianos','555-0163',160,false,'Démo'),
+('drogue','Cocaïne 50%','Dimitri Volkov','Anatolie Crime Syndicate','555-0135',175,false,'Démo'),
+('drogue','Mexicana 50%','Carlos Mendez','Los Reyes Colombianos','555-0188',165,false,'Démo'),
+('drogue','Mexicana 50%','Rico Alvarez','Los Malditos','555-0142',180,false,'Démo'),
 ('arme','Fusil à pompe','Big Joe','Armurerie du port','555-0210',14000,false,'Démo'),
-('arme','Fusil à pompe','Hank Doyle','Ballas','555-0231',15200,false,'Démo'),
+('arme','Fusil à pompe','Hank Doyle','Bloodside','555-0231',15200,false,'Démo'),
 ('arme','Pistolet lourd','Big Joe','Armurerie du port','555-0210',9500,false,'Démo'),
-('arme','Pistolet lourd','Hank Doyle','Ballas','555-0231',10400,false,'Démo'),
+('arme','Pistolet lourd','Hank Doyle','Bloodside','555-0231',10400,false,'Démo'),
 ('arme','Grenade','Big Joe','Armurerie du port','555-0210',3200,false,'Démo'),
-('arme','Grenade','Nikolai Kozlov','Bratva','555-0147',3500,false,'Démo'),
+('arme','Grenade','Nikolai Kozlov','Anatolie Crime Syndicate','555-0147',3500,false,'Démo'),
 ('accessoire','Silencieux Pistolets','Big Joe','Armurerie du port','555-0210',11000,false,'Démo'),
-('accessoire','Silencieux Pistolets','Mia Chen','Triades','555-0254',12500,false,'Démo');
+('accessoire','Silencieux Pistolets','Mia Chen','Zhovta Krov','555-0254',12500,false,'Démo');
 -- Prix de vente PNJ des armes (le tableau des prix les avait a 0)
 update obsidian_armes_prix set prix = 20500 where lower(trim(nom)) = lower('Fusil à pompe');
 update obsidian_armes_prix set prix = 14000 where lower(trim(nom)) = lower('Pistolet lourd');

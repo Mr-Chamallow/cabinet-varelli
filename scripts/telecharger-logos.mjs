@@ -15,11 +15,16 @@ const mf = path.join(dir, "manifest.json");
 const manifest = fs.existsSync(mf) ? JSON.parse(fs.readFileSync(mf, "utf8") || "{}") : {};
 
 const items = [];
-for (const raw of fs.readFileSync(src, "utf8").split(/\r?\n/)) {
+// Lecture robuste : UTF-8 (avec ou sans BOM) ou UTF-16 (fichier cree avec PowerShell / Bloc-notes "Unicode")
+const buf = fs.readFileSync(src);
+const texte = buf[0] === 0xff && buf[1] === 0xfe ? buf.toString("utf16le") : buf.toString("utf8");
+for (const raw of texte.replace(/^\uFEFF/, "").split(/\r?\n/)) {
   const m = raw.trim().replace(/^[-*•]\s*/, "").match(/^(.+?)\s+(https?:\/\/\S+)\s*$/);
   if (m) items.push({ nom: m[1].trim(), url: m[2].trim() });
 }
 console.log(`${items.length} logos a telecharger...`);
+if (items.length === 0) { console.error("AUCUN lien trouve dans groupes-liste.txt. Chaque ligne doit etre : Nom (espace) https://lien"); process.exit(1); }
+if (items.length === 0) { console.error("AUCUN lien trouve dans groupes-liste.txt. Format attendu, une ligne par groupe : Nom https://lien"); process.exit(1); }
 let ok = 0; const ko = [];
 for (const it of items) {
   try {
