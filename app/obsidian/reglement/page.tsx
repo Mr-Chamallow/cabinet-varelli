@@ -16,8 +16,7 @@ export default function ReglementPage() {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [prod, setProd] = useState<string[]>(PRODUIT_DEFAUT);
   const [revend, setRevend] = useState<string[]>(REVENDIQUE_DEFAUT);
-  const [effMax, setEffMax] = useState<number>(DEFAUTS.effectifMax);
-  const [kevMax, setKevMax] = useState<number>(DEFAUTS.kevlarMax);
+  const effMax = DEFAUTS.effectifMax;
   const [effectif, setEffectif] = useState<number | null>(null);
   const [kevlar, setKevlar] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -33,8 +32,6 @@ export default function ReglementPage() {
       if (s) {
         if (Array.isArray(s.drogues_produites)) setProd(s.drogues_produites);
         if (Array.isArray(s.drogues_revendiquees)) setRevend(s.drogues_revendiquees);
-        if (s.effectif_max) setEffMax(Number(s.effectif_max));
-        if (s.kevlar_max) setKevMax(Number(s.kevlar_max));
       }
       setEffectif((e || []).filter((x: any) => x.actif !== false).length);
       setKevlar((st || []).filter(estKevlar).reduce((a: number, x: any) => a + (Number(x.quantite) || 0), 0));
@@ -44,7 +41,7 @@ export default function ReglementPage() {
   const toggle = (list: string[], set: (v: string[]) => void, d: string) => set(list.includes(d) ? list.filter(x => x !== d) : [...list, d]);
   async function saveReglages() {
     setSaving(true);
-    const r = await dbw.upsert("obsidian_settings", { id: "default", drogues_produites: prod, drogues_revendiquees: revend, effectif_max: effMax, kevlar_max: kevMax });
+    const r = await dbw.upsert("obsidian_settings", { id: "default", drogues_produites: prod, drogues_revendiquees: revend, });
     setSaving(false);
     if (r.error) showToast(`Erreur : ${r.error.message}`, "danger"); else showToast("Réglages enregistrés");
   }
@@ -54,8 +51,7 @@ export default function ReglementPage() {
   const alertes: string[] = [];
   if (prod.length > DEFAUTS.productionMax) alertes.push(`${prod.length} drogues produites : le règlement limite à ${DEFAUTS.productionMax}.`);
   if (revend.length > DEFAUTS.revendicationMax) alertes.push(`${revend.length} drogues revendiquées : le règlement limite à ${DEFAUTS.revendicationMax}.`);
-  if (effectif != null && effectif > effMax) alertes.push(`Effectif de ${effectif} : maximum ${effMax} en OP.`);
-  if (kevlar != null && kevlar > kevMax) alertes.push(`${kevlar} kevlars en stock : maximum ${kevMax} (un par joueur).`);
+  if (effectif != null && effectif > effMax) alertes.push(`Effectif de ${effectif} : maximum ${effMax} au total (${DEFAUTS.effectifGdt} pendant une GDT).`);
   if (revend.some(d => !prod.includes(d))) alertes.push("Une drogue revendiquée n'est pas dans les drogues produites.");
 
   const card: React.CSSProperties = { padding: "0.85rem 1rem" };
@@ -67,8 +63,8 @@ export default function ReglementPage() {
       </div>
 
       <div className="stat-grid">
-        <div className="stat-card"><div className="stat-label">Effectif</div><div className="stat-value" style={{ fontSize: "1.4rem", color: effectif != null && effectif > effMax ? "var(--danger)" : "var(--text)" }}>{effectif ?? "?"} / {effMax}</div></div>
-        <div className="stat-card"><div className="stat-label">Kevlar en stock</div><div className="stat-value" style={{ fontSize: "1.4rem", color: kevlar != null && kevlar > kevMax ? "var(--danger)" : "var(--text)" }}>{kevlar ?? "?"} / {kevMax}</div></div>
+        <div className="stat-card"><div className="stat-label">Effectif</div><div className="stat-value" style={{ fontSize: "1.4rem", color: effectif != null && effectif > effMax ? "var(--danger)" : "var(--text)" }}>{effectif ?? "?"} / {effMax} <small style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>({DEFAUTS.effectifGdt} en GDT)</small></div></div>
+        <div className="stat-card"><div className="stat-label">Kevlar en stock</div><div className="stat-value" style={{ fontSize: "1.4rem", color: "var(--text)" }}>{kevlar ?? "?"} <small style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>({DEFAUTS.kevlarMax} max en GDT)</small></div></div>
         <div className="stat-card"><div className="stat-label">Drogues produites</div><div className="stat-value" style={{ fontSize: "1.4rem" }}>{prod.length} / {DEFAUTS.productionMax}</div></div>
         <div className="stat-card"><div className="stat-label">Revendiquées</div><div className="stat-value" style={{ fontSize: "1.4rem" }}>{revend.length} / {DEFAUTS.revendicationMax}</div></div>
       </div>
@@ -86,8 +82,8 @@ export default function ReglementPage() {
             {DROGUES_ORGA.map(d => <label key={d} style={{ display: "flex", gap: "0.4rem", fontSize: "0.82rem", cursor: canWrite ? "pointer" : "default" }}><input type="checkbox" style={{ width: "auto" }} disabled={!canWrite} checked={revend.includes(d)} onChange={() => toggle(revend, setRevend, d)} /> {d}</label>)}
           </div>
           <div>
-            <label>Effectif maximum (OP)</label><input type="number" min={1} disabled={!canWrite} value={effMax} onChange={e => setEffMax(Number(e.target.value) || 1)} />
-            <label style={{ marginTop: "0.5rem", display: "block" }}>Kevlar maximum</label><input type="number" min={0} disabled={!canWrite} value={kevMax} onChange={e => setKevMax(Number(e.target.value) || 0)} />
+            <label>Limites</label>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>👥 {DEFAUTS.effectifMax} membres au total, {DEFAUTS.effectifGdt} pendant une GDT<br />🦺 Kevlar : {DEFAUTS.kevlarMax} max uniquement pendant une GDT</div>
           </div>
         </div>
         {canWrite && <div style={{ marginTop: "0.8rem" }}><button className="btn btn-gold" disabled={saving} onClick={saveReglages}>{saving ? "..." : "Enregistrer"}</button></div>}

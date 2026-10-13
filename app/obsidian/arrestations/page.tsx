@@ -14,6 +14,7 @@ import { hasPermission } from "@/lib/auth";
 import { timeAgo } from "@/lib/activity";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { money } from "@/lib/money";
+import SearchBox, { matchQ } from "@/components/SearchBox";
 
 const fmt = (n: number) => money(n);
 function localInputNow() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); }
@@ -55,7 +56,8 @@ export default function ArrestationsPage() {
     setLoading(false);
   }
 
-  const visible = list.filter(a => !filterMembre || a.membre === filterMembre);
+  const [qS, setQS] = useState("");
+  const visible = list.filter(a => matchQ(qS, JSON.stringify(a))).filter(a => !filterMembre || a.membre === filterMembre);
   const totalAmendes = visible.reduce((s, a) => s + a.amende, 0);
   const totalArgent = visible.reduce((s, a) => s + a.argent_perdu, 0);
   const membres = useMemo(() => [...new Set([...employes, ...list.map(a => a.membre)])].filter(Boolean).sort((a, b) => a.localeCompare(b)), [list, employes]);
@@ -125,6 +127,7 @@ export default function ArrestationsPage() {
       </div>
 
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+        <SearchBox value={qS} onChange={setQS} placeholder="Nom, motif, objet..." />
         <select value={filterMembre} onChange={e => setFilterMembre(e.target.value)} style={{ maxWidth: 220 }}>
           <option value="">Tous les employés</option>
           {membres.map(m => <option key={m} value={m}>{m}</option>)}

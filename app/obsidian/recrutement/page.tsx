@@ -27,21 +27,19 @@ export default function RecrutementPage() {
   const [filtre, setFiltre] = useState("tout");
   const [effectif, setEffectif] = useState<number | null>(null);
   const [votes, setVotes] = useState<any[]>([]);
-  const [effMax, setEffMax] = useState<number>(DEFAUTS.effectifMax);
+  const effMax = DEFAUTS.effectifMax;
 
   useEffect(() => { load(); }, []);
   useRealtimeTable(["obsidian_recrutement", "obsidian_recrutement_votes", "obsidian_employes"], load);
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const [{ data }, { count }, { data: st }, { data: vt }] = await Promise.all([
+    const [{ data }, { count }, { data: vt }] = await Promise.all([
       supabase.from("obsidian_recrutement").select("*").order("created_at", { ascending: false }),
       supabase.from("obsidian_employes").select("id", { count: "exact", head: true }),
-      supabase.from("obsidian_settings").select("effectif_max").eq("id", "default").maybeSingle(),
       supabase.from("obsidian_recrutement_votes").select("recrutement_id,voter_id,voter_nom,vote"),
     ]);
     setVotes(vt || []);
     setList(data || []); setEffectif(count ?? null);
-    if (st?.effectif_max) setEffMax(Number(st.effectif_max));
     setLoading(false);
   }
   const nbDossier = list.filter(l => l.statut === "valide" || l.statut === "dossier").length;
@@ -105,7 +103,7 @@ export default function RecrutementPage() {
         </div>
       </div>
       <div className="stat-grid">
-        <div className="stat-card"><div className="stat-label">Effectif actuel</div><div className="stat-value" style={{ fontSize: "1.4rem", color: effectif != null && effectif > effMax ? "var(--danger)" : "var(--text)" }}>{effectif ?? "?"} / {effMax}</div></div>
+        <div className="stat-card"><div className="stat-label">Effectif actuel</div><div className="stat-value" style={{ fontSize: "1.4rem", color: effectif != null && effectif > effMax ? "var(--danger)" : "var(--text)" }}>{effectif ?? "?"} / {effMax} <small style={{fontSize:"0.65rem",color:"var(--text-dim)"}}>({DEFAUTS.effectifGdt} en GDT)</small></div></div>
         <div className="stat-card"><div className="stat-label">Dossier (min. {DEFAUTS.dossierMin})</div><div className="stat-value" style={{ fontSize: "1.4rem", color: nbDossier >= DEFAUTS.dossierMin ? "var(--success)" : "var(--warning)" }}>{nbDossier} / {DEFAUTS.dossierMin}</div><div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>fiches validées ou dans le dossier</div></div>
         <div className="stat-card"><div className="stat-label">Candidats</div><div className="stat-value" style={{ fontSize: "1.4rem" }}>{list.filter(l => l.statut === "candidat").length}</div></div>
       </div>

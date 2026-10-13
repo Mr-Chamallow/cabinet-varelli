@@ -44,6 +44,7 @@ const ALL_PAGES: PageEntry[] = [
   { title: "Guerres & GDT", subtitle: "Trêves, cooldowns", href: "/obsidian/guerres", icon: "⚔️", permission: "obsidian_guerres" },
   { title: "Recrutement", subtitle: "Fiches candidats", href: "/obsidian/recrutement", icon: "📝", permission: "obsidian_recrutement" },
   { title: "Taxes", subtitle: "Accords avec les groupes", href: "/obsidian/taxes", icon: "💸", permission: "obsidian_taxes" },
+  { title: "Convois & flotte", subtitle: "Formations et véhicules", href: "/obsidian/convois-flotte", icon: "🚚", permission: "obsidian_reglement" },
   { title: "Règlement FA", subtitle: "Règles des organisations", href: "/obsidian/reglement", icon: "📘", permission: "obsidian_reglement" },
   { title: "Réputation des groupes", subtitle: "Scores et historique", href: "/obsidian/reputation", icon: "⭐", permission: "gm_reputation" },
   { title: "Stats du Consortium", subtitle: "Chiffres clés GM", href: "/obsidian/consortium", icon: "📈", permission: "gm_stats" },

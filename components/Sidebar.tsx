@@ -42,6 +42,7 @@ const NAV_SECTIONS = [
     { href: "/obsidian/guerres",      label: "Guerres & GDT",    icon: "⚔️", permission: "obsidian_guerres" },
     { href: "/obsidian/recrutement",  label: "Recrutement",      icon: "📝", permission: "obsidian_recrutement" },
     { href: "/obsidian/taxes",        label: "Taxes",            icon: "💸", permission: "obsidian_taxes" },
+    { href: "/obsidian/convois-flotte", label: "Convois & flotte", icon: "🚚", permission: "obsidian_reglement" },
     { href: "/obsidian/reglement",    label: "Règlement FA",     icon: "📘", permission: "obsidian_reglement" },
     { href: "/obsidian/reputation",   label: "Réputation",       icon: "⭐", permission: "gm_reputation" },
     { href: "/obsidian/consortium",   label: "Stats Consortium", icon: "📈", permission: "gm_stats" },

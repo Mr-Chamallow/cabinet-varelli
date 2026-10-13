@@ -1,0 +1,178 @@
+<title>Convois Obsidian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Plan : plan de situation vu de dessus, ton obsidienne et or. Barre d'onglets, schema SVG, tableau de lecture dessous. */
+:root{
+  --bg:#f3f1ec; --panel:#ffffff; --panel2:#ebe8e0; --fg:#1b1a17; --dim:#6a665c; --line:#d6d1c4;
+  --gold:#8a6a12; --road:#c9c5ba; --lane:#f3f1ec; --zone:#8a6a12;
+  --suv:#b8860b; --off:#b4541c; --van:#3d5f85; --heavy:#27425f; --moto:#2f7d4f; --dir:#6d4a8a; --other:#8d8a82;
+  --font-d:"Cormorant Garamond",Georgia,serif; --font-b:"IBM Plex Sans",system-ui,sans-serif; --font-m:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f0e0c; --panel:#171512; --panel2:#1f1c17; --fg:#ece7da; --dim:#9b9484; --line:#2f2b23;
+  --gold:#d4af37; --road:#2a2823; --lane:#4a463c; --zone:#d4af37;
+  --suv:#d4af37; --off:#e0793a; --van:#5b8fc7; --heavy:#3f6aa0; --moto:#4fb583; --dir:#a47fc4; --other:#6b685f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f0e0c; --panel:#171512; --panel2:#1f1c17; --fg:#ece7da; --dim:#9b9484; --line:#2f2b23;
+  --gold:#d4af37; --road:#2a2823; --lane:#4a463c; --zone:#d4af37;
+  --suv:#d4af37; --off:#e0793a; --van:#5b8fc7; --heavy:#3f6aa0; --moto:#4fb583; --dir:#a47fc4; --other:#6b685f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-b);font-size:15px;line-height:1.5;padding-inline:16px;padding-block:24px 48px}
+.wrap{max-width:1040px;margin:0 auto}
+h1{font-family:var(--font-d);font-size:clamp(2rem,5vw,2.9rem);font-weight:700;margin:0;letter-spacing:.01em;text-wrap:balance}
+.sub{color:var(--dim);margin:.3rem 0 1.4rem;max-width:62ch}
+.eyebrow{font-family:var(--font-m);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+nav button{font:500 .85rem var(--font-b);color:var(--dim);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+nav button[aria-selected="true"]{color:var(--bg);background:var(--gold);border-color:var(--gold)}
+nav button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.board{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:14px}
+.svgbox{overflow-x:auto;border-radius:6px;background:var(--panel2)}
+svg{display:block;width:100%;min-width:640px;height:auto}
+svg text{font-family:var(--font-m);font-weight:600}
+.cols{display:grid;grid-template-columns:1.1fr 1fr;gap:16px}
+@media(max-width:760px){.cols{grid-template-columns:1fr}}
+h2{font-family:var(--font-d);font-size:1.5rem;margin:0 0 .2rem}
+h3{font-family:var(--font-m);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:0 0 .5rem;font-weight:600}
+ul.why{margin:0;padding-left:1.1rem;display:grid;gap:.35rem}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--font-m);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:600}
+td.r,th.r{text-align:right}
+.chip{display:inline-flex;align-items:center;gap:6px}
+.win{fill:rgba(8,8,10,.62)}.roof{fill:rgba(255,255,255,.16)}.tire{fill:#0b0b0c}.edge{stroke:rgba(0,0,0,.35);stroke-width:1;fill:none}
+.dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.8rem;color:var(--dim);margin:0 0 6px}
+.rule{border-left:3px solid var(--gold);padding:6px 12px;background:var(--panel2);font-size:.85rem;color:var(--dim)}
+.k-suv{fill:var(--suv)}.k-off{fill:var(--off)}.k-van{fill:var(--van)}.k-heavy{fill:var(--heavy)}.k-moto{fill:var(--moto)}.k-dir{fill:var(--dir)}.k-other{fill:var(--other)}
+.vl{fill:#fff;font-size:9.5px;text-anchor:middle;dominant-baseline:central;pointer-events:none;paint-order:stroke;stroke:rgba(0,0,0,.45);stroke-width:2px}
+.note{fill:var(--dim);font-size:11px}
+.tot td{font-weight:600;border-bottom:0}
+.ico{width:76px;height:34px;display:block}
+td.ic{padding:2px 8px 2px 0;width:84px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:4px}
+.card svg{min-width:0;width:100%;height:64px}
+.card b{font-family:var(--font-d);font-size:1.25rem}
+.card .m{font-family:var(--font-m);font-size:.7rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+.card .p{font-variant-numeric:tabular-nums;color:var(--gold);font-weight:600}
+.k-dir{fill:var(--dir)}
+</style>
+<div class="wrap">
+  <div class="eyebrow">Obsidian Logistique · Flotte de 20 membres</div>
+  <h1>Disposition des convois</h1>
+  <p class="sub">Plans de situation vus de dessus. Un convoi = 6 véhicules + 1 moto, avec 1 SUV et 1 tout-terrain maximum (règlement).</p>
+  <nav id="tabs" role="tablist"></nav>
+  <div class="board">
+    <div class="legend" id="legend"></div>
+    <div class="svgbox"><svg id="plan" viewBox="0 0 900 440" role="img" aria-label="Plan de la disposition"></svg></div>
+    <div class="cards" id="cards" hidden></div>
+    <div class="cols">
+      <div><h2 id="t"></h2><p class="sub" id="d" style="margin:.2rem 0 .8rem"></p><h3>Pourquoi cette disposition</h3><ul class="why" id="why"></ul></div>
+      <div><h3 id="oh">Ordre de marche</h3><div class="tbl"><table id="order"></table></div></div>
+    </div>
+    <div class="rule" id="rule"></div>
+  </div>
+</div>
+<script>
+const TYPES={suv:["SUV d'escorte","k-suv","var(--suv)"],off:["Tout-terrain","k-off","var(--off)"],van:["Van de transport","k-van","var(--van)"],moto:["Moto","k-moto","var(--moto)"],dir:["Direction","k-dir","var(--dir)"],other:["Autre partie","k-other","var(--other)"]};
+// Modeles : [type, longueur, largeur]
+const MOD={granger:["suv",50,24],landstalker:["suv",50,24],kamacho:["off",48,25],rumpo:["van",56,24],vader:["moto",30,10],schafter:["dir",50,20],deity:["dir",58,21],cinq:["dir",54,21],other:["other",50,22]};
+const wheels=(w,h,r=5,ex=2)=>[[-.3,-1],[.3,-1],[-.3,1],[.3,1]].map(([a,b])=>`<rect class="tire" x="${a*w-r}" y="${b>0?h/2-1:-h/2-ex}" width="${r*2}" height="${3+ex-1}" rx="1.5"/>`).join("");
+// Silhouettes vues de dessus, avant vers la droite
+function shape(m,cls){const [,w,h]=MOD[m];const x=-w/2,y=-h/2;
+ if(m==="vader")return `<rect class="tire" x="${-w/2}" y="-2" width="9" height="4" rx="2"/><rect class="tire" x="${w/2-9}" y="-2" width="9" height="4" rx="2"/><rect class="${cls}" x="-8" y="-3.4" width="18" height="6.8" rx="3.4"/><rect class="win" x="2" y="-2" width="5" height="4" rx="1"/><rect x="${w/2-12}" y="-5" width="2.2" height="10" rx="1" fill="#0b0b0c"/>`;
+ if(m==="rumpo")return wheels(w,h,6)+`<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/><rect class="roof" x="${x+4}" y="${y+3}" width="${w-22}" height="${h-6}" rx="3"/><path class="win" d="M${w/2-17} ${y+3} L${w/2-5} ${y+4} Q${w/2-3} 0 ${w/2-5} ${-y-4} L${w/2-17} ${-y-3}Z"/>`+[-14,-7,0].map(k=>`<line x1="${k}" x2="${k}" y1="${y+3}" y2="${-y-3}" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/>`).join("")+`<rect x="${w/2-2}" y="${y+4}" width="3" height="4" rx="1" fill="#fff6c8"/><rect x="${w/2-2}" y="${-y-8}" width="3" height="4" rx="1" fill="#fff6c8"/>`;
+ if(m==="kamacho")return wheels(w,h,7,3)+`<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/><rect class="roof" x="${x+8}" y="${y+4}" width="${w-24}" height="${h-8}" rx="3"/><path class="win" d="M${w/2-15} ${y+3.5} L${w/2-5} ${y+5} Q${w/2-3} 0 ${w/2-5} ${-y-5} L${w/2-15} ${-y-3.5}Z"/><circle cx="${x-3}" cy="0" r="6.5" class="tire"/><circle cx="${x-3}" cy="0" r="3" fill="rgba(255,255,255,.25)"/><rect x="${w/2}" y="${y+2}" width="2.5" height="${h-4}" rx="1" fill="#0b0b0c"/>`;
+ if(m==="granger"||m==="landstalker")return wheels(w,h,6)+`<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="7"/><rect class="roof" x="${x+6}" y="${y+3.5}" width="${w-24}" height="${h-7}" rx="3"/><path class="win" d="M${w/2-17} ${y+3} L${w/2-6} ${y+5} Q${w/2-4} 0 ${w/2-6} ${-y-5} L${w/2-17} ${-y-3}Z"/><rect class="win" x="${x+3}" y="${y+5}" width="4" height="${h-10}" rx="1.5"/><line x1="${x+8}" x2="${w/2-19}" y1="${y+2}" y2="${y+2}" stroke="rgba(0,0,0,.5)" stroke-width="1.2"/><line x1="${x+8}" x2="${w/2-19}" y1="${-y-2}" y2="${-y-2}" stroke="rgba(0,0,0,.5)" stroke-width="1.2"/>`;
+ // berlines : silhouette effilee
+ const nose=m==="deity"?5:4, long=m==="deity"?1:0;
+ return wheels(w,h,5.5,1.5)+`<path class="${cls}" d="M${x+5} ${y} L${w/2-12} ${y} Q${w/2-2} ${y+1} ${w/2} ${-y*0.0-1}  L${w/2} 1 Q${w/2-2} ${-y-1} ${w/2-12} ${-y} L${x+5} ${-y} Q${x} ${-y} ${x} ${-y-4} L${x} ${y+4} Q${x} ${y} ${x+5} ${y}Z"/><path class="win" d="M${x+14} ${y+2.5} L${w/2-20} ${y+2.8} L${w/2-14} ${y+5} Q${w/2-12} 0 ${w/2-14} ${-y-5} L${w/2-20} ${-y-2.8} L${x+14} ${-y-2.5}Z"/><rect class="roof" x="${x+22}" y="${y+4}" width="${w-52}" height="${h-8}" rx="3"/>`+(long?`<line x1="${w/2-8}" x2="${w/2-8}" y1="${y+2}" y2="${-y-2}" stroke="rgba(255,255,255,.35)" stroke-width="1"/>`:"");
+}
+const mk=(k)=>MOD[k][0];
+const NS="http://www.w3.org/2000/svg";
+const road=(x,y,w,h,dash=true)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="var(--road)"/>`+(dash?`<line x1="${x}" x2="${x+w}" y1="${y+h/2}" y2="${y+h/2}" stroke="var(--lane)" stroke-width="2" stroke-dasharray="14 12"/>`:"");
+const txt=(x,y,s,c="note",anchor="start")=>`<text class="${c}" x="${x}" y="${y}" text-anchor="${anchor}">${s}</text>`;
+function veh(v){const t=mk(v.m);const cls=TYPES[t][1];
+  return `<g transform="translate(${v.x} ${v.y}) rotate(${v.a||0})">${shape(v.m,cls)}</g>`+(v.l?`<text class="vl" x="${v.x}" y="${v.y}">${v.l}</text>`:"");}
+function icon(m,box=[84,34],pad=4){const [t,w,h]=MOD[m];const sc=Math.min((box[0]-pad*2)/(w+12),(box[1]-pad*2)/(h+6));
+  return `<svg class="ico" viewBox="0 0 ${box[0]} ${box[1]}" aria-hidden="true" style="min-width:0"><g transform="translate(${box[0]/2} ${box[1]/2}) scale(${sc})">${shape(m,TYPES[t][1])}</g></svg>`;}
+const NAME={granger:"Granger",landstalker:"Landstalker XL",kamacho:"Kamacho",rumpo:"Rumpo Trail",vader:"Vader",schafter:"Schafter V12",deity:"Deity",cinq:"Cinquemila"};
+const rows=list=>`<tr><th></th><th>Rép.</th><th>Véhicule</th><th>Rôle</th></tr>`+list.map(r=>`<tr><td class="ic">${icon(r[0])}</td><td><span class="chip"><span class="dot" style="background:${TYPES[mk(r[0])][2]}"></span>${r[1]}</span></td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("");
+const std=(p="")=>[["vader",p+"M",NAME.vader,"Éclaireur, ouvre la route"],["granger",p+"S",NAME.granger,"Tête d'escorte"],["rumpo",p+"1",NAME.rumpo,"Transport"],["rumpo",p+"2",NAME.rumpo,"Transport"],["rumpo",p+"3",NAME.rumpo,"Transport"],["rumpo",p+"4",NAME.rumpo,"Transport"],["kamacho",p+"T",NAME.kamacho,"Serre-file, couvre l'arrière"]];
+const COL=[["vader","M",830],["granger","S",750],["rumpo","1",675],["rumpo","2",605],["rumpo","3",535],["rumpo","4",465],["kamacho","T",385]];
+const S=[];
+S.push({vb:"330 150 570 140",tab:"Route",t:"Convoi en colonne",d:"Déplacement standard sur route dégagée ou autoroute. Un seul axe, intervalles réguliers.",
+ rule:"Règlement : 6 véhicules + 1 moto par convoi, maximum 1 SUV et 1 tout-terrain.",
+ why:["La moto éclaire 1 à 2 virages devant et signale tout contrôle ou barrage.","Le Granger prend les risques en premier et protège les vans.","Les 4 Rumpo Trail sont au centre : jamais premiers, jamais derniers.","Le Kamacho ferme la colonne et empêche qu'on se glisse derrière."],
+ order:std(),
+ svg:()=>road(0,190,900,60)+txt(345,262,"sens de marche  →")+COL.map(([m,l,x])=>veh({m,l,x,y:220})).join("")});
+S.push({vb:"180 110 720 220",tab:"Ville",t:"Convoi décalé en ville",d:"Rues à deux voies, carrefours, feux. Les véhicules alternent d'une voie à l'autre.",
+ rule:"Recommandation : garder le même ordre de marche qu'en colonne.",
+ why:["Le décalage garde le convoi court : il tient mieux aux feux et aux carrefours.","Chaque voie est occupée : personne ne se glisse entre deux véhicules.","Au carrefour, le dernier véhicule ralentit pour couvrir la transversale.","Si un van est bloqué, le suivant du même côté le contourne."],
+ order:std(),
+ svg:()=>road(0,170,900,100,false)+`<line x1="0" x2="900" y1="220" y2="220" stroke="var(--lane)" stroke-width="2" stroke-dasharray="14 12"/><rect x="215" y="0" width="100" height="440" fill="var(--road)"/><rect x="215" y="170" width="100" height="100" fill="var(--road)"/>`+txt(265,130,"carrefour","note","middle")+txt(380,300,"sens de marche  →")+
+  [["vader","M",830,220],["granger","S",760,195],["rumpo","1",695,245],["rumpo","2",630,195],["rumpo","3",565,245],["rumpo","4",500,195],["kamacho","T",435,245]].map(([m,l,x,y])=>veh({m,l,x,y})).join("")});
+S.push({vb:"180 40 560 340",tab:"Transaction",t:"Échange sur zone",d:"Arrêt pour une transaction. Les vans se placent face à l'autre partie, l'escorte tient le périmètre.",
+ rule:"Règlement, transactions : uniquement des vans, loin d'un quartier, d'un entrepôt, d'un laboratoire ou d'une zone safe.",
+ why:["Seuls les vans sont au contact : ils sont les seuls autorisés pour la transaction.","Le Granger reste en retrait côté route : c'est notre issue de repli.","Le Kamacho couvre le flanc sud, le plus ouvert.","La moto observe depuis le nord, à l'écart du groupe, et prévient si quelqu'un arrive."],
+ order:[["vader","M",NAME.vader,"Poste d'observation, nord"],["granger","S",NAME.granger,"Repli côté route"],["rumpo","1",NAME.rumpo,"Au contact"],["rumpo","2",NAME.rumpo,"Au contact"],["rumpo","3",NAME.rumpo,"En appui"],["rumpo","4",NAME.rumpo,"En appui"],["kamacho","T",NAME.kamacho,"Flanc sud"]],
+ svg:()=>road(0,205,330,50)+`<rect x="330" y="95" width="330" height="250" rx="14" fill="none" stroke="var(--zone)" stroke-width="2" stroke-dasharray="8 7"/>`+txt(495,86,"zone d'échange","note","middle")+
+  `<line x1="365" y1="68" x2="440" y2="205" stroke="var(--moto)" stroke-width="1.5" stroke-dasharray="4 4"/>`+
+  [["granger","S",250,230,0],["rumpo","1",420,212,0],["rumpo","2",420,252,0],["rumpo","3",355,212,0],["rumpo","4",355,252,0],["kamacho","T",470,330,0],["vader","M",360,62,0],["other","",570,205,180],["other","",570,255,180],["other","",625,230,180]].map(([m,l,x,y,a])=>veh({m,l,x,y,a})).join("")+txt(590,300,"autre partie","note","middle")});
+S.push({tab:"Deux convois",t:"Deux convois en parallèle",d:"Deux convois partent en même temps sur deux axes différents. 14 véhicules + 2 motos.",
+ rule:"Règlement : chaque convoi respecte ses limites, 1 SUV et 1 tout-terrain.",
+ why:["Deux axes différents : si un convoi est bloqué, l'autre continue.","Chaque convoi a sa moto, sur la fréquence de son convoi.","Les cargaisons sont réparties : on ne perd pas tout sur une seule interception.","Indicatifs A et B : on sait tout de suite quel convoi est touché."],
+ order:std("A").concat(std("B")),
+ svg:()=>road(0,100,900,56)+road(0,290,900,56)+txt(24,92,"Convoi A (axe nord)")+txt(24,282,"Convoi B (axe sud)")+
+  [[128,"A"],[318,"B"]].map(([y,p])=>COL.map(([m,l,x])=>veh({m,l:p+l,x,y})).join("")).join("")});
+S.push({tab:"Entrepôt",t:"Stationnement au site",d:"Toute la flotte à l'arrêt : 21 véhicules. Vans au quai, escorte près du portail, direction à part.",
+ rule:"Recommandation : garer nez vers la sortie, l'escorte près du portail.",
+ why:["Les 10 Rumpo Trail sont au quai : 8 pour les convois, 2 de réserve pour le chargement.","L'escorte est près du portail, nez dehors : elle sort la première.","Les motos sont à côté du portail, prêtes à ouvrir la route.","La direction est garée à part, loin des quais."],
+ order:[["rumpo","A1-4",NAME.rumpo,"Vans convoi A"],["rumpo","B1-4",NAME.rumpo,"Vans convoi B"],["rumpo","R1-2",NAME.rumpo,"Réserve et chargement"],["granger","S",NAME.granger+" ×2, "+NAME.landstalker,"Escorte"],["kamacho","T",NAME.kamacho+" ×2","Escorte"],["vader","M",NAME.vader+" ×3","Éclaireurs"],["schafter","D",NAME.schafter+", "+NAME.deity+", "+NAME.cinq,"Direction"]],
+ svg:()=>`<rect x="0" y="0" width="900" height="440" fill="var(--panel2)"/><rect x="0" y="195" width="900" height="245" fill="var(--road)"/><rect x="40" y="20" width="800" height="90" rx="4" fill="var(--panel)" stroke="var(--line)"/>`+txt(440,48,"ENTREPÔT","note","middle")+
+  [0,1,2,3,4,5,6,7,8,9].map(i=>`<rect x="${95+i*80-18}" y="106" width="36" height="8" fill="var(--zone)"/>`).join("")+
+  `<line x1="840" y1="195" x2="900" y2="195" stroke="var(--zone)" stroke-width="3"/>`+txt(894,188,"portail →","note","end")+
+  ["A1","A2","A3","A4","B1","B2","B3","B4","R1","R2"].map((l,i)=>veh({m:"rumpo",l,x:95+i*80,y:160,a:90})).join("")+
+  [["granger","AS"],["kamacho","AT"],["granger","BS"],["kamacho","BT"],["landstalker","L"]].map(([m,l],i)=>veh({m,l,x:510+i*70,y:250,a:0})).join("")+
+  ["AM","BM","M3"].map((l,i)=>veh({m:"vader",l,x:790,y:300+i*30,a:0})).join("")+
+  [["schafter","D1"],["deity","D2"],["cinq","D3"]].map(([m,l],i)=>veh({m,l,x:120+i*90,y:340,a:0})).join("")+txt(100,385,"direction")});
+S.push({vb:"430 140 470 160",tab:"Guerre ouverte",t:"Formation de guerre ouverte",d:"Conflit déclaré : 5 véhicules + 1 moto, formation en pointe, sans gros volume.",
+ rule:"Règlement, guerre ouverte : 5 véhicules + 1 moto, pas de gros CVC.",
+ why:["Le Granger mène : le plus solide pour absorber le premier contact.","Deux Rumpo Trail encadrent la pointe, un troisième ferme l'axe central.","Le Kamacho ferme la formation et couvre le repli.","La moto est en avant, à portée de radio : elle donne l'alerte, elle n'engage pas."],
+ order:[["vader","M",NAME.vader,"Éclaireur avancé"],["granger","S",NAME.granger,"Pointe"],["rumpo","1",NAME.rumpo,"Flanc gauche"],["rumpo","2",NAME.rumpo,"Flanc droit"],["rumpo","3",NAME.rumpo,"Centre arrière"],["kamacho","T",NAME.kamacho,"Fermeture"]],
+ svg:()=>road(0,170,900,100,false)+`<line x1="0" x2="900" y1="220" y2="220" stroke="var(--lane)" stroke-width="2" stroke-dasharray="14 12"/>`+txt(445,285,"sens de marche  →")+
+  [["vader","M",830,220],["granger","S",730,220],["rumpo","1",650,190],["rumpo","2",650,252],["rumpo","3",570,220],["kamacho","T",490,220]].map(([m,l,x,y])=>veh({m,l,x,y})).join("")});
+S.push({tab:"Flotte et prix",t:"Flotte finale",d:"21 véhicules pour 20 membres. Un seul van, un seul tout-terrain, une direction de prestige.",
+ rule:"Prix issus du catalogue du site FlashBackFA. À vérifier en jeu avant achat.",
+ why:["Un seul modèle de van : Rumpo Trail. Le convoi est homogène, facile à repérer.","Un seul tout-terrain : Kamacho. Sobre et robuste, il garde la même ligne que le reste.","Schafter V12 plutôt que LWB : 171 km/h contre 143, pour 11 200 $ de plus. La LWB est plus longue mais plus lente.","Les motos Vader sont autorisées aux organisations, mais interdites en braquage et en vente de drogue."],
+ fleet:true});
+const FLEET=[["P1","rumpo",8,67200],["P1","granger",2,72800],["P1","kamacho",2,70560],["P1","vader",2,50400],["P1","schafter",1,89600],["P2","rumpo",2,67200],["P2","landstalker",1,56000],["P2","deity",1,392000],["P2","cinq",1,280000],["P2","vader",1,50400]];
+const ROLE={rumpo:"Van de transport, 150 kg",granger:"SUV d'escorte, 8 places",kamacho:"Tout-terrain, 149 km/h",vader:"Moto éclaireur",schafter:"Direction, 171 km/h",landstalker:"SUV de réserve",deity:"Direction de prestige",cinq:"Direction haut de gamme"};
+const fmt=n=>n.toLocaleString("fr-FR")+" $";
+const $=id=>document.getElementById(id);
+function show(i){
+  const s=S[i];
+  document.querySelectorAll("#tabs button").forEach((b,j)=>b.setAttribute("aria-selected",j===i));
+  $("t").textContent=s.t;$("d").textContent=s.d;$("rule").textContent=s.rule;
+  $("why").innerHTML=s.why.map(w=>`<li>${w}</li>`).join("");
+  if(s.fleet){
+    $("plan").parentElement.hidden=true;$("legend").innerHTML="";
+    let tot=0,p1=0,p2=0,n=0;
+    const cards=FLEET.map(f=>{const t=f[2]*f[3];tot+=t;n+=f[2];f[0]==="P1"?p1+=t:p2+=t;
+      return `<div class="card"><svg viewBox="0 0 120 64" aria-hidden="true"><g transform="translate(60 32) scale(${Math.min(1.7,100/(MOD[f[1]][1]+10))})">${shape(f[1],TYPES[mk(f[1])][1])}</g></svg><span class="m">${f[0]==="P1"?"Phase 1":"Phase 2"} · ×${f[2]}</span><b>${NAME[f[1]]}</b><span style="color:var(--dim);font-size:.82rem">${ROLE[f[1]]}</span><span class="p">${fmt(f[3])} l'unité</span><span style="color:var(--dim);font-size:.82rem;font-variant-numeric:tabular-nums">Total ${fmt(t)}</span></div>`;}).join("");
+    $("order").innerHTML=`<tr><td colspan="2">Phase 1</td><td class="r">${fmt(p1)}</td></tr><tr><td colspan="2">Phase 2</td><td class="r">${fmt(p2)}</td></tr><tr class="tot"><td>Total</td><td>${n} véhicules</td><td class="r">${fmt(tot)}</td></tr>`;
+    $("cards").innerHTML=cards;$("cards").hidden=false;$("oh").textContent="Budget";return;
+  }
+  $("cards").hidden=true;$("oh").textContent="Ordre de marche";
+  $("plan").parentElement.hidden=false;$("plan").setAttribute("viewBox",s.vb||"0 0 900 440");$("plan").innerHTML=s.svg();
+  const kinds=new Set(s.order.map(r=>mk(r[0])));if(s.tab==="Transaction")kinds.add("other");
+  $("legend").innerHTML=[...kinds].map(k=>`<span class="chip"><span class="dot" style="background:${TYPES[k][2]}"></span>${TYPES[k][0]}</span>`).join("");
+  $("order").innerHTML=rows(s.order);
+}
+$("tabs").innerHTML=S.map((s,i)=>`<button role="tab" aria-selected="false" data-i="${i}">${s.tab}</button>`).join("");
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b)show(+b.dataset.i)});
+show(0);
+</script>

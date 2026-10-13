@@ -34,11 +34,10 @@ export default function OrganigrammePage() {
   const [gallery, setGallery] = useState(false);
   const [members, setMembers] = useState<Record<string, string[]>>({});
   const [effectif, setEffectif] = useState<number | null>(null);
-  const [effMax, setEffMax] = useState<number>(DEFAUTS.effectifMax);
+  const effMax = DEFAUTS.effectifMax;
   useEffect(() => {
     if (!supabase) return;
     supabase.from("obsidian_employes").select("actif").then(({ data }) => setEffectif((data || []).filter((x: any) => x.actif !== false).length));
-    supabase.from("obsidian_settings").select("effectif_max").eq("id", "default").maybeSingle().then(({ data }) => { if (data?.effectif_max) setEffMax(Number(data.effectif_max)); });
     Promise.all([
       supabase.from("site_logins").select("discord_id,discord_name,nom_perso,site_role"),
       supabase.from("obsidian_employes").select("discord_id,nom"),
@@ -82,7 +81,7 @@ export default function OrganigrammePage() {
       <div className="page-header"><div><h1 className="page-title">🏛️ Organigramme</h1><p className="page-subtitle">Direction & gouvernance · Obsidian Logistics</p><div className="gold-line" /></div><button className="btn btn-outline" onClick={() => setGallery(true)}>🪪 Cartes par grade</button></div>
       <div className="card" style={{ padding: "0.7rem 1rem", marginBottom: "1.2rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "0.35rem" }}>
-          <span>👥 <b>Effectif</b> (maximum {effMax} en OP, règlement FlashBackFA)</span>
+          <span>👥 <b>Effectif</b> (maximum {effMax} au total, {DEFAUTS.effectifGdt} pendant une GDT)</span>
           <b style={{ color: over ? "var(--danger)" : "var(--text)" }}>{effectif ?? "?"} / {effMax}</b>
         </div>
         <div style={{ height: 6, borderRadius: 3, background: "var(--surface)", overflow: "hidden" }}><div style={{ width: `${pct}%`, height: "100%", background: over ? "var(--danger)" : pct >= 90 ? "var(--warning)" : "var(--gold)", transition: "width .4s" }} /></div>

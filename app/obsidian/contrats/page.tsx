@@ -13,6 +13,7 @@ import { pdfContrat } from "@/lib/pdfDocs";
 import { LoadingBlock } from "@/components/ui/LoadingBlock";
 import { money } from "@/lib/money";
 import { dbw } from "@/lib/dbw";
+import SearchBox, { matchQ } from "@/components/SearchBox";
 const TYPES=["Livraison","Surveillance","Intimidation","Récupération","Braquage","Autre"];
 const DIFFS=["Facile","Normale","Difficile","Extrême"];
 const STATUTS=["En attente","En cours","Terminé","Échoué","Annulé"];
@@ -42,12 +43,14 @@ export default function ContratsPage(){
   async function saveRapport(){if(!supabase||!showRapport)return;await dbw.update("obsidian_contrats", showRapport.id, {rapport});const updated={...showRapport,rapport};setContrats(c=>c.map(x=>x.id===showRapport.id?updated:x));setShowRapport(null);showToast("Rapport sauvegardé");notifyDiscordUpdate("contrats",updated.discord_message_id,buildContratEmbed(updated));}
   async function changeStatut(id:string,statut:string){if(!supabase)return;await dbw.update("obsidian_contrats", id, {statut});const c0=contrats.find(x=>x.id===id);const updated={...c0,statut};setContrats(c=>c.map(x=>x.id===id?updated:x));if(c0)notifyDiscordUpdate("contrats",c0.discord_message_id,buildContratEmbed(updated));}
   async function del(id:string){if(!supabase)return;const c0=contrats.find(x=>x.id===id);await dbw.remove("obsidian_contrats", id);setContrats(c=>c.filter(x=>x.id!==id));showToast("Supprimé");if(c0)notifyDiscordDelete("contrats",c0.discord_message_id,buildContratEmbed(c0));}
-  const filtered=contrats.filter(c=>!filterStatut||c.statut===filterStatut);
+  const [qS,setQS]=useState("");
+  const filtered=contrats.filter(c=>matchQ(qS,JSON.stringify(c))).filter(c=>!filterStatut||c.statut===filterStatut);
   return(
     <div className="page-container">
       <Link className="back-link" href="/obsidian">Dashboard Obsidian</Link>
       <div className="page-header"><div><h1 className="page-title">📋 Contrats</h1><p className="page-subtitle">Missions · Opérations · Rapports</p><div className="gold-line"/></div><button className="btn btn-gold" onClick={()=>{setForm({...EMPTY});setEditId(null);setMembresInput("");setShowForm(true);}}>+ Nouveau contrat</button></div>
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem",flexWrap:"wrap"}}>
+        <SearchBox value={qS} onChange={setQS} placeholder="Titre, client, membre..."/>
         {["","En attente","En cours","Terminé","Échoué","Annulé"].map(s=><button key={s||"all"} onClick={()=>setFilterStatut(s)} style={{padding:"0.25rem 0.75rem",borderRadius:999,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.75rem",fontWeight:filterStatut===s?700:400,background:filterStatut===s?"var(--gold-muted)":"var(--surface)",border:`1px solid ${filterStatut===s?"rgba(var(--gold-rgb), 0.4)":"var(--border)"}`,color:filterStatut===s?"var(--gold)":"var(--text-muted)"}}>{s||"Tous"}</button>)}
       </div>
       {loading?<LoadingBlock />:

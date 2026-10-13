@@ -12,7 +12,7 @@ export const REGLES_LIENS = {
 };
 
 // ---- Chiffres cles (modifiables dans la page Reglement quand c'est un reglage) ----
-export const DEFAUTS = { effectifMax: 20, effectifDiscord: 25, dossierMin: 15, kevlarMax: 5, productionMax: 3, revendicationMax: 2 };
+export const DEFAUTS = { effectifMax: 25, effectifGdt: 20, effectifDiscord: 25, dossierMin: 15, kevlarMax: 5, productionMax: 3, revendicationMax: 2 };
 export const DROGUES_ORGA = ["Cocaïne", "Tranq", "Meth Bleue", "Mexicana"];
 export const PRODUIT_DEFAUT = ["Cocaïne", "Tranq", "Mexicana"];
 export const REVENDIQUE_DEFAUT = ["Cocaïne", "Mexicana"];

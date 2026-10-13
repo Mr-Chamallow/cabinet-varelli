@@ -15,6 +15,7 @@ import { VEH_LIST, vehExact, vehSuggest } from "@/lib/vehicules";
 import { dbw } from "@/lib/dbw";
 import { vehAutorises, vehNote, vehUsageNote, USAGES } from "@/lib/regles";
 import { VehiculesPenseBete } from "@/components/VehiculesPenseBete";
+import SearchBox, { matchQ } from "@/components/SearchBox";
 const STATUTS=["Disponible","Sortie","Fourrière","Endommagé","Détruit"];
 const SCOL:Record<string,string>={Disponible:"var(--success)",Sortie:"var(--warning)",Fourrière:"var(--danger)",Endommagé:"#f97316",Détruit:"var(--text-dim)"};
 const fmt=(n:number)=>money(n);
@@ -40,12 +41,14 @@ export default function GaragePage(){
   async function save(){if(!supabase||!form.modele||!form.plaque)return;setSaving(true);const {usage,...base}=form as any;const prevUsage=(veh.find(x=>x.id===editId) as any)?.usage||"Standard";const payload:any=(usage||"Standard")!==(editId?prevUsage:"Standard")?{...base,usage}:base;if(editId){const{data,error}=await dbw.update("obsidian_garage", editId, payload);if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>v.map(x=>x.id===editId?data:x));showToast("Mis à jour");}else{const{data,error}=await dbw.insert("obsidian_garage", {...payload,created_by:user?.nom||""});if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>[...v,data]);showToast("Ajouté");}setShowForm(false);setEditId(null);setForm({...EMPTY});setSaving(false);}
   async function changeStatut(id:string,statut:string){if(!supabase)return;await dbw.update("obsidian_garage", id, {statut});setVeh(v=>v.map(x=>x.id===id?{...x,statut}:x));}
   async function del(id:string){if(!supabase)return;await dbw.remove("obsidian_garage", id);setVeh(v=>v.filter(x=>x.id!==id));showToast("Supprimé");}
-  const filtered=veh.filter(v=>!filterStatut||v.statut===filterStatut);
+  const [qS,setQS]=useState("");
+  const filtered=veh.filter(v=>matchQ(qS,JSON.stringify(v))).filter(v=>!filterStatut||v.statut===filterStatut);
   return(
     <div className="page-container">
       <Link className="back-link" href="/obsidian">Dashboard Obsidian</Link>
       <div className="page-header"><div><h1 className="page-title">🚗 Garage</h1><p className="page-subtitle">Véhicules · Plaques · Positions · Statuts</p><div className="gold-line"/></div><div style={{display:"flex",gap:"0.5rem"}}><button className="btn btn-outline" onClick={()=>setPenseBete(true)}>📋 Pense-bête</button><button className="btn btn-gold" onClick={()=>{setForm({...EMPTY});setEditId(null);setShowForm(true);}}>+ Ajouter</button></div></div>
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem",flexWrap:"wrap"}}>
+        <SearchBox value={qS} onChange={setQS} placeholder="Modèle, plaque, position..."/>
         {["","Disponible","Sortie","Fourrière","Endommagé","Détruit"].map(s=><button key={s||"all"} onClick={()=>setFilterStatut(s)} style={{padding:"0.25rem 0.75rem",borderRadius:999,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.75rem",fontWeight:filterStatut===s?700:400,background:filterStatut===s?"var(--gold-muted)":"var(--surface)",border:`1px solid ${filterStatut===s?"rgba(var(--gold-rgb), 0.4)":"var(--border)"}`,color:filterStatut===s?"var(--gold)":"var(--text-muted)"}}>{s||"Tous"}</button>)}
       </div>
       {loading?<LoadingBlock />:

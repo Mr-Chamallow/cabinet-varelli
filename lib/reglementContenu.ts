@@ -6,7 +6,7 @@ export interface Section { id: string; icon: string; titre: string; source: keyo
 
 export const SECTIONS: Section[] = [
   { id: "effectifs", icon: "👥", titre: "Effectifs et recrutement", source: "gangOrga", points: [
-    "Organisation : 20 membres maximum en OP, 25 maximum sur Discord (gang : 25 et 30).",
+    "Organisation : 25 membres maximum au total, 20 pendant une GDT, 25 maximum sur Discord (gang : 25 et 30).",
     "Wipe obligatoire pour rejoindre un groupe officiel (pas pour le quitter). Pas de même nom sur plusieurs personnages, pas deux groupes officiels avec le même personnage.",
     "Délai interorga : 4 jours après un départ ou une exclusion, et 50 heures de jeu minimum pour rejoindre un groupe.",
     "Exceptions au délai : projet accepté sous 3 jours, wipe de projet par le staff ou un lead, ancien membre après 1 mois de projet, exclusion jugée injuste.",
@@ -49,7 +49,7 @@ export const SECTIONS: Section[] = [
     "Deux armes maximum sur soi : une lourde ou automatique et une de poing. Les armes de boutique ne se portent pas en public.",
     "Interdit de vendre des armes automatiques ou lourdes aux petites frappes et aux indépendants. Un indépendant ne peut pas acquérir d'armes de catégorie gang ou organisation.",
     "Accessoires : aucun pour les indépendants, tous sauf chargeurs pour les petites frappes, tous pour gangs et organisations.",
-    "Kevlar : réservé aux organisations, 5 pièces maximum, une par joueur, doit rester visible. Pas de vente de kevlar ni d'accessoires d'armes aux indépendants.",
+    "Kevlar : réservé aux organisations, 5 pièces maximum uniquement pendant une GDT, une par joueur, doit rester visible. Pas de vente de kevlar ni d'accessoires d'armes aux indépendants.",
     "GPB : vente uniquement aux organisations et gangs, prix minimum 150.000 $ (propre ou sale), supplément de 20% maximum possible en sale. Les organisations gun lead ne peuvent plus acheter de GPB à un gang.",
     "Braquage d'arme : le gun lead peut braquer pour le type d'arme qu'il revendique, loot limité à 50% de l'inventaire (nombre impair inférieur), interdit si la cible n'a qu'une arme.",
     "Straff interdit, sauf guerres ouvertes, CVC, GDT, PVP et événements PVP validés par le staff.",
@@ -128,7 +128,7 @@ export const MISSIONS: Record<string, { titre: string; icon: string; missions: s
     "Drogues : production (Cocaïne, Tranq, Mexicana), laboratoires, matières premières, transactions.",
   ]},
   securite: { titre: "Pôle Sécurité", icon: "🛡️", missions: [
-    "Armes, munitions et kevlar (5 pièces maximum, une par joueur).",
+    "Armes, munitions et kevlar (5 pièces maximum pendant une GDT, une par joueur).",
     "Sécurité générale : gardes des hangars, escortes, protection du Directoire.",
     "Braquages et prises d'otages dans le respect du règlement (rançons plafonnées).",
     "Défense légitime uniquement : pas de guerre offensive, riposte par le Tribunal et les sanctions économiques.",

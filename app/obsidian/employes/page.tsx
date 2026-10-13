@@ -14,6 +14,7 @@ import { EmployeeCard, EmployeeCardModalBody, sortByRole, roleKey, roleLabel } f
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { EmployeeDossier } from "@/components/EmployeeDossier";
 import { ProfilPsy, type Psy } from "@/components/ProfilPsy";
+import SearchBox, { matchQ } from "@/components/SearchBox";
 
 interface Employe {
   id: string; nom: string; role: string; telephone: string; discord: string;
@@ -147,7 +148,8 @@ export default function EmployesObsidianPage() {
     });
   }
 
-  const visibles = sortByRole(employes.filter(e => showInactifs ? true : e.actif !== false));
+  const [qS, setQS] = useState("");
+  const visibles = sortByRole(employes.filter(e => (showInactifs ? true : e.actif !== false) && matchQ(qS, e.nom, e.role, e.telephone, e.discord)));
 
   return (
     <div className="page-container">
@@ -161,7 +163,8 @@ export default function EmployesObsidianPage() {
         <button className="btn btn-gold" onClick={openNew}>+ Ajouter un employé</button>
       </div>
 
-      <div style={{ marginBottom: "1.25rem" }}>
+      <div style={{ marginBottom: "1.25rem", display: "flex", gap: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
+        <SearchBox value={qS} onChange={setQS} placeholder="Nom, rôle..." />
         <button className="btn btn-outline btn-sm" onClick={() => setShowInactifs(!showInactifs)}>
           {showInactifs ? "Masquer les inactifs" : "Afficher aussi les inactifs"}
         </button>
