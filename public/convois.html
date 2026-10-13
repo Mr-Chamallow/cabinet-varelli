@@ -1,178 +1,224 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Convois Obsidian</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* Plan : plan de situation vu de dessus, ton obsidienne et or. Barre d'onglets, schema SVG, tableau de lecture dessous. */
-:root{
-  --bg:#f3f1ec; --panel:#ffffff; --panel2:#ebe8e0; --fg:#1b1a17; --dim:#6a665c; --line:#d6d1c4;
-  --gold:#8a6a12; --road:#c9c5ba; --lane:#f3f1ec; --zone:#8a6a12;
-  --suv:#b8860b; --off:#b4541c; --van:#3d5f85; --heavy:#27425f; --moto:#2f7d4f; --dir:#6d4a8a; --other:#8d8a82;
-  --font-d:"Cormorant Garamond",Georgia,serif; --font-b:"IBM Plex Sans",system-ui,sans-serif; --font-m:"IBM Plex Mono",ui-monospace,monospace;
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0f0e0c; --panel:#171512; --panel2:#1f1c17; --fg:#ece7da; --dim:#9b9484; --line:#2f2b23;
-  --gold:#d4af37; --road:#2a2823; --lane:#4a463c; --zone:#d4af37;
-  --suv:#d4af37; --off:#e0793a; --van:#5b8fc7; --heavy:#3f6aa0; --moto:#4fb583; --dir:#a47fc4; --other:#6b685f; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0f0e0c; --panel:#171512; --panel2:#1f1c17; --fg:#ece7da; --dim:#9b9484; --line:#2f2b23;
-  --gold:#d4af37; --road:#2a2823; --lane:#4a463c; --zone:#d4af37;
-  --suv:#d4af37; --off:#e0793a; --van:#5b8fc7; --heavy:#3f6aa0; --moto:#4fb583; --dir:#a47fc4; --other:#6b685f; color-scheme:dark}
+:root{--bg:#f3f1ec;--panel:#fff;--panel2:#ebe8e0;--fg:#1b1a17;--dim:#6a665c;--line:#d6d1c4;--gold:#8a6a12;--road:#c9c5ba;--lane:#f3f1ec;--zone:#8a6a12;
+--suv:#b8860b;--off:#b4541c;--van:#3d5f85;--sport:#27425f;--moto:#2f7d4f;--dir:#6d4a8a;--sedan:#6a665c;--foe:#8d8a82;
+--font-d:"Cormorant Garamond",Georgia,serif;--font-b:"IBM Plex Sans",system-ui,sans-serif;--font-m:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f0e0c;--panel:#171512;--panel2:#1f1c17;--fg:#ece7da;--dim:#9b9484;--line:#2f2b23;--gold:#d4af37;--road:#2a2823;--lane:#4a463c;--zone:#d4af37;--suv:#d4af37;--off:#e0793a;--van:#5b8fc7;--sport:#3f6aa0;--moto:#4fb583;--dir:#a47fc4;--sedan:#7d796e;--foe:#6b685f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f0e0c;--panel:#171512;--panel2:#1f1c17;--fg:#ece7da;--dim:#9b9484;--line:#2f2b23;--gold:#d4af37;--road:#2a2823;--lane:#4a463c;--zone:#d4af37;--suv:#d4af37;--off:#e0793a;--van:#5b8fc7;--sport:#3f6aa0;--moto:#4fb583;--dir:#a47fc4;--sedan:#7d796e;--foe:#6b685f;color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--font-b);font-size:15px;line-height:1.5;padding-inline:16px;padding-block:24px 48px}
-.wrap{max-width:1040px;margin:0 auto}
-h1{font-family:var(--font-d);font-size:clamp(2rem,5vw,2.9rem);font-weight:700;margin:0;letter-spacing:.01em;text-wrap:balance}
-.sub{color:var(--dim);margin:.3rem 0 1.4rem;max-width:62ch}
-.eyebrow{font-family:var(--font-m);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-b);font-size:15px;line-height:1.5;padding:24px 16px 56px}
+.wrap{max-width:1080px;margin:0 auto}
+h1{font-family:var(--font-d);font-size:clamp(2rem,5vw,2.9rem);margin:0;text-wrap:balance}
+.sub{color:var(--dim);margin:.3rem 0 1.2rem;max-width:68ch}
+.eyebrow,h3{font-family:var(--font-m);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600}
+h3{margin:0 0 .5rem}
+h2{font-family:var(--font-d);font-size:1.6rem;margin:0 0 .2rem}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 nav button{font:500 .85rem var(--font-b);color:var(--dim);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
 nav button[aria-selected="true"]{color:var(--bg);background:var(--gold);border-color:var(--gold)}
-nav button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+nav button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+nav.sub2 button{font-size:.8rem;padding:6px 10px}
 .board{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:14px}
 .svgbox{overflow-x:auto;border-radius:6px;background:var(--panel2)}
-svg{display:block;width:100%;min-width:640px;height:auto}
+svg{display:block;width:100%;min-width:680px;height:auto}
 svg text{font-family:var(--font-m);font-weight:600}
-.cols{display:grid;grid-template-columns:1.1fr 1fr;gap:16px}
-@media(max-width:760px){.cols{grid-template-columns:1fr}}
-h2{font-family:var(--font-d);font-size:1.5rem;margin:0 0 .2rem}
-h3{font-family:var(--font-m);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:0 0 .5rem;font-weight:600}
-ul.why{margin:0;padding-left:1.1rem;display:grid;gap:.35rem}
+.cols{display:grid;grid-template-columns:1fr 1.15fr;gap:18px}
+@media(max-width:800px){.cols{grid-template-columns:1fr}}
+ul.l{margin:0;padding-left:1.1rem;display:grid;gap:.35rem}
 .tbl{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums}
-th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
-th{font-family:var(--font-m);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:600}
-td.r,th.r{text-align:right}
-.chip{display:inline-flex;align-items:center;gap:6px}
-.win{fill:rgba(8,8,10,.62)}.roof{fill:rgba(255,255,255,.16)}.tire{fill:#0b0b0c}.edge{stroke:rgba(0,0,0,.35);stroke-width:1;fill:none}
-.dot{width:12px;height:12px;border-radius:3px;display:inline-block}
-.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.8rem;color:var(--dim);margin:0 0 6px}
-.rule{border-left:3px solid var(--gold);padding:6px 12px;background:var(--panel2);font-size:.85rem;color:var(--dim)}
-.k-suv{fill:var(--suv)}.k-off{fill:var(--off)}.k-van{fill:var(--van)}.k-heavy{fill:var(--heavy)}.k-moto{fill:var(--moto)}.k-dir{fill:var(--dir)}.k-other{fill:var(--other)}
-.vl{fill:#fff;font-size:9.5px;text-anchor:middle;dominant-baseline:central;pointer-events:none;paint-order:stroke;stroke:rgba(0,0,0,.45);stroke-width:2px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--font-m);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+td.r,th.r{text-align:right;white-space:nowrap}
+.dot{width:12px;height:12px;border-radius:3px;display:inline-block;margin-right:6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.8rem;color:var(--dim)}
+.rule{border-left:3px solid var(--gold);padding:8px 12px;background:var(--panel2);font-size:.88rem}
+.rule b{color:var(--gold)}
+.k-suv{fill:var(--suv)}.k-off{fill:var(--off)}.k-van{fill:var(--van)}.k-sport{fill:var(--sport)}.k-moto{fill:var(--moto)}.k-dir{fill:var(--dir)}.k-sedan{fill:var(--sedan)}
+.k-foe{fill:none;stroke:var(--foe);stroke-width:2;stroke-dasharray:5 3}
+.vl{fill:#fff;font-size:11px;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 .note{fill:var(--dim);font-size:11px}
-.tot td{font-weight:600;border-bottom:0}
-.ico{width:76px;height:34px;display:block}
-td.ic{padding:2px 8px 2px 0;width:84px}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
-.card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:4px}
-.card svg{min-width:0;width:100%;height:64px}
-.card b{font-family:var(--font-d);font-size:1.25rem}
-.card .m{font-family:var(--font-m);font-size:.7rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
-.card .p{font-variant-numeric:tabular-nums;color:var(--gold);font-weight:600}
-.k-dir{fill:var(--dir)}
-</style>
+input[type=search]{width:100%;max-width:380px;font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);color:var(--fg)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.stat b{display:block;font-family:var(--font-d);font-size:1.6rem;color:var(--gold)}
+.stat span{font-family:var(--font-m);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.card ul{margin:.3rem 0 0;padding-left:1.1rem;display:grid;gap:.25rem}
+code{font-family:var(--font-m);font-size:.85em;color:var(--gold)}
+</style></head><body>
 <div class="wrap">
-  <div class="eyebrow">Obsidian Logistique · Flotte de 20 membres</div>
-  <h1>Disposition des convois</h1>
-  <p class="sub">Plans de situation vus de dessus. Un convoi = 6 véhicules + 1 moto, avec 1 SUV et 1 tout-terrain maximum (règlement).</p>
+  <div class="eyebrow">Obsidian Logistique · Convois et flotte</div>
+  <h1>Flotte et formations</h1>
+  <p class="sub">Un convoi d'organisation = 6 véhicules + 1 moto, 1 SUV et 1 tout-terrain maximum, au moins 1 tout-terrain, aucun véhicule en double. Chez nous, tout le monde vient de l'armée ou de la police : on roule comme on a appris.</p>
   <nav id="tabs" role="tablist"></nav>
-  <div class="board">
-    <div class="legend" id="legend"></div>
-    <div class="svgbox"><svg id="plan" viewBox="0 0 900 440" role="img" aria-label="Plan de la disposition"></svg></div>
-    <div class="cards" id="cards" hidden></div>
-    <div class="cols">
-      <div><h2 id="t"></h2><p class="sub" id="d" style="margin:.2rem 0 .8rem"></p><h3>Pourquoi cette disposition</h3><ul class="why" id="why"></ul></div>
-      <div><h3 id="oh">Ordre de marche</h3><div class="tbl"><table id="order"></table></div></div>
-    </div>
-    <div class="rule" id="rule"></div>
-  </div>
+  <div id="view"></div>
 </div>
 <script>
-const TYPES={suv:["SUV d'escorte","k-suv","var(--suv)"],off:["Tout-terrain","k-off","var(--off)"],van:["Van de transport","k-van","var(--van)"],moto:["Moto","k-moto","var(--moto)"],dir:["Direction","k-dir","var(--dir)"],other:["Autre partie","k-other","var(--other)"]};
-// Modeles : [type, longueur, largeur]
-const MOD={granger:["suv",50,24],landstalker:["suv",50,24],kamacho:["off",48,25],rumpo:["van",56,24],vader:["moto",30,10],schafter:["dir",50,20],deity:["dir",58,21],cinq:["dir",54,21],other:["other",50,22]};
-const wheels=(w,h,r=5,ex=2)=>[[-.3,-1],[.3,-1],[-.3,1],[.3,1]].map(([a,b])=>`<rect class="tire" x="${a*w-r}" y="${b>0?h/2-1:-h/2-ex}" width="${r*2}" height="${3+ex-1}" rx="1.5"/>`).join("");
-// Silhouettes vues de dessus, avant vers la droite
-function shape(m,cls){const [,w,h]=MOD[m];const x=-w/2,y=-h/2;
- if(m==="vader")return `<rect class="tire" x="${-w/2}" y="-2" width="9" height="4" rx="2"/><rect class="tire" x="${w/2-9}" y="-2" width="9" height="4" rx="2"/><rect class="${cls}" x="-8" y="-3.4" width="18" height="6.8" rx="3.4"/><rect class="win" x="2" y="-2" width="5" height="4" rx="1"/><rect x="${w/2-12}" y="-5" width="2.2" height="10" rx="1" fill="#0b0b0c"/>`;
- if(m==="rumpo")return wheels(w,h,6)+`<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/><rect class="roof" x="${x+4}" y="${y+3}" width="${w-22}" height="${h-6}" rx="3"/><path class="win" d="M${w/2-17} ${y+3} L${w/2-5} ${y+4} Q${w/2-3} 0 ${w/2-5} ${-y-4} L${w/2-17} ${-y-3}Z"/>`+[-14,-7,0].map(k=>`<line x1="${k}" x2="${k}" y1="${y+3}" y2="${-y-3}" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/>`).join("")+`<rect x="${w/2-2}" y="${y+4}" width="3" height="4" rx="1" fill="#fff6c8"/><rect x="${w/2-2}" y="${-y-8}" width="3" height="4" rx="1" fill="#fff6c8"/>`;
- if(m==="kamacho")return wheels(w,h,7,3)+`<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/><rect class="roof" x="${x+8}" y="${y+4}" width="${w-24}" height="${h-8}" rx="3"/><path class="win" d="M${w/2-15} ${y+3.5} L${w/2-5} ${y+5} Q${w/2-3} 0 ${w/2-5} ${-y-5} L${w/2-15} ${-y-3.5}Z"/><circle cx="${x-3}" cy="0" r="6.5" class="tire"/><circle cx="${x-3}" cy="0" r="3" fill="rgba(255,255,255,.25)"/><rect x="${w/2}" y="${y+2}" width="2.5" height="${h-4}" rx="1" fill="#0b0b0c"/>`;
- if(m==="granger"||m==="landstalker")return wheels(w,h,6)+`<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="7"/><rect class="roof" x="${x+6}" y="${y+3.5}" width="${w-24}" height="${h-7}" rx="3"/><path class="win" d="M${w/2-17} ${y+3} L${w/2-6} ${y+5} Q${w/2-4} 0 ${w/2-6} ${-y-5} L${w/2-17} ${-y-3}Z"/><rect class="win" x="${x+3}" y="${y+5}" width="4" height="${h-10}" rx="1.5"/><line x1="${x+8}" x2="${w/2-19}" y1="${y+2}" y2="${y+2}" stroke="rgba(0,0,0,.5)" stroke-width="1.2"/><line x1="${x+8}" x2="${w/2-19}" y1="${-y-2}" y2="${-y-2}" stroke="rgba(0,0,0,.5)" stroke-width="1.2"/>`;
- // berlines : silhouette effilee
- const nose=m==="deity"?5:4, long=m==="deity"?1:0;
- return wheels(w,h,5.5,1.5)+`<path class="${cls}" d="M${x+5} ${y} L${w/2-12} ${y} Q${w/2-2} ${y+1} ${w/2} ${-y*0.0-1}  L${w/2} 1 Q${w/2-2} ${-y-1} ${w/2-12} ${-y} L${x+5} ${-y} Q${x} ${-y} ${x} ${-y-4} L${x} ${y+4} Q${x} ${y} ${x+5} ${y}Z"/><path class="win" d="M${x+14} ${y+2.5} L${w/2-20} ${y+2.8} L${w/2-14} ${y+5} Q${w/2-12} 0 ${w/2-14} ${-y-5} L${w/2-20} ${-y-2.8} L${x+14} ${-y-2.5}Z"/><rect class="roof" x="${x+22}" y="${y+4}" width="${w-52}" height="${h-8}" rx="3"/>`+(long?`<line x1="${w/2-8}" x2="${w/2-8}" y1="${y+2}" y2="${-y-2}" stroke="rgba(255,255,255,.35)" stroke-width="1"/>`:"");
-}
-const mk=(k)=>MOD[k][0];
-const NS="http://www.w3.org/2000/svg";
-const road=(x,y,w,h,dash=true)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="var(--road)"/>`+(dash?`<line x1="${x}" x2="${x+w}" y1="${y+h/2}" y2="${y+h/2}" stroke="var(--lane)" stroke-width="2" stroke-dasharray="14 12"/>`:"");
-const txt=(x,y,s,c="note",anchor="start")=>`<text class="${c}" x="${x}" y="${y}" text-anchor="${anchor}">${s}</text>`;
-function veh(v){const t=mk(v.m);const cls=TYPES[t][1];
-  return `<g transform="translate(${v.x} ${v.y}) rotate(${v.a||0})">${shape(v.m,cls)}</g>`+(v.l?`<text class="vl" x="${v.x}" y="${v.y}">${v.l}</text>`:"");}
-function icon(m,box=[84,34],pad=4){const [t,w,h]=MOD[m];const sc=Math.min((box[0]-pad*2)/(w+12),(box[1]-pad*2)/(h+6));
-  return `<svg class="ico" viewBox="0 0 ${box[0]} ${box[1]}" aria-hidden="true" style="min-width:0"><g transform="translate(${box[0]/2} ${box[1]/2}) scale(${sc})">${shape(m,TYPES[t][1])}</g></svg>`;}
-const NAME={granger:"Granger",landstalker:"Landstalker XL",kamacho:"Kamacho",rumpo:"Rumpo Trail",vader:"Vader",schafter:"Schafter V12",deity:"Deity",cinq:"Cinquemila"};
-const rows=list=>`<tr><th></th><th>Rép.</th><th>Véhicule</th><th>Rôle</th></tr>`+list.map(r=>`<tr><td class="ic">${icon(r[0])}</td><td><span class="chip"><span class="dot" style="background:${TYPES[mk(r[0])][2]}"></span>${r[1]}</span></td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("");
-const std=(p="")=>[["vader",p+"M",NAME.vader,"Éclaireur, ouvre la route"],["granger",p+"S",NAME.granger,"Tête d'escorte"],["rumpo",p+"1",NAME.rumpo,"Transport"],["rumpo",p+"2",NAME.rumpo,"Transport"],["rumpo",p+"3",NAME.rumpo,"Transport"],["rumpo",p+"4",NAME.rumpo,"Transport"],["kamacho",p+"T",NAME.kamacho,"Serre-file, couvre l'arrière"]];
-const COL=[["vader","M",830],["granger","S",750],["rumpo","1",675],["rumpo","2",605],["rumpo","3",535],["rumpo","4",465],["kamacho","T",385]];
-const S=[];
-S.push({vb:"330 150 570 140",tab:"Route",t:"Convoi en colonne",d:"Déplacement standard sur route dégagée ou autoroute. Un seul axe, intervalles réguliers.",
- rule:"Règlement : 6 véhicules + 1 moto par convoi, maximum 1 SUV et 1 tout-terrain.",
- why:["La moto éclaire 1 à 2 virages devant et signale tout contrôle ou barrage.","Le Granger prend les risques en premier et protège les vans.","Les 4 Rumpo Trail sont au centre : jamais premiers, jamais derniers.","Le Kamacho ferme la colonne et empêche qu'on se glisse derrière."],
- order:std(),
- svg:()=>road(0,190,900,60)+txt(345,262,"sens de marche  →")+COL.map(([m,l,x])=>veh({m,l,x,y:220})).join("")});
-S.push({vb:"180 110 720 220",tab:"Ville",t:"Convoi décalé en ville",d:"Rues à deux voies, carrefours, feux. Les véhicules alternent d'une voie à l'autre.",
- rule:"Recommandation : garder le même ordre de marche qu'en colonne.",
- why:["Le décalage garde le convoi court : il tient mieux aux feux et aux carrefours.","Chaque voie est occupée : personne ne se glisse entre deux véhicules.","Au carrefour, le dernier véhicule ralentit pour couvrir la transversale.","Si un van est bloqué, le suivant du même côté le contourne."],
- order:std(),
- svg:()=>road(0,170,900,100,false)+`<line x1="0" x2="900" y1="220" y2="220" stroke="var(--lane)" stroke-width="2" stroke-dasharray="14 12"/><rect x="215" y="0" width="100" height="440" fill="var(--road)"/><rect x="215" y="170" width="100" height="100" fill="var(--road)"/>`+txt(265,130,"carrefour","note","middle")+txt(380,300,"sens de marche  →")+
-  [["vader","M",830,220],["granger","S",760,195],["rumpo","1",695,245],["rumpo","2",630,195],["rumpo","3",565,245],["rumpo","4",500,195],["kamacho","T",435,245]].map(([m,l,x,y])=>veh({m,l,x,y})).join("")});
-S.push({vb:"180 40 560 340",tab:"Transaction",t:"Échange sur zone",d:"Arrêt pour une transaction. Les vans se placent face à l'autre partie, l'escorte tient le périmètre.",
- rule:"Règlement, transactions : uniquement des vans, loin d'un quartier, d'un entrepôt, d'un laboratoire ou d'une zone safe.",
- why:["Seuls les vans sont au contact : ils sont les seuls autorisés pour la transaction.","Le Granger reste en retrait côté route : c'est notre issue de repli.","Le Kamacho couvre le flanc sud, le plus ouvert.","La moto observe depuis le nord, à l'écart du groupe, et prévient si quelqu'un arrive."],
- order:[["vader","M",NAME.vader,"Poste d'observation, nord"],["granger","S",NAME.granger,"Repli côté route"],["rumpo","1",NAME.rumpo,"Au contact"],["rumpo","2",NAME.rumpo,"Au contact"],["rumpo","3",NAME.rumpo,"En appui"],["rumpo","4",NAME.rumpo,"En appui"],["kamacho","T",NAME.kamacho,"Flanc sud"]],
- svg:()=>road(0,205,330,50)+`<rect x="330" y="95" width="330" height="250" rx="14" fill="none" stroke="var(--zone)" stroke-width="2" stroke-dasharray="8 7"/>`+txt(495,86,"zone d'échange","note","middle")+
-  `<line x1="365" y1="68" x2="440" y2="205" stroke="var(--moto)" stroke-width="1.5" stroke-dasharray="4 4"/>`+
-  [["granger","S",250,230,0],["rumpo","1",420,212,0],["rumpo","2",420,252,0],["rumpo","3",355,212,0],["rumpo","4",355,252,0],["kamacho","T",470,330,0],["vader","M",360,62,0],["other","",570,205,180],["other","",570,255,180],["other","",625,230,180]].map(([m,l,x,y,a])=>veh({m,l,x,y,a})).join("")+txt(590,300,"autre partie","note","middle")});
-S.push({tab:"Deux convois",t:"Deux convois en parallèle",d:"Deux convois partent en même temps sur deux axes différents. 14 véhicules + 2 motos.",
- rule:"Règlement : chaque convoi respecte ses limites, 1 SUV et 1 tout-terrain.",
- why:["Deux axes différents : si un convoi est bloqué, l'autre continue.","Chaque convoi a sa moto, sur la fréquence de son convoi.","Les cargaisons sont réparties : on ne perd pas tout sur une seule interception.","Indicatifs A et B : on sait tout de suite quel convoi est touché."],
- order:std("A").concat(std("B")),
- svg:()=>road(0,100,900,56)+road(0,290,900,56)+txt(24,92,"Convoi A (axe nord)")+txt(24,282,"Convoi B (axe sud)")+
-  [[128,"A"],[318,"B"]].map(([y,p])=>COL.map(([m,l,x])=>veh({m,l:p+l,x,y})).join("")).join("")});
-S.push({tab:"Entrepôt",t:"Stationnement au site",d:"Toute la flotte à l'arrêt : 21 véhicules. Vans au quai, escorte près du portail, direction à part.",
- rule:"Recommandation : garer nez vers la sortie, l'escorte près du portail.",
- why:["Les 10 Rumpo Trail sont au quai : 8 pour les convois, 2 de réserve pour le chargement.","L'escorte est près du portail, nez dehors : elle sort la première.","Les motos sont à côté du portail, prêtes à ouvrir la route.","La direction est garée à part, loin des quais."],
- order:[["rumpo","A1-4",NAME.rumpo,"Vans convoi A"],["rumpo","B1-4",NAME.rumpo,"Vans convoi B"],["rumpo","R1-2",NAME.rumpo,"Réserve et chargement"],["granger","S",NAME.granger+" ×2, "+NAME.landstalker,"Escorte"],["kamacho","T",NAME.kamacho+" ×2","Escorte"],["vader","M",NAME.vader+" ×3","Éclaireurs"],["schafter","D",NAME.schafter+", "+NAME.deity+", "+NAME.cinq,"Direction"]],
- svg:()=>`<rect x="0" y="0" width="900" height="440" fill="var(--panel2)"/><rect x="0" y="195" width="900" height="245" fill="var(--road)"/><rect x="40" y="20" width="800" height="90" rx="4" fill="var(--panel)" stroke="var(--line)"/>`+txt(440,48,"ENTREPÔT","note","middle")+
-  [0,1,2,3,4,5,6,7,8,9].map(i=>`<rect x="${95+i*80-18}" y="106" width="36" height="8" fill="var(--zone)"/>`).join("")+
-  `<line x1="840" y1="195" x2="900" y2="195" stroke="var(--zone)" stroke-width="3"/>`+txt(894,188,"portail →","note","end")+
-  ["A1","A2","A3","A4","B1","B2","B3","B4","R1","R2"].map((l,i)=>veh({m:"rumpo",l,x:95+i*80,y:160,a:90})).join("")+
-  [["granger","AS"],["kamacho","AT"],["granger","BS"],["kamacho","BT"],["landstalker","L"]].map(([m,l],i)=>veh({m,l,x:510+i*70,y:250,a:0})).join("")+
-  ["AM","BM","M3"].map((l,i)=>veh({m:"vader",l,x:790,y:300+i*30,a:0})).join("")+
-  [["schafter","D1"],["deity","D2"],["cinq","D3"]].map(([m,l],i)=>veh({m,l,x:120+i*90,y:340,a:0})).join("")+txt(100,385,"direction")});
-S.push({vb:"430 140 470 160",tab:"Guerre ouverte",t:"Formation de guerre ouverte",d:"Conflit déclaré : 5 véhicules + 1 moto, formation en pointe, sans gros volume.",
- rule:"Règlement, guerre ouverte : 5 véhicules + 1 moto, pas de gros CVC.",
- why:["Le Granger mène : le plus solide pour absorber le premier contact.","Deux Rumpo Trail encadrent la pointe, un troisième ferme l'axe central.","Le Kamacho ferme la formation et couvre le repli.","La moto est en avant, à portée de radio : elle donne l'alerte, elle n'engage pas."],
- order:[["vader","M",NAME.vader,"Éclaireur avancé"],["granger","S",NAME.granger,"Pointe"],["rumpo","1",NAME.rumpo,"Flanc gauche"],["rumpo","2",NAME.rumpo,"Flanc droit"],["rumpo","3",NAME.rumpo,"Centre arrière"],["kamacho","T",NAME.kamacho,"Fermeture"]],
- svg:()=>road(0,170,900,100,false)+`<line x1="0" x2="900" y1="220" y2="220" stroke="var(--lane)" stroke-width="2" stroke-dasharray="14 12"/>`+txt(445,285,"sens de marche  →")+
-  [["vader","M",830,220],["granger","S",730,220],["rumpo","1",650,190],["rumpo","2",650,252],["rumpo","3",570,220],["kamacho","T",490,220]].map(([m,l,x,y])=>veh({m,l,x,y})).join("")});
-S.push({tab:"Flotte et prix",t:"Flotte finale",d:"21 véhicules pour 20 membres. Un seul van, un seul tout-terrain, une direction de prestige.",
- rule:"Prix issus du catalogue du site FlashBackFA. À vérifier en jeu avant achat.",
- why:["Un seul modèle de van : Rumpo Trail. Le convoi est homogène, facile à repérer.","Un seul tout-terrain : Kamacho. Sobre et robuste, il garde la même ligne que le reste.","Schafter V12 plutôt que LWB : 171 km/h contre 143, pour 11 200 $ de plus. La LWB est plus longue mais plus lente.","Les motos Vader sont autorisées aux organisations, mais interdites en braquage et en vente de drogue."],
- fleet:true});
-const FLEET=[["P1","rumpo",8,67200],["P1","granger",2,72800],["P1","kamacho",2,70560],["P1","vader",2,50400],["P1","schafter",1,89600],["P2","rumpo",2,67200],["P2","landstalker",1,56000],["P2","deity",1,392000],["P2","cinq",1,280000],["P2","vader",1,50400]];
-const ROLE={rumpo:"Van de transport, 150 kg",granger:"SUV d'escorte, 8 places",kamacho:"Tout-terrain, 149 km/h",vader:"Moto éclaireur",schafter:"Direction, 171 km/h",landstalker:"SUV de réserve",deity:"Direction de prestige",cinq:"Direction haut de gamme"};
-const fmt=n=>n.toLocaleString("fr-FR")+" $";
+const FLEET=[{"nom": "Schafter V 12", "g": "Berline discrète", "role": "Liaison et déplacements en ville. Passe inaperçue.", "prix": 89600, "vit": 171, "pl": 4, "cof": 50, "q": 1, "moto": false}, {"nom": "Tailgater S", "g": "Berline discrète", "role": "Liaison, repérage de trajet.", "prix": 201600, "vit": 161, "pl": 4, "cof": 50, "q": 1, "moto": false}, {"nom": "Cinquemila", "g": "Direction", "role": "Berline de la direction. Protégée au centre du convoi.", "prix": 280000, "vit": 166, "pl": 4, "cof": 50, "q": 1, "moto": false}, {"nom": "Deity", "g": "Direction", "role": "Berline de prestige du CEO. Toujours au centre, jamais en pointe.", "prix": 392000, "vit": 174, "pl": 4, "cof": 40, "q": 1, "moto": false}, {"nom": "Ubermarcht Rhinehart", "g": "Berline discrète", "role": "Berline sobre, convoi de ville.", "prix": 123200, "vit": 165, "pl": 4, "cof": 50, "q": 1, "moto": false}, {"nom": "Buffalo S T X", "g": "Escorte rapide", "role": "Escorte musclée, ferme la marche.", "prix": 529760, "vit": 190, "pl": 4, "cof": 50, "q": 1, "moto": false}, {"nom": "Calico GTF", "g": "Escorte rapide", "role": "Coupé léger de ville, relais rapide.", "prix": 135520, "vit": 190, "pl": 2, "cof": 40, "q": 1, "moto": false}, {"nom": "Cypher", "g": "Escorte rapide", "role": "Sport de couverture, sortie de zone.", "prix": 474320, "vit": 195, "pl": 2, "cof": 40, "q": 1, "moto": false}, {"nom": "Comet Safari", "g": "Escorte rapide", "role": "Escorte polyvalente route et piste.", "prix": 455840, "vit": 195, "pl": 2, "cof": 40, "q": 1, "moto": false}, {"nom": "Issi Sport", "g": "Escorte rapide", "role": "Petite sportive de ville, relais et reconnaissance.", "prix": 172480, "vit": 180, "pl": 2, "cof": 40, "q": 1, "moto": false}, {"nom": "Jugular", "g": "Escorte rapide", "role": "Grande sportive 4 places, transport de personnel.", "prix": 1022560, "vit": 195, "pl": 4, "cof": 50, "q": 1, "moto": false}, {"nom": "Komoda", "g": "Escorte rapide", "role": "Sportive 4 places, couverture de flanc.", "prix": 800800, "vit": 190, "pl": 4, "cof": 40, "q": 1, "moto": false}, {"nom": "Sunrise", "g": "Escorte rapide", "role": "Coupé de ville, sobre.", "prix": 123200, "vit": 190, "pl": 4, "cof": 30, "q": 1, "moto": false}, {"nom": "Paragon R", "g": "Escorte rapide", "role": "Sportive rapide de réserve (QRF).", "prix": 529760, "vit": 180, "pl": 2, "cof": 40, "q": 1, "moto": false}, {"nom": "Paragon S", "g": "Direction", "role": "GT de prestige. Rendez-vous clients et signatures de contrat.", "prix": 739200, "vit": 180, "pl": 2, "cof": 50, "q": 1, "moto": false}, {"nom": "Vectre", "g": "Escorte rapide", "role": "Escorte de la direction.", "prix": 351120, "vit": 185, "pl": 2, "cof": 40, "q": 1, "moto": false}, {"nom": "V-STR", "g": "Escorte rapide", "role": "Sportive 4 places, QRF.", "prix": 258720, "vit": 180, "pl": 4, "cof": 50, "q": 1, "moto": false}, {"nom": "Maibatsu Arsher Pro 2", "g": "Escorte rapide", "role": "Berline sportive 4 places, discrète.", "prix": 224000, "vit": 185, "pl": 4, "cof": 30, "q": 1, "moto": false}, {"nom": "Dominator GT", "g": "Escorte rapide", "role": "Muscle car, fermeture et blocage.", "prix": 246400, "vit": 172, "pl": 2, "cof": 30, "q": 1, "moto": false}, {"nom": "Caracara 4x4", "g": "Tout-terrain", "role": "Pointe sur piste, 4 places.", "prix": 56000, "vit": 145, "pl": 4, "cof": 150, "q": 1, "moto": false}, {"nom": "Kamacho", "g": "Tout-terrain", "role": "Pointe standard : reconnaît la route.", "prix": 70560, "vit": 149, "pl": 4, "cof": 150, "q": 1, "moto": false}, {"nom": "Mesa trail", "g": "Tout-terrain", "role": "Pointe discrète en ville.", "prix": 50400, "vit": 137, "pl": 4, "cof": 50, "q": 1, "moto": false}, {"nom": "Monstro Citi", "g": "Tout-terrain", "role": "Tout-terrain 2 places, reconnaissance.", "prix": 89600, "vit": 156, "pl": 2, "cof": 80, "q": 1, "moto": false}, {"nom": "Terminus", "g": "Tout-terrain", "role": "Pointe lourde, protège le convoi de direction.", "prix": 201600, "vit": 158, "pl": 4, "cof": 100, "q": 1, "moto": false}, {"nom": "Baller Sport", "g": "SUV", "role": "SUV d'escorte, transport de personnel.", "prix": 145600, "vit": 156, "pl": 4, "cof": 150, "q": 1, "moto": false}, {"nom": "Novak", "g": "SUV", "role": "SUV de direction (interdit en labo).", "prix": 257600, "vit": 169, "pl": 4, "cof": 150, "q": 1, "moto": false}, {"nom": "Rebla GTS", "g": "SUV", "role": "SUV rapide (interdit en labo).", "prix": 280000, "vit": 164, "pl": 4, "cof": 150, "q": 1, "moto": false}, {"nom": "Rocoto", "g": "SUV", "role": "SUV de couverture, autorisé en labo.", "prix": 89600, "vit": 142, "pl": 4, "cof": 150, "q": 1, "moto": false}, {"nom": "Everon RS", "g": "SUV", "role": "Pick-up sportif 2 places, support.", "prix": 207200, "vit": 180, "pl": 2, "cof": 120, "q": 1, "moto": false}, {"nom": "Rumpo Trail", "g": "Van cargo", "role": "Van de transport (150 kg). Transactions autorisées.", "prix": 67200, "vit": 134, "pl": 4, "cof": 150, "q": 2, "moto": false}, {"nom": "Speedo Custom 2", "g": "Van cargo", "role": "Van de transport (200 kg). Transactions autorisées.", "prix": 134400, "vit": 150, "pl": 4, "cof": 200, "q": 1, "moto": false}, {"nom": "Bison S T X", "g": "Support", "role": "Atelier et logistique. Interdit en transaction.", "prix": 25004, "vit": 154, "pl": 2, "cof": 150, "q": 1, "moto": false}, {"nom": "Vader", "g": "Moto", "role": "Éclaireur : ouvre la route, guetteur de CVC.", "prix": 50400, "vit": 0, "pl": 0, "cof": 0, "q": 1, "moto": true}, {"nom": "PCJ600", "g": "Moto", "role": "Éclaireur de réserve.", "prix": 28000, "vit": 0, "pl": 0, "cof": 0, "q": 1, "moto": true}, {"nom": "Nemesis", "g": "Moto", "role": "Éclaireur de ville.", "prix": 31360, "vit": 0, "pl": 0, "cof": 0, "q": 1, "moto": true}];
 const $=id=>document.getElementById(id);
-function show(i){
-  const s=S[i];
-  document.querySelectorAll("#tabs button").forEach((b,j)=>b.setAttribute("aria-selected",j===i));
-  $("t").textContent=s.t;$("d").textContent=s.d;$("rule").textContent=s.rule;
-  $("why").innerHTML=s.why.map(w=>`<li>${w}</li>`).join("");
-  if(s.fleet){
-    $("plan").parentElement.hidden=true;$("legend").innerHTML="";
-    let tot=0,p1=0,p2=0,n=0;
-    const cards=FLEET.map(f=>{const t=f[2]*f[3];tot+=t;n+=f[2];f[0]==="P1"?p1+=t:p2+=t;
-      return `<div class="card"><svg viewBox="0 0 120 64" aria-hidden="true"><g transform="translate(60 32) scale(${Math.min(1.7,100/(MOD[f[1]][1]+10))})">${shape(f[1],TYPES[mk(f[1])][1])}</g></svg><span class="m">${f[0]==="P1"?"Phase 1":"Phase 2"} · ×${f[2]}</span><b>${NAME[f[1]]}</b><span style="color:var(--dim);font-size:.82rem">${ROLE[f[1]]}</span><span class="p">${fmt(f[3])} l'unité</span><span style="color:var(--dim);font-size:.82rem;font-variant-numeric:tabular-nums">Total ${fmt(t)}</span></div>`;}).join("");
-    $("order").innerHTML=`<tr><td colspan="2">Phase 1</td><td class="r">${fmt(p1)}</td></tr><tr><td colspan="2">Phase 2</td><td class="r">${fmt(p2)}</td></tr><tr class="tot"><td>Total</td><td>${n} véhicules</td><td class="r">${fmt(tot)}</td></tr>`;
-    $("cards").innerHTML=cards;$("cards").hidden=false;$("oh").textContent="Budget";return;
-  }
-  $("cards").hidden=true;$("oh").textContent="Ordre de marche";
-  $("plan").parentElement.hidden=false;$("plan").setAttribute("viewBox",s.vb||"0 0 900 440");$("plan").innerHTML=s.svg();
-  const kinds=new Set(s.order.map(r=>mk(r[0])));if(s.tab==="Transaction")kinds.add("other");
-  $("legend").innerHTML=[...kinds].map(k=>`<span class="chip"><span class="dot" style="background:${TYPES[k][2]}"></span>${TYPES[k][0]}</span>`).join("");
-  $("order").innerHTML=rows(s.order);
+const fmt=n=>new Intl.NumberFormat("fr-FR").format(n)+" $";
+const KIND={dir:["Direction","k-dir","var(--dir)"],sport:["Escorte rapide","k-sport","var(--sport)"],sedan:["Berline discrète","k-sedan","var(--sedan)"],off:["Tout-terrain","k-off","var(--off)"],suv:["SUV","k-suv","var(--suv)"],van:["Van cargo","k-van","var(--van)"],moto:["Moto","k-moto","var(--moto)"],foe:["Autre partie ou cible","k-foe","var(--foe)"]};
+const F={};FLEET.forEach(f=>F[f.nom]=f);
+// ---------- Formations ----------
+const R=(y,h)=>`<rect x="0" y="${y}" width="900" height="${h}" fill="var(--road)"/>`;
+const LN=y=>`<line x1="0" x2="900" y1="${y}" y2="${y}" stroke="var(--lane)" stroke-width="2" stroke-dasharray="14 12"/>`;
+const ARW=(y)=>`<text class="note" x="16" y="${y}">sens de marche  →</text>`;
+const S=[
+{tab:"Route",t:"Colonne de route",
+ d:"Transport sur route dégagée. Un seul axe, intervalles réguliers, l'éclaireur ouvre à 300 m.",
+ bg:R(105,90)+LN(150)+ARW(30)+`<text class="note" x="640" y="95">intervalle 40 à 60 m</text>`,
+ it:[[1,"Vader","moto",840,150,"Éclaireur : 300 m devant, signale tout contrôle ou barrage."],[2,"Kamacho","off",730,150,"Pointe : fixe l'allure et choisit la voie."],[3,"Comet Safari","sport",610,150,"Escorte avant : couvre les vans."],[4,"Rumpo Trail","van",490,150,"Cargo 1 : protégé au centre."],[5,"Speedo Custom 2","van",370,150,"Cargo 2 : colle au Rumpo."],[6,"Baller Sport","suv",250,150,"Escorte arrière : surveille les rétros."],[7,"Buffalo S T X","sport",130,150,"Serre-file : dernier, commande la fermeture."]],
+ why:["Les vans sont au centre : rien ne les touche sans passer par l'escorte.","Un seul tout-terrain, en pointe : il prend les mauvais chemins avant les autres.","Le serre-file voit tout le convoi et annonce les décrochages.","Rien ne dépasse 6 véhicules + 1 moto, donc rien à justifier à un contrôle du règlement."],
+ rule:"Règlement : 6 véhicules + 1 moto, 1 SUV et 1 tout-terrain maximum. Pas de plan pneus, pas de hors-piste pour fuir."},
+{tab:"Ville",t:"Colonne décalée en ville",
+ d:"Rues à deux voies et carrefours. Les véhicules alternent de voie : on passe à plusieurs feux sans s'étirer.",
+ bg:R(95,110)+LN(150)+`<rect x="400" y="0" width="90" height="300" fill="var(--road)"/>`+ARW(30),
+ it:[[1,"Nemesis","moto",850,128,"Éclaireur : lit les carrefours à l'avance."],[2,"Mesa trail","off",750,172,"Pointe discrète : l'offroad passe pour un véhicule de chantier."],[3,"Tailgater S","sedan",650,128,"Liaison : tient la voie gauche."],[4,"Schafter V 12","sedan",550,172,"Direction : berline sobre."],[5,"Rhinehart","sedan",330,128,"Berline : comble l'écart derrière le carrefour."],[6,"Sunrise","sport",230,172,"Escorte : garde la voie droite."],[7,"Calico GTF","sport",130,128,"Serre-file : bloque les insertions."]],
+ why:["On alterne les voies : un feu qui passe au rouge ne coupe pas le convoi en deux.","Que des modèles sobres : on se fond dans la circulation.","Au carrefour, le premier qui passe tient la fenêtre, les autres suivent à vue."],
+ rule:"Pas de zone massRP traversée à pleine vitesse. Les motos restent éclaireuses : interdites pour braquage ou vente de drogue."},
+{tab:"Transaction",t:"Échange sur zone",
+ d:"Seuls des vans servent à la transaction. L'escorte tient le périmètre, hors de la zone d'échange.",
+ bg:`<rect x="250" y="60" width="400" height="180" rx="8" fill="none" stroke="var(--zone)" stroke-width="2" stroke-dasharray="8 6"/><text class="note" x="262" y="78">zone d'échange</text>`,
+ it:[[1,"Vader","moto",450,272,"Guetteur : observe la route d'accès, signale la police."],[2,"Rumpo Trail","van",350,130,"Van d'échange 1."],[3,"Speedo Custom 2","van",350,170,"Van d'échange 2."],[0,"Partie adverse","foe",550,130,"Camion ou van de l'autre partie."],[0,"Partie adverse","foe",550,170,"Idem."],[4,"Kamacho","off",205,60,"Accès nord : bloque l'entrée."],[5,"Cypher","sport",205,240,"Sortie : prêt à ouvrir la route."],[6,"Komoda","sport",695,60,"Flanc est : couverture."],[7,"V-STR","sport",695,240,"Flanc est : reprise."]],
+ why:["Seuls les vans entrent dans la zone, comme l'exige le règlement.","L'escorte est à l'extérieur : pas de véhicule de sport dans un échange.","La sortie est toujours libre : le Cypher ne bloque jamais l'issue."],
+ rule:"Interdit : transaction près d'un quartier, d'un entrepôt, d'un labo, d'une zone sécurisée, avec un véhicule de location. 50 unités maximum par personne."},
+{tab:"Guerre ouverte",t:"Pointe de guerre ouverte",
+ d:"Conflit déclaré : 5 véhicules + 1 moto, pas de grand convoi. Formation en pointe de flèche.",
+ bg:R(60,180)+ARW(30),
+ it:[[1,"PCJ600","moto",860,150,"Éclaireur : trouve l'adversaire, ne s'engage pas."],[2,"Kamacho","off",780,150,"Pointe : prend le premier contact."],[3,"Jugular","sport",680,100,"Flanc gauche."],[4,"Komoda","sport",680,200,"Flanc droit."],[5,"Cypher","sport",570,70,"Aile gauche, retrait rapide."],[6,"Dominator GT","sport",570,230,"Aile droite, blocage."]],
+ why:["En pointe de flèche, tous les véhicules voient devant sans se masquer.","Le Dominator GT est le seul muscle : il sert à bloquer, pas à fuir.","5 véhicules + 1 moto : la limite de guerre ouverte, jamais plus."],
+ rule:"Guerre ouverte : 5 véhicules + 1 moto (organisation). Pas de plan pneus, pas de drive-by (réservé aux gangs et MC), pas de straff hors guerre ouverte, CVC, GDT ou PVP validé."},
+{tab:"Direction",t:"Convoi de direction",
+ d:"Déplacement du CEO et du COO. Boîte de protection : tout ce qui est précieux est au centre.",
+ bg:R(75,150)+LN(112)+LN(188)+ARW(30),
+ it:[[1,"Vader","moto",860,150,"Éclaireur : 300 m devant."],[2,"Terminus","off",780,150,"Pointe lourde : ouvre le passage."],[3,"Novak","suv",680,105,"Flanc gauche : SUV d'escorte."],[4,"Vectre","sport",680,195,"Flanc droit : voie de dégagement."],[5,"Deity","dir",590,150,"CEO : au centre, jamais en pointe."],[6,"Cinquemila","dir",490,105,"COO : couvert à gauche."],[7,"Paragon S","dir",490,195,"Prestige : couvert à droite."]],
+ why:["La direction est au centre : aucun côté n'est exposé.","Le SUV et le Vectre ferment les flancs de l'avant, comme dans une escorte officielle.","Trois voies : une manoeuvre d'évitement n'a jamais à passer par-dessus une berline de direction."],
+ rule:"Respecte la limite de 6 véhicules + 1 moto. Novak et Rebla : interdits en labo."},
+{tab:"GDT",t:"Stationnement GDT",
+ d:"Pendant la GDT, aucun véhicule dans l'instance. On se gare à l'extérieur, le nez vers la sortie.",
+ bg:`<rect x="330" y="95" width="240" height="110" rx="8" fill="none" stroke="var(--zone)" stroke-width="2" stroke-dasharray="8 6"/><text class="note" x="344" y="118">instance GDT : aucun véhicule</text>`,
+ it:[[1,"PCJ600","moto",450,262,"Guetteur de CVC, hors instance."],[2,"Caracara 4x4","off",245,150,"Accès ouest : sortie de piste."],[3,"Paragon R","sport",360,45,"Nord : départ rapide."],[4,"V-STR","sport",540,45,"Nord : départ rapide."],[5,"Buffalo S T X","sport",655,150,"Accès est."],[6,"Rocoto","suv",540,255,"Sud : repli des blessés."],[7,"Rumpo Trail","van",360,255,"Ravitaillement : munitions et soins."]],
+ why:["Les véhicules sont garés nez vers l'extérieur : départ immédiat.","Un seul tout-terrain à l'ouest, les sportives au nord.","Pas de véhicule dans l'instance : la règle est tenue, le plan reste lisible."],
+ rule:"GDT : mêlée, bagarre ou armes à feu. Aucun véhicule pendant l'attaque, ATA de 45 minutes pour tous. Limite GDT : 20 membres et 5 kevlars."},
+{tab:"Interception",t:"Interception d'un véhicule",
+ d:"Intercepter un véhicule ennemi : le seul cas hors transaction qui autorise plus de 6 véhicules. On encadre, on ne percute pas.",
+ bg:R(90,120)+LN(150)+ARW(30),
+ it:[[1,"Vader","moto",740,150,"Éclaireur : annonce la cible."],[2,"Kamacho","off",615,150,"Bloque devant, freinage progressif."],[0,"Cible","foe",500,150,"Véhicule ennemi."],[3,"Cypher","sport",500,108,"Flanc gauche, ralentit."],[4,"Komoda","sport",500,192,"Flanc droit, ralentit."],[5,"V-STR","sport",385,108,"Ferme à gauche."],[6,"Buffalo S T X","sport",385,192,"Ferme à droite."],[7,"Dominator GT","sport",280,150,"Bouchon arrière."],[8,"Vectre","sport",175,150,"Réserve : prêt à remplacer."]],
+ why:["On encadre la cible dans une boîte : 4 côtés, aucun ne percute.","Le Dominator GT est le seul véhicule lourd pour le blocage arrière.","Plus de 6 véhicules, mais seulement pour ce cas (règlement)."],
+ rule:"Plus de 6 véhicules autorisés pour : transaction ou récolte de drogue, interception d'un véhicule ennemi, événement validé par le staff, convoi de saisie SAMP ou LVSO. Retour à la taille normale après."},
+{tab:"Labo",t:"Récolte et laboratoire",
+ d:"Récolte ou accès labo : véhicules de transaction + 4x4 et SUV, hors liste interdite.",
+ bg:R(105,90)+LN(150)+ARW(30)+`<text class="note" x="560" y="95">3 km minimum des entrepôts et QG</text>`,
+ it:[[1,"Nemesis","moto",850,150,"Éclaireur : surveille le labo."],[2,"Kamacho","off",740,150,"Pointe."],[3,"Rocoto","suv",620,150,"SUV de couverture (Novak et Rebla sont interdits en labo)."],[4,"Rumpo Trail","van",500,150,"Cargo : matières premières."],[5,"Speedo Custom 2","van",380,150,"Cargo : retour de production."]],
+ why:["Seuls les véhicules autorisés en labo : on évite Novak, Rebla, Bison.","Convoi allégé : moins on attire l'attention, plus le labo reste discret."],
+ rule:"Interdit en labo : Dune, Kalahari, Outlaw, Trophy Truck, Verus, Winky, Astron, Habanero, Radi, Serrano, Toros, Rebla, Novak, Jubilee, Gresley H. Les labos doivent rester à 3 km des entrepôts et QG."}
+];
+function veh(it){
+  const [n,nom,k,x,y]=it;const moto=k==="moto";const w=moto?34:(k==="van"?66:58),h=moto?12:24;
+  const num=n?`<text class="vl" x="${x}" y="${y}">${n}</text>`:"";
+  return `<rect class="${KIND[k][1]}" x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="${moto?5:6}"><title>${nom}</title></rect>${num}`;
 }
-$("tabs").innerHTML=S.map((s,i)=>`<button role="tab" aria-selected="false" data-i="${i}">${s.tab}</button>`).join("");
-$("tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b)show(+b.dataset.i)});
-show(0);
-</script>
+function kindOf(g){return {Direction:"dir","Escorte rapide":"sport","Berline discrète":"sedan","Tout-terrain":"off",SUV:"suv","Van cargo":"van",Moto:"moto",Support:"van"}[g]||"sport"}
+function formation(i){
+  const s=S[i];
+  const svg=`<svg viewBox="0 0 900 300" role="img" aria-label="${s.t}">${s.bg||""}${s.it.map(veh).join("")}</svg>`;
+  const kinds=[...new Set(s.it.map(r=>r[2]))];
+  const legend=kinds.map(k=>`<span><span class="dot" style="background:${KIND[k][2]}"></span>${KIND[k][0]}</span>`).join("");
+  const rows=s.it.filter(r=>r[0]).sort((a,b)=>a[0]-b[0]).map(r=>{const f=F[r[1]]||F[({"Rhinehart":"Ubermarcht Rhinehart"})[r[1]]]||null;return `<tr><td>${r[0]}</td><td><b>${r[1]}</b><br><small style="color:var(--dim)">${f?f.g:""}</small></td><td>${r[5]}</td></tr>`}).join("");
+  return `<div class="board"><nav class="sub2" id="subtabs">${S.map((x,j)=>`<button role="tab" aria-selected="${j===i}" data-f="${j}">${x.tab}</button>`).join("")}</nav>
+  <div class="legend">${legend}</div><div class="svgbox">${svg}</div>
+  <div class="cols"><div><h2>${s.t}</h2><p class="sub" style="margin:.2rem 0 .8rem">${s.d}</p><h3>Pourquoi cette disposition</h3><ul class="l">${s.why.map(w=>`<li>${w}</li>`).join("")}</ul></div>
+  <div><h3>Ordre de marche</h3><div class="tbl"><table><tr><th>N°</th><th>Véhicule</th><th>Mission</th></tr>${rows}</table></div></div></div>
+  <div class="rule"><b>Règle.</b> ${s.rule}</div></div>`;
+}
+// ---------- Flotte ----------
+let q="";
+function flotte(){
+  const norm=s=>String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+  const list=FLEET.filter(f=>!q||norm(f.nom+" "+f.g+" "+f.role).includes(norm(q)));
+  const units=FLEET.reduce((a,f)=>a+f.q,0),total=FLEET.reduce((a,f)=>a+f.q*f.prix,0);
+  const groups={};FLEET.forEach(f=>{groups[f.g]=(groups[f.g]||0)+f.q});
+  const order=["Direction","Berline discrète","Escorte rapide","Tout-terrain","SUV","Van cargo","Support","Moto"];
+  const body=order.map(g=>{const rs=list.filter(f=>f.g===g);if(!rs.length)return"";
+    return `<tr><td colspan="6"><h3 style="margin:.6rem 0 0"><span class="dot" style="background:${KIND[kindOf(g)][2]}"></span>${g} (${groups[g]})</h3></td></tr>`+rs.map(f=>`<tr><td><b>${f.nom}</b>${f.q>1?` <small>x${f.q}</small>`:""}${f.moto?` <small style="color:var(--dim)">moto : éclaireur seulement</small>`:""}<br><small style="color:var(--dim)">${f.role}</small></td><td class="r">${f.vit?f.vit+" km/h":"-"}</td><td class="r">${f.pl||"-"}</td><td class="r">${f.cof?f.cof+" kg":"-"}</td><td class="r">${fmt(f.prix)}</td></tr>`).join("")}).join("");
+  return `<div class="board"><div class="stats"><div class="stat"><b>${units}</b><span>véhicules</span></div><div class="stat"><b>${(total/1e6).toFixed(2).replace(".",",")} M$</b><span>valeur de la flotte</span></div><div class="stat"><b>20</b><span>membres (25 au total)</span></div><div class="stat"><b>3</b><span>convois de 6 + 1</span></div></div>
+  <input type="search" id="q" placeholder="🔍 Rechercher un véhicule, un rôle..." value="${q.replace(/"/g,"&quot;")}">
+  <div class="tbl"><table><tr><th>Véhicule</th><th class="r">Vitesse</th><th class="r">Places</th><th class="r">Coffre</th><th class="r">Prix</th></tr>${body||'<tr><td colspan="5">Aucun résultat.</td></tr>'}</table></div>
+  <div class="grid2"><div class="card"><h3>Retirés de la liste</h3><ul><li>Buffalo S, Sultan RS classic, Gresley : interdits aux organisations (catalogue FA).</li><li>Bison STX : gardé en support, interdit en transaction.</li></ul></div>
+  <div class="card"><h3>À savoir</h3><ul><li>Novak et Rebla GTS : interdits en labo.</li><li>Paragon S et Maibatsu Arsher Pro 2 : au catalogue Elite Vinewood, non interdits.</li><li>Motos : ni braquage, ni vente de drogue. On les utilise comme éclaireurs.</li></ul></div></div></div>`;
+}
+// ---------- Rôles et radio ----------
+const ROLES=`<div class="grid2">
+<div class="card"><h3>Rôles dans un convoi</h3><ul>
+<li><b>Chef de convoi</b> : donne le départ, l'arrêt et les changements de plan. Un seul à parler sur le canal de commandement.</li>
+<li><b>Éclaireur</b> (moto) : 300 m devant. Signale contrôle, barrage, patrouille. Ne s'engage jamais.</li>
+<li><b>Pointe</b> (tout-terrain) : fixe l'allure et choisit la voie.</li>
+<li><b>Cargo</b> (vans) : protégés au centre, toujours à portée de l'escorte.</li>
+<li><b>Escorte</b> : couvre les flancs, garde les intervalles.</li>
+<li><b>Serre-file</b> : dernier véhicule, annonce les décrochages et ferme les carrefours.</li></ul></div>
+<div class="card"><h3>Distances</h3><ul>
+<li>Éclaireur : 300 m devant la pointe.</li>
+<li>Intervalle en route : 40 à 60 m.</li>
+<li>Intervalle en ville : 15 à 25 m, voies alternées.</li>
+<li>Arrêt : 5 m entre véhicules, nez vers la sortie.</li>
+<li>Guetteur sur une transaction : 200 m minimum.</li></ul></div>
+<div class="card"><h3>Radio (brèves)</h3><ul>
+<li><code>Oscar Mike</code> : en mouvement.</li><li><code>Contact</code> + direction : police ou hostile en vue.</li><li><code>Roger</code> / <code>Wilco</code> : reçu / sera fait.</li>
+<li><code>Négatif</code> : non.</li><li><code>Break</code> : j'interromps pour une urgence.</li><li><code>Standby</code> : attends.</li>
+<li><code>Rendez-compte</code> : demande de situation.</li><li><code>Alpha, Bravo</code> : convoi 1, convoi 2.</li><li><code>Fin de mission</code> : tout le monde au point de dispersion.</li></ul></div>
+<div class="card"><h3>Plan PACE</h3><ul>
+<li><b>P</b>rimaire : route normale, canal radio principal.</li>
+<li><b>A</b>lternatif : deuxième route, deuxième canal.</li>
+<li><b>C</b>ontingence : point de regroupement fixe, à pied si besoin.</li>
+<li><b>E</b>mergence : dispersion et retour séparé au QG.</li>
+<li>Le chef annonce le plan avant chaque départ.</li></ul></div></div>`;
+// ---------- Procédures ----------
+const PROC=`<div class="grid2">
+<div class="card"><h3>Avant le départ</h3><ul>
+<li>Briefing de 2 minutes : mission, route, plan PACE, qui est chef.</li>
+<li>Vérifier carburant, état, kevlar visible (une pièce par joueur, 5 maximum en GDT).</li>
+<li>Pas d'arme lourde sans 200 h de jeu, deux armes maximum par personne.</li>
+<li>Test radio dans l'ordre de marche.</li></ul></div>
+<div class="card"><h3>En route</h3><ul>
+<li>Respecter l'ordre de marche et les intervalles. Pas de dépassement sans ordre.</li>
+<li>Aucune conversation inutile sur le canal de commandement.</li>
+<li>Pas de moto en action illégale en dehors du rôle d'éclaireur.</li>
+<li>Le serre-file annonce tout décrochage.</li></ul></div>
+<div class="card"><h3>Contact police</h3><ul>
+<li>L'éclaireur annonce <code>Contact</code>, direction et nombre.</li>
+<li>Décision du chef : dispersion ou arrêt. Pas de fuite hors-piste injustifiée.</li>
+<li>Plan pneus interdit. Pas de tirs sur la police sans cadre RP validé.</li>
+<li>On ne sacrifie jamais un cargo pour sauver une escorte.</li></ul></div>
+<div class="card"><h3>Contact hostile</h3><ul>
+<li>Pas de tir tant que le Lead n'a pas donné l'ordre (seul le Lead OP ordonne le tir).</li>
+<li>Radio avant toute action offensive. Appel audible.</li>
+<li>Pas de drive-by : réservé aux gangs et MC.</li>
+<li>On cherche d'abord à sortir, on engage en dernier recours.</li></ul></div>
+<div class="card"><h3>Panne ou véhicule perdu</h3><ul>
+<li>Annoncer <code>Rendez-compte</code> avec position.</li>
+<li>Le serre-file reste avec le véhicule, le convoi continue.</li>
+<li>Le cargo est transféré avant tout abandon.</li></ul></div>
+<div class="card"><h3>Retour et débrief</h3><ul>
+<li>Tout le monde au point de dispersion, véhicules garés, armes rangées.</li>
+<li>Débrief de 3 minutes : qu'est-ce qui était prévu, qu'est-ce qui s'est passé, qu'est-ce qu'on change.</li>
+<li>Le chef note les erreurs, pas les coupables.</li></ul></div></div>
+<div class="rule"><b>Principe.</b> On est d'anciens militaires et policiers : ordre, ponctualité, radio brève, débrief systématique. C'est notre signature, et c'est ce qui nous distingue des gangs.</div>`;
+// ---------- Router ----------
+const TABS=[["flotte","Flotte"],["form","Formations"],["roles","Rôles et radio"],["proc","Procédures"]];
+let cur="flotte",fi=0;
+function render(){
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===cur));
+  $("view").innerHTML=cur==="flotte"?flotte():cur==="form"?formation(fi):cur==="roles"?ROLES:PROC;
+  const qi=$("q");if(qi){qi.addEventListener("input",e=>{q=e.target.value;const p=e.target.selectionStart;render();const n=$("q");n.focus();n.setSelectionRange(p,p)})}
+}
+$("tabs").innerHTML=TABS.map(t=>`<button role="tab" aria-selected="false" data-t="${t[0]}">${t[1]}</button>`).join("");
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b){cur=b.dataset.t;render()}});
+$("view").addEventListener("click",e=>{const b=e.target.closest("button[data-f]");if(b){fi=+b.dataset.f;render()}});
+render();
+</script></body></html>
