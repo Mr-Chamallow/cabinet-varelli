@@ -75,6 +75,12 @@ export default function ComptaHubPage() {
 
   // --- Budget de lancement (indépendant du filtre d'argent) ---
   const isInvest = (e: any) => e.type !== "recette" && /^investissement/i.test(e.categorie || "");
+  const stockVal = useMemo(() => {
+    const parCat: Record<string, number> = {}; let total = 0, n = 0;
+    stocks.forEach(s => { const v = (Number(s.quantite) || 0) * (Number(s.prix_unitaire) || 0); if (v > 0) { total += v; n++; parCat[s.categorie || "autre"] = (parCat[s.categorie || "autre"] || 0) + v; } });
+    const top = Object.entries(parCat).sort((a, b) => b[1] - a[1])[0];
+    return { total, n, top };
+  }, [stocks]);
   const budgetCalc = useMemo(() => {
     const tPropre = capital + (Number(bg?.propre) || 0), tSale = Number(bg?.sale) || 0, tMixte = Number(bg?.mixte) || 0;
     const reste = tPropre + tSale + tMixte;
@@ -192,6 +198,8 @@ export default function ComptaHubPage() {
             <Kpi icon="💵" label="Caisse propre" value={fmt(budgetCalc.tPropre)} color={budgetCalc.tPropre >= seuil ? COL.rec : COL.dep} sub={seuil > 0 && budgetCalc.tPropre < seuil ? "sous le seuil, la paie demandera confirmation" : "capital inclus"} />
             <Kpi icon="🕶️" label="Caisse sale" value={fmt(budgetCalc.tSale)} color={COL.dep} sub="à blanchir" />
             <Kpi icon="🔀" label="Caisse mixte" value={fmt(budgetCalc.tMixte)} />
+            <Kpi icon="📦" label="Valeur du stock" value={fmt(stockVal.total)} color={COL.warn} sub={`${stockVal.n} article(s) valorisé(s)${stockVal.top ? " · surtout " + stockVal.top[0] : ""}`} />
+            <Kpi icon="🏛️" label="Patrimoine (caisses + stock)" value={fmt(budgetCalc.reste + stockVal.total)} color={budgetCalc.reste + stockVal.total >= 0 ? COL.rec : COL.dep} sub="valeur au coût moyen d'achat" />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
             <Panel title="Réglages du budget">

@@ -507,6 +507,7 @@ export default function CahierVentePage() {
               }
               if (form.type === "entrée" && (form.categorie === "arme" || form.categorie === "munition") && armeLourdeOuAuto(nom)) w.push("Arme automatique ou lourde : interdite à la vente aux petites frappes et aux indépendants.");
               if (form.type === "entrée" && estKevlar({ nom, categorie: form.categorie })) w.push("Kevlar / GPB : vente aux organisations et gangs uniquement, 150.000 $ minimum (+20% max en sale), jamais aux indépendants.");
+              if (form.type === "entrée" && prodForm && Number(prodForm.achat) > 0 && form.montant > 0 && form.montant / qteForm < Number(prodForm.achat)) { const pu = form.montant / qteForm; w.push(`Vente sous le prix de revient : ${fmt(Math.round(pu))} / unité contre un coût de ${fmt(Math.round(Number(prodForm.achat)))} (perte de ${fmt(Math.round((Number(prodForm.achat) - pu) * qteForm))}).`); }
               if (form.type === "entrée" && form.categorie === "accessoire") w.push("Accessoires d'armes : jamais aux indépendants ; petites frappes : tous sauf chargeurs.");
               return w.length ? <div style={{ margin: "-0.25rem 0 0.9rem", display: "flex", flexDirection: "column", gap: "0.25rem" }}>{w.map((x, i) => <div key={i} style={{ fontSize: "0.76rem", color: "var(--warning)" }}>⚠️ {x}</div>)}</div> : null;
             })()}
