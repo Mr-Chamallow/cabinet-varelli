@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
+import { estDirection } from "@/lib/direction";
 import { sendDiscordAlert, ARMURERIE_CATEGORIES } from "@/lib/discordAlert";
 
 // Mouvement de stock ATOMIQUE : tout (verrou, controle, historique, stock, compta) se fait dans la fonction SQL
 // obsidian_mouvement_stock (lot 52). Plus de risque de sortie en double ni d'historique desynchronise.
 export async function POST(req: Request) {
   try {
-    const { authorized, supabaseAdmin, error } = await requireAnyPermission(["obsidian_stocks", "obsidian_armurerie"]);
+    const { authorized, supabaseAdmin, user, error } = await requireAnyPermission(["obsidian_stocks", "obsidian_armurerie"]);
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
 
     const { stock_id, type, quantite, motif, membre, created_by, prix_unitaire: prixBody, type_argent } = await req.json();
+    if (/^\s*ajustement/i.test(String(motif || "")) && !estDirection((user as any)?.site_role)) return NextResponse.json({ error: "Ajustement réservé au CEO et au COO" }, { status: 403 });
     const qte = Number(quantite);
     if (!stock_id || !Number.isFinite(qte) || qte <= 0) {
       return NextResponse.json({ error: "stock_id et quantite (> 0) sont requis" }, { status: 400 });

@@ -16,7 +16,7 @@ export const isUrgent = (title: string, _color?: number, desc = "") => URGENT.te
 
 export async function postAlert(kind: DiscordWebhookKind, title: string, description: string, color = GOLD, fields?: DiscordEmbedField[], ping?: RoleKey[], pingUsers?: string[]) {
   try {
-    const urgent = isUrgent(title, color, description);
+    const urgent = !!(ping?.length || pingUsers?.length);
     const roles = urgent ? ping : undefined;
     const parts = [roles?.length ? mention(roles) : "", ...(urgent ? (pingUsers || []).map(u => `<@${u}>`) : [])].filter(Boolean);
     await sendDiscordMessage(kind, { title, description, color, fields, content: parts.join(" ") || undefined, mentionRoles: roles?.length ? roleIds(roles) : [], mentionUsers: urgent ? (pingUsers || []) : [] });
@@ -29,9 +29,9 @@ export async function syncAlert(db: any, table: string, row: any, kind: DiscordW
   try {
     if (row?.discord_message_id) {
       const r = await editDiscordMessage(kind, row.discord_message_id, { title, description, color, fields });
-      if (r.ok) { if (ping?.length && isUrgent(title, color, description)) await postAlert(kind, `🔔 ${title}`, "Voir le message d'origine ci-dessus.", color, undefined, ping); return; }
+      if (r.ok) { if (ping?.length) await postAlert(kind, `🔔 ${title}`, "Voir le message d'origine ci-dessus.", color, undefined, ping); return; }
     }
-    const urgent = isUrgent(title, color, description);
+    const urgent = !!ping?.length;
     const r = await sendDiscordMessage(kind, { title, description, color, fields, content: urgent && ping?.length ? mention(ping) : undefined, mentionRoles: urgent && ping?.length ? roleIds(ping) : [] });
     if (r.messageId && row?.id) await db.from(table).update({ discord_message_id: r.messageId }).eq("id", row.id);
   } catch {}
@@ -50,7 +50,7 @@ export async function bigThreshold(db: any): Promise<number> {
 export async function bigMoveAlert(db: any, montant: number, label: string, who: string) {
   const seuil = await bigThreshold(db);
   if (!seuil || Math.abs(montant) < seuil) return;
-  await postAlert("compta", `${montant >= 0 ? "💰 Gros gain" : "📉 Grosse perte"} - ${usd(Math.abs(montant))}`, `${label}\nPar **${who || "?"}**`, montant >= 0 ? GREEN : RED, undefined, ["CEO", "COO"]);
+  await postAlert("compta", `${montant >= 0 ? "💰 Gros gain" : "📉 Grosse perte"} - ${usd(Math.abs(montant))}`, `${label}\nPar **${who || "?"}**`, montant >= 0 ? GREEN : RED, undefined, ["RL", "CEO", "COO"]);
 }
 
 // Journal des actions sensibles (Admin > Journaux > Sensibles). Ne throw jamais.

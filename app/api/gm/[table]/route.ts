@@ -96,11 +96,11 @@ async function afterUpdate(db: any, table: string, old: any, row: any, who: stri
     const nv = (row.violations || []).length - (old.violations || []).length;
     if (nv > 0) {
       await rep(db, row.organisation, -10 * nv, `${nv} violation(s) du pacte`, "pacte_violation", row.id, who);
-      await postAlert("gm", `⚠️ Violation de pacte - ${row.organisation}`, (row.violations || []).slice(-nv).map((v: any) => `· ${v.texte}`).join("\n"), ORANGE, undefined, GROUPS.JURIDIQUE);
+      await postAlert("gm", `⚠️ Violation de pacte - ${row.organisation}`, (row.violations || []).slice(-nv).map((v: any) => `· ${v.texte}`).join("\n"), ORANGE, undefined, ["RESP"]);
     }
     if (row.statut !== old.statut) {
       if (row.statut === "rompu") await rep(db, row.organisation, -20, "Pacte rompu", "pacte_rompu", row.id, who);
-      await syncAlert(db, table, row, "gm", `🤝 Pacte - ${row.organisation}`, `Statut : **${row.statut}** _(avant : ${old.statut})_`, row.statut === "rompu" ? RED : GOLD, undefined, row.statut === "rompu" ? [...GROUPS.JURIDIQUE, ...GROUPS.DIRECTION] : undefined);
+      await syncAlert(db, table, row, "gm", `🤝 Pacte - ${row.organisation}`, `Statut : **${row.statut}** _(avant : ${old.statut})_`, row.statut === "rompu" ? RED : GOLD, undefined, row.statut === "rompu" ? ["RESP"] : undefined);
     }
   } else if (table === "tribunal_dossiers") {
     if (row.verdict !== old.verdict && row.verdict !== "en_cours") {
@@ -109,7 +109,7 @@ async function afterUpdate(db: any, table: string, old: any, row: any, who: stri
         if (!dupC) await db.from("gm_evenements").insert([{ type: "capture", titre: `Capture : ${row.accuse || row.organisation || row.titre}`, statut: "a_faire", partenaire: row.organisation || null, dossier_id: row.id, notes: `Condamné par le Tribunal de l'Ombre - dossier « ${row.titre} ».${row.sentence ? `\nSentence : ${row.sentence}` : ""}`, created_by: who }]);
       }
       if (row.verdict === "coupable" && row.organisation) await rep(db, row.organisation, -15, `Condamné : ${row.titre}`, "tribunal", row.id, who);
-      await postAlert("gm", `⚖️ Verdict - ${row.titre}`, `**${row.verdict === "coupable" ? "COUPABLE" : "INNOCENT"}**${row.sentence ? `\nSentence : ${row.sentence}` : ""}\nAccusé : ${row.accuse || row.organisation || "?"}`, row.verdict === "coupable" ? RED : GREEN, undefined, row.verdict === "coupable" ? [...GROUPS.SECURITE, "CEO", "RJ"] : GROUPS.JURIDIQUE);
+      await postAlert("gm", `⚖️ Verdict - ${row.titre}`, `**${row.verdict === "coupable" ? "COUPABLE" : "INNOCENT"}**${row.sentence ? `\nSentence : ${row.sentence}` : ""}\nAccusé : ${row.accuse || row.organisation || "?"}`, row.verdict === "coupable" ? RED : GREEN, undefined, row.verdict === "coupable" ? ["RESP"] : GROUPS.JURIDIQUE);
     } else if (row.statut !== old.statut) {
       await syncAlert(db, table, row, "gm", `⚖️ Dossier - ${row.titre}`, `Accusé : **${row.accuse || row.organisation || "?"}**\nStatut : **${row.statut}**`, GOLD);
     }

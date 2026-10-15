@@ -89,7 +89,7 @@ export async function GET(req: Request) {
   try {
     const { data: aud } = await db.from("gm_audits").select("id,organisation,sanction,sanction_fin").eq("sanction_alerte", false).not("sanction_fin", "is", null).lte("sanction_fin", new Date(now).toISOString());
     for (const a of aud || []) {
-      await postAlert("gm", `✅ Sanction levée - ${a.organisation}`, `« ${a.sanction || "Sanction"} » est terminée.`, GREEN, undefined, ["COO"]);
+      await postAlert("gm", `✅ Sanction levée - ${a.organisation}`, `« ${a.sanction || "Sanction"} » est terminée.`, GREEN, undefined, ["RESP"]);
       await db.from("gm_audits").update({ sanction_alerte: true }).eq("id", a.id);
     }
     out.sanctions = (aud || []).length;
@@ -106,7 +106,7 @@ export async function GET(req: Request) {
     const caisse = (Number(b?.capital) || 0) + (Number(b?.propre) || 0);
     if (seuil > 0) {
       if (caisse < seuil && !st?.alerte_treso) {
-        await postAlert("compta", "💸 Trésorerie basse", `La caisse propre est à **${usd(caisse)}**, sous le seuil de **${usd(seuil)}**.`, ORANGE, undefined, ["CEO"]);
+        await postAlert("compta", "💸 Trésorerie basse", `La caisse propre est à **${usd(caisse)}**, sous le seuil de **${usd(seuil)}**.`, ORANGE, undefined, ["RL", "RESP"]);
         await db.from("obsidian_settings").update({ alerte_treso: true }).eq("id", "default");
         out.treso = "alerte";
       } else if (caisse >= seuil && st?.alerte_treso) {
