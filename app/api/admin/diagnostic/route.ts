@@ -88,6 +88,49 @@ export async function GET() {
     detail: `Connecté en tant que ${(session.user as any)?.discord_name || "?"} (rôle: ${(session.user as any)?.site_role || "?"})`,
   });
 
+  // --- Intégrité des données (stocks / compta) ---
+  if (url && serviceKey) {
+    try {
+      const db = createClient(url, serviceKey);
+      const all = async (table: string, cols: string) => {
+        const rows: any[] = [];
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await db.from(table).select(cols).range(from, from + 999);
+          if (error) throw new Error(`${table} : ${error.message}`);
+          rows.push(...(data || []));
+          if (!data || data.length < 1000) break;
+        }
+        return rows;
+      };
+      const [stocks, mvts, compta] = await Promise.all([
+        all("obsidian_stocks", "id,nom,quantite,prix_unitaire"),
+        all("obsidian_mouvements", "id,stock_id,stock_nom,type,quantite,total,motif"),
+        all("obsidian_comptabilite", "id,type,montant,semaine,source,source_id,type_argent"),
+      ]);
+      const list = (a: string[]) => (a.length > 6 ? a.slice(0, 6).join(", ") + ` ... (+${a.length - 6})` : a.join(", "));
+      const add = (label: string, bad: string[], okTxt: string) =>
+        checks.push({ label, ok: bad.length === 0, detail: bad.length ? `${bad.length} problème(s) : ${list(bad)}` : okTxt });
+
+      add("Stocks négatifs", stocks.filter(x => Number(x.quantite) < 0).map(x => `${x.nom} (${x.quantite})`), `${stocks.length} stocks, aucun négatif`);
+      add("Prix de stock invalides", stocks.filter(x => Number(x.prix_unitaire) < 0 || isNaN(Number(x.prix_unitaire))).map(x => x.nom), "Aucun prix négatif");
+
+      const stockIds = new Set(stocks.map(x => x.id));
+      add("Mouvements sans stock", mvts.filter(m => m.stock_id && !stockIds.has(m.stock_id)).map(m => `${m.stock_nom}`), `${mvts.length} mouvements rattachés à un stock`);
+
+      const comptaStock = compta.filter(c => c.source === "stock");
+      const comptaIds = new Map<string, number>();
+      comptaStock.forEach(c => comptaIds.set(c.source_id, (comptaIds.get(c.source_id) || 0) + 1));
+      const achats = mvts.filter(m => ["entrée", "entree"].includes(m.type) && Number(m.total) > 0 && !/^(annulation|ajustement)/i.test(m.motif || ""));
+      add("Achats sans écriture compta", achats.filter(m => !comptaIds.has(m.id)).map(m => `${m.quantite} x ${m.stock_nom}`), `${achats.length} achats valorisés, tous comptabilisés`);
+      const mvtIds = new Set(mvts.map(m => m.id));
+      add("Écritures compta stock orphelines", comptaStock.filter(c => !mvtIds.has(c.source_id)).map(c => `${c.montant} $`), "Aucune orpheline");
+      add("Doublons compta (même source)", [...comptaIds.entries()].filter(([, n]) => n > 1).map(([id, n]) => `${id.slice(0, 8)} x${n}`), "Aucun doublon");
+      add("Écritures compta invalides", compta.filter(c => !(Number(c.montant) > 0) || !c.semaine).map(c => `${c.type} ${c.montant}`), `${compta.length} écritures valides (montant > 0, semaine renseignée)`);
+    } catch (e: any) {
+      checks.push({ label: "Intégrité des données", ok: false, detail: e?.message || String(e) });
+    }
+  }
+
   const allOk = checks.every((c) => c.ok);
   return NextResponse.json({ checks, allOk, checkedAt: new Date().toISOString() });
 }
