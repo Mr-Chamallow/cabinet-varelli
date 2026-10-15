@@ -11,48 +11,57 @@ import { supabase } from "@/lib/supabase";
 import { getCachedIdentity, cacheIdentity, DEFAULT_LOGO_URL, DEFAULT_APP_NOM, Identity } from "@/lib/theme";
 
 const NAV_SECTIONS = [
-  { label: "Obsidian Logistics", items: [
+  { label: "Accueil", items: [
     { href: "/",                       label: "Dashboard",       icon: "🏠", permission: "obsidian_dashboard" },
-    { href: "/obsidian/prix",          label: "Tableau des prix", icon: "🏷️", permission: "obsidian_prix" },
-    { href: "/obsidian/stocks",        label: "Stocks",          icon: "📦", permission: "obsidian_stocks" },
-    { href: "/obsidian/garage",        label: "Garage",          icon: "🚗", permission: "obsidian_garage" },
-    { href: "/obsidian/comptabilite",  label: "Comptabilité",    icon: "🧾", permission: "obsidian_comptabilite" },
-    { href: "/obsidian/rdv",           label: "Rendez-vous",     icon: "🗓️", permission: "obsidian_rdv" },
-    { href: "/obsidian/contrats",      label: "Contrats",        icon: "📜", permission: "obsidian_contrats" },
+    { href: "/obsidian/stats",         label: "Statistiques",    icon: "📊", permission: "obsidian_stats" },
+  ]},
+  { label: "Opérations", items: [
+    { href: "/cahier-vente",           label: "Transaction", icon: "🧮", permission: "cahier_vente" },
     { href: "/obsidian/actions-illegales", label: "Actions illégales", icon: "🕶️", permission: "obsidian_actions" },
     { href: "/obsidian/arrestations", label: "Arrestations", icon: "🚔", permission: "obsidian_arrestations" },
-    { href: "/obsidian/stats",         label: "Statistiques",    icon: "📊", permission: "obsidian_stats" },
-    { href: "/obsidian/fiches",        label: "Fiches",          icon: "🗂️", permission: "obsidian_fiches" },
-    { href: "/obsidian/profil",        label: "Profil central",  icon: "🧬", permission: "obsidian_fiches" },
-    { href: "/cahier-vente",           label: "Transaction", icon: "🧮", permission: "cahier_vente" },
+    { href: "/obsidian/rdv",           label: "Rendez-vous",     icon: "🗓️", permission: "obsidian_rdv" },
+    { href: "/obsidian/contrats",      label: "Contrats",        icon: "📜", permission: "obsidian_contrats" },
+    { href: "/obsidian/garage",        label: "Garage",          icon: "🚗", permission: "obsidian_garage" },
+  ]},
+  { label: "Stocks & Finances", items: [
+    { href: "/obsidian/stocks",        label: "Stocks",          icon: "📦", permission: "obsidian_stocks" },
+    { href: "/obsidian/prix",          label: "Tableau des prix", icon: "🏷️", permission: "obsidian_prix" },
+    { href: "/obsidian/comptabilite",  label: "Comptabilité",    icon: "🧾", permission: "obsidian_comptabilite" },
     { href: "/obsidian/paie",          label: "Paie & Commissions", icon: "💰", permission: "obsidian_paie" },
     { href: "/obsidian/dons",          label: "Dons", icon: "🎁", permission: "obsidian_dons" },
+    { href: "/obsidian/taxes",         label: "Taxes",            icon: "💸", permission: "obsidian_taxes" },
+  ]},
+  { label: "Équipe", items: [
     { href: "/obsidian/employes",      label: "Employés",        icon: "🧑‍💼", permission: "obsidian_employes" },
-    { href: "/juridique",       label: "Code pénal",       icon: "📖", permission: "juridique" },
-    { href: "/utile-samp",      label: "Utile SAMP",       icon: "🐈", permission: "utile_samp" },
-    { href: "/carte-enqueteur", label: "San Andreas",  icon: "🗺️", permission: "carte-enqueteur" },
-    { href: "/base-de-donnees", label: "Base de données",  icon: "🗄️", permission: "base_donnees" },
+    { href: "/obsidian/recrutement",   label: "Recrutement",      icon: "📝", permission: "obsidian_recrutement" },
+    { href: "/obsidian/fiches",        label: "Fiches",          icon: "🗂️", permission: "obsidian_fiches" },
+    { href: "/obsidian/profil",        label: "Profil central",  icon: "🧬", permission: "obsidian_fiches" },
+    { href: "/obsidian/organigramme",  label: "Organigramme",     icon: "🏛️", permission: "organigramme" },
   ]},
   { label: "Consortium de Régulation", items: [
-    { href: "/obsidian/organigramme", label: "Organigramme",     icon: "🏛️", permission: "organigramme" },
     { href: "/obsidian/tribunal",     label: "Tribunal de l'Ombre", icon: "⚖️", permission: "gm_tribunal" },
     { href: "/obsidian/pactes",       label: "Pactes d'Obsidienne", icon: "🤝", permission: "gm_pactes" },
     { href: "/obsidian/audits",       label: "Audits de conformité", icon: "🔎", permission: "gm_audits" },
     { href: "/obsidian/evenements",   label: "Convois & Enchères", icon: "🚚", permission: "gm_evenements" },
     { href: "/obsidian/guerres",      label: "Guerres & GDT",    icon: "⚔️", permission: "obsidian_guerres" },
-    { href: "/obsidian/recrutement",  label: "Recrutement",      icon: "📝", permission: "obsidian_recrutement" },
-    { href: "/obsidian/taxes",        label: "Taxes",            icon: "💸", permission: "obsidian_taxes" },
-    { href: "/obsidian/convois-flotte", label: "Convois & flotte", icon: "🚚", permission: "obsidian_reglement" },
-    { href: "/obsidian/reglement",    label: "Règlement FA",     icon: "📘", permission: "obsidian_reglement" },
     { href: "/obsidian/reputation",   label: "Réputation",       icon: "⭐", permission: "gm_reputation" },
     { href: "/obsidian/consortium",   label: "Stats Consortium", icon: "📈", permission: "gm_stats" },
   ]},
+  { label: "Références & Outils", items: [
+    { href: "/obsidian/reglement",    label: "Règlement FA",     icon: "📘", permission: "obsidian_reglement" },
+    { href: "/obsidian/convois-flotte", label: "Convois & flotte", icon: "🚚", permission: "obsidian_reglement" },
+    { href: "/juridique",       label: "Code pénal",       icon: "📖", permission: "juridique" },
+    { href: "/carte-enqueteur", label: "San Andreas",  icon: "🗺️", permission: "carte-enqueteur" },
+    { href: "/base-de-donnees", label: "Base de données",  icon: "🗄️", permission: "base_donnees" },
+    { href: "/utile-samp",      label: "Utile SAMP",       icon: "🐈", permission: "utile_samp" },
+  ]},
   { label: "Administration", items: [
-    { href: "/settings",    label: "Personnalisation", icon: "🎨", permission: "admin" },
     { href: "/supervision", label: "Supervision",      icon: "📡", permission: "supervision" },
+    { href: "/settings",    label: "Personnalisation", icon: "🎨", permission: "admin" },
     { href: "/admin",       label: "Admin",            icon: "🛡️", permission: "admin" },
   ]},
 ];
+
 
 export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
