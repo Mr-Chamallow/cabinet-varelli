@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/serverAuth";
-import { postAlert, GREEN, ORANGE, BLUE } from "@/lib/alerts";
+import { postAlert, usd, GREEN, ORANGE, BLUE } from "@/lib/alerts";
 import { fmtDelai } from "@/lib/actionTypes";
 import { syncEmployes } from "@/lib/syncEmployes";
 
@@ -97,6 +97,24 @@ export async function GET(req: Request) {
 
   // 5) Membres du site -> employés
   try { out.employes = await syncEmployes(db); } catch (e: any) { out.employes = `erreur: ${e?.message || e}`; }
+
+  // 6) Trésorerie propre sous le seuil (1 alerte, réarmée quand elle remonte)
+  try {
+    const { data: b } = await db.rpc("obsidian_budget");
+    const { data: st } = await db.from("obsidian_settings").select("alerte_treso").eq("id", "default").maybeSingle();
+    const seuil = Number(b?.seuil) || 0;
+    const caisse = (Number(b?.capital) || 0) + (Number(b?.propre) || 0);
+    if (seuil > 0) {
+      if (caisse < seuil && !st?.alerte_treso) {
+        await postAlert("compta", "💸 Trésorerie basse", `La caisse propre est à **${usd(caisse)}**, sous le seuil de **${usd(seuil)}**.`, ORANGE, undefined, ["CEO"]);
+        await db.from("obsidian_settings").update({ alerte_treso: true }).eq("id", "default");
+        out.treso = "alerte";
+      } else if (caisse >= seuil && st?.alerte_treso) {
+        await db.from("obsidian_settings").update({ alerte_treso: false }).eq("id", "default");
+        out.treso = "rearme";
+      }
+    }
+  } catch (e: any) { out.treso = `erreur: ${e?.message || e}`; }
 
   return NextResponse.json({ ok: true, ...out });
 }

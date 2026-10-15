@@ -10,7 +10,7 @@ export const GREEN = 0x22c55e, RED = 0xef4444, GOLD = 0xd4af37, ORANGE = 0xeab30
 // Règle anti-spam : on ne ping QUE pour les choses importantes (alerte rouge, violation, verdict, échec, stock bas, gros mouvement).
 // Le reste est posté sans mention (le message reste visible dans le salon, sans notifier personne).
 // Ping UNIQUEMENT : violation de pacte, verdict, pacte rompu, stock bas, convoi attaqué / échoué.
-const URGENT = /violation|verdict|stock bas/i;
+const URGENT = /violation|verdict|stock bas|trésorerie basse/i;
 const URGENT_DESC = /rompu|échec|echec|attaq/i;
 export const isUrgent = (title: string, _color?: number, desc = "") => URGENT.test(title) || URGENT_DESC.test(desc);
 
