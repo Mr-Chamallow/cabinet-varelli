@@ -1,10 +1,20 @@
-// Contenu du module Reglement (reformule a partir des pages FlashBackFA, vu le 11/10/2026).
+// Contenu du module Reglement (reformule a partir des pages FlashBackFA, vu le 11/10/2026, patch note illegal du 15/10/2026 integre).
 // Pas d'export Next ici : ce fichier est importe par la page /obsidian/reglement et l'organigramme.
-import { REGLES_LIENS } from "@/lib/regles";
+import { REGLES_LIENS, HEURES_ARME_AUTO } from "@/lib/regles";
 
 export interface Section { id: string; icon: string; titre: string; source: keyof typeof REGLES_LIENS; points: string[] }
 
 export const SECTIONS: Section[] = [
+  { id: "patch-1510", icon: "🆕", titre: "Patch note illégal du 15/10/2026", source: "illegal", points: [
+    "Économie : nylon 0,5 kg, feuille de coca 0,8 kg. Bonus Nord supprimé. Prix de revente des drogues libres dans une fourchette min/max par revendeur. Emplacements de récolte des matières premières modifiés.",
+    "Armes : limite de fabrication 150 → 175. Armes automatiques : 125 h de jeu minimum. Fusil à pompe : limite de munitions 30 → 32 (UTS + chargeur tambour). Chargeurs moins chers (voir le Gun Lead). SMG MK2 fabricable chez le Gun Lead.",
+    "Laboratoires : attaque directe d'un laboratoire public adverse sans missionner un autre groupe. Nouveau laboratoire d'accessoires (intérieur inédit, fabrications centralisées).",
+    "GDT : affrontements gangs/orgas autorisés sur les tables de purification (indépendants et petites frappes toujours interdits). PNJ d'attaque et de défense repositionnés.",
+    "Poursuites : motards fair-play, feintes WIN RP et hors-piste pour bloquer la police interdits. Les groupes seront prévenus d'une feinte interdite. Les restrictions de feintes seront révisées.",
+    "Braquages : bijouterie 2 h entre deux braquages, banques 1 h. Retour de la plateforme pétrolière. Conteneurs : PNJ près des docks, loot corrigé en équipe.",
+    "Groupes : avertissements revus (moins de responsabilité des leads pour les membres virulents). Prêt d'armes : restitution sous 1 semaine. Don d'armes entre groupes interdit (armes supprimées + sanctions).",
+    "Véhicules : accélération en hausse (Primo Custom, Glendale Custom, Manana Custom, Voodoo Custom), en baisse (Impaler LX). Vitesse max en baisse (Sabre Turbo), en hausse (Seminole Frontier, Dubsta, Dubsta Luxury). Tahoma Coupé rééquilibrée.",
+  ]},
   { id: "effectifs", icon: "👥", titre: "Effectifs et recrutement", source: "gangOrga", points: [
     "Organisation : 25 membres maximum au total, 20 pendant une GDT, 25 maximum sur Discord (gang : 25 et 30).",
     "Wipe obligatoire pour rejoindre un groupe officiel (pas pour le quitter). Pas de même nom sur plusieurs personnages, pas deux groupes officiels avec le même personnage.",
@@ -15,6 +25,7 @@ export const SECTIONS: Section[] = [
     "Exclure un membre : scène RP de kick puis retrait du F7. Un lead ne peut plus demander de KP wipe.",
     "Abandon de projet par un lead principal ou wipe anticipé : 2 mois de BL pour les leads. Double projet : BL de 1 à 3 mois.",
     "Armes lourdes : réservées aux joueurs ayant 200 heures de jeu minimum, le donneur est responsable.",
+    `Armes automatiques : ${HEURES_ARME_AUTO} heures de jeu minimum (nouveau, patch du 15/10/2026).`,
   ]},
   { id: "dossier", icon: "📋", titre: "Dossier de création", source: "dossier", points: [
     "18 ans minimum pour créer une organisation. Dossier envoyé en ticket au format Google Doc ou Google Slides, validé par les référents illégal.",
@@ -30,12 +41,17 @@ export const SECTIONS: Section[] = [
     "Vente aux PNJ : les organisations ne vendent dans la rue que des drogues liées à des événements. Interdit à moto, vélo, quad et en zone safe.",
     "Transactions : interruption possible seulement si clairement vue ; attaquer une cargaison exige un conflit préalable ; pas de véhicule de location ; interdit dans une instance, près d'un quartier, d'un entrepôt, d'un laboratoire ou d'une zone safe.",
     "Fours illégaux : 50 unités maximum par personne.",
+    "Poids : bande de nylon 0,5 kg, feuille de coca 0,8 kg. Le bonus Nord est supprimé.",
+    "Revente : plus de prix fixes pour les gangs et organisations. Chaque revendeur fixe ses prix dans une fourchette minimale et maximale.",
+    "Matières premières : les emplacements de récolte ont changé, vérifier les nouveaux points avant de planifier une récolte.",
   ]},
   { id: "labos", icon: "🏭", titre: "Laboratoires", source: "gangOrga", points: [
     "Coût : 1,5 M$ par laboratoire, 750 K$ pour déplacer un laboratoire public.",
     "Laboratoires privés réservés aux revendicateurs. Par revendicateur : 1 privé, 1 public sud et 1 public nord par drogue revendiquée.",
     "Distance minimale de 3 km par rapport aux entrepôts et au QG, pas de garage à proximité.",
     "Achat possible uniquement après démantèlement par la police, vente entre joueurs interdite.",
+    "Attaque d'un laboratoire public adverse : plus besoin de missionner un autre groupe, on peut attaquer directement.",
+    "Laboratoire d'accessoires : nouveau laboratoire avec un intérieur inédit, les points de fabrication sont centralisés.",
     "Véhicules : ceux des transactions et les 4x4/SUV, sauf Dune, Kalahari, Outlaw, Trophytruck, Vagrant, Verus, Winky, Astron, Habanero, Radi, Serrano, Toros, Rebla, Novak, Jubilee, Gresley H.",
   ]},
   { id: "territoires", icon: "🗺️", titre: "Territoires, zones et taxes", source: "gangOrga", points: [
@@ -49,6 +65,9 @@ export const SECTIONS: Section[] = [
     "Deux armes maximum sur soi : une lourde ou automatique et une de poing. Les armes de boutique ne se portent pas en public.",
     "Interdit de vendre des armes automatiques ou lourdes aux petites frappes et aux indépendants. Un indépendant ne peut pas acquérir d'armes de catégorie gang ou organisation.",
     "Accessoires : aucun pour les indépendants, tous sauf chargeurs pour les petites frappes, tous pour gangs et organisations.",
+    `Armes automatiques : ${HEURES_ARME_AUTO} heures de jeu minimum pour les utiliser.`,
+    "Fabrication : limite portée de 150 à 175 (nouveaux groupes, commandes du Gun Lead). SMG MK2 désormais fabricable chez le Gun Lead.",
+    "Fusil à pompe : limite de munitions de 30 à 32 (UTS avec chargeur tambour complet). Chargeurs : coûts de fabrication et prix d'achat réduits, voir le Gun Lead.",
     "Kevlar : réservé aux organisations, 5 pièces maximum uniquement pendant une GDT, une par joueur, doit rester visible. Pas de vente de kevlar ni d'accessoires d'armes aux indépendants.",
     "GPB : vente uniquement aux organisations et gangs, prix minimum 150.000 $ (propre ou sale), supplément de 20% maximum possible en sale. Les organisations gun lead ne peuvent plus acheter de GPB à un gang.",
     "Braquage d'arme : le gun lead peut braquer pour le type d'arme qu'il revendique, loot limité à 50% de l'inventaire (nombre impair inférieur), interdit si la cible n'a qu'une arme.",
@@ -60,7 +79,9 @@ export const SECTIONS: Section[] = [
     "Mules : uniquement des véhicules de la catégorie VANS, interdites pour les petits actes comme la vente de drogue. Le timer démarre à la fin du braquage.",
     "Interdits en braquage : armes lourdes ou automatiques, supersportives, véhicules d'entreprise ou de location, motos et bateaux (sauf négociation), plongée.",
     "Butin autorisé : 50% de la cargaison. Amende maximale : 75% de la valeur vendue.",
-    "Plateforme pétrolière : une fois par semaine et par groupe.",
+    "Plateforme pétrolière : une fois par semaine et par groupe (activité de retour).",
+    "Cooldowns : bijouterie 2 h entre deux braquages, banques 1 h.",
+    "Conteneurs : PNJ déplacé près des docks pour faciliter les achats, loot corrigé pour les braquages à plusieurs.",
     "Nouveaux groupes : interdiction d'intervenir sur leurs transactions pendant 2 semaines.",
   ]},
   { id: "convois", icon: "🚚", titre: "Convois", source: "gangOrga", points: [
@@ -90,6 +111,7 @@ export const SECTIONS: Section[] = [
   ]},
   { id: "vehicules", icon: "🚗", titre: "Véhicules", source: "catalogue", points: [
     "Supersportives autorisées sauf dans les scènes avec police (exception : grosses scènes comme Human Labs, Pacific Bank, trames). Une seule par scène avec police, interdites dans les petites scènes (ATM, Fleeca, armurerie).",
+    "Équilibrage du 15/10/2026 : accélération en hausse (Primo Custom, Glendale Custom, Manana Custom, Voodoo Custom), en baisse (Impaler LX) ; vitesse max en baisse (Sabre Turbo), en hausse (Seminole Frontier, Dubsta, Dubsta Luxury) ; Tahoma Coupé rééquilibrée. Les vitesses du catalogue ne sont pas encore mises à jour.",
     "Certains modèles sont interdits pour toute action illégale (voir la liste dans le Garage).",
     "Le catalogue indique pour chaque modèle les groupes à qui il est interdit (Gang, Organisation, MC) ou le lore imposé.",
     "Les véhicules doivent correspondre au lore, à l'ethnie et au dossier RP. Notre lore est mixte : on évite les modèles réservés à un lore précis.",
@@ -104,6 +126,7 @@ export const SECTIONS: Section[] = [
   ]},
   { id: "sanctions", icon: "🚫", titre: "Sanctions et divers", source: "illegal", points: [
     "Tout transfert d'argent ou d'objet illégal vu par la modération : ban et ban organisation.",
+    "Avertissements de groupe : motifs revus pour limiter la responsabilité des leads sur les comportements individuels de membres virulents.",
     "Fuite d'information à la DOA interdite sauf cas précis : RP du groupe, warn, ban ou blacklist possibles.",
     "Tenues cohérentes avec le personnage, gilets pare-balles factices interdits.",
     "Ne pas prendre pour argent comptant une info donnée par un modérateur : la remonter à un Gestionnaire Modération ou un Responsable.",
@@ -114,7 +137,8 @@ export const SECTIONS: Section[] = [
     "Une seule UMP ou arme lourde par guerre, jamais les deux. Munitions plafonnées à 100.",
     "Deux armes maximum par personne : une automatique ou lourde + un pistolet.",
     "Armes stockées dans des propriétés de membres officiels, lieux communiqués aux référents illégal.",
-    "Prêt d'arme entre groupes officiels : compensation d'au moins 10% du prix de l'arme.",
+    "Prêt d'arme entre groupes officiels : compensation d'au moins 10% du prix de l'arme. L'arme prêtée est rendue au bout d'une semaine, une nouvelle demande est possible ensuite.",
+    "Don d'armes entre groupes : interdit. Non-respect : armes supprimées et sanctions pour le groupe qui donne.",
     "Arme lourde réservée aux joueurs de 200 h minimum. Celui qui la donne est responsable en cas d'abus.",
     "Armes achetées en boutique : stockage chez soi, port en public strictement interdit.",
     "Habitants : SNS, SNS PICO, Colt, M9A3 uniquement.",
@@ -136,6 +160,7 @@ export const SECTIONS: Section[] = [
   ]},
   { id: "motos-pneus", icon: "🏍️", titre: "Motos, pneus et hors-piste", source: "illegal", points: [
     "Motos : interdites en braquage, vente de drogue et toute activité impliquant la police. Autorisées pour les MC et pour un guetteur de CVC.",
+    "Course-poursuite à moto : conduite fair-play obligatoire. Feintes WIN RP et passages hors-route pour empêcher la police de suivre interdits. Les groupes sont prévenus quand une feinte est interdite ; la liste sera révisée.",
     "Plan pneus (tirer dans les pneus) : interdit dans toutes les scènes. Exception : réponse à un no-fear abusif, scène enregistrée. Contre la police : interdit dans tous les cas.",
     "Hors-piste : justifié par le RP, jamais pour fuir ou raccourcir. Fuite hors-piste interdite si la police ne peut pas suivre. Pentes irréalistes ou quasi verticales : power-gaming.",
     "Véhicules interdits : supercars (versions boutique comprises), véhicules d'entreprise ou de location, bateaux (négociables en braquage, sans équipement de plongée).",
@@ -160,6 +185,7 @@ export const SECTIONS: Section[] = [
   ]},
   { id: "gdt-cvc", icon: "🛡️", titre: "GDT, CVC et appels", source: "gangOrga", points: [
     "GDT : mêlée, bagarre ou armes à feu. Aucun véhicule pendant l'attaque. ATA de 45 minutes pour tous. Limite de membres et de kevlar propre à la GDT (voir Effectifs et Armes).",
+    "Tables de purification : gangs et organisations peuvent s'y affronter. Attaques contre indépendants et petites frappes toujours interdites. PNJ d'attaque et de défense des zones GDT repositionnés.",
     "GDT obligatoire pour prendre une zone ou un territoire. Aucun recrutement une fois la guerre validée par ticket.",
     "CVC : les deux camps discutent avant la fusillade. Interdits : redrop, safe corps avec EMS ou police, ragdoll, pit abusif, cacher un joueur dans un coffre, rush d'otage, chuchoter pendant les sommations.",
     "Appels : braquage à 3 minimum, seul le Lead OP ordonne le tir, appel radio avant toute action offensive, appel audible (chuchoter l'invalide), POV du Lead enregistré en entier.",

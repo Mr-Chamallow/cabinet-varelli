@@ -1,4 +1,4 @@
-import { DELAI_INTERORGA_JOURS, HEURES_MIN, HEURES_ARME_LOURDE, addDays } from "@/lib/regles";
+import { DELAI_INTERORGA_JOURS, HEURES_MIN, HEURES_ARME_LOURDE, HEURES_ARME_AUTO, addDays } from "@/lib/regles";
 
 export const STATUTS_RECRUTEMENT: Record<string, { label: string; color: string }> = {
   candidat: { label: "Candidat", color: "var(--info)" },
@@ -30,7 +30,7 @@ export function formatDiscord(f: any): string {
     `• Discord : ${f.discord || "-"}${f.discord_id ? ` (${f.discord_id})` : ""}`,
     `• 18 ans ou plus : ${yn(f.age_ok)}`,
     `• Wipe effectué : ${yn(f.wipe_fait)}`,
-    `• Heures de jeu : ${Number(f.heures_jeu) || 0} h (min. ${HEURES_MIN} h, armes lourdes ${HEURES_ARME_LOURDE} h)`,
+    `• Heures de jeu : ${Number(f.heures_jeu) || 0} h (min. ${HEURES_MIN} h, armes automatiques ${HEURES_ARME_AUTO} h, armes lourdes ${HEURES_ARME_LOURDE} h)`,
     `• Ancien groupe : ${f.ancien_groupe || "aucun"}${f.date_depart_ancien ? ` (départ le ${new Date(f.date_depart_ancien).toLocaleDateString("fr-FR")})` : ""}`,
     `• Sanctions vérifiées : ${yn(f.sanctions_verifiees)}${f.sanctions_notes ? ` (${f.sanctions_notes})` : ""}`,
     f.gdoc_url ? `• Gdoc : ${f.gdoc_url}` : "",

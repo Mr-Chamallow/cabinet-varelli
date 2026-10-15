@@ -3,7 +3,7 @@
 // Les alertes sont INFORMATIVES : elles ne bloquent jamais la saisie.
 import { VEH_LIST, Veh, normV, vehExact } from "@/lib/vehicules";
 
-export const REGLES_VU_LE = "11/10/2026";
+export const REGLES_VU_LE = "15/10/2026";
 export const REGLES_LIENS = {
   illegal: "https://sites.google.com/view/reglement-flashback-fa/illégal/illégal",
   gangOrga: "https://sites.google.com/view/reglement-flashback-fa/illégal/gang-orga",
@@ -23,6 +23,7 @@ export const TAXE_RECOLTE_MAX_SEMAINE = 50000;
 export const DELAI_INTERORGA_JOURS = 4;
 export const HEURES_MIN = 50;
 export const HEURES_ARME_LOURDE = 200;
+export const HEURES_ARME_AUTO = 125;
 export const TREVE_JOURS = 7;
 export const COOLDOWN_ZONE_JOURS = 5;
 export const COOLDOWN_BUSINESS_JOURS = 7;

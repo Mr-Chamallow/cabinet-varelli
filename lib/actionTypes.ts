@@ -9,6 +9,8 @@ export const DEFAULT_ACTION_TYPES: ActionType[] = [
   { nom: "Cambriolage", icon: "🏚️", delaiMin: 0, ordre: 5, actif: true },
   { nom: "Human Labs", icon: "🧪", delaiMin: 0, ordre: 6, actif: true },
   { nom: "Pacific Bank", icon: "🏦", delaiMin: 0, ordre: 7, actif: true },
+  { nom: "Bijouterie", icon: "💎", delaiMin: 120, ordre: 7, actif: true, portee: "groupe" },
+  { nom: "Banque (Fleeca)", icon: "🏛️", delaiMin: 60, ordre: 7, actif: true, portee: "groupe" },
   { nom: "Plateforme pétrolière", icon: "🛢️", delaiMin: 10080, ordre: 8, actif: true, portee: "groupe" },
   { nom: "Pêche du chat", icon: "🎣", delaiMin: 1440, ordre: 9, actif: true },
 ];

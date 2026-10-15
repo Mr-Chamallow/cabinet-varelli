@@ -9,7 +9,6 @@
     "stats": "node scripts/stats-projet.mjs"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.7",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
@@ -18,12 +17,7 @@
     "next": "^16.2.7",
     "next-auth": "^4.24.14",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-hook-form": "^7.78.0",
-    "react-icons": "^5.6.0",
-    "recharts": "^3.8.1",
-    "uuid": "^14.0.0",
-    "xlsx": "^0.18.5"
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.22",
