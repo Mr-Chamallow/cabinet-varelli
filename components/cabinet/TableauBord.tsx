@@ -1,9 +1,9 @@
 "use client";
+import { montant } from "@/lib/montant";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTempsReel } from "@/lib/useTempsReel";
 
-const montant = (n: number) => `${Number(n || 0).toFixed(2).replace(".", ",")} EUR`;
 const heure = (s: string) => new Date(s).toLocaleString("fr-FR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 // Tableau de bord direction : vue d'ensemble, mise à jour en temps réel

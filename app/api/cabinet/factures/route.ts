@@ -3,6 +3,7 @@ import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
 import { diffuser, estStaff, topicPour } from "@/lib/cabinetAcces";
 import { calculer, historiser, nettoyerLignes, numeroFacture } from "@/lib/factures";
+import { montant } from "@/lib/montant";
 
 // Liste des factures (employés) avec totaux : encaissé, en attente, en retard
 export async function GET() {
@@ -65,15 +66,16 @@ export async function POST(req: Request) {
     }]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-    await historiser(db, facture.id, "creation", `Montant ${total.toFixed(2)} EUR`, nomAffiche(user));
+    await historiser(db, facture.id, "creation", `Montant ${montant(total)}`, nomAffiche(user));
 
-    const texte = `Facture ${numero} émise : ${total.toFixed(2).replace(".", ",")} EUR` + (echeance ? `, échéance le ${new Date(echeance).toLocaleDateString("fr-FR")}` : "") + ". Elle est disponible dans Mon espace, onglet Mes factures.";
+    const texte = `Facture ${numero} émise : ${montant(total)}` + (echeance ? `, échéance le ${new Date(echeance).toLocaleDateString("fr-FR")}` : "") + ".";
     const { data: msg } = await db.from("cabinet_messages").insert([{
       dossier_id: dossier.id, auteur_nom: "Cabinet Varelli & Associés", est_staff: true, contenu: texte,
+      fichier_url: `/api/cabinet/factures/${facture.id}/pdf`, fichier_nom: `${numero}.pdf`,
     }]).select().single();
     if (msg) await diffuser(`dossier:${dossier.id}`, msg);
 
-    await notifyDiscord(`**Nouvelle facture** ${numero} (${total.toFixed(2).replace(".", ",")} EUR) sur le dossier : ${dossier.titre}`);
+    await notifyDiscord(`**Nouvelle facture** ${numero} (${montant(total)}) sur le dossier : ${dossier.titre}`);
     return NextResponse.json(facture);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

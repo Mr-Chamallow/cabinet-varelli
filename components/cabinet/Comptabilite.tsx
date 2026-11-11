@@ -1,6 +1,8 @@
 "use client";
+import { montant } from "@/lib/montant";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { prixDepuisTexte } from "@/lib/montant";
 
 interface Ligne { description: string; quantite: string; prix: string; }
 
@@ -10,7 +12,6 @@ const STATUTS: Record<string, { label: string; color: string }> = {
   payee: { label: "Payée", color: "#5fb878" },
   annulee: { label: "Annulée", color: "#9ca3af" },
 };
-const montant = (n: number) => `${Number(n || 0).toFixed(2).replace(".", ",")} EUR`;
 const dateFr = (s?: string | null) => (s ? new Date(s).toLocaleDateString("fr-FR") : "-");
 const champ: React.CSSProperties = { width: "100%", padding: "0.55rem", borderRadius: 6, border: "1px solid var(--border, #333)", background: "transparent", color: "inherit" };
 
@@ -19,6 +20,7 @@ export default function Comptabilite() {
   const [factures, setFactures] = useState<any[]>([]);
   const [totaux, setTotaux] = useState<any>({ encaisse: 0, attente: 0, retard: 0 });
   const [dossiers, setDossiers] = useState<any[]>([]);
+  const [tarifs, setTarifs] = useState<any[]>([]);
   const [filtre, setFiltre] = useState("tous");
   const [erreur, setErreur] = useState("");
   const [ouverts, setOuverts] = useState<Record<string, any[]>>({});
@@ -38,10 +40,23 @@ export default function Comptabilite() {
   useEffect(() => {
     charger();
     fetch("/api/cabinet/dossiers").then(r => r.json()).then(d => setDossiers((d.rows || []).filter((x: any) => x.statut !== "archive")));
+    fetch("/api/cabinet/cabinet_tarifs").then(r => r.json()).then(d => setTarifs(d.rows || []));
   }, []);
 
   const sousTotal = lignes.reduce((s, l) => s + (Number(l.quantite) || 0) * (Number(l.prix) || 0), 0);
   const total = sousTotal * (1 + (Number(tva) || 0) / 100);
+
+  // Ajoute une prestation du cabinet : désignation et prix remplis automatiquement
+  const ajouterPrestation = (id: string) => {
+    const t = tarifs.find((x: any) => x.id === id);
+    if (!t) return;
+    const prix = prixDepuisTexte(t.prix);
+    setLignes(ls => {
+      const vide = ls.length === 1 && !ls[0].description && !ls[0].prix;
+      const nouvelle = { description: t.nom, quantite: "1", prix: prix !== null ? String(prix) : "" };
+      return vide ? [nouvelle] : [...ls, nouvelle];
+    });
+  };
 
   const majLigne = (i: number, c: keyof Ligne, val: string) => setLignes(ls => ls.map((l, k) => (k === i ? { ...l, [c]: val } : l)));
   const retirerLigne = (i: number) => setLignes(ls => (ls.length > 1 ? ls.filter((_, k) => k !== i) : ls));
@@ -101,11 +116,16 @@ export default function Comptabilite() {
           {dossiers.map(d => <option key={d.id} value={d.id}>{d.titre} : {d.client_nom}</option>)}
         </select>
 
+        <select value="" onChange={e => { ajouterPrestation(e.target.value); e.target.value = ""; }} style={{ ...champ, marginBottom: "0.6rem" }}>
+          <option value="">+ Ajouter une prestation du cabinet</option>
+          {tarifs.map((t: any) => <option key={t.id} value={t.id}>{t.categorie} : {t.nom} ({t.prix || "sur devis"})</option>)}
+        </select>
+
         {lignes.map((l, i) => (
           <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 70px 110px 34px", gap: "0.4rem", marginBottom: "0.4rem" }}>
             <input style={champ} placeholder="Désignation" value={l.description} onChange={e => majLigne(i, "description", e.target.value)} />
-            <input style={champ} placeholder="Qté" inputMode="decimal" value={l.quantite} onChange={e => majLigne(i, "quantite", e.target.value)} />
-            <input style={champ} placeholder="Prix unitaire" inputMode="decimal" value={l.prix} onChange={e => majLigne(i, "prix", e.target.value)} />
+            <input style={champ} placeholder="Qté" inputMode="numeric" value={l.quantite} onChange={e => majLigne(i, "quantite", e.target.value)} />
+            <input style={champ} placeholder="Prix unitaire ($)" inputMode="numeric" value={l.prix} onChange={e => majLigne(i, "prix", e.target.value)} />
             <button className="btn btn-outline btn-sm" onClick={() => retirerLigne(i)} title="Retirer la ligne">×</button>
           </div>
         ))}

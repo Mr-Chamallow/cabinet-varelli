@@ -96,6 +96,12 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
               {m.auteur_nom}{m.est_staff ? " (cabinet)" : ""}, {heure(m.created_at)}
             </div>
             {m.contenu && <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{avecLiens(m.contenu)}</div>}
+            {m.fichier_url && (
+              <a href={m.fichier_url} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginTop: "0.4rem", padding: "0.6rem 0.8rem", border: "1px solid var(--gold)", borderRadius: "var(--radius)", color: "inherit", textDecoration: "none" }}>
+                <span style={{ fontSize: "1.3rem" }}>📄</span>
+                <span><b>{m.fichier_nom || "Document"}</b><br /><span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>Ouvrir le PDF</span></span>
+              </a>
+            )}
             {m.image_url && <a href={m.image_url} target="_blank" rel="noreferrer"><img src={m.image_url} alt="Image" style={{ maxWidth: "100%", maxHeight: 280, borderRadius: "var(--radius)", marginTop: m.contenu ? "0.4rem" : 0 }} /></a>}
           </div>
         ))}

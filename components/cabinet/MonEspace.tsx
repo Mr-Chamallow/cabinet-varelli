@@ -1,8 +1,8 @@
 "use client";
+import { montant } from "@/lib/montant";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const montant = (n: number) => `${Number(n || 0).toLocaleString("fr-FR")} $`;
 const dateFr = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 const dateHeure = (d: string) => new Date(d).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 

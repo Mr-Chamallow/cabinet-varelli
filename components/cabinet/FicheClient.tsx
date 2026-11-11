@@ -1,8 +1,8 @@
 "use client";
+import { montant } from "@/lib/montant";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const montant = (n: number) => `${Number(n || 0).toFixed(2).replace(".", ",")} EUR`;
 const dateFr = (s?: string | null) => (s ? new Date(s).toLocaleDateString("fr-FR") : "-");
 const STATUT_FAC: Record<string, string> = { en_attente: "En attente", payee: "Payée", annulee: "Annulée" };
 

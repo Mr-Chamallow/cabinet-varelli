@@ -5,17 +5,18 @@ export function nettoyerLignes(brutes: any): Ligne[] {
   return (Array.isArray(brutes) ? brutes : [])
     .map((l: any) => ({
       description: String(l?.description || "").trim().slice(0, 200),
-      quantite: Number(l?.quantite) || 0,
-      prix: Number(l?.prix) || 0,
+      quantite: Math.round(Number(l?.quantite)) || 0,
+      prix: Math.round(Number(l?.prix)) || 0,
     }))
     .filter((l: Ligne) => l.description && l.quantite > 0 && l.prix >= 0)
     .slice(0, 50);
 }
 
 export function calculer(lignes: Ligne[], tvaTaux: number) {
-  const sousTotal = Math.round(lignes.reduce((s, l) => s + l.quantite * l.prix, 0) * 100) / 100;
-  const tva = Math.round((sousTotal * tvaTaux) / 100 * 100) / 100;
-  const total = Math.round((sousTotal + tva) * 100) / 100;
+  // Dollars entiers : tout est arrondi à l'unité
+  const sousTotal = Math.round(lignes.reduce((s, l) => s + l.quantite * l.prix, 0));
+  const tva = Math.round((sousTotal * tvaTaux) / 100);
+  const total = sousTotal + tva;
   return { sousTotal, tva, total };
 }
 
