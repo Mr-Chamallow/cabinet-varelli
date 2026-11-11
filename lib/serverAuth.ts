@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { hasPermission } from "@/lib/auth";
+import { authOptions } from "@/lib/authOptions";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
@@ -9,7 +10,7 @@ const supabaseAdmin = createClient(
 );
 
 async function session() {
-  const s = await getServerSession();
+  const s = await getServerSession(authOptions);
   const user = (s?.user as any) || null;
   if (!user) return { user: null, u: null };
   const u = { id: user.discord_id, nom: user.discord_name, role: user.site_role, permissions: user.permissions || [] };
