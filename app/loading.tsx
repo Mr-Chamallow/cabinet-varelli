@@ -1,4 +1,6 @@
 import { ObsLogo } from "@/components/ObsLogo";
+
+export default function Loading() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "var(--bg)", gap: "1.25rem" }}>
       <div style={{ fontFamily: "'Cinzel', serif", fontSize: "1.4rem", fontWeight: 700, color: "var(--gold)", letterSpacing: "0.12em", textAlign: "center" }}>

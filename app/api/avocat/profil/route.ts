@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { supabaseAdmin } from "@/lib/serverAuth";
+import { DISCORD_ROLE_MAP } from "@/lib/discord-config";
+
+const CLIENT_ROLE = "Clients Varelli & Associés";
+
+// Donne le rôle client à un nouveau compte, sauf aux membres ayant déjà un rôle Discord du staff
+// et aux comptes dont le rôle a déjà été forcé dans Admin > Membres.
+async function attribuerRoleClient(discordId: string, discordRoles: string[]) {
+  if (discordRoles.some(id => Object.keys(DISCORD_ROLE_MAP).includes(id))) return;
+  const { data: existant } = await supabaseAdmin.from("role_overrides").select("discord_id").eq("discord_id", discordId).maybeSingle();
+  if (existant) return;
+  await supabaseAdmin.from("role_overrides").insert([{ discord_id: discordId, role: CLIENT_ROLE }]);
+}
 
 async function moi(req: Request) {
   const t: any = await getToken({ req: req as any, secret: process.env.NEXTAUTH_SECRET });
   if (!t?.discord_id) return null;
-  return { discord_id: String(t.discord_id), discord_name: String(t.discord_name || "Membre") };
+  return { discord_id: String(t.discord_id), discord_name: String(t.discord_name || "Membre"), discord_roles: (t.discord_roles || []) as string[] };
 }
 
 function champs(body: any) {
@@ -32,6 +44,7 @@ export async function POST(req: Request) {
   if (existe) return NextResponse.json({ error: "Tu as déjà un compte. Modifie tes informations.", existe: true }, { status: 409 });
   const { error } = await supabaseAdmin.from("avocat_clients").insert({ ...c, discord_id: me.discord_id, discord_name: me.discord_name });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  await attribuerRoleClient(me.discord_id, me.discord_roles);
   return NextResponse.json({ ok: true });
 }
 

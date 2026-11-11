@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { hasPermission } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { ObsLogo } from "@/components/ObsLogo";
 
 interface SidebarProps {
   open?: boolean;
@@ -19,6 +20,7 @@ const NAV_SECTIONS = [
     { href: "/avocat/presentation",    label: "Présentation",    icon: "📜", permission: "avocat" },
     { href: "/avocat/organigramme",    label: "Organigramme",    icon: "🏛️", permission: "avocat" },
     { href: "/avocat/nouveau-dossier", label: "Nouveau dossier", icon: "📁", permission: "avocat" },
+    { href: "/avocat/clients", label: "Comptes clients", icon: "👥", permission: "avocat_clients" },
   ]},
   { label: "Obsidian Logistique", items: [
     { href: "/",                      label: "Dashboard",          icon: "◈", permission: "obsidian_dashboard" },

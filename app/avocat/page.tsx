@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { ObsLogo } from "@/components/ObsLogo";
 import { hasPermission } from "@/lib/auth";
 import InscriptionModal from "@/components/avocat/InscriptionModal";
 
