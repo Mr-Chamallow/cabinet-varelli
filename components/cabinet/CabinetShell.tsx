@@ -2,6 +2,7 @@
 import { ReactNode, useEffect } from "react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
+import { CabinetStyles } from "@/components/cabinet/CabinetStyles";
 
 interface Props {
   title: string;
@@ -22,7 +23,8 @@ export default function CabinetShell({ title, icon, desc, perms, children }: Pro
   const acces = perms.some(p => hasPermission(user, p));
 
   return (
-    <div className="page-container">
+    <div className="page-container cab-enter">
+      <CabinetStyles />
       <a className="back-link" href="/avocat">Retour à l'espace avocat</a>
       <div className="page-header">
         <div>

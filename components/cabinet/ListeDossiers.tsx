@@ -32,7 +32,7 @@ export default function ListeDossiers() {
         const actif = pathname === `/avocat/dossiers/${d.id}`;
         return (
           <Link key={d.id} href={`/avocat/dossiers/${d.id}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-            <div className="card" style={{ marginBottom: "0.4rem", padding: "0.5rem 0.7rem", background: actif ? "var(--gold-muted)" : undefined }}>
+            <div className="cab-card" style={{ marginBottom: "0.4rem", padding: "0.5rem 0.7rem", background: actif ? "var(--gold-muted)" : undefined }}>
               <div style={{ fontWeight: 600, fontSize: "0.88rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}># {d.titre}</div>
               {staff && <div style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>{d.client_nom}</div>}
             </div>

@@ -50,10 +50,10 @@ export default function AvocatAccueil() {
         <div className="card" style={{ marginBottom: "1rem" }}>Accès en cours d'activation. Recharge la page.</div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: "1rem" }}>
+      <div className="cab-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: "1rem" }}>
         {SECTIONS.filter(s => s.perms.some(p => hasPermission(user, p))).map(s => (
           <a key={s.label} href={s.href} style={{ textDecoration: "none", color: "inherit" }}>
-            <div className="card">
+            <div className="cab-card">
               <div style={{ fontSize: "1.6rem", marginBottom: "0.5rem" }}>{s.icon}</div>
               <div style={{ fontWeight: 700 }}>{s.label}</div>
               <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>{s.desc}</div>

@@ -59,7 +59,7 @@ export default function DossierChat({ id, moiId, staff, direction }: Props) {
 
   return (
     <div>
-      <div className="card" style={{ marginBottom: "1rem" }}>
+      <div className="cab-card" style={{ marginBottom: "1rem" }}>
         {renommer ? (
           <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
             <input value={nouveauTitre} onChange={e => setNouveauTitre(e.target.value)} style={{ flex: 1, minWidth: 160 }} />
