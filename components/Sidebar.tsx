@@ -13,7 +13,7 @@ interface SidebarProps {
 
 const NAV_SECTIONS = [
   { label: "Cabinet Varelli", items: [
-    { href: "/avocat",                 label: "Accueil",         icon: "⚖️", permission: "avocat" },
+    { href: "/avocat",                 label: "Accueil",         icon: <ObsLogo size={18} />, permission: "avocat" },
     { href: "/avocat/tarifs",          label: "Tarifs",          icon: "💰", permission: "avocat" },
     { href: "/avocat/rdv",             label: "Prise de RDV",    icon: "📅", permission: "avocat" },
     { href: "/avocat/presentation",    label: "Présentation",    icon: "📜", permission: "avocat" },
@@ -54,7 +54,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   return (
     <aside className={`sidebar${open ? " open" : ""}`}>
       <div className="sidebar-logo">
-        <div className="sidebar-logo-title">⚖️ CABINET VARELLI</div>
+        <div className="sidebar-logo-title" style={{ display: "flex", alignItems: "center", gap: 8 }}><ObsLogo size={22} />CABINET VARELLI</div>
         <div className="sidebar-logo-sub">& Associés</div>
       </div>
 

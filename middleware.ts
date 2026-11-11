@@ -53,6 +53,6 @@ export const config = {
     // On exclut TOUT /api/* : les routes API gèrent déjà leur propre vérification
     // (requirePermission côté serveur) et doivent répondre en JSON, jamais être
     // redirigées vers /login par le middleware (ça cassait fetch() en boucle).
-    "/((?!login|banni|api|_next/static|_next/image|favicon.ico|logo.png).*)",
+    "/((?!login|banni|api|_next/static|_next/image|favicon.ico|logo.png|cabinet-logo.jpg).*)",
   ],
 };

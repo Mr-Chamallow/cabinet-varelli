@@ -7,7 +7,7 @@ import InscriptionModal from "@/components/avocat/InscriptionModal";
 const SECTIONS = [
   { label: "Tarifs", icon: "💰", desc: "Grille des honoraires" },
   { label: "Prise de RDV", icon: "📅", desc: "Réserver un rendez-vous" },
-  { label: "Présentation", icon: "⚖️", desc: "Qui nous sommes" },
+  { label: "Présentation", icon: <ObsLogo size={26} />, desc: "Qui nous sommes" },
   { label: "Organigramme", icon: "🏛️", desc: "Notre équipe" },
   { label: "Nouveau dossier", icon: "📁", desc: "Ouvrir une demande" },
 ];

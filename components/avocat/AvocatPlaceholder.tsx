@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
 
-interface Props { title: string; icon: string; desc: string; }
+interface Props { title: string; icon: React.ReactNode; desc: string; }
 
 export default function AvocatPlaceholder({ title, icon, desc }: Props) {
   const { user, loading } = useCurrentUser();

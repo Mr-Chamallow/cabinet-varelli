@@ -7,5 +7,5 @@ export function ObsLogo({ size = 34, className = "", style }: { size?: number; c
   const [src, setSrc] = useState(DEFAULT_LOGO_URL);
   useEffect(() => { try { const u = getCachedIdentity()?.logoUrl; if (u) setSrc(u); } catch {} }, []);
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt="Obsidian" className={className} referrerPolicy="no-referrer" style={{ width: size, height: size, objectFit: "contain", ...style }} />;
+  return <img src={src} alt="Cabinet Varelli & Associés" className={className} referrerPolicy="no-referrer" style={{ width: size, height: size, objectFit: "contain", ...style }} />;
 }

@@ -9,8 +9,8 @@ export const metadata: Metadata = {
   description: 'Plateforme du Cabinet Varelli & Associés',
   manifest: '/manifest.json',
   icons: {
-    icon: '/logo.png',
-    shortcut: '/logo.png',
+    icon: '/cabinet-logo.jpg',
+    shortcut: '/cabinet-logo.jpg',
     apple: '/icon-192.png',
   },
   appleWebApp: {
