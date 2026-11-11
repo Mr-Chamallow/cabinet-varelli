@@ -39,6 +39,8 @@ async function fetchGuildMembership(accessToken: string): Promise<GuildMembershi
 
 // Synchro auto des rôles Discord -> site : intervalle de relecture.
 const ROLE_SYNC_INTERVAL_MS = 5 * 60 * 1000;
+// Rôle donné à qui se connecte sans être sur le serveur Discord (accès client du cabinet)
+const ROLE_HORS_SERVEUR = "Clients Varelli & Associés";
 
 // Renouvelle le token Discord de l'utilisateur (il expire après ~7 jours).
 async function refreshDiscordToken(refreshToken: string): Promise<{ access_token: string; refresh_token: string; expires_in: number } | null> {
@@ -206,13 +208,8 @@ export const authOptions: NextAuthOptions = {
           await logFailedLogin("inconnu", discordName, "no_access_token");
           return "/login?error=AccessDenied";
         }
-        if (account.providerAccountId === ADMIN_DISCORD_ID) return true;
-        const { inGuild, failReason } = await fetchGuildMembership(account.access_token);
-        if (inGuild) return true;
-        await logFailedLogin(account.providerAccountId, discordName, failReason || "api_error");
-        if (failReason === "missing_scope") return "/login?error=MissingScope";
-        if (failReason === "not_member") return "/login?error=NotMember";
-        return "/login?error=AccessDenied";
+        // Connexion ouverte à tous : hors serveur Discord, le compte reçoit le rôle client (voir jwt)
+        return true;
       } catch (err: any) {
         const reason = `exception: ${err?.message || String(err)}`.slice(0, 500);
         await logFailedLogin(account?.providerAccountId || "inconnu", discordName, reason);
@@ -264,7 +261,7 @@ export const authOptions: NextAuthOptions = {
           token.discord_id === ADMIN_DISCORD_ID
             ? "CEO - Directeur général"
             // Garde-fou : plus membre du serveur -> plus de rôle (donc plus d'accès).
-            : (token.in_guild ? getHighestRole((token.discord_roles as string[]) || []) : null);
+            : (token.in_guild ? getHighestRole((token.discord_roles as string[]) || []) : ROLE_HORS_SERVEUR);
         token.discord_role = token.site_role;
         const override = await getRoleOverride(token.discord_id as string);
         if (override) token.site_role = override;
