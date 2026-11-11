@@ -7,42 +7,46 @@ import { supabaseAdmin } from "@/lib/serverAuth";
 const ADMIN_DISCORD_ID = process.env.ADMIN_DISCORD_ID || "";
 
 async function fetchGuildRoles(accessToken: string): Promise<string[]> {
-  const res = await fetch(
-    `https://discord.com/api/users/@me/guilds/${DISCORD_SERVER_ID}/member`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.roles || [];
+  try {
+    const res = await fetch(
+      `https://discord.com/api/users/@me/guilds/${DISCORD_SERVER_ID}/member`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.roles || [];
+  } catch {
+    return [];
+  }
 }
 
 async function getRoleOverride(discordId: string): Promise<string | null> {
-  if (!supabase) return null;
-  const { data } = await supabase
-    .from("role_overrides")
-    .select("role")
-    .eq("discord_id", discordId)
-    .maybeSingle();
-  return data?.role || null;
+  try {
+    if (!supabase) return null;
+    const { data } = await supabase.from("role_overrides").select("role").eq("discord_id", discordId).maybeSingle();
+    return data?.role || null;
+  } catch {
+    return null;
+  }
 }
 
 async function getRolePermissions(roleName: string): Promise<string[] | null> {
-  if (!supabase) return null;
-  const { data } = await supabase
-    .from("roles")
-    .select("permissions")
-    .eq("nom", roleName)
-    .maybeSingle();
-  return data?.permissions ?? null;
+  try {
+    if (!supabase) return null;
+    const { data } = await supabase.from("roles").select("permissions").eq("nom", roleName).maybeSingle();
+    return data?.permissions ?? null;
+  } catch {
+    return null;
+  }
 }
 
 async function isAvocatClient(discordId: string): Promise<boolean> {
-  const { data } = await supabaseAdmin
-    .from("avocat_clients")
-    .select("discord_id")
-    .eq("discord_id", discordId)
-    .maybeSingle();
-  return !!data;
+  try {
+    const { data } = await supabaseAdmin.from("avocat_clients").select("discord_id").eq("discord_id", discordId).maybeSingle();
+    return !!data;
+  } catch {
+    return false;
+  }
 }
 
 const handler = NextAuth({
@@ -72,7 +76,6 @@ const handler = NextAuth({
         const perms = await getRolePermissions(token.site_role as string);
         token.permissions = perms;
       }
-      // Client du cabinet : ajoute la permission "avocat" sans toucher au rôle Discord/Obsidian
       if (token.discord_id && (await isAvocatClient(token.discord_id as string))) {
         token.permissions = [...((token.permissions as string[]) || []), "avocat"];
       }
