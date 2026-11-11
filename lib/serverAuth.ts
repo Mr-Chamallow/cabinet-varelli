@@ -8,40 +8,30 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || "placeholder"
 );
 
-type Ctx = { authorized: boolean; user: any; supabaseAdmin: typeof supabaseAdmin };
-
-async function ctx(): Promise<Ctx> {
-  const session = await getServerSession();
-  const user = (session?.user as any) || null;
-  if (!user) return { authorized: false, user: null, supabaseAdmin };
-  const perms = user.permissions || [];
-  const role = user.site_role;
-  const u = { id: user.discord_id, nom: user.discord_name, role, permissions: perms };
-  return { authorized: true, user: { ...user, _u: u }, supabaseAdmin };
+async function session() {
+  const s = await getServerSession();
+  const user = (s?.user as any) || null;
+  if (!user) return { user: null, u: null };
+  const u = { id: user.discord_id, nom: user.discord_name, role: user.site_role, permissions: user.permissions || [] };
+  return { user, u };
 }
 
-function ok(c: Ctx, p: string) {
-  return c.authorized && hasPermission(c.user._u, p);
-}
-
-// Une permission précise
 export async function requirePermission(permission: string) {
-  const c = await ctx();
-  return { authorized: ok(c, permission), user: c.user, supabaseAdmin };
+  const { user, u } = await session();
+  const authorized = !!u && hasPermission(u as any, permission);
+  return { authorized, user, supabaseAdmin, error: authorized ? null : "Non autorisé" };
 }
 
-// Au moins une des permissions
 export async function requireAnyPermission(permissions: string[]) {
-  const c = await ctx();
-  const authorized = permissions.some(p => ok(c, p));
-  return { authorized, user: c.user, supabaseAdmin };
+  const { user, u } = await session();
+  const authorized = !!u && permissions.some(p => hasPermission(u as any, p));
+  return { authorized, user, supabaseAdmin, error: authorized ? null : "Non autorisé" };
 }
 
-// Patron / admin uniquement
 export async function requirePatron() {
-  const c = await ctx();
-  const isPatron = c.authorized && (c.user.site_role === "Associé / Patron" || c.user.site_role === "CEO - Directeur général");
-  return { authorized: isPatron, user: c.user, supabaseAdmin };
+  const { user } = await session();
+  const authorized = !!user && (user.site_role === "Associé / Patron" || user.site_role === "CEO - Directeur général");
+  return { authorized, user, supabaseAdmin, error: authorized ? null : "Non autorisé" };
 }
 
 export { supabaseAdmin, NextResponse };
