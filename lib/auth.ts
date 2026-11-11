@@ -38,10 +38,10 @@ export const PERMISSION_LABELS: Record<string, string> = {
   obsidian_fiches: "Fiches & Profil central", gm_tribunal: "Tribunal de l'Ombre", gm_pactes: "Pactes d'Obsidienne", gm_audits: "Audits de conformité",
   gm_evenements: "Convois / Enchères / Alertes", gm_reputation: "Réputation des groupes", organigramme: "Organigramme", gm_stats: "Stats du Consortium",
   obsidian_reglement: "Règlement FlashBackFA", obsidian_taxes: "Taxes", obsidian_recrutement: "Recrutement", obsidian_guerres: "Guerres & GDT",
-  avocat: "Cabinet Varelli — Espace client", avocat_clients: "Cabinet Varelli — Comptes clients (employés)",
-  cabinet_tarifs: "Cabinet Varelli — Tarifs (édition)", cabinet_presentation: "Cabinet Varelli — Présentation (édition)",
-  cabinet_organigramme: "Cabinet Varelli — Organigramme (édition)", cabinet_rdv: "Cabinet Varelli — Agenda RDV (gestion)",
-  cabinet_dossiers: "Cabinet Varelli — Dossiers & messagerie (gestion)",
+  avocat: "Cabinet Varelli : Espace client", avocat_clients: "Cabinet Varelli : Comptes clients (employés)",
+  cabinet_tarifs: "Cabinet Varelli : Tarifs (édition)", cabinet_presentation: "Cabinet Varelli : Présentation (édition)",
+  cabinet_organigramme: "Cabinet Varelli : Organigramme (édition)", cabinet_rdv: "Cabinet Varelli : Agenda RDV (gestion)",
+  cabinet_dossiers: "Cabinet Varelli : Dossiers & messagerie (gestion)",
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {

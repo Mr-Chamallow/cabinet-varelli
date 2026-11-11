@@ -35,7 +35,7 @@ export async function deletePoint(id: string): Promise<void> {
 
 export async function upsertDossier(dossier: Dossier): Promise<Dossier> {
   // On ne renvoie jamais dossier.id (vide pour un nouveau dossier, ce qui
-  // ferait échouer l'upsert côté Postgres — bug qui empêchait la sauvegarde).
+  // ferait échouer l'upsert côté Postgres : bug qui empêchait la sauvegarde).
   // On upsert sur point_id (unique), qui identifie le dossier sans ambiguïté.
   const { id, ...payload } = dossier;
   const { data, error } = await dbw.upsert('carte_dossiers', { ...payload, point_id: dossier.point_id }, 'point_id');

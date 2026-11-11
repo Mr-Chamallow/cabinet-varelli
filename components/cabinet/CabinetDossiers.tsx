@@ -65,7 +65,7 @@ export default function CabinetDossiers({ staff }: Props) {
         <div className="card" style={{ marginBottom: "1rem" }}>
           <div className="form-group"><label>Type de dossier</label>
             <select value={typeId} onChange={e => setTypeId(e.target.value)}>
-              <option value="">— Choisir —</option>
+              <option value="">Choisir</option>
               {types.map(t => <option key={t.id} value={t.id}>{t.nom}</option>)}
             </select>
           </div>
@@ -81,10 +81,10 @@ export default function CabinetDossiers({ staff }: Props) {
                 </div>
               ) : (
                 <>
-                  <input value={recherche} onChange={e => setRecherche(e.target.value)} placeholder="Pseudo, nom RP ou ID Discord…" />
+                  <input value={recherche} onChange={e => setRecherche(e.target.value)} placeholder="Pseudo, nom RP ou ID Discord..." />
                   {resultats.map(c => (
                     <div key={c.discord_id} className="card" style={{ marginTop: "0.4rem", cursor: "pointer", padding: "0.5rem 0.7rem" }} onClick={() => setClient(c)}>
-                      {c.nom_rp} · {c.discord_name} <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>{c.discord_id}</span>
+                      {c.nom_rp}, {c.discord_name} <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>{c.discord_id}</span>
                     </div>
                   ))}
                 </>
@@ -96,8 +96,8 @@ export default function CabinetDossiers({ staff }: Props) {
         </div>
       )}
 
-      {erreur && <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>⚠️ {erreur}</div>}
-      {chargement ? <div style={{ color: "var(--text-dim)" }}>Chargement…</div>
+      {erreur && <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>{erreur}</div>}
+      {chargement ? <div style={{ color: "var(--text-dim)" }}>Chargement...</div>
         : rows.length === 0 ? <div className="empty-state"><div className="empty-title">Aucun dossier</div></div>
         : rows.map(d => {
           const s = STATUT_LABEL[d.statut] || { txt: d.statut, color: "var(--text-dim)" };
@@ -106,9 +106,9 @@ export default function CabinetDossiers({ staff }: Props) {
               <div className="card" style={{ marginBottom: "0.6rem" }}>
                 <div style={{ fontWeight: 700 }}>{d.titre}</div>
                 <div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>
-                  {d.cabinet_dossier_types?.nom ? `${d.cabinet_dossier_types.nom} · ` : ""}{staff ? `${d.client_nom || "?"} · ` : ""}{new Date(d.created_at).toLocaleDateString("fr-FR")}
+                  {d.cabinet_dossier_types?.nom ? `${d.cabinet_dossier_types.nom}, ` : ""}{staff ? `${d.client_nom || "?"}, ` : ""}{new Date(d.created_at).toLocaleDateString("fr-FR")}
                 </div>
-                <div style={{ fontSize: "0.72rem", color: s.color, marginTop: "0.2rem" }}>● {s.txt}</div>
+                <div style={{ fontSize: "0.72rem", color: s.color, marginTop: "0.2rem" }}>{s.txt}</div>
               </div>
             </Link>
           );

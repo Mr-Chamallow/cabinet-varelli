@@ -57,7 +57,7 @@ export async function POST(req: Request) {
       }]);
     }
 
-    await notifyDiscord(`📁 Nouveau dossier — **${titre}**${type ? ` (${type.nom})` : ""}\nClient : ${client_nom}\nOuvert par : ${nomAffiche(user)}`);
+    await notifyDiscord(`Nouveau dossier : **${titre}**${type ? ` (${type.nom})` : ""}\nClient : ${client_nom}\nOuvert par : ${nomAffiche(user)}`);
     return NextResponse.json(dossier);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
@@ -79,7 +79,7 @@ export async function PATCH(req: Request) {
     if (b.titre) patch.titre = String(b.titre).trim();
     const { data, error } = await r.supabaseAdmin.from("cabinet_dossiers").update(patch).eq("id", b.id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    if (b.statut) await notifyDiscord(`📁 Dossier **${data.titre}** → ${b.statut} (par ${nomAffiche(r.user)})`);
+    if (b.statut) await notifyDiscord(`Dossier **${data.titre}** → ${b.statut} (par ${nomAffiche(r.user)})`);
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

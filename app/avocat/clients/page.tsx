@@ -31,7 +31,7 @@ export default function ComptesClients() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/avocat">← Espace avocat</a>
+      <a className="back-link" href="/avocat">Retour à l'espace avocat</a>
       <div className="page-header">
         <div>
           <h1 className="page-title">👥 Comptes clients</h1>
@@ -41,11 +41,11 @@ export default function ComptesClients() {
       </div>
 
       <div className="form-group">
-        <input placeholder="Rechercher : pseudo, nom RP, téléphone, ID perso, ID Discord…" value={recherche} onChange={e => setRecherche(e.target.value)} />
+        <input placeholder="Rechercher : pseudo, nom RP, téléphone, ID perso, ID Discord..." value={recherche} onChange={e => setRecherche(e.target.value)} />
       </div>
 
-      {erreur && <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>⚠️ {erreur}</div>}
-      {chargement ? <div style={{ color: "var(--text-dim)" }}>Chargement…</div> : (
+      {erreur && <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>{erreur}</div>}
+      {chargement ? <div style={{ color: "var(--text-dim)" }}>Chargement...</div> : (
         <div className="card" style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
             <thead>

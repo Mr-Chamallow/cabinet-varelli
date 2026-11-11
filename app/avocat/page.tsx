@@ -28,7 +28,7 @@ export default function AvocatAccueil() {
   }, [loading, user]);
 
   if (loading || !user) return null;
-  if (!pret) return <div className="page-container" style={{ color: "var(--text-dim)" }}>Chargement…</div>;
+  if (!pret) return <div className="page-container" style={{ color: "var(--text-dim)" }}>Chargement...</div>;
 
   const recharger = () => window.location.reload();
   const infosDiscord = discord || { discord_id: "", discord_name: "" };
@@ -39,11 +39,11 @@ export default function AvocatAccueil() {
         <div>
           <h1 className="page-title">Cabinet Varelli & Associés</h1>
           <p className="page-subtitle">
-            {profil ? `Espace client · ${profil.nom_rp}` : "Bienvenue — crée ton compte pour continuer"}
+            {profil ? `Espace client : ${profil.nom_rp}` : "Bienvenue, crée ton compte pour continuer"}
           </p>
           <div className="gold-line" />
         </div>
-        {profil && <button className="btn btn-outline btn-sm" onClick={() => setEditer(true)}>✏️ Mes informations</button>}
+        {profil && <button className="btn btn-outline btn-sm" onClick={() => setEditer(true)}>Mes informations</button>}
       </div>
 
       {profil && !hasPermission(user, "avocat") && (

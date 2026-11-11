@@ -75,8 +75,8 @@ export default function CabinetCrud({ table, fields, canWrite, titleKey, subKey,
       </div>
       {canWrite && (
         <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
-          <button className="btn btn-outline btn-sm" onClick={() => ouvrir(row)}>✏️</button>
-          <button className="btn btn-outline btn-sm" onClick={() => supprimer(row)}>🗑️</button>
+          <button className="btn btn-outline btn-sm" onClick={() => ouvrir(row)}>Modifier</button>
+          <button className="btn btn-outline btn-sm" onClick={() => supprimer(row)}>Supprimer</button>
         </div>
       )}
     </div>
@@ -104,8 +104,8 @@ export default function CabinetCrud({ table, fields, canWrite, titleKey, subKey,
         </div>
       )}
 
-      {erreur && <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>⚠️ {erreur}</div>}
-      {chargement ? <div style={{ color: "var(--text-dim)" }}>Chargement…</div>
+      {erreur && <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>{erreur}</div>}
+      {chargement ? <div style={{ color: "var(--text-dim)" }}>Chargement...</div>
         : rows.length === 0 ? <div className="empty-state"><div className="empty-title">Rien pour l'instant</div></div>
         : groupKey
           ? groupes.map(([nom, items]) => (

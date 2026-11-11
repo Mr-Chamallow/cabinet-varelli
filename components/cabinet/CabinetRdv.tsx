@@ -48,7 +48,7 @@ export default function CabinetRdv({ staff }: { staff: boolean }) {
       {ajout && (
         <div className="card" style={{ marginBottom: "1rem" }}>
           <div className="form-group"><label>Date et heure</label><input type="datetime-local" value={form.date_rdv} onChange={e => setForm({ ...form, date_rdv: e.target.value })} /></div>
-          <div className="form-group"><label>Motif</label><input value={form.motif} onChange={e => setForm({ ...form, motif: e.target.value })} placeholder="Ex : divorce, changement de nom…" /></div>
+          <div className="form-group"><label>Motif</label><input value={form.motif} onChange={e => setForm({ ...form, motif: e.target.value })} placeholder="Ex : divorce, changement de nom..." /></div>
           {staff && <>
             <div className="form-group"><label>ID Discord du client (optionnel)</label><input value={form.discord_id} onChange={e => setForm({ ...form, discord_id: e.target.value })} /></div>
             <div className="form-group"><label>Nom du client</label><input value={form.client_nom} onChange={e => setForm({ ...form, client_nom: e.target.value })} /></div>
@@ -57,8 +57,8 @@ export default function CabinetRdv({ staff }: { staff: boolean }) {
         </div>
       )}
 
-      {erreur && <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>⚠️ {erreur}</div>}
-      {chargement ? <div style={{ color: "var(--text-dim)" }}>Chargement…</div>
+      {erreur && <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>{erreur}</div>}
+      {chargement ? <div style={{ color: "var(--text-dim)" }}>Chargement...</div>
         : rows.length === 0 ? <div className="empty-state"><div className="empty-title">Aucun rendez-vous</div></div>
         : rows.map(r => {
           const s = STATUT_LABEL[r.statut] || { txt: r.statut, color: "var(--text-dim)" };
@@ -66,11 +66,11 @@ export default function CabinetRdv({ staff }: { staff: boolean }) {
             <div key={r.id} className="card" style={{ marginBottom: "0.6rem", display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap" }}>
               <div>
                 <div style={{ fontWeight: 700, textTransform: "capitalize" }}>{quand(r.date_rdv)}</div>
-                <div style={{ fontSize: "0.85rem" }}>{r.client_nom || "—"}{r.motif ? ` · ${r.motif}` : ""}</div>
-                <div style={{ fontSize: "0.72rem", color: s.color, marginTop: "0.2rem" }}>● {s.txt}</div>
+                <div style={{ fontSize: "0.85rem" }}>{r.client_nom || "Non renseigné"}{r.motif ? `, ${r.motif}` : ""}</div>
+                <div style={{ fontSize: "0.72rem", color: s.color, marginTop: "0.2rem" }}>{s.txt}</div>
               </div>
-              {staff && r.statut !== "confirme" && <button className="btn btn-outline btn-sm" onClick={() => statut(r.id, "confirme")}>✅ Confirmer</button>}
-              {staff && r.statut !== "annule" && <button className="btn btn-outline btn-sm" onClick={() => statut(r.id, "annule")}>✖ Annuler</button>}
+              {staff && r.statut !== "confirme" && <button className="btn btn-outline btn-sm" onClick={() => statut(r.id, "confirme")}>Confirmer</button>}
+              {staff && r.statut !== "annule" && <button className="btn btn-outline btn-sm" onClick={() => statut(r.id, "annule")}>Annuler</button>}
             </div>
           );
         })}

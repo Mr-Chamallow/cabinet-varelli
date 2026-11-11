@@ -29,11 +29,11 @@ export default function CabinetPresentation({ canWrite }: { canWrite: boolean })
 
   return (
     <div>
-      {canWrite && !editer && <button className="btn btn-sm" style={{ marginBottom: "1rem" }} onClick={() => { setBrouillon(texte); setEditer(true); }}>✏️ Modifier</button>}
+      {canWrite && !editer && <button className="btn btn-sm" style={{ marginBottom: "1rem" }} onClick={() => { setBrouillon(texte); setEditer(true); }}>Modifier</button>}
       {editer ? (
         <div className="card">
           <textarea rows={14} value={brouillon} onChange={e => setBrouillon(e.target.value)} />
-          {message && <div style={{ color: "var(--danger)", margin: "0.5rem 0" }}>⚠️ {message}</div>}
+          {message && <div style={{ color: "var(--danger)", margin: "0.5rem 0" }}>{message}</div>}
           <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem" }}>
             <button className="btn btn-sm" onClick={enregistrer}>Enregistrer</button>
             <button className="btn btn-outline btn-sm" onClick={() => setEditer(false)}>Annuler</button>

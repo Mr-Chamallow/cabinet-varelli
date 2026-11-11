@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
     const quand = new Date(b.date_rdv).toLocaleString("fr-FR", { dateStyle: "full", timeStyle: "short" });
-    await notifyDiscord(`📅 ${staff ? "RDV ajouté" : "Nouvelle demande de RDV"} — **${client_nom}**\nDate : ${quand}${b.motif ? `\nMotif : ${b.motif}` : ""}`);
+    await notifyDiscord(`${staff ? "RDV ajouté" : "Nouvelle demande de RDV"} : **${client_nom}**\nDate : ${quand}${b.motif ? `\nMotif : ${b.motif}` : ""}`);
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
@@ -67,7 +67,7 @@ export async function PATCH(req: Request) {
     if (b.statut && !STATUTS.includes(b.statut)) return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
     const { data, error } = await r.supabaseAdmin.from("cabinet_rdv").update({ statut: b.statut }).eq("id", b.id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    await notifyDiscord(`📅 RDV **${data.client_nom}** → ${b.statut} (par ${nomAffiche(r.user)})`);
+    await notifyDiscord(`RDV **${data.client_nom}** → ${b.statut} (par ${nomAffiche(r.user)})`);
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

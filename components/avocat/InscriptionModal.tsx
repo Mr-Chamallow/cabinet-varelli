@@ -43,12 +43,12 @@ export default function InscriptionModal({ profil, discord, onClose, onDone }: P
           <div className="form-group"><label>Nom et prénom RP *</label><input autoFocus value={nom_rp} onChange={e => setNom(e.target.value)} /></div>
           <div className="form-group"><label>Téléphone RP *</label><input value={tel_rp} onChange={e => setTel(e.target.value)} /></div>
           <div className="form-group"><label>ID personnage *</label><input value={id_perso} onChange={e => setIdp(e.target.value)} /></div>
-          {erreur && <div style={{ color: "var(--danger)", fontSize: "0.85rem" }}>⚠️ {erreur}</div>}
+          {erreur && <div style={{ color: "var(--danger)", fontSize: "0.85rem" }}>{erreur}</div>}
         </div>
         <div className="modal-footer">
           {onClose && <button className="btn btn-outline" onClick={onClose}>Annuler</button>}
           <button className="btn btn-gold" onClick={valider} disabled={envoi || !nom_rp.trim() || !tel_rp.trim() || !id_perso.trim()}>
-            {envoi ? "…" : edition ? "Enregistrer" : "Créer mon compte"}
+            {envoi ? "..." : edition ? "Enregistrer" : "Créer mon compte"}
           </button>
         </div>
       </div>
