@@ -79,7 +79,7 @@ export default function ObsidianDashboard() {
           {greeting()}, <span style={{ color: "var(--gold)" }}>{user.nom.split(" ")[0]}</span>
         </div>
         <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-          Obsidian Logistique - {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          Cabinet Varelli & Associés - {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
         </div>
         <div className="gold-line" style={{ marginTop: "0.8rem" }} />
       </div>

@@ -8,7 +8,7 @@ import { useToast } from "@/lib/useToast";
 import { Toast } from "@/components/ui/Toast";
 
 const SETTINGS_KEYS = [
-  { key: "app_nom", label: "Nom du site", placeholder: "Obsidian Logistique" },
+  { key: "app_nom", label: "Nom du site", placeholder: "Cabinet Varelli & Associés" },
   { key: "app_sous_nom", label: "Sous-titre", placeholder: "Consortium · Opérations · Logistique" },
   { key: "logo_url", label: "URL du logo", placeholder: "https://..." },
   { key: "police", label: "Police principale", placeholder: "Inter" },
@@ -69,7 +69,7 @@ export default function SettingsPage() {
 
   const palette = deriveGoldPalette(gold);
   const preview = {
-    nom: settings["app_nom"] || "Obsidian Logistique",
+    nom: settings["app_nom"] || "Cabinet Varelli & Associés",
     sous: settings["app_sous_nom"] || "Consortium · Opérations · Logistique",
     logo: settings["logo_url"] || "",
   };

@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import { DISCORD_SERVER_ID, getHighestRole } from "@/lib/discord-config";
 import { supabase } from "@/lib/supabase";
@@ -49,7 +49,7 @@ async function isAvocatClient(discordId: string): Promise<boolean> {
   }
 }
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
   providers: [
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID!,
@@ -73,8 +73,7 @@ const handler = NextAuth({
         if (override) token.site_role = override;
       }
       if (token.site_role) {
-        const perms = await getRolePermissions(token.site_role as string);
-        token.permissions = perms;
+        token.permissions = await getRolePermissions(token.site_role as string);
       }
       if (token.discord_id && (await isAvocatClient(token.discord_id as string))) {
         token.permissions = [...((token.permissions as string[]) || []), "avocat"];
@@ -93,6 +92,7 @@ const handler = NextAuth({
   },
   pages: { signIn: "/login", error: "/login" },
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
 
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

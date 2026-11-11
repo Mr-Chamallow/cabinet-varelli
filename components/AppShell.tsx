@@ -42,7 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="main-content" style={{ display: "flex", flexDirection: "column", ["--pole" as any]: poleColor }}>
         <div className="mobile-topbar">
           <button className="mobile-topbar-btn" onClick={() => setOpen(o => !o)} aria-label="Menu">☰</button>
-          <span className="mobile-topbar-title">Obsidian Logistique</span>
+          <span className="mobile-topbar-title">Cabinet Varelli & Associés</span>
           <span style={{ marginLeft: "auto" }}><ThemeToggle compact /></span>
         </div>
         <PreviewBanner />

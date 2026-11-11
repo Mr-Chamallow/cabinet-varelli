@@ -1,6 +1,6 @@
 export const DEFAULT_GOLD = "#c9a24d"; // or bruni - sur fond obsidienne
 export const DEFAULT_LOGO_URL = "https://i.imgur.com/Shh0rIn.png";
-export const DEFAULT_APP_NOM = "Obsidian Logistique";
+export const DEFAULT_APP_NOM = "Cabinet Varelli & Associés";
 export const THEME_STORAGE_KEY = "obsidian_theme_gold";
 export const IDENTITY_STORAGE_KEY = "obsidian_identity";
 

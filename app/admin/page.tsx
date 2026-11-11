@@ -78,7 +78,7 @@ interface Role {
 }
 
 const SITE_SETTINGS_KEYS = [
-  { key: "app_nom", label: "Nom du site", placeholder: "Obsidian Logistique" },
+  { key: "app_nom", label: "Nom du site", placeholder: "Cabinet Varelli & Associés" },
   { key: "app_sous_nom", label: "Sous-titre", placeholder: "Consortium · Opérations · Logistique" },
   { key: "logo_url", label: "URL du logo", placeholder: "https://..." },
   { key: "alert_seuil_gros", label: "Alerte Discord « gros mouvement » dès (en $, 0 = désactivé)", placeholder: "100000" },
@@ -706,7 +706,7 @@ export default function AdminPage() {
               <div className="card" style={{ border:`2px solid ${sitePalette.goldMuted}` }}>
                 <div style={{ fontSize:"0.68rem", textTransform:"uppercase", letterSpacing:"0.1em", color:"var(--text-dim)", marginBottom:"0.875rem" }}>Aperçu</div>
                 <div style={{ fontFamily:"'Cinzel',serif", fontSize:"1.05rem", fontWeight:900, color:sitePalette.gold, letterSpacing:"0.08em", marginBottom:"0.2rem" }}>
-                  {siteSettings["app_nom"] || "Obsidian Logistique"}
+                  {siteSettings["app_nom"] || "Cabinet Varelli & Associés"}
                 </div>
                 <div style={{ fontSize:"0.7rem", color:"var(--text-dim)", marginBottom:"0.875rem" }}>{siteSettings["app_sous_nom"] || "Consortium · Opérations · Logistique"}</div>
                 <span style={{ fontSize:"0.75rem", fontWeight:700, color:"#0b0b12", background:sitePalette.gold, padding:"0.3rem 0.75rem", borderRadius:"var(--radius)", display:"inline-block" }}>Bouton</span>

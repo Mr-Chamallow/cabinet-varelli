@@ -69,7 +69,7 @@ export function BootScreen() {
     <div className={`boot${leaving ? " leaving" : ""}`} onClick={close}>
       <div className="boot-scan" />
       <div className="boot-wrap">
-        <div className="boot-title">Obsidian Logistique</div>
+        <div className="boot-title">Cabinet Varelli & Associés</div>
         <div className="boot-sub">TERMINAL SÉCURISÉ · CONSORTIUM</div>
 
         <div className="boot-log">
