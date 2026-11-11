@@ -20,6 +20,7 @@ const NAV_SECTIONS = [
     { href: "/avocat/presentation",    label: "Présentation",    icon: "📜", perms: ["avocat", "cabinet_presentation"] },
     { href: "/avocat/organigramme",    label: "Organigramme",    icon: "🏛️", perms: ["avocat", "cabinet_organigramme"] },
     { href: "/avocat/nouveau-dossier", label: "Nouveau dossier", icon: "📁", perms: ["avocat", "cabinet_dossiers"] },
+    { href: "/avocat/messagerie", label: "Messagerie interne", icon: "💬", perms: ["cabinet_dossiers", "cabinet_rdv"] },
     { href: "/avocat/clients", label: "Comptes clients", icon: "👥", perms: ["avocat_clients"] },
   ]},
   { label: "Obsidian Logistique", items: [

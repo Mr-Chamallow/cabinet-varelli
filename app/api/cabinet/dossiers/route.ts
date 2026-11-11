@@ -1,19 +1,33 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
-import { canRead, canWrite, nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
+import { canWrite, nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
+import { accesDossier, estDirection, estStaff } from "@/lib/cabinetAcces";
 
 const STATUTS = ["ouvert", "ferme", "archive"];
 
-// Liste des dossiers : le staff (cabinet_dossiers) voit tout, le client seulement les siens
+// Liste des dossiers : le client voit les siens, la direction voit tout, l'avocat voit ceux qui lui sont attribués
 export async function GET(req: Request) {
   try {
     const r = await requireAnyPermission(["avocat", "cabinet_dossiers"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const user = r.user as any;
+    const db = r.supabaseAdmin;
     const id = new URL(req.url).searchParams.get("id");
-    let q = r.supabaseAdmin.from("cabinet_dossiers").select("*, cabinet_dossier_types(nom)").order("created_at", { ascending: false });
+
+    let q = db.from("cabinet_dossiers")
+      .select("*, cabinet_dossier_types(nom), cabinet_dossier_acces(avocat_discord_id,avocat_nom)")
+      .order("created_at", { ascending: false });
     if (id) q = q.eq("id", id);
-    if (!canRead(user, ["cabinet_dossiers"])) q = q.eq("client_discord_id", user.discord_id);
+
+    if (!estStaff(user)) {
+      q = q.eq("client_discord_id", user.discord_id);
+    } else if (!estDirection(user)) {
+      const { data: acces } = await db.from("cabinet_dossier_acces").select("dossier_id").eq("avocat_discord_id", user.discord_id);
+      const ids = (acces || []).map((a: any) => a.dossier_id);
+      if (ids.length === 0) return NextResponse.json({ rows: [] });
+      q = q.in("id", ids);
+    }
+
     const { data, error } = await q;
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [] });
@@ -22,7 +36,7 @@ export async function GET(req: Request) {
   }
 }
 
-// Ouverture d'un dossier : un client l'ouvre pour lui-même, le staff pour n'importe quel client
+// Ouverture d'un dossier : un client l'ouvre pour lui-même, un employé pour un client (il en devient l'avocat)
 export async function POST(req: Request) {
   try {
     const r = await requireAnyPermission(["avocat", "cabinet_dossiers"]);
@@ -45,10 +59,22 @@ export async function POST(req: Request) {
       : { data: null };
 
     const { data: dossier, error } = await db.from("cabinet_dossiers").insert([{
-      titre, type_id: b.type_id || null, client_discord_id: clientId, client_nom,
-      statut: "ouvert", created_by: nomAffiche(user),
+      titre,
+      type_id: b.type_id || null,
+      prestation: (b.prestation || "").trim() || null,
+      client_discord_id: clientId,
+      client_nom,
+      statut: "ouvert",
+      created_by: nomAffiche(user),
     }]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+    // L'employé qui ouvre le dossier pour un client y a automatiquement accès
+    if (staff) {
+      await db.from("cabinet_dossier_acces").insert([{
+        dossier_id: dossier.id, avocat_discord_id: user.discord_id, avocat_nom: nomAffiche(user), attribue_par: nomAffiche(user),
+      }]);
+    }
 
     // Le modèle du type de dossier devient le premier message du dossier
     if (type?.template) {
@@ -57,20 +83,24 @@ export async function POST(req: Request) {
       }]);
     }
 
-    await notifyDiscord(`Nouveau dossier : **${titre}**${type ? ` (${type.nom})` : ""}\nClient : ${client_nom}\nOuvert par : ${nomAffiche(user)}`);
+    await notifyDiscord(`**Nouveau dossier** : ${titre}${type ? ` (${type.nom})` : ""}${dossier.prestation ? `\nPrestation : ${dossier.prestation}` : ""}\nClient : ${client_nom}\nOuvert par : ${nomAffiche(user)}`);
     return NextResponse.json(dossier);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
   }
 }
 
-// Ouvrir / fermer / archiver un dossier : réservé au staff (cabinet_dossiers en écriture)
+// Ouvrir, fermer, archiver ou renommer un dossier : réservé aux avocats du dossier et à la direction
 export async function PATCH(req: Request) {
   try {
     const r = await requireAnyPermission(["cabinet_dossiers"]);
     if (!r.authorized || !canWrite(r.user, "cabinet_dossiers")) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    const user = r.user as any;
     const b = await req.json();
     if (!b.id) return NextResponse.json({ error: "id requis" }, { status: 400 });
+    const acces = await accesDossier(r.supabaseAdmin, user, b.id);
+    if (!acces.peutGerer) return NextResponse.json({ error: "Dossier non attribué à ton nom" }, { status: 403 });
+
     const patch: any = { updated_at: new Date().toISOString() };
     if (b.statut) {
       if (!STATUTS.includes(b.statut)) return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
@@ -79,9 +109,10 @@ export async function PATCH(req: Request) {
     if (b.titre) patch.titre = String(b.titre).trim();
     const { data, error } = await r.supabaseAdmin.from("cabinet_dossiers").update(patch).eq("id", b.id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    if (b.statut) await notifyDiscord(`Dossier **${data.titre}** → ${b.statut} (par ${nomAffiche(r.user)})`);
+    if (b.statut) await notifyDiscord(`**Dossier** ${data.titre} : statut ${b.statut} (par ${nomAffiche(user)})`);
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
   }
 }
+

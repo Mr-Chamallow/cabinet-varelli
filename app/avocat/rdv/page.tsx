@@ -1,12 +1,18 @@
 "use client";
 import CabinetShell from "@/components/cabinet/CabinetShell";
 import CabinetRdv from "@/components/cabinet/CabinetRdv";
-import { hasWriteAccess } from "@/lib/auth";
+import { hasPermission, hasWriteAccess } from "@/lib/auth";
 
 export default function Page() {
   return (
-    <CabinetShell title="Prise de RDV" icon="📅" desc="Agenda du cabinet" perms={["avocat", "cabinet_rdv"]}>
-      {(user) => <CabinetRdv staff={hasWriteAccess(user, "cabinet_rdv")} />}
+    <CabinetShell title="Prise de RDV" icon="" desc="Calendrier et demandes de rendez-vous" perms={["avocat", "cabinet_rdv"]}>
+      {(user) => (
+        <CabinetRdv
+          employe={hasWriteAccess(user, "cabinet_rdv")}
+          direction={hasPermission(user, "cabinet_attribution")}
+          moiId={user.discord_id || ""}
+        />
+      )}
     </CabinetShell>
   );
 }

@@ -10,15 +10,17 @@ const STATUT_LABEL: Record<string, { txt: string; color: string }> = {
 
 interface Props { staff: boolean; }
 
-// Liste des dossiers + ouverture d'un nouveau dossier (client pour lui-même, staff pour un client)
+// Liste des dossiers + ouverture d'un nouveau dossier (client pour lui-même, employé pour un client)
 export default function CabinetDossiers({ staff }: Props) {
   const [rows, setRows] = useState<any[]>([]);
   const [types, setTypes] = useState<any[]>([]);
+  const [tarifs, setTarifs] = useState<any[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
   const [ajout, setAjout] = useState(false);
   const [titre, setTitre] = useState("");
   const [typeId, setTypeId] = useState("");
+  const [prestation, setPrestation] = useState("");
   const [recherche, setRecherche] = useState("");
   const [resultats, setResultats] = useState<any[]>([]);
   const [client, setClient] = useState<any | null>(null);
@@ -30,9 +32,10 @@ export default function CabinetDossiers({ staff }: Props) {
   useEffect(() => {
     charger();
     fetch("/api/cabinet/cabinet_dossier_types").then(r => r.json()).then(d => setTypes(d.rows || []));
+    fetch("/api/cabinet/cabinet_tarifs").then(r => r.json()).then(d => setTarifs(d.rows || []));
   }, []);
 
-  // Recherche de client (staff) par pseudo, nom RP ou ID Discord
+  // Recherche de client (employé) par pseudo, nom RP ou ID Discord
   useEffect(() => {
     if (!staff || recherche.trim().length < 2) { setResultats([]); return; }
     const t = setTimeout(() => {
@@ -43,7 +46,7 @@ export default function CabinetDossiers({ staff }: Props) {
 
   const creer = async () => {
     setErreur("");
-    const body: any = { titre, type_id: typeId || null };
+    const body: any = { titre, type_id: typeId || null, prestation };
     if (staff) {
       if (!client) return setErreur("Choisis un client (recherche ou ID Discord)");
       body.client_discord_id = client.discord_id;
@@ -51,14 +54,14 @@ export default function CabinetDossiers({ staff }: Props) {
     const r = await fetch("/api/cabinet/dossiers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const d = await r.json();
     if (!r.ok || d.error) return setErreur(d.error || "Erreur");
-    setAjout(false); setTitre(""); setTypeId(""); setClient(null); setRecherche("");
+    setAjout(false); setTitre(""); setTypeId(""); setPrestation(""); setClient(null); setRecherche("");
     charger();
   };
 
   return (
     <div>
       <button className="btn btn-sm" style={{ marginBottom: "1rem" }} onClick={() => setAjout(!ajout)}>
-        {ajout ? "Fermer" : "+ Nouveau dossier"}
+        {ajout ? "Fermer" : "Nouveau dossier"}
       </button>
 
       {ajout && (
@@ -67,6 +70,12 @@ export default function CabinetDossiers({ staff }: Props) {
             <select value={typeId} onChange={e => setTypeId(e.target.value)}>
               <option value="">Choisir</option>
               {types.map(t => <option key={t.id} value={t.id}>{t.nom}</option>)}
+            </select>
+          </div>
+          <div className="form-group"><label>Prestation (grille tarifaire)</label>
+            <select value={prestation} onChange={e => setPrestation(e.target.value)}>
+              <option value="">Choisir une prestation</option>
+              {tarifs.map(t => <option key={t.id} value={`${t.nom}${t.prix ? ` (${t.prix})` : ""}`}>{t.categorie} : {t.nom}{t.prix ? ` (${t.prix})` : ""}</option>)}
             </select>
           </div>
           <div className="form-group"><label>Titre du dossier</label><input value={titre} onChange={e => setTitre(e.target.value)} placeholder="Ex : Changement de nom de Jean Dupont" /></div>
@@ -81,7 +90,7 @@ export default function CabinetDossiers({ staff }: Props) {
                 </div>
               ) : (
                 <>
-                  <input value={recherche} onChange={e => setRecherche(e.target.value)} placeholder="Pseudo, nom RP ou ID Discord..." />
+                  <input value={recherche} onChange={e => setRecherche(e.target.value)} placeholder="Pseudo, nom RP ou ID Discord" />
                   {resultats.map(c => (
                     <div key={c.discord_id} className="card" style={{ marginTop: "0.4rem", cursor: "pointer", padding: "0.5rem 0.7rem" }} onClick={() => setClient(c)}>
                       {c.nom_rp}, {c.discord_name} <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>{c.discord_id}</span>
@@ -106,7 +115,7 @@ export default function CabinetDossiers({ staff }: Props) {
               <div className="card" style={{ marginBottom: "0.6rem" }}>
                 <div style={{ fontWeight: 700 }}>{d.titre}</div>
                 <div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>
-                  {d.cabinet_dossier_types?.nom ? `${d.cabinet_dossier_types.nom}, ` : ""}{staff ? `${d.client_nom || "?"}, ` : ""}{new Date(d.created_at).toLocaleDateString("fr-FR")}
+                  {[d.cabinet_dossier_types?.nom, d.prestation, staff ? d.client_nom : null, new Date(d.created_at).toLocaleDateString("fr-FR")].filter(Boolean).join(", ")}
                 </div>
                 <div style={{ fontSize: "0.72rem", color: s.color, marginTop: "0.2rem" }}>{s.txt}</div>
               </div>
