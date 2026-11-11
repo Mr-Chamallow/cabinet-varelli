@@ -1,20 +1,20 @@
 "use client";
 import { useParams } from "next/navigation";
-import CabinetShell from "@/components/cabinet/CabinetShell";
 import DossierChat from "@/components/cabinet/DossierChat";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
+import { estStaffUser } from "@/lib/cabinetRoles";
 
 export default function Page() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useCurrentUser();
+  if (!user) return null;
   return (
-    <CabinetShell title="Dossier" icon="" desc="Messagerie privée du dossier" perms={["avocat", "cabinet_dossiers"]}>
-      {(user) => (
-        <DossierChat
-          id={id}
-          staff={hasPermission(user, "cabinet_dossiers")}
-          direction={hasPermission(user, "cabinet_attribution")}
-        />
-      )}
-    </CabinetShell>
+    <DossierChat
+      id={id}
+      moiId={(user as any).discord_id}
+      staff={estStaffUser(user)}
+      direction={hasPermission(user, "cabinet_attribution")}
+    />
   );
 }

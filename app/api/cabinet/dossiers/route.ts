@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { canWrite, nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
-import { accesDossier, estDirection, estStaff } from "@/lib/cabinetAcces";
+import { accesDossier, estDirection, estSecretaire, estStaff } from "@/lib/cabinetAcces";
 
 const STATUTS = ["ouvert", "ferme", "archive"];
 
-// Liste des dossiers : le client voit les siens, la direction voit tout, l'avocat voit ceux qui lui sont attribués
+// Liste des dossiers : le client voit les siens, la direction et la secrétaire voient tout, l'avocat voit ceux qui lui sont attribués
 export async function GET(req: Request) {
   try {
     const r = await requireAnyPermission(["avocat", "cabinet_dossiers"]);
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
     if (!estStaff(user)) {
       q = q.eq("client_discord_id", user.discord_id);
-    } else if (!estDirection(user)) {
+    } else if (!estDirection(user) && !estSecretaire(user)) {
       const { data: acces } = await db.from("cabinet_dossier_acces").select("dossier_id").eq("avocat_discord_id", user.discord_id);
       const ids = (acces || []).map((a: any) => a.dossier_id);
       if (ids.length === 0) return NextResponse.json({ rows: [] });
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     const b = await req.json();
     const titre = (b.titre || "").trim();
     if (!titre) return NextResponse.json({ error: "Titre requis" }, { status: 400 });
-    const staff = canWrite(user, "cabinet_dossiers");
+    const staff = estStaff(user);
 
     const clientId = staff ? String(b.client_discord_id || "").trim() : user.discord_id;
     if (!clientId) return NextResponse.json({ error: "Client requis" }, { status: 400 });

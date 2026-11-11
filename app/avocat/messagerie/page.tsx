@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import CabinetShell from "@/components/cabinet/CabinetShell";
 import { hasPermission } from "@/lib/auth";
+import { estStaffUser } from "@/lib/cabinetRoles";
 
 const SALONS = [
   { slug: "salon-general", nom: "Salon général" },
@@ -41,10 +42,13 @@ function Liste({ direction }: { direction: boolean }) {
   );
 }
 
+// Messagerie interne : réservée aux employés du cabinet (jamais aux clients)
 export default function Page() {
   return (
     <CabinetShell title="Messagerie interne" icon="" desc="Salons, bureaux et notes internes" perms={["cabinet_dossiers", "cabinet_rdv"]}>
-      {(user) => <Liste direction={hasPermission(user, "cabinet_attribution")} />}
+      {(user) => estStaffUser(user)
+        ? <Liste direction={hasPermission(user, "cabinet_attribution")} />
+        : <div className="empty-state"><div className="empty-title">Réservé aux employés</div></div>}
     </CabinetShell>
   );
 }

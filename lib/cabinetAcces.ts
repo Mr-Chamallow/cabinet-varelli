@@ -1,14 +1,16 @@
 import { createHmac } from "crypto";
 import { hasPermission } from "@/lib/auth";
 import { appUser } from "@/lib/cabinetServer";
+import { estStaffUser, estSecretaireUser, CABINET_STAFF_ROLES } from "@/lib/cabinetRoles";
 
-// Rôles du cabinet (employés). Le client a le rôle "Clients Varelli & Associés".
-export const CABINET_STAFF_ROLES = ["Secrétaire juridique", "Collaborateur", "Associé", "Associé Sénior", "Associé Gérant"];
+export { CABINET_STAFF_ROLES };
 
 // Salons internes par équipe. Le salon "direction" est réservé à ceux qui ont l'attribution.
 export const SALONS = ["general", "juridique", "direction"] as const;
 
-export const estStaff = (user: any) => hasPermission(appUser(user), "cabinet_dossiers") || hasPermission(appUser(user), "cabinet_rdv");
+// Employé = rôle du cabinet (jamais le client)
+export const estStaff = (user: any) => estStaffUser(user);
+export const estSecretaire = (user: any) => estStaffUser(user) && estSecretaireUser(user);
 export const estDirection = (user: any) => hasPermission(appUser(user), "cabinet_attribution");
 
 // Nom de canal de temps réel : impossible à deviner sans passer par l'API (signé avec un secret serveur)
@@ -33,18 +35,24 @@ export async function diffuser(canal: string, payload: any) {
   }
 }
 
-// Accès à un dossier : client propriétaire, direction, ou avocat assigné par la direction
+// Accès à un dossier (visible uniquement par) : le client ou l'employé qui l'a ouvert, l'avocat assigné,
+// la direction et la secrétaire juridique. Seuls l'avocat assigné et la direction peuvent le gérer.
 export async function accesDossier(db: any, user: any, dossierId: string) {
   const { data: dossier } = await db.from("cabinet_dossiers").select("*").eq("id", dossierId).maybeSingle();
-  if (!dossier) return { dossier: null, client: false, direction: false, assigne: false, peutVoir: false, peutGerer: false };
+  if (!dossier) return { dossier: null, client: false, direction: false, secretaire: false, assigne: false, peutVoir: false, peutGerer: false };
   const client = dossier.client_discord_id === user.discord_id;
   const direction = estDirection(user);
+  const secretaire = estSecretaire(user);
   let assigne = false;
   if (estStaff(user) && !direction) {
     const { data } = await db.from("cabinet_dossier_acces").select("dossier_id").eq("dossier_id", dossierId).eq("avocat_discord_id", user.discord_id).maybeSingle();
     assigne = !!data;
   }
-  return { dossier, client, direction, assigne, peutVoir: client || direction || assigne, peutGerer: direction || assigne };
+  return {
+    dossier, client, direction, secretaire, assigne,
+    peutVoir: client || direction || assigne || secretaire,
+    peutGerer: direction || assigne,
+  };
 }
 
 // Nom d'un employé à partir de son ID Discord (annuaire des connexions du site)

@@ -10,7 +10,7 @@ const SECTIONS = [
   { label: "Prise de RDV", icon: "📅", desc: "Réserver un rendez-vous", href: "/avocat/rdv", perms: ["avocat", "cabinet_rdv"] },
   { label: "Présentation", icon: <ObsLogo size={26} />, desc: "Qui nous sommes", href: "/avocat/presentation", perms: ["avocat", "cabinet_presentation"] },
   { label: "Organigramme", icon: "🏛️", desc: "Notre équipe", href: "/avocat/organigramme", perms: ["avocat", "cabinet_organigramme"] },
-  { label: "Nouveau dossier", icon: "📁", desc: "Ouvrir une demande", href: "/avocat/nouveau-dossier", perms: ["avocat", "cabinet_dossiers"] },
+  { label: "Dossiers", icon: "📁", desc: "Ouvrir ou suivre un dossier", href: "/avocat/dossiers", perms: ["avocat", "cabinet_dossiers"] },
 ];
 
 export default function AvocatAccueil() {

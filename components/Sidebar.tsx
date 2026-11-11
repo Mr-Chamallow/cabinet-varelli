@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { hasPermission } from "@/lib/auth";
+import { estStaffUser } from "@/lib/cabinetRoles";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { ObsLogo } from "@/components/ObsLogo";
 
@@ -19,8 +20,8 @@ const NAV_SECTIONS = [
     { href: "/avocat/rdv",             label: "Prise de RDV",    icon: "📅", perms: ["avocat", "cabinet_rdv"] },
     { href: "/avocat/presentation",    label: "Présentation",    icon: "📜", perms: ["avocat", "cabinet_presentation"] },
     { href: "/avocat/organigramme",    label: "Organigramme",    icon: "🏛️", perms: ["avocat", "cabinet_organigramme"] },
-    { href: "/avocat/nouveau-dossier", label: "Nouveau dossier", icon: "📁", perms: ["avocat", "cabinet_dossiers"] },
-    { href: "/avocat/messagerie", label: "Messagerie interne", icon: "💬", perms: ["cabinet_dossiers", "cabinet_rdv"] },
+    { href: "/avocat/dossiers", label: "Dossiers", icon: "📁", perms: ["avocat", "cabinet_dossiers"] },
+    { href: "/avocat/messagerie", label: "Messagerie interne", icon: "💬", perms: ["cabinet_dossiers", "cabinet_rdv"], staffOnly: true },
     { href: "/avocat/clients", label: "Comptes clients", icon: "👥", perms: ["avocat_clients"] },
   ]},
   { label: "Obsidian Logistique", items: [
@@ -64,7 +65,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
       <nav className="sidebar-nav">
         {NAV_SECTIONS.map(section => {
           // Un lien est visible si l'utilisateur a AU MOINS une de ses permissions (perms) ou sa permission (permission)
-          const visibleItems = section.items.filter((i: any) => i.perms ? i.perms.some((p: string) => hasPermission(user, p)) : hasPermission(user, i.permission));
+          const visibleItems = section.items.filter((i: any) => (!i.staffOnly || estStaffUser(user)) && (i.perms ? i.perms.some((p: string) => hasPermission(user, p)) : hasPermission(user, i.permission)));
           if (visibleItems.length === 0) return null;
           return (
             <div key={section.label}>
