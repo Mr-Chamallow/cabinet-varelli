@@ -4,9 +4,10 @@ import { nomAffiche } from "@/lib/cabinetServer";
 import { SALONS, accesDossier, diffuser, estDirection, estStaff, topicPour } from "@/lib/cabinetAcces";
 
 // Messagerie interne. Le nom de canal (slug) dans l'URL :
-//   salon-general, salon-juridique, salon-direction : salons par équipe
-//   bureau-<ID Discord> : bureau d'un avocat (messages visibles par tous les employés)
+//   salon-general, salon-juridique : salons par équipe (salon-juridique = liaison secrétaire juridique)
+//   bureau-<ID Discord> : bureau d'un avocat (visible par tous les employés)
 //   dossier-<ID du dossier> : notes internes d'un dossier (direction et avocat assigné)
+//   plainte-<ID du ticket> : plainte interne (direction et auteur du ticket uniquement)
 function resoudre(slug: string): { canal: string; ok: boolean; salon?: string } {
   if (slug.startsWith("salon-")) {
     const nom = slug.slice(6);
@@ -14,6 +15,7 @@ function resoudre(slug: string): { canal: string; ok: boolean; salon?: string } 
   }
   if (slug.startsWith("bureau-") && slug.length > 7) return { canal: `bureau:${slug.slice(7)}`, ok: true };
   if (slug.startsWith("dossier-") && slug.length > 8) return { canal: `interne:${slug.slice(8)}`, ok: true };
+  if (slug.startsWith("plainte-") && slug.length > 8) return { canal: `plainte:${slug.slice(8)}`, ok: true };
   return { canal: "", ok: false };
 }
 
@@ -21,11 +23,17 @@ async function acces(user: any, db: any, slug: string) {
   const c = resoudre(slug);
   if (!c.ok) return { err: NextResponse.json({ error: "Canal inconnu" }, { status: 404 }) } as any;
   if (!estStaff(user)) return { err: NextResponse.json({ error: "Réservé aux employés" }, { status: 403 }) } as any;
-  if (c.salon === "direction" && !estDirection(user)) return { err: NextResponse.json({ error: "Salon réservé à la direction" }, { status: 403 }) } as any;
   if (c.canal.startsWith("interne:")) {
     const dossierId = c.canal.slice(8);
     const a = await accesDossier(db, user, dossierId);
     if (!a.peutGerer) return { err: NextResponse.json({ error: "Dossier non attribué à ton nom" }, { status: 403 }) } as any;
+  }
+  if (c.canal.startsWith("plainte:")) {
+    const { data } = await db.from("cabinet_plaintes").select("auteur_discord_id").eq("id", c.canal.slice(8)).maybeSingle();
+    if (!data) return { err: NextResponse.json({ error: "Plainte introuvable" }, { status: 404 }) } as any;
+    if (data.auteur_discord_id !== user.discord_id && !estDirection(user)) {
+      return { err: NextResponse.json({ error: "Plainte non accessible" }, { status: 403 }) } as any;
+    }
   }
   return { canal: c.canal };
 }

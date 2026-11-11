@@ -6,18 +6,18 @@ import FilMessages from "@/components/cabinet/FilMessages";
 
 const NOMS: Record<string, string> = {
   "salon-general": "Salon général",
-  "salon-juridique": "Salon juridique",
-  "salon-direction": "Salon direction",
+  "salon-juridique": "Liaison secrétaire juridique",
 };
 
 export default function Page() {
   const { canal } = useParams<{ canal: string }>();
   const [titre, setTitre] = useState("Messagerie");
 
-  // Titre du bureau : nom de l'avocat retrouvé dans la liste du staff
+  // Titre : nom du salon, du bureau de l'avocat ou de la plainte
   useEffect(() => {
     if (!canal) return;
     if (NOMS[canal]) return setTitre(NOMS[canal]);
+    if (canal.startsWith("plainte-")) return setTitre("Plainte interne");
     if (canal.startsWith("bureau-")) {
       const id = canal.slice(7);
       fetch("/api/cabinet/staff").then(r => r.json()).then(d => {

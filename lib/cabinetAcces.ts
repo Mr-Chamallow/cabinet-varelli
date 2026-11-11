@@ -5,8 +5,8 @@ import { estStaffUser, estSecretaireUser, CABINET_STAFF_ROLES } from "@/lib/cabi
 
 export { CABINET_STAFF_ROLES };
 
-// Salons internes par équipe. Le salon "direction" est réservé à ceux qui ont l'attribution.
-export const SALONS = ["general", "juridique", "direction"] as const;
+// Salons internes par équipe. "juridique" s'affiche comme "Liaison secrétaire juridique".
+export const SALONS = ["general", "juridique"] as const;
 
 // Employé = rôle du cabinet (jamais le client)
 export const estStaff = (user: any) => estStaffUser(user);
