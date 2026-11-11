@@ -14,13 +14,13 @@ interface SidebarProps {
 
 const NAV_SECTIONS = [
   { label: "Cabinet Varelli", items: [
-    { href: "/avocat",                 label: "Accueil",         icon: <ObsLogo size={18} />, permission: "avocat" },
-    { href: "/avocat/tarifs",          label: "Tarifs",          icon: "💰", permission: "avocat" },
-    { href: "/avocat/rdv",             label: "Prise de RDV",    icon: "📅", permission: "avocat" },
-    { href: "/avocat/presentation",    label: "Présentation",    icon: "📜", permission: "avocat" },
-    { href: "/avocat/organigramme",    label: "Organigramme",    icon: "🏛️", permission: "avocat" },
-    { href: "/avocat/nouveau-dossier", label: "Nouveau dossier", icon: "📁", permission: "avocat" },
-    { href: "/avocat/clients", label: "Comptes clients", icon: "👥", permission: "avocat_clients" },
+    { href: "/avocat",                 label: "Accueil",         icon: <ObsLogo size={18} />, perms: ["avocat"] },
+    { href: "/avocat/tarifs",          label: "Tarifs",          icon: "💰", perms: ["avocat", "cabinet_tarifs"] },
+    { href: "/avocat/rdv",             label: "Prise de RDV",    icon: "📅", perms: ["avocat", "cabinet_rdv"] },
+    { href: "/avocat/presentation",    label: "Présentation",    icon: "📜", perms: ["avocat", "cabinet_presentation"] },
+    { href: "/avocat/organigramme",    label: "Organigramme",    icon: "🏛️", perms: ["avocat", "cabinet_organigramme"] },
+    { href: "/avocat/nouveau-dossier", label: "Nouveau dossier", icon: "📁", perms: ["avocat", "cabinet_dossiers"] },
+    { href: "/avocat/clients", label: "Comptes clients", icon: "👥", perms: ["avocat_clients"] },
   ]},
   { label: "Obsidian Logistique", items: [
     { href: "/",                      label: "Dashboard",          icon: "◈", permission: "obsidian_dashboard" },
@@ -62,7 +62,8 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
 
       <nav className="sidebar-nav">
         {NAV_SECTIONS.map(section => {
-          const visibleItems = section.items.filter(i => hasPermission(user, i.permission));
+          // Un lien est visible si l'utilisateur a AU MOINS une de ses permissions (perms) ou sa permission (permission)
+          const visibleItems = section.items.filter((i: any) => i.perms ? i.perms.some((p: string) => hasPermission(user, p)) : hasPermission(user, i.permission));
           if (visibleItems.length === 0) return null;
           return (
             <div key={section.label}>

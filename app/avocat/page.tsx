@@ -6,11 +6,11 @@ import { hasPermission } from "@/lib/auth";
 import InscriptionModal from "@/components/avocat/InscriptionModal";
 
 const SECTIONS = [
-  { label: "Tarifs", icon: "💰", desc: "Grille des honoraires" },
-  { label: "Prise de RDV", icon: "📅", desc: "Réserver un rendez-vous" },
-  { label: "Présentation", icon: <ObsLogo size={26} />, desc: "Qui nous sommes" },
-  { label: "Organigramme", icon: "🏛️", desc: "Notre équipe" },
-  { label: "Nouveau dossier", icon: "📁", desc: "Ouvrir une demande" },
+  { label: "Tarifs", icon: "💰", desc: "Grille des honoraires", href: "/avocat/tarifs", perms: ["avocat", "cabinet_tarifs"] },
+  { label: "Prise de RDV", icon: "📅", desc: "Réserver un rendez-vous", href: "/avocat/rdv", perms: ["avocat", "cabinet_rdv"] },
+  { label: "Présentation", icon: <ObsLogo size={26} />, desc: "Qui nous sommes", href: "/avocat/presentation", perms: ["avocat", "cabinet_presentation"] },
+  { label: "Organigramme", icon: "🏛️", desc: "Notre équipe", href: "/avocat/organigramme", perms: ["avocat", "cabinet_organigramme"] },
+  { label: "Nouveau dossier", icon: "📁", desc: "Ouvrir une demande", href: "/avocat/nouveau-dossier", perms: ["avocat", "cabinet_dossiers"] },
 ];
 
 export default function AvocatAccueil() {
@@ -51,13 +51,14 @@ export default function AvocatAccueil() {
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: "1rem" }}>
-        {SECTIONS.map(s => (
-          <div key={s.label} className="card" style={{ opacity: 0.6 }}>
-            <div style={{ fontSize: "1.6rem", marginBottom: "0.5rem" }}>{s.icon}</div>
-            <div style={{ fontWeight: 700 }}>{s.label}</div>
-            <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>{s.desc}</div>
-            <div style={{ fontSize: "0.65rem", color: "var(--gold)", marginTop: "0.5rem" }}>Bientôt disponible</div>
-          </div>
+        {SECTIONS.filter(s => s.perms.some(p => hasPermission(user, p))).map(s => (
+          <a key={s.label} href={s.href} style={{ textDecoration: "none", color: "inherit" }}>
+            <div className="card">
+              <div style={{ fontSize: "1.6rem", marginBottom: "0.5rem" }}>{s.icon}</div>
+              <div style={{ fontWeight: 700 }}>{s.label}</div>
+              <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>{s.desc}</div>
+            </div>
+          </a>
         ))}
       </div>
 

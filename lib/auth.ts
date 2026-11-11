@@ -19,6 +19,7 @@ export const ALL_PERMISSIONS = [
   "obsidian_fiches", "gm_tribunal", "gm_pactes", "gm_audits", "gm_evenements", "gm_reputation", "organigramme", "gm_stats",
   "obsidian_reglement", "obsidian_taxes", "obsidian_recrutement", "obsidian_guerres",
   "avocat", "avocat_clients",
+  "cabinet_tarifs", "cabinet_presentation", "cabinet_organigramme", "cabinet_rdv", "cabinet_dossiers",
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
@@ -38,14 +39,17 @@ export const PERMISSION_LABELS: Record<string, string> = {
   gm_evenements: "Convois / Enchères / Alertes", gm_reputation: "Réputation des groupes", organigramme: "Organigramme", gm_stats: "Stats du Consortium",
   obsidian_reglement: "Règlement FlashBackFA", obsidian_taxes: "Taxes", obsidian_recrutement: "Recrutement", obsidian_guerres: "Guerres & GDT",
   avocat: "Cabinet Varelli — Espace client", avocat_clients: "Cabinet Varelli — Comptes clients (employés)",
+  cabinet_tarifs: "Cabinet Varelli — Tarifs (édition)", cabinet_presentation: "Cabinet Varelli — Présentation (édition)",
+  cabinet_organigramme: "Cabinet Varelli — Organigramme (édition)", cabinet_rdv: "Cabinet Varelli — Agenda RDV (gestion)",
+  cabinet_dossiers: "Cabinet Varelli — Dossiers & messagerie (gestion)",
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   "Associé / Patron":               [...ALL_PERMISSIONS], // LA CLÉ QUI MANQUAIT
   "CEO - Directeur général":        [...ALL_PERMISSIONS],
   "COO - Directrice opérationnel":  ALL_PERMISSIONS.filter(p => p !== "delete_all"),
-  "Responsable juridique":          ["obsidian_dashboard","obsidian_rdv","obsidian_contrats","obsidian_stats","juridique","utile_samp","carte-enqueteur","obsidian_reglement:read","avocat","avocat_clients"],
-  "Agent juridique":                ["obsidian_dashboard","obsidian_rdv","juridique","utile_samp","carte-enqueteur","obsidian_reglement:read","avocat"],
+  "Responsable juridique":          ["obsidian_dashboard","obsidian_rdv","obsidian_contrats","obsidian_stats","juridique","utile_samp","carte-enqueteur","obsidian_reglement:read","avocat","avocat_clients","cabinet_tarifs","cabinet_presentation","cabinet_organigramme","cabinet_rdv","cabinet_dossiers"],
+  "Agent juridique":                ["obsidian_dashboard","obsidian_rdv","juridique","utile_samp","carte-enqueteur","obsidian_reglement:read","avocat","cabinet_rdv","cabinet_dossiers","cabinet_tarifs:read","cabinet_presentation:read","cabinet_organigramme:read"],
   "Responsable logistique":         ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_stats","cahier_vente","obsidian_paie","obsidian_employes","carte-enqueteur","obsidian_actions","obsidian_arrestations","obsidian_reglement:read"],
   "Agent logistique":               ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_rdv","cahier_vente","carte-enqueteur","obsidian_actions","obsidian_arrestations","obsidian_reglement:read"],
   "Responsable sécurité":           ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","carte-enqueteur","juridique","utile_samp","obsidian_arrestations","obsidian_stocks","obsidian_reglement:read"],
