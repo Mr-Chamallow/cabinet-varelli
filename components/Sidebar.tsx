@@ -6,31 +6,36 @@ import { signOut } from "next-auth/react";
 import { hasPermission } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
+interface SidebarProps {
+  open?: boolean;
+  onNavigate?: () => void;
+}
+
 const NAV_SECTIONS = [
   { label: "Cabinet Varelli", items: [
-    { href: "/avocat",                    label: "Accueil",          icon: "⚖️", permission: "avocat" },
-    { href: "/avocat/tarifs",             label: "Tarifs",           icon: "💰", permission: "avocat" },
-    { href: "/avocat/rdv",                label: "Prise de RDV",     icon: "📅", permission: "avocat" },
-    { href: "/avocat/presentation",       label: "Présentation",     icon: "📜", permission: "avocat" },
-    { href: "/avocat/organigramme",       label: "Organigramme",     icon: "🏛️", permission: "avocat" },
-    { href: "/avocat/nouveau-dossier",    label: "Nouveau dossier",  icon: "📁", permission: "avocat" },
+    { href: "/avocat",                 label: "Accueil",         icon: "⚖️", permission: "avocat" },
+    { href: "/avocat/tarifs",          label: "Tarifs",          icon: "💰", permission: "avocat" },
+    { href: "/avocat/rdv",             label: "Prise de RDV",    icon: "📅", permission: "avocat" },
+    { href: "/avocat/presentation",    label: "Présentation",    icon: "📜", permission: "avocat" },
+    { href: "/avocat/organigramme",    label: "Organigramme",    icon: "🏛️", permission: "avocat" },
+    { href: "/avocat/nouveau-dossier", label: "Nouveau dossier", icon: "📁", permission: "avocat" },
   ]},
   { label: "Obsidian Logistique", items: [
-    { href: "/",                       label: "Dashboard",       icon: "◈", permission: "obsidian_dashboard" },
-    { href: "/obsidian/prix",          label: "Tableau des prix", icon: "▤", permission: "obsidian_prix" },
-    { href: "/obsidian/stocks",        label: "Stocks",          icon: "▥", permission: "obsidian_stocks" },
-    { href: "/obsidian/armurerie",     label: "Armurerie",       icon: "▦", permission: "obsidian_armurerie" },
-    { href: "/obsidian/garage",        label: "Garage",          icon: "▧", permission: "obsidian_garage" },
-    { href: "/obsidian/comptabilite",  label: "Comptabilité",    icon: "▨", permission: "obsidian_comptabilite" },
-    { href: "/obsidian/rdv",           label: "Rendez-vous",     icon: "▩", permission: "obsidian_rdv" },
-    { href: "/obsidian/contrats",      label: "Contrats",        icon: "◆", permission: "obsidian_contrats" },
-    { href: "/obsidian/stats",         label: "Statistiques",    icon: "◈", permission: "obsidian_stats" },
-    { href: "/obsidian/fiches",        label: "Fiches",          icon: "◉", permission: "obsidian_stats" },
-    { href: "/cahier-vente",           label: "Cahier de vente", icon: "▪", permission: "cahier_vente" },
-    { href: "/obsidian/paie",          label: "Paie & Commissions", icon: "💰", permission: "obsidian_paie" },
-    { href: "/obsidian/employes",      label: "Employés",        icon: "🧑‍💼", permission: "obsidian_employes" },
-    { href: "/juridique",       label: "Code pénal",       icon: "📖", permission: "juridique" },
-    { href: "/carte-enqueteur", label: "Carte enquêteur",  icon: "◔", permission: "carte-enqueteur" },
+    { href: "/",                      label: "Dashboard",          icon: "◈", permission: "obsidian_dashboard" },
+    { href: "/obsidian/prix",         label: "Tableau des prix",   icon: "▤", permission: "obsidian_prix" },
+    { href: "/obsidian/stocks",       label: "Stocks",             icon: "▥", permission: "obsidian_stocks" },
+    { href: "/obsidian/armurerie",    label: "Armurerie",          icon: "▦", permission: "obsidian_armurerie" },
+    { href: "/obsidian/garage",       label: "Garage",             icon: "▧", permission: "obsidian_garage" },
+    { href: "/obsidian/comptabilite", label: "Comptabilité",       icon: "▨", permission: "obsidian_comptabilite" },
+    { href: "/obsidian/rdv",          label: "Rendez-vous",        icon: "▩", permission: "obsidian_rdv" },
+    { href: "/obsidian/contrats",     label: "Contrats",           icon: "◆", permission: "obsidian_contrats" },
+    { href: "/obsidian/stats",        label: "Statistiques",       icon: "◈", permission: "obsidian_stats" },
+    { href: "/obsidian/fiches",       label: "Fiches",             icon: "◉", permission: "obsidian_stats" },
+    { href: "/cahier-vente",          label: "Cahier de vente",    icon: "▪", permission: "cahier_vente" },
+    { href: "/obsidian/paie",         label: "Paie & Commissions", icon: "💰", permission: "obsidian_paie" },
+    { href: "/obsidian/employes",     label: "Employés",           icon: "🧑‍💼", permission: "obsidian_employes" },
+    { href: "/juridique",             label: "Code pénal",         icon: "📖", permission: "juridique" },
+    { href: "/carte-enqueteur",       label: "Carte enquêteur",    icon: "◔", permission: "carte-enqueteur" },
   ]},
   { label: "Administration", items: [
     { href: "/settings",    label: "Personnalisation", icon: "◌", permission: "admin" },
@@ -39,7 +44,7 @@ const NAV_SECTIONS = [
   ]},
 ];
 
-export function Sidebar() {
+export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   const pathname = usePathname();
   const { user, loading } = useCurrentUser();
 
@@ -47,7 +52,7 @@ export function Sidebar() {
   if (loading || !user) return null;
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${open ? " open" : ""}`}>
       <div className="sidebar-logo">
         <div className="sidebar-logo-title">⚖️ CABINET VARELLI</div>
         <div className="sidebar-logo-sub">& Associés</div>
@@ -61,9 +66,16 @@ export function Sidebar() {
             <div key={section.label}>
               <div className="sidebar-section-label">{section.label}</div>
               {visibleItems.map(item => {
-                const isActive = item.href === "/" ? pathname === "/" : pathname === item.href || (item.href !== "/avocat" && pathname?.startsWith(item.href));
+                const isActive = item.href === "/"
+                  ? pathname === "/"
+                  : pathname === item.href || (item.href !== "/avocat" && !!pathname?.startsWith(item.href));
                 return (
-                  <Link key={item.href} href={item.href} className={`sidebar-link${isActive ? " active" : ""}`}>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => onNavigate?.()}
+                    className={`sidebar-link${isActive ? " active" : ""}`}
+                  >
                     <span className="sidebar-link-icon">{item.icon}</span>
                     <span>{item.label}</span>
                   </Link>
