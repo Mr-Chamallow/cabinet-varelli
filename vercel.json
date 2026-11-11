@@ -1,6 +1,16 @@
 {
   "crons": [
-    { "path": "/api/cron/purge", "schedule": "0 3 * * *" },
-    { "path": "/api/cron/rapport", "schedule": "0 7 * * 1" }
+    {
+      "path": "/api/cron/purge",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/rapport",
+      "schedule": "0 7 * * 1"
+    },
+    {
+      "path": "/api/cron/relances-factures",
+      "schedule": "0 8 * * *"
+    }
   ]
 }

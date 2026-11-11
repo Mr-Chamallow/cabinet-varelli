@@ -29,6 +29,7 @@ export default function Comptabilite() {
   const [tva, setTva] = useState("0");
   const [echeance, setEcheance] = useState("");
   const [note, setNote] = useState("");
+  const [moisExport, setMoisExport] = useState(new Date().toISOString().slice(0, 7));
   const [envoi, setEnvoi] = useState(false);
 
   const charger = () => fetch("/api/cabinet/factures").then(r => r.json()).then(d => {
@@ -141,6 +142,12 @@ export default function Comptabilite() {
           <div style={{ fontWeight: 700 }}>Total : {montant(total)}</div>
           <button className="btn btn-gold btn-sm" onClick={creer} disabled={envoi}>{envoi ? "Création..." : "Créer la facture"}</button>
         </div>
+      </div>
+
+      <div className="cab-card" style={{ marginBottom: "1rem", display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ fontWeight: 600 }}>Export comptable</div>
+        <input type="month" value={moisExport} onChange={e => setMoisExport(e.target.value)} style={{ ...champ, width: "auto" }} />
+        <a className="btn btn-gold btn-sm" href={`/api/cabinet/factures/export?mois=${moisExport}`}>Télécharger le CSV</a>
       </div>
 
       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.8rem" }}>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
 import { accesDossier, diffuser, topicPour } from "@/lib/cabinetAcces";
+import { prevenirDossier } from "@/lib/cabinetNotifs";
 
 // Messagerie client <-> cabinet d'un dossier, en temps réel
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -47,6 +48,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
     await diffuser(`dossier:${id}`, data);
+    await prevenirDossier(r.supabaseAdmin, a.dossier, id, est_staff);
     if (!est_staff) {
       await notifyDiscord(`**Message client** : ${a.dossier.client_nom || "Client"}, dossier ${a.dossier.titre}\n${contenu ? contenu.slice(0, 300) : "image envoyée"}`);
     }
