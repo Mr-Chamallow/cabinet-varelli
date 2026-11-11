@@ -7,6 +7,7 @@ const ONGLETS: [string, string][] = [
   ["tarifs", "Prestations et prix"],
   ["organigramme", "Organigramme"],
   ["presentation", "Présentation"],
+  ["avis", "Avis clients"],
   ["types", "Types de dossiers"],
 ];
 
@@ -51,12 +52,33 @@ export function CabinetAdminTab() {
             { key: "nom_rp", label: "Nom RP", placeholder: "Ex : Marco Varelli" },
             { key: "poste", label: "Poste", placeholder: "Ex : Associé Gérant" },
             { key: "description", label: "Présentation courte", type: "textarea" },
+            { key: "photo_url", label: "Lien de la photo (image en ligne)", placeholder: "https://..." },
+            { key: "barreau", label: "Barreau", placeholder: "Ex : Los Santos" },
+            { key: "numero_barreau", label: "Numéro d'inscription", placeholder: "Ex : LS-2024-017" },
+            { key: "annee_inscription", label: "Année d'inscription", placeholder: "Ex : 2024" },
+            { key: "specialites", label: "Spécialités (séparées par des virgules)", placeholder: "Ex : Pénal, Civil" },
             { key: "ordre", label: "Ordre d'affichage", type: "number" },
           ]}
         />
       )}
 
       {onglet === "presentation" && <CabinetPresentation canWrite={true} />}
+
+      {onglet === "avis" && (
+        <CabinetCrud
+          table="cabinet_avis"
+          libelle="avis"
+          canWrite={true}
+          titleKey="auteur_nom"
+          subKey="statut"
+          fields={[
+            { key: "auteur_nom", label: "Auteur", placeholder: "Ex : Jean Dupont" },
+            { key: "note", label: "Note (1 à 5)", type: "number" },
+            { key: "contenu", label: "Avis", type: "textarea" },
+            { key: "statut", label: "Statut : publie ou en_attente", placeholder: "publie" },
+          ]}
+        />
+      )}
 
       {onglet === "types" && (
         <CabinetCrud

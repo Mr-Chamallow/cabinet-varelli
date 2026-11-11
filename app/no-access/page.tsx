@@ -12,11 +12,11 @@ export default function NoAccessPage() {
           Aucun accès configuré
         </div>
         <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "0.5rem" }}>
-          Ton compte est bien connecté{user?.role ? <> avec le rôle <strong style={{ color: "var(--text)" }}>{user.role}</strong></> : ""},
-          mais ce rôle n'a aucune permission activée sur le site pour l'instant.
+          Bienvenue{user?.nom ? <>, <strong style={{ color: "var(--text)" }}>{user.nom}</strong></> : ""}. Ton compte est bien créé.
+          Il est en attente d'activation : un membre du cabinet va valider ton accès.
         </p>
         <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "1.5rem" }}>
-          Demande à un administrateur d'ajouter au moins une permission à ce rôle (onglet Rôles de l'Admin).
+          Si tu penses avoir oublié de passer par le cabinet, contacte l'accueil sur Discord.
         </p>
         <button className="btn btn-outline" onClick={() => signOut({ callbackUrl: "/login" })}>
           Se déconnecter

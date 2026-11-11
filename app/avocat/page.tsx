@@ -4,6 +4,7 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 import { ObsLogo } from "@/components/ObsLogo";
 import { hasPermission } from "@/lib/auth";
 import InscriptionModal from "@/components/avocat/InscriptionModal";
+import AccueilCabinet from "@/components/cabinet/AccueilCabinet";
 
 const SECTIONS = [
   { label: "Tarifs", icon: "💰", desc: "Grille des honoraires", href: "/avocat/tarifs", perms: ["avocat", "cabinet_tarifs"] },
@@ -49,6 +50,8 @@ export default function AvocatAccueil() {
       {profil && !hasPermission(user, "avocat") && (
         <div className="card" style={{ marginBottom: "1rem" }}>Accès en cours d'activation. Recharge la page.</div>
       )}
+
+      <AccueilCabinet />
 
       <div className="cab-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: "1rem" }}>
         {SECTIONS.filter(s => s.perms.some(p => hasPermission(user, p))).map(s => (
