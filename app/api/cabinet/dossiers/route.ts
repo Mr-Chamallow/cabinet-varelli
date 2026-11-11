@@ -28,6 +28,11 @@ export async function GET(req: Request) {
       q = q.in("id", ids);
     }
 
+    // Dossiers archivés que l'utilisateur a retirés de sa liste
+    const { data: masques, error: errMasques } = await db.from("cabinet_dossier_masques").select("dossier_id").eq("discord_id", user.discord_id);
+    const caches = errMasques ? [] : (masques || []).map((m: any) => m.dossier_id);
+    if (caches.length) q = q.not("id", "in", `(${caches.join(",")})`);
+
     const { data, error } = await q;
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [] });

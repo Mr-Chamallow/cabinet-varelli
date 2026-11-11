@@ -83,5 +83,7 @@ export function useCurrentUser(): {
   if (status === "loading") return { user: null, loading: true, realUser: null, previewRole: null };
   if (!session?.user) return { user: null, loading: false, realUser: null, previewRole: null };
 
-  return { user: effectiveUser, loading: false, realUser, previewRole };
+  // En aperçu, on attend les vraies permissions du rôle avant de dire "chargé" (sinon redirection vers no-access)
+  const attentePreview = !!previewRole && previewPerms === null;
+  return { user: effectiveUser, loading: attentePreview, realUser, previewRole };
 }

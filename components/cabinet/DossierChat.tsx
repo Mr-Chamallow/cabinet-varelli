@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import FilMessages from "@/components/cabinet/FilMessages";
 import AttributionDossier from "@/components/cabinet/AttributionDossier";
 
@@ -15,6 +16,7 @@ export default function DossierChat({ id, moiId, staff, direction }: Props) {
   const [erreur, setErreur] = useState("");
   const [renommer, setRenommer] = useState(false);
   const [nouveauTitre, setNouveauTitre] = useState("");
+  const router = useRouter();
 
   const charger = () => fetch(`/api/cabinet/dossiers?id=${id}`).then(r => r.json()).then(d => {
     setDossier((d.rows || [])[0] || null);
@@ -35,6 +37,17 @@ export default function DossierChat({ id, moiId, staff, direction }: Props) {
   const enregistrerTitre = async () => {
     if (!nouveauTitre.trim()) return;
     if (await envoyer({ titre: nouveauTitre.trim() })) setRenommer(false);
+  };
+
+  // Retire un dossier archivé de sa seule liste (les autres participants le gardent)
+  const retirerPourMoi = async () => {
+    if (!window.confirm("Retirer ce dossier de ta liste ? Il reste visible pour les autres participants.")) return;
+    setErreur("");
+    const r = await fetch(`/api/cabinet/dossiers/${id}/masquer`, { method: "POST" });
+    const d = await r.json();
+    if (!r.ok || d.error) return setErreur(d.error || "Erreur");
+    avertirListe();
+    router.push("/avocat/dossiers");
   };
 
   if (chargement) return <div style={{ color: "var(--text-dim)" }}>Chargement...</div>;
@@ -69,6 +82,11 @@ export default function DossierChat({ id, moiId, staff, direction }: Props) {
             {!ouvert && <button className="btn btn-outline btn-sm" onClick={() => envoyer({ statut: "ouvert" })}>Ouvrir la messagerie</button>}
             {ouvert && <button className="btn btn-outline btn-sm" onClick={() => envoyer({ statut: "ferme" })}>Fermer la messagerie</button>}
             {dossier.statut !== "archive" && <button className="btn btn-outline btn-sm" onClick={() => envoyer({ statut: "archive" })}>Archiver</button>}
+          </div>
+        )}
+        {dossier.statut === "archive" && (
+          <div style={{ marginTop: "0.6rem" }}>
+            <button className="btn btn-outline btn-sm" onClick={retirerPourMoi}>Supprimer de ma liste</button>
           </div>
         )}
         {erreur && <div style={{ color: "var(--danger)", marginTop: "0.5rem" }}>{erreur}</div>}
