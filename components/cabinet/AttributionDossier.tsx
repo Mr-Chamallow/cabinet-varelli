@@ -8,7 +8,7 @@ interface Props {
   onChange: () => void;
 }
 
-// Avocats qui ont accès à ce dossier. Seule la direction peut ajouter ou retirer un avocat.
+// Membres du dossier. La direction et les avocats assignés peuvent ajouter ou retirer un employé.
 export default function AttributionDossier({ id, direction, acces, onChange }: Props) {
   const [staff, setStaff] = useState<any[]>([]);
   const [choix, setChoix] = useState("");
@@ -41,8 +41,8 @@ export default function AttributionDossier({ id, direction, acces, onChange }: P
 
   return (
     <div className="cab-card" style={{ marginBottom: "1rem" }}>
-      <div style={{ fontWeight: 700, marginBottom: "0.5rem" }}>Avocats sur ce dossier</div>
-      {acces.length === 0 && <div style={{ fontSize: "0.85rem", color: "var(--text-dim)" }}>Aucun avocat attribué.</div>}
+      <div style={{ fontWeight: 700, marginBottom: "0.5rem" }}>Membres du dossier</div>
+      {acces.length === 0 && <div style={{ fontSize: "0.85rem", color: "var(--text-dim)" }}>Aucun membre pour l'instant.</div>}
       {acces.map(a => (
         <div key={a.avocat_discord_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem" }}>
           <span>{a.avocat_nom}</span>
@@ -52,10 +52,10 @@ export default function AttributionDossier({ id, direction, acces, onChange }: P
       {direction && (
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem", flexWrap: "wrap" }}>
           <select value={choix} onChange={e => setChoix(e.target.value)} style={{ flex: 1, minWidth: 180 }}>
-            <option value="">Choisir un avocat</option>
+            <option value="">Choisir un employé</option>
             {staff.filter(s => !dejaAttribues.has(s.discord_id)).map(s => <option key={s.discord_id} value={s.discord_id}>{s.nom} ({s.role})</option>)}
           </select>
-          <button className="btn btn-sm" onClick={ajouter}>Attribuer</button>
+          <button className="btn btn-sm" onClick={ajouter}>Ajouter</button>
         </div>
       )}
       {erreur && <div style={{ color: "var(--danger)", marginTop: "0.5rem" }}>{erreur}</div>}

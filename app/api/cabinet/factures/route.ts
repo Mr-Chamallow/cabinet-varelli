@@ -4,7 +4,6 @@ import { nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
 import { diffuser, estStaff, topicPour } from "@/lib/cabinetAcces";
 import { calculer, historiser, nettoyerLignes, numeroFacture } from "@/lib/factures";
 import { montant } from "@/lib/montant";
-import { prevenirFacture } from "@/lib/cabinetNotifs";
 
 // Liste des factures (employés) avec totaux : encaissé, en attente, en retard
 export async function GET() {
@@ -75,7 +74,6 @@ export async function POST(req: Request) {
       fichier_url: `/api/cabinet/factures/${facture.id}/pdf`, fichier_nom: `${numero}.pdf`,
     }]).select().single();
     if (msg) await diffuser(`dossier:${dossier.id}`, msg);
-    await prevenirFacture(dossier.client_discord_id, numero, total, echeance);
 
     await notifyDiscord(`**Nouvelle facture** ${numero} (${montant(total)}) sur le dossier : ${dossier.titre}`);
     return NextResponse.json(facture);

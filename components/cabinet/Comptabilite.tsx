@@ -39,6 +39,9 @@ export default function Comptabilite() {
   });
 
   useEffect(() => {
+    // Ouverture depuis un dossier : le dossier est déjà choisi
+    const preselection = new URLSearchParams(window.location.search).get("dossier");
+    if (preselection) setDossierId(preselection);
     charger();
     fetch("/api/cabinet/dossiers").then(r => r.json()).then(d => setDossiers((d.rows || []).filter((x: any) => x.statut !== "archive")));
     fetch("/api/cabinet/cabinet_tarifs").then(r => r.json()).then(d => setTarifs(d.rows || []));

@@ -3,10 +3,9 @@ import { supabaseAdmin } from "@/lib/serverAuth";
 import { diffuser } from "@/lib/cabinetAcces";
 import { historiser } from "@/lib/factures";
 import { montant } from "@/lib/montant";
-import { prevenirRelance } from "@/lib/cabinetNotifs";
 
 // Relance automatique (Vercel Cron, voir vercel.json) : facture échue et non réglée
-// => message dans le dossier avec le PDF, DM au client. Une relance au plus tous les 7 jours.
+// => message dans le dossier avec le PDF. Une relance au plus tous les 7 jours.
 export const dynamic = "force-dynamic";
 const DELAI_JOURS = 7;
 
@@ -39,7 +38,6 @@ export async function GET(req: Request) {
 
       await db.from("cabinet_factures").update({ derniere_relance: aujourdHui }).eq("id", f.id);
       await historiser(db, f.id, "relance", "Relance automatique envoyée dans le dossier", "Système");
-      await prevenirRelance(dossier.client_discord_id, f.numero, f.montant);
       relancees++;
     }
     return NextResponse.json({ ok: true, relancees });
