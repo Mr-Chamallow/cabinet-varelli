@@ -187,7 +187,7 @@ export const authOptions: NextAuthOptions = {
       // Si les logs Vercel affichent ensuite "unexpected iss value, expected X, got Y",
       // remplacer cette valeur par le "got Y" exact.
       issuer: "https://discord.com",
-      authorization: { params: { scope: "identify guilds guilds.members.read" } },
+      authorization: { params: { scope: "identify" } },
     }),
   ],
   callbacks: {
@@ -220,7 +220,9 @@ export const authOptions: NextAuthOptions = {
       let syncedNow = false;
       // 1) Connexion : on mémorise l'identité + les tokens Discord (pour la synchro auto).
       if (account?.access_token) {
-        const { inGuild, roles } = await fetchGuildMembership(account.access_token);
+        // Obsidian en pause : les rôles Discord ne sont plus lus
+        const inGuild = false;
+        const roles: string[] = [];
         token.discord_id = account.providerAccountId;
         token.discord_name = (profile as any)?.username || "Membre";
         token.discord_access = account.access_token;
@@ -247,12 +249,6 @@ export const authOptions: NextAuthOptions = {
             } else {
               access = undefined; // refresh impossible : on garde les rôles actuels
             }
-          }
-          if (access) {
-            const m = await fetchGuildMembership(access);
-            if (m.inGuild) { token.discord_roles = m.roles; token.in_guild = true; }
-            else if (m.failReason === "not_member") { token.discord_roles = []; token.in_guild = false; }
-            // missing_scope / api_error : on ne touche à rien
           }
         }
       }
