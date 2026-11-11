@@ -15,7 +15,7 @@ export default function ObsidianDashboard() {
   const { user, loading: userLoading } = useCurrentUser();
   useEffect(() => {
     if (userLoading) return;
-    if (!user) { window.location.href = "/login"; return; }
+    if (!user) { window.location.href = "/avocat"; return; }
     // ⚠️ Ne JAMAIS renvoyer vers /login ici : l'utilisateur EST connecté, seulement
     // sans accès au Dashboard (ex: rôle "Légal Service"). /login le renvoie vers "/",
     // qui le renvoyait ici vers /login -> boucle infinie. On l'envoie plutôt vers la

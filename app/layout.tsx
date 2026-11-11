@@ -5,8 +5,8 @@ import { AppShell } from '@/components/AppShell';
 import { PwaRegister } from '@/components/PwaRegister';
 
 export const metadata: Metadata = {
-  title: 'Obsidian Logistique',
-  description: 'Plateforme de gestion - Obsidian Logistique',
+  title: 'Cabinet Varelli & Associés',
+  description: 'Plateforme du Cabinet Varelli & Associés',
   manifest: '/manifest.json',
   icons: {
     icon: '/logo.png',
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Obsidian Logistique',
+    title: 'Cabinet Varelli & Associés',
   },
 };
 

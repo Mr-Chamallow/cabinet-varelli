@@ -1,5 +1,5 @@
 // Adapte l'import ci-dessous au chemin réel de ton client Supabase existant
-// (celui déjà utilisé par Cabinet BullHead).
+// (celui déjà utilisé par Cabinet Varelli & Associés).
 import { supabase } from '@/lib/supabase';
 import type { CartePoint, Category, Dossier, Gang, Personne, Plaque, Preset } from './types';
 import { dbw } from "@/lib/dbw";
