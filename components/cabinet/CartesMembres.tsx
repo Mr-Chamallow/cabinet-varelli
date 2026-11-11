@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import DiplomeBarreau from "@/components/cabinet/DiplomeBarreau";
 
 // Initiales d'un membre (ex : "Marco Varelli" -> "MV")
 const initiales = (nom: string) => nom.split(/\s+/).filter(Boolean).slice(0, 2).map(m => m[0]?.toUpperCase()).join("") || "?";
@@ -71,24 +72,20 @@ export default function CartesMembres({ limite }: Props) {
       {ouvert && (
         <div
           onClick={() => setOuvert(null)}
-          style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,.75)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem", animation: "cabFade .3s ease both" }}
+          style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,.78)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem", animation: "cabFade .3s ease both", overflowY: "auto" }}
         >
-          <div onClick={e => e.stopPropagation()} className="cab-diplome-grand" style={{ animation: "cabFade .45s cubic-bezier(.2,.7,.2,1) both" }}>
-            <button className="cab-fermer" onClick={() => setOuvert(null)} aria-label="Fermer">×</button>
-            <div className="cab-ornement">◆ ◆ ◆</div>
-            <div className="cab-titre-diplome">Diplôme d'avocat</div>
-            <div className="cab-decerne">Cabinet Varelli & Associés certifie que</div>
-            {ouvert.photo_url && <img className="cab-photo" src={ouvert.photo_url} alt={ouvert.nom_rp} style={{ width: 120, height: 120 }} />}
-            <div className="cab-nom-grand">{ouvert.nom_rp}</div>
-            {ouvert.poste && <div className="cab-poste" style={{ fontSize: ".9rem" }}>{ouvert.poste}</div>}
-            {detailBarreau(ouvert) && <div className="cab-texte-grand">Est inscrit au {detailBarreau(ouvert)}</div>}
-            {specialitesDe(ouvert).length > 0 && (
-              <div className="cab-chips" style={{ marginTop: "1rem" }}>{specialitesDe(ouvert).map((x: string) => <span key={x} className="cab-chip">{x}</span>)}</div>
-            )}
-            {ouvert.description && <p className="cab-texte-grand" style={{ fontStyle: "italic", marginTop: "1rem" }}>« {ouvert.description} »</p>}
-            <div className="cab-ornement">◆ ◆ ◆</div>
-            <div className="cab-sceau" style={{ width: 52, height: 52, fontSize: ".75rem" }}>CV</div>
-            <div className="cab-signature">{ouvert.poste || "Cabinet Varelli & Associés"}</div>
+          <div onClick={e => e.stopPropagation()} style={{ width: "min(600px,100%)", animation: "cabFade .5s cubic-bezier(.2,.7,.2,1) both" }}>
+            <DiplomeBarreau
+              nom={ouvert.nom_rp}
+              poste={ouvert.poste}
+              barreau={ouvert.barreau}
+              numero={ouvert.numero_barreau}
+              annee={ouvert.annee_inscription}
+              specialites={specialitesDe(ouvert)}
+              photo={ouvert.photo_url}
+              description={ouvert.description}
+              onFermer={() => setOuvert(null)}
+            />
           </div>
         </div>
       )}

@@ -112,6 +112,30 @@ const CSS = `
 .cab-signature { margin-top: 1.4rem; font-family: 'Playfair Display', serif; font-style: italic; color: var(--gold-light); font-size: 1rem; }
 .cab-fermer { position: absolute; top: 8px; right: 12px; z-index: 2; background: none; border: none; color: var(--gold); font-size: 1.6rem; line-height: 1; cursor: pointer; }
 
+/* Diplôme du barreau : cadre, coins ornés, filigrane, sceau */
+.cab-diplome-grand {
+  background:
+    radial-gradient(circle at top, rgba(var(--gold-rgb),.14), transparent 55%),
+    repeating-linear-gradient(45deg, rgba(var(--gold-rgb),.025) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, #181516, #0d0c0c);
+}
+.cab-diplome-grand > .cab-coin { position: absolute; width: 64px; height: 64px; color: var(--gold); z-index: 2; pointer-events: none; }
+.cab-diplome-grand > .cab-coin.tl { top: 6px; left: 6px; }
+.cab-diplome-grand > .cab-coin.tr { top: 6px; right: 6px; transform: scaleX(-1); }
+.cab-diplome-grand > .cab-coin.bl { bottom: 6px; left: 6px; transform: scaleY(-1); }
+.cab-diplome-grand > .cab-coin.br { bottom: 6px; right: 6px; transform: scale(-1, -1); }
+.cab-diplome-grand > .cab-filigrane {
+  position: absolute; inset: 0; z-index: 0; display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-size: 15rem; font-weight: 900; line-height: 1;
+  color: rgba(var(--gold-rgb),.045); pointer-events: none; user-select: none;
+}
+.cab-diplome-haut { font-family: 'Cinzel', serif; font-size: .68rem; letter-spacing: .35em; text-transform: uppercase; color: var(--gold-dark); margin-top: .4rem; }
+.cab-ornement-diplome { color: var(--gold); letter-spacing: .2em; font-size: .75rem; margin: .7rem 0 .2rem; opacity: .9; }
+.cab-pied { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-top: 1.4rem; padding: 0 .5rem; }
+.cab-signature-bloc { text-align: center; min-width: 150px; }
+.cab-ligne-signature { height: 1px; margin: .3rem 0 .2rem; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+.cab-serie { margin-top: 1.4rem; font-family: 'JetBrains Mono', monospace; font-size: .6rem; letter-spacing: .15em; color: var(--text-dim); }
+
 @media (prefers-reduced-motion: reduce) {
   .cab-enter, .cab-stagger > *, .cab-live, .cab-card, .cab-card::after { animation: none !important; transition: none !important; }
 }
