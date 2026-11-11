@@ -22,7 +22,7 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
   const [staffListe, setStaffListe] = useState<any[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
-  const [form, setForm] = useState({ date_rdv: "", motif: "", prestation: "" });
+  const [form, setForm] = useState({ date_rdv: "", motif: "", prestation: "", discord_id: "", client_nom: "" });
   const [ouvrirForm, setOuvrirForm] = useState(false);
   const [choixAvocat, setChoixAvocat] = useState<Record<string, string>>({});
 
@@ -48,7 +48,7 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
 
   const demander = async () => {
     const ok = await appel("POST", form);
-    if (ok) { setOuvrirForm(false); setForm({ date_rdv: "", motif: "", prestation: "" }); }
+    if (ok) { setOuvrirForm(false); setForm({ date_rdv: "", motif: "", prestation: "", discord_id: "", client_nom: "" }); }
   };
 
   // Clic sur une case verte du calendrier : pré-remplit la date et ouvre le formulaire
@@ -69,14 +69,20 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
 
   return (
     <div>
-      <CalendrierRdv rdvs={creneaux} staff={data.staff} onPick={data.staff ? undefined : choisirCreneau} />
+      <CalendrierRdv rdvs={creneaux} staff={data.staff} onPick={choisirCreneau} />
 
-      {!data.staff && (
+      {(
         <div style={{ marginBottom: "1.2rem" }}>
-          <button className="btn btn-sm" onClick={() => setOuvrirForm(!ouvrirForm)}>{ouvrirForm ? "Fermer" : "Demander un RDV"}</button>
+          <button className="btn btn-sm" onClick={() => setOuvrirForm(!ouvrirForm)}>{ouvrirForm ? "Fermer" : (data.staff ? "Ajouter un RDV" : "Demander un RDV")}</button>
           {ouvrirForm && (
             <div className="card" style={{ marginTop: "0.8rem" }}>
               <div className="form-group"><label>Date et heure (créneau d'une heure)</label><input type="datetime-local" value={form.date_rdv} onChange={e => setForm({ ...form, date_rdv: e.target.value })} /></div>
+              {data.staff && (
+                <>
+                  <div className="form-group"><label>ID Discord du client (laisse vide si le RDV est pour toi)</label><input value={form.discord_id} onChange={e => setForm({ ...form, discord_id: e.target.value })} /></div>
+                  <div className="form-group"><label>Nom RP du client</label><input value={form.client_nom} onChange={e => setForm({ ...form, client_nom: e.target.value })} /></div>
+                </>
+              )}
               <div className="form-group">
                 <label>Prestation</label>
                 <select value={form.prestation} onChange={e => setForm({ ...form, prestation: e.target.value })}>
