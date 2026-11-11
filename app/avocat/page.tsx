@@ -5,6 +5,7 @@ import { ObsLogo } from "@/components/ObsLogo";
 import { hasPermission } from "@/lib/auth";
 import InscriptionModal from "@/components/avocat/InscriptionModal";
 import AccueilCabinet from "@/components/cabinet/AccueilCabinet";
+import { CabinetStyles } from "@/components/cabinet/CabinetStyles";
 
 const SECTIONS = [
   { label: "Tarifs", icon: "💰", desc: "Grille des honoraires", href: "/avocat/tarifs", perms: ["avocat", "cabinet_tarifs"] },
@@ -35,7 +36,8 @@ export default function AvocatAccueil() {
   const infosDiscord = discord || { discord_id: "", discord_name: "" };
 
   return (
-    <div className="page-container">
+    <div className="page-container cab-enter">
+      <CabinetStyles />
       <div className="page-header">
         <div>
           <h1 className="page-title">Cabinet Varelli & Associés</h1>

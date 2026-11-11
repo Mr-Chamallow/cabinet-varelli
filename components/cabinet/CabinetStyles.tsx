@@ -36,7 +36,11 @@ const CSS = `
 .cab-link { text-decoration: none; color: inherit; display: block; }
 
 .cab-title { font-family: 'Cinzel', serif; color: var(--gold); letter-spacing: .08em; }
-.cab-muted { color: var(--text-muted); font-size: .85rem; line-height: 1.6; }
+.cab-muted { color: #c5cbdb; font-size: .85rem; line-height: 1.6; }
+/* Dans le module cabinet, les gris sont plus lisibles */
+.cab-enter { --text-dim: #a3abc4; --text-muted: #cdd2df; }
+.cab-cliquable { cursor: pointer; }
+.cab-cliquable:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
 .cab-badge {
   display: inline-block; font-size: .66rem; letter-spacing: .12em; text-transform: uppercase;
@@ -88,6 +92,25 @@ const CSS = `
 }
 .cab-etoiles { color: var(--gold); letter-spacing: .15em; }
 .cab-section-titre { font-family: 'Cinzel', serif; color: var(--gold); letter-spacing: .08em; font-size: 1rem; margin: 0 0 .8rem; }
+
+/* Diplôme en grand (ouvert au clic sur une carte de l'organigramme) */
+.cab-diplome-grand {
+  position: relative; width: min(560px, 100%); max-height: 90vh; overflow: auto;
+  padding: 2.6rem 2rem 2.2rem; text-align: center; border-radius: 6px;
+  background: radial-gradient(circle at top, rgba(var(--gold-rgb),.14), transparent 55%), linear-gradient(180deg, #181516, #0d0c0c);
+  border: 2px solid rgba(var(--gold-rgb),.75);
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,.9), inset 0 0 0 1px rgba(var(--gold-rgb),.25);
+}
+.cab-diplome-grand::before { content: ""; position: absolute; inset: 10px; border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 3px; pointer-events: none; }
+.cab-diplome-grand::after { content: ""; position: absolute; inset: 16px; border: 1px dashed rgba(var(--gold-rgb),.25); border-radius: 2px; pointer-events: none; }
+.cab-diplome-grand > * { position: relative; z-index: 1; }
+.cab-ornement { color: var(--gold); letter-spacing: .5em; font-size: .7rem; margin: 1rem 0; opacity: .85; }
+.cab-titre-diplome { font-family: 'Cinzel', serif; font-size: 1.5rem; letter-spacing: .18em; text-transform: uppercase; color: var(--gold-light); margin: .2rem 0 1.2rem; }
+.cab-decerne { font-family: 'Playfair Display', serif; font-style: italic; color: #c5cbdb; font-size: .95rem; }
+.cab-nom-grand { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: var(--gold); margin: .3rem 0 .8rem; }
+.cab-texte-grand { color: #d6dbe7; font-size: .9rem; line-height: 1.8; margin: .3rem auto; max-width: 440px; }
+.cab-signature { margin-top: 1.4rem; font-family: 'Playfair Display', serif; font-style: italic; color: var(--gold-light); font-size: 1rem; }
+.cab-fermer { position: absolute; top: 8px; right: 12px; z-index: 2; background: none; border: none; color: var(--gold); font-size: 1.6rem; line-height: 1; cursor: pointer; }
 
 @media (prefers-reduced-motion: reduce) {
   .cab-enter, .cab-stagger > *, .cab-live, .cab-card, .cab-card::after { animation: none !important; transition: none !important; }
