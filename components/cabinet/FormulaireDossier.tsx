@@ -74,7 +74,7 @@ export default function FormulaireDossier({ staff, onCree }: Props) {
             <>
               <input value={recherche} onChange={e => setRecherche(e.target.value)} placeholder="Pseudo, nom RP ou ID Discord" />
               {resultats.map(c => (
-                <div key={c.discord_id} className="card" style={{ marginTop: "0.4rem", cursor: "pointer", padding: "0.5rem 0.7rem" }} onClick={() => setClient(c)}>
+                <div key={c.discord_id} className="cab-card" style={{ marginTop: "0.4rem", cursor: "pointer", padding: "0.5rem 0.7rem" }} onClick={() => setClient(c)}>
                   {c.nom_rp}, {c.discord_name} <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>{c.discord_id}</span>
                 </div>
               ))}

@@ -8,6 +8,7 @@ const ONGLETS: [string, string][] = [
   ["organigramme", "Organigramme"],
   ["presentation", "Présentation"],
   ["avis", "Avis clients"],
+  ["factures", "Facturation"],
   ["types", "Types de dossiers"],
 ];
 
@@ -63,6 +64,24 @@ export function CabinetAdminTab() {
       )}
 
       {onglet === "presentation" && <CabinetPresentation canWrite={true} />}
+
+      {onglet === "factures" && (
+        <CabinetCrud
+          table="cabinet_factures"
+          libelle="facture"
+          canWrite={true}
+          titleKey="libelle"
+          subKey="statut"
+          fields={[
+            { key: "client_discord_id", label: "ID Discord du client", placeholder: "Ex : 460865920278069248" },
+            { key: "client_nom", label: "Nom du client", placeholder: "Ex : Jean Dupont" },
+            { key: "libelle", label: "Libellé", placeholder: "Ex : Honoraires mariage" },
+            { key: "montant", label: "Montant ($)", type: "number" },
+            { key: "statut", label: "Statut : en_attente ou payee", placeholder: "en_attente" },
+            { key: "date_echeance", label: "Échéance (AAAA-MM-JJ)", placeholder: "2026-12-01" },
+          ]}
+        />
+      )}
 
       {onglet === "avis" && (
         <CabinetCrud

@@ -19,6 +19,7 @@ interface SidebarProps {
 const NAV_SECTIONS = [
   { label: "Cabinet Varelli", items: [
     { href: "/avocat",                 label: "Accueil",         icon: <ObsLogo size={18} />, perms: ["avocat"] },
+    { href: "/avocat/mon-espace",      label: "Mon espace",      icon: "🧭", perms: ["avocat"] },
     { href: "/avocat/tarifs",          label: "Tarifs",          icon: "💰", perms: ["avocat", "cabinet_tarifs"] },
     { href: "/avocat/rdv",             label: "Prise de RDV",    icon: "📅", perms: ["avocat", "cabinet_rdv"] },
     { href: "/avocat/presentation",    label: "Présentation",    icon: "📜", perms: ["avocat", "cabinet_presentation"] },

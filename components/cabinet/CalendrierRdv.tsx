@@ -64,7 +64,7 @@ export default function CalendrierRdv({ rdvs, staff, onPick }: Props) {
   const titre = `${jours[0].toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })} au ${jours[6].toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`;
 
   return (
-    <div className="card" style={{ marginBottom: "1rem" }}>
+    <div className="cab-card" style={{ marginBottom: "1rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem", marginBottom: "0.6rem", flexWrap: "wrap" }}>
         <button className="btn btn-outline btn-sm" onClick={() => setDecalage(decalage - 1)}>Semaine précédente</button>
         <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{titre}</div>

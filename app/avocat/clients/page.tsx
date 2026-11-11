@@ -46,7 +46,7 @@ export default function ComptesClients() {
 
       {erreur && <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>{erreur}</div>}
       {chargement ? <div style={{ color: "var(--text-dim)" }}>Chargement...</div> : (
-        <div className="card" style={{ overflowX: "auto" }}>
+        <div className="cab-card" style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
             <thead>
               <tr style={{ textAlign: "left", color: "var(--text-dim)" }}>

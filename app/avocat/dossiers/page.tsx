@@ -10,7 +10,7 @@ export default function Page() {
   const { user } = useCurrentUser();
   if (!user) return null;
   return (
-    <div className="card">
+    <div className="cab-card">
       <div style={{ fontWeight: 700, marginBottom: "0.8rem" }}>Ouvrir un nouveau dossier</div>
       <FormulaireDossier staff={estStaffUser(user)} onCree={d => router.push(`/avocat/dossiers/${d.id}`)} />
     </div>

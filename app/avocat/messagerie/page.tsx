@@ -22,7 +22,7 @@ function Liste({ direction }: { direction: boolean }) {
       <div style={{ fontFamily: "'Cinzel', serif", color: "var(--gold)", marginBottom: "0.6rem" }}>Salons</div>
       {salons.map(s => (
         <Link key={s.slug} href={`/avocat/messagerie/${s.slug}`} style={lien}>
-          <div className="card" style={{ marginBottom: "0.5rem", fontWeight: 600 }}>{s.nom}</div>
+          <div className="cab-card" style={{ marginBottom: "0.5rem", fontWeight: 600 }}>{s.nom}</div>
         </Link>
       ))}
 
@@ -32,7 +32,7 @@ function Liste({ direction }: { direction: boolean }) {
       </div>
       {staff.map(s => (
         <Link key={s.discord_id} href={`/avocat/messagerie/bureau-${s.discord_id}`} style={lien}>
-          <div className="card" style={{ marginBottom: "0.5rem" }}>
+          <div className="cab-card" style={{ marginBottom: "0.5rem" }}>
             <div style={{ fontWeight: 600 }}>Bureau de {s.nom}</div>
             <div style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>{s.role}</div>
           </div>

@@ -95,7 +95,7 @@ export default function DossierChat({ id, moiId, staff, direction }: Props) {
       {staff && <AttributionDossier id={id} direction={direction} acces={dossier.cabinet_dossier_acces || []} onChange={() => { charger(); avertirListe(); }} />}
 
       {!ouvert && (
-        <div className="card" style={{ marginBottom: "1rem", color: "var(--text-dim)" }}>
+        <div className="cab-card" style={{ marginBottom: "1rem", color: "var(--text-dim)" }}>
           Dossier {dossier.statut === "archive" ? "archivé" : "fermé"} : lecture seule.
         </div>
       )}

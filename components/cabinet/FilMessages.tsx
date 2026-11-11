@@ -88,7 +88,7 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
 
   return (
     <div>
-      <div className="card" style={{ maxHeight: "60vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+      <div className="cab-card" style={{ maxHeight: "60vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
         {messages.length === 0 && <div style={{ color: "var(--text-dim)" }}>{titreVide}</div>}
         {messages.map(m => (
           <div key={m.id} style={{ alignSelf: m.est_staff ? "flex-start" : "flex-end", maxWidth: "85%", background: m.est_staff ? "rgba(255,255,255,0.04)" : "rgba(212,175,55,0.12)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "0.5rem 0.7rem" }}>
@@ -105,7 +105,7 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
       {erreur && <div style={{ color: "var(--danger)", margin: "0.6rem 0" }}>{erreur}</div>}
 
       {!lecture && (
-        <div className="card" style={{ marginTop: "1rem" }}>
+        <div className="cab-card" style={{ marginTop: "1rem" }}>
           <textarea
             rows={3}
             placeholder="Écris ton message (tu peux coller une image avec Ctrl+V)"

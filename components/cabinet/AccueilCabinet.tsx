@@ -23,7 +23,8 @@ export default function AccueilCabinet() {
           Un accompagnement juridique sérieux, discret et sur mesure. Choisis ce dont tu as besoin.
         </p>
         <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", marginTop: "1.1rem" }}>
-          <Link className="btn btn-gold btn-sm" href="/avocat/rdv">Prendre rendez-vous</Link>
+          <Link className="btn btn-gold btn-sm" href="/avocat/mon-espace">Mon espace</Link>
+          <Link className="btn btn-outline btn-sm" href="/avocat/rdv">Prendre rendez-vous</Link>
           <Link className="btn btn-outline btn-sm" href="/avocat/dossiers">Ouvrir un dossier</Link>
           <Link className="btn btn-outline btn-sm" href="/avocat/tarifs">Voir les tarifs</Link>
         </div>
@@ -50,7 +51,7 @@ export default function AccueilCabinet() {
           <h2 className="cab-section-titre" style={{ margin: 0 }}>Notre équipe</h2>
           <Link href="/avocat/organigramme" className="cab-muted" style={{ color: "var(--gold)" }}>Voir tout l'organigramme</Link>
         </div>
-        <CartesMembres limite={3} />
+        <CartesMembres />
       </section>
 
       <AvisCabinet />

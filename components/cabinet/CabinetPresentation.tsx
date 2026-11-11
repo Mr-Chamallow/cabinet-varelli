@@ -31,7 +31,7 @@ export default function CabinetPresentation({ canWrite }: { canWrite: boolean })
     <div>
       {canWrite && !editer && <button className="btn btn-sm" style={{ marginBottom: "1rem" }} onClick={() => { setBrouillon(texte); setEditer(true); }}>Modifier</button>}
       {editer ? (
-        <div className="card">
+        <div className="cab-card">
           <textarea rows={14} value={brouillon} onChange={e => setBrouillon(e.target.value)} />
           {message && <div style={{ color: "var(--danger)", margin: "0.5rem 0" }}>{message}</div>}
           <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem" }}>
@@ -40,7 +40,7 @@ export default function CabinetPresentation({ canWrite }: { canWrite: boolean })
           </div>
         </div>
       ) : (
-        <div className="card" style={{ whiteSpace: "pre-wrap", lineHeight: 1.7 }}>{texte || "Pas encore de présentation."}</div>
+        <div className="cab-card" style={{ whiteSpace: "pre-wrap", lineHeight: 1.7 }}>{texte || "Pas encore de présentation."}</div>
       )}
     </div>
   );

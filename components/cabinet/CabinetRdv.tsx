@@ -75,7 +75,7 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
         <div style={{ marginBottom: "1.2rem" }}>
           <button className="btn btn-sm" onClick={() => setOuvrirForm(!ouvrirForm)}>{ouvrirForm ? "Fermer" : (data.staff ? "Ajouter un RDV" : "Demander un RDV")}</button>
           {ouvrirForm && (
-            <div className="card" style={{ marginTop: "0.8rem" }}>
+            <div className="cab-card" style={{ marginTop: "0.8rem" }}>
               <div className="form-group"><label>Date et heure (créneau d'une heure)</label><input type="datetime-local" value={form.date_rdv} onChange={e => setForm({ ...form, date_rdv: e.target.value })} /></div>
               {data.staff && (
                 <>
@@ -116,7 +116,7 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
         const peutAnnuler = r.statut !== "termine" && r.statut !== "annule" && (monRdv || estAvocat || direction);
 
         return (
-          <div key={r.id} className="card" style={{ marginBottom: "0.7rem" }}>
+          <div key={r.id} className="cab-card" style={{ marginBottom: "0.7rem" }}>
             <div style={{ fontWeight: 700, textTransform: "capitalize" }}>{quand(r.date_rdv)}</div>
             <div style={{ fontSize: "0.85rem", marginTop: "0.2rem" }}>
               {data.staff && <>Client : {r.client_nom || "Non renseigné"}<br /></>}

@@ -40,7 +40,7 @@ export default function AttributionDossier({ id, direction, acces, onChange }: P
   const dejaAttribues = new Set(acces.map(a => a.avocat_discord_id));
 
   return (
-    <div className="card" style={{ marginBottom: "1rem" }}>
+    <div className="cab-card" style={{ marginBottom: "1rem" }}>
       <div style={{ fontWeight: 700, marginBottom: "0.5rem" }}>Avocats sur ce dossier</div>
       {acces.length === 0 && <div style={{ fontSize: "0.85rem", color: "var(--text-dim)" }}>Aucun avocat attribué.</div>}
       {acces.map(a => (

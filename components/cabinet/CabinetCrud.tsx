@@ -65,7 +65,7 @@ export default function CabinetCrud({ table, fields, canWrite, titleKey, subKey,
   }
 
   const ligne = (row: any) => (
-    <div key={row.id} className="card" style={{ marginBottom: "0.6rem", display: "flex", gap: "0.8rem", alignItems: "flex-start", justifyContent: "space-between" }}>
+    <div key={row.id} className="cab-card" style={{ marginBottom: "0.6rem", display: "flex", gap: "0.8rem", alignItems: "flex-start", justifyContent: "space-between" }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontWeight: 700 }}>{row[titleKey]}</div>
         {subKey && row[subKey] && <div style={{ fontSize: "0.82rem", color: "var(--gold)" }}>{row[subKey]}</div>}
@@ -87,7 +87,7 @@ export default function CabinetCrud({ table, fields, canWrite, titleKey, subKey,
       {canWrite && !edition && <button className="btn btn-sm" style={{ marginBottom: "1rem" }} onClick={() => ouvrir(null)}>+ Ajouter</button>}
 
       {edition && (
-        <div className="card" style={{ marginBottom: "1rem" }}>
+        <div className="cab-card" style={{ marginBottom: "1rem" }}>
           <div style={{ fontWeight: 700, marginBottom: "0.6rem" }}>{edition.id ? `Modifier le ${libelle}` : `Nouveau ${libelle}`}</div>
           {fields.map(f => (
             <div key={f.key} className="form-group">
