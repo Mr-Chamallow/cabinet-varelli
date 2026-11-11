@@ -149,6 +149,7 @@ const LANDING_PRIORITY: { path: string; permission: string }[] = [
   { path: "/obsidian/taxes", permission: "obsidian_taxes" },
   { path: "/obsidian/recrutement", permission: "obsidian_recrutement" },
   { path: "/obsidian/guerres", permission: "obsidian_guerres" },
+  { path: "/avocat", permission: "avocat" },
   { path: "/admin", permission: "admin" },
   { path: "/supervision", permission: "supervision" },
 ];

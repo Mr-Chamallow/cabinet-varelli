@@ -1,10 +1,13 @@
 "use client";
 
+import { Fragment } from "react";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { hasPermission } from "@/lib/auth";
 import { estStaffUser } from "@/lib/cabinetRoles";
+import ListeDossiers from "@/components/cabinet/ListeDossiers";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { ObsLogo } from "@/components/ObsLogo";
 
@@ -75,6 +78,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
                   ? pathname === "/"
                   : pathname === item.href || (item.href !== "/avocat" && !!pathname?.startsWith(item.href));
                 return (
+                  <Fragment key={item.href}>
                   <Link
                     key={item.href}
                     href={item.href}
@@ -84,6 +88,8 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
                     <span className="sidebar-link-icon">{item.icon}</span>
                     <span>{item.label}</span>
                   </Link>
+                  {item.href === "/avocat/dossiers" && <div style={{ padding: "0 0 0.6rem 0.4rem" }}><ListeDossiers /></div>}
+                  </Fragment>
                 );
               })}
             </div>
