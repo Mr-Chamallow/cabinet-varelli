@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import FilMessages from "@/components/cabinet/FilMessages";
 import AttributionDossier from "@/components/cabinet/AttributionDossier";
 import { montant } from "@/lib/montant";
+import { supprimerDefinitivement } from "@/lib/suppression";
 
 interface Props { id: string; moiId: string; staff: boolean; direction: boolean; }
 
@@ -85,6 +86,13 @@ export default function DossierChat({ id, moiId, staff, direction }: Props) {
 
   const bouton: React.CSSProperties = { fontSize: "0.8rem" };
 
+  const supprimerCeDossier = async () => {
+    const res = await supprimerDefinitivement({ type: "dossier", id }, `le dossier « ${dossier.titre} » et tout son contenu`);
+    if (!res.ok) return setErreur(res.message);
+    avertirListe();
+    router.push("/avocat/dossiers");
+  };
+
   return (
     <div>
       {/* En-tête */}
@@ -116,6 +124,7 @@ export default function DossierChat({ id, moiId, staff, direction }: Props) {
             {!ouvert && dossier.statut !== "archive" && <button className="btn btn-outline btn-sm" style={bouton} onClick={() => envoyer({ statut: "ouvert" })}>Rouvrir la messagerie</button>}
             {ouvert && <button className="btn btn-outline btn-sm" style={bouton} onClick={() => envoyer({ statut: "ferme" })}>Fermer la messagerie</button>}
             {dossier.statut !== "archive" && <button className="btn btn-outline btn-sm" style={bouton} onClick={() => envoyer({ statut: "archive" })}>Archiver</button>}
+            {direction && <button className="btn btn-outline btn-sm" style={{ ...bouton, color: "#f87171", borderColor: "#f87171" }} onClick={supprimerCeDossier}>Supprimer définitivement</button>}
           </div>
         )}
         {dossier.statut === "archive" && (

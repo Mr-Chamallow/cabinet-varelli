@@ -3,6 +3,9 @@ import { montant } from "@/lib/montant";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { prixDepuisTexte } from "@/lib/montant";
+import { supprimerDefinitivement } from "@/lib/suppression";
+import { useCurrentUser } from "@/lib/useCurrentUser";
+import { hasPermission } from "@/lib/auth";
 
 interface Ligne { description: string; quantite: string; prix: string; }
 
@@ -21,6 +24,8 @@ export default function Comptabilite() {
   const [totaux, setTotaux] = useState<any>({ encaisse: 0, attente: 0, retard: 0 });
   const [dossiers, setDossiers] = useState<any[]>([]);
   const [tarifs, setTarifs] = useState<any[]>([]);
+  const { user } = useCurrentUser();
+  const direction = !!user && hasPermission(user, "cabinet_attribution");
   const [filtre, setFiltre] = useState("tous");
   const [erreur, setErreur] = useState("");
   const [ouverts, setOuverts] = useState<Record<string, any[]>>({});
@@ -92,6 +97,13 @@ export default function Comptabilite() {
     const d = await r.json();
     if (!r.ok) return setErreur(d.error || "Erreur");
     setOuverts(o => { const c = { ...o }; delete c[id]; return c; });
+    charger();
+  }
+
+  async function supprimerUneFacture(id: string, numero: string) {
+    const res = await supprimerDefinitivement({ type: "facture", id }, `la facture ${numero}`);
+    if (!res.ok) return setErreur(res.message);
+    setErreur("");
     charger();
   }
 
@@ -188,6 +200,7 @@ export default function Comptabilite() {
               <a className="btn btn-outline btn-sm" href={`/api/cabinet/factures/${f.id}/pdf`} target="_blank" rel="noreferrer">PDF</a>
               {f.dossier_id && <Link className="btn btn-outline btn-sm" href={`/avocat/dossiers/${f.dossier_id}`}>Dossier</Link>}
               <button className="btn btn-outline btn-sm" onClick={() => basculerHistorique(f.id)}>{ouverts[f.id] ? "Masquer l'historique" : "Historique"}</button>
+              {direction && <button className="btn btn-outline btn-sm" style={{ color: "#f87171", borderColor: "#f87171" }} onClick={() => supprimerUneFacture(f.id, f.numero || "")}>Supprimer</button>}
             </div>
 
             {ouverts[f.id] && (

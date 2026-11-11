@@ -3,6 +3,7 @@ import { montant } from "@/lib/montant";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTempsReel } from "@/lib/useTempsReel";
+import { supprimerDefinitivement } from "@/lib/suppression";
 
 const heure = (s: string) => new Date(s).toLocaleString("fr-FR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
@@ -10,11 +11,18 @@ const heure = (s: string) => new Date(s).toLocaleString("fr-FR", { weekday: "sho
 export default function TableauBord() {
   const [d, setD] = useState<any>(null);
   const [erreur, setErreur] = useState("");
+  const [info, setInfo] = useState("");
 
   const charger = () => fetch("/api/cabinet/direction").then(r => r.json()).then(x => { if (x.error) setErreur(x.error); else setD(x); });
   useEffect(() => { charger(); }, []);
   useTempsReel(d?.topics?.votes, charger);
   useTempsReel(d?.topics?.plaintes, charger);
+
+  const purger = async (corps: any, quoi: string) => {
+    const res = await supprimerDefinitivement(corps, quoi);
+    setInfo(res.message);
+    if (res.ok) charger();
+  };
 
   if (erreur) return <div style={{ color: "#f87171" }}>{erreur}</div>;
   if (!d) return <div className="cab-muted">Chargement...</div>;
@@ -65,6 +73,16 @@ export default function TableauBord() {
         <Link className="btn btn-outline btn-sm" href="/avocat/votes">Votes</Link>
         <Link className="btn btn-outline btn-sm" href="/avocat/rdv">Rendez-vous</Link>
       </div>
+
+      <h2 className="cab-section-titre" style={{ marginTop: "1.6rem" }}>Suppression définitive</h2>
+      <div className="cab-muted" style={{ fontSize: "0.8rem", marginBottom: "0.6rem" }}>
+        Irréversible. Efface aussi les messages, notes internes et membres liés. Réservé à la direction.
+      </div>
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <button className="btn btn-outline btn-sm" style={{ color: "#f87171", borderColor: "#f87171" }} onClick={() => purger({ type: "toutes_factures" }, "toutes les factures")}>Supprimer toutes les factures</button>
+        <button className="btn btn-outline btn-sm" style={{ color: "#f87171", borderColor: "#f87171" }} onClick={() => purger({ type: "tous_dossiers" }, "tous les dossiers, avec leurs messages et leurs factures")}>Supprimer tous les dossiers</button>
+      </div>
+      {info && <div style={{ marginTop: "0.6rem", fontSize: "0.85rem", color: "var(--gold)" }}>{info}</div>}
     </div>
   );
 }
