@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
@@ -61,7 +62,7 @@ export default function ComptesClients() {
             <tbody>
               {filtres.map(c => (
                 <tr key={c.discord_id} style={{ borderTop: "1px solid var(--border)" }}>
-                  <td style={{ padding: "0.5rem", fontWeight: 600 }}>{c.discord_name}</td>
+                  <td style={{ padding: "0.5rem", fontWeight: 600 }}><Link href={`/avocat/clients/${c.discord_id}`} style={{ color: "inherit" }}>{c.discord_name}</Link></td>
                   <td style={{ padding: "0.5rem" }}>{c.nom_rp}</td>
                   <td style={{ padding: "0.5rem" }}>{c.tel_rp}</td>
                   <td style={{ padding: "0.5rem" }}>{c.id_perso}</td>

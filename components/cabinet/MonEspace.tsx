@@ -97,6 +97,7 @@ export default function MonEspace() {
                   <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
                     <span className="cab-title">{montant(f.montant)}</span>
                     {payee ? <Badge txt="Payée" color="#5fb878" /> : <Badge txt="En attente" color="#e0b050" />}
+                    <a className="btn btn-outline btn-sm" href={`/api/cabinet/factures/${f.id}/pdf`} target="_blank" rel="noreferrer">PDF</a>
                   </div>
                 </div>
               );

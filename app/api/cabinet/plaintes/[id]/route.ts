@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
-import { estDirection, estStaff } from "@/lib/cabinetAcces";
+import { diffuser, estDirection, estStaff } from "@/lib/cabinetAcces";
 
 // Fermer ou rouvrir une plainte : l'auteur ou la direction
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -19,6 +19,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     const statut = b.statut === "ferme" ? "ferme" : "ouvert";
     const { data, error } = await r.supabaseAdmin.from("cabinet_plaintes").update({ statut }).eq("id", id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    await diffuser("liste:plaintes", { id });
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

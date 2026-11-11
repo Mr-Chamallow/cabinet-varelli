@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,6 +10,7 @@ import { estStaffUser } from "@/lib/cabinetRoles";
 import ListeDossiers from "@/components/cabinet/ListeDossiers";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { ObsLogo } from "@/components/ObsLogo";
+import { useTempsReel } from "@/lib/useTempsReel";
 
 interface SidebarProps {
   open?: boolean;
@@ -26,6 +27,8 @@ const NAV_SECTIONS = [
     { href: "/avocat/organigramme",    label: "Organigramme",    icon: "🏛️", perms: ["avocat", "cabinet_organigramme"] },
     { href: "/avocat/dossiers", label: "Dossiers", icon: "📁", perms: ["avocat", "cabinet_dossiers"] },
     { href: "/avocat/messagerie", label: "Messagerie interne", icon: "💬", perms: ["cabinet_dossiers", "cabinet_rdv"], staffOnly: true },
+    { href: "/avocat/comptabilite", label: "Comptabilité", icon: "🧾", perms: ["cabinet_dossiers"], staffOnly: true },
+    { href: "/avocat/direction", label: "Tableau de bord", icon: "📊", perms: ["cabinet_attribution"], staffOnly: true },
     { href: "/avocat/clients", label: "Comptes clients", icon: "👥", perms: ["avocat_clients"] },
   ]},
   { label: "Obsidian Logistique", items: [
@@ -55,6 +58,19 @@ const NAV_SECTIONS = [
 export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   const pathname = usePathname();
   const { user, loading } = useCurrentUser();
+  const [notifs, setNotifs] = useState<any>(null);
+  const staffUser = estStaffUser(user);
+  const chargerNotifs = () => {
+    if (!staffUser) return;
+    fetch("/api/cabinet/notifications").then(r => r.json()).then(d => { if (!d.error) setNotifs(d); }).catch(() => {});
+  };
+  useEffect(() => { chargerNotifs(); }, [user?.discord_id, pathname]);
+  useTempsReel(notifs?.topics?.plaintes, chargerNotifs);
+  useTempsReel(notifs?.topics?.votes, chargerNotifs);
+  const badgeFor = (href: string) =>
+    href === "/avocat/messagerie" ? (notifs?.plaintes || 0) + (notifs?.votes || 0)
+    : href === "/avocat/direction" ? (notifs?.plaintes || 0)
+    : 0;
 
   if (pathname === "/login") return null;
   if (loading || !user) return null;
@@ -88,6 +104,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
                   >
                     <span className="sidebar-link-icon">{item.icon}</span>
                     <span>{item.label}</span>
+                    {badgeFor(item.href) > 0 && <span style={{ marginLeft: "auto", background: "#e0b050", color: "#111", borderRadius: 10, padding: "0 7px", fontSize: "0.7rem", fontWeight: 700 }}>{badgeFor(item.href)}</span>}
                   </Link>
                   {item.href === "/avocat/dossiers" && <div style={{ padding: "0 0 0.6rem 0.4rem" }}><ListeDossiers /></div>}
                   </Fragment>

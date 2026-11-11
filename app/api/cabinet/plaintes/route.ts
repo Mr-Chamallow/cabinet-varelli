@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche } from "@/lib/cabinetServer";
-import { estDirection, estStaff } from "@/lib/cabinetAcces";
+import { diffuser, estDirection, estStaff, topicPour } from "@/lib/cabinetAcces";
 
 // Plaintes internes : visibles uniquement par la direction et par l'auteur du ticket
 export async function GET() {
@@ -15,7 +15,7 @@ export async function GET() {
     if (!direction) q = q.eq("auteur_discord_id", user.discord_id);
     const { data, error } = await q;
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ rows: data || [], direction, moiId: user.discord_id });
+    return NextResponse.json({ rows: data || [], direction, moiId: user.discord_id, topic: topicPour("liste:plaintes") });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
   }
@@ -34,6 +34,7 @@ export async function POST(req: Request) {
       auteur_discord_id: user.discord_id, auteur_nom: nomAffiche(user), sujet, statut: "ouvert",
     }]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    await diffuser("liste:plaintes", { id: data.id });
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

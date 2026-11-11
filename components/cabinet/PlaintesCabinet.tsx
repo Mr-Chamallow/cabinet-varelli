@@ -1,20 +1,30 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTempsReel } from "@/lib/useTempsReel";
 
 interface Props { direction: boolean; moiId: string; }
 
 const heure = (s: string) => new Date(s).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
-// Plaintes internes : la direction voit tout, chaque employé voit seulement ses propres tickets
+// Plaintes internes : la direction voit tout, chaque employé voit seulement ses tickets. Mise à jour en temps réel.
 export default function PlaintesCabinet({ direction, moiId }: Props) {
   const [rows, setRows] = useState<any[]>([]);
+  const [topic, setTopic] = useState<string | null>(null);
   const [sujet, setSujet] = useState("");
   const [erreur, setErreur] = useState("");
   const [envoi, setEnvoi] = useState(false);
 
-  const charger = () => fetch("/api/cabinet/plaintes").then(r => r.json()).then(d => { if (d.error) setErreur(d.error); else setRows(d.rows || []); });
-  useEffect(() => { charger(); }, []);
+  const charger = () => fetch("/api/cabinet/plaintes").then(r => r.json()).then(d => {
+    if (d.error) return setErreur(d.error);
+    setRows(d.rows || []);
+    setTopic(d.topic || null);
+  });
+  useEffect(() => {
+    charger();
+    if (direction) fetch("/api/cabinet/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ section: "plaintes" }) });
+  }, []);
+  useTempsReel(topic, charger);
 
   async function ouvrir() {
     if (sujet.trim().length < 3) return setErreur("Écris le sujet de ta plainte (3 caractères minimum).");

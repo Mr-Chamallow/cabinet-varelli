@@ -1,16 +1,17 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { estStaffUser } from "@/lib/cabinetRoles";
 
-// Liste façon salons Discord : un salon par dossier, rangés en « Dossiers » et « Archives »
+// Liste façon salons Discord : un salon par dossier, rangés en « Dossiers » et « Archives », avec recherche
 export default function ListeDossiers() {
   const pathname = usePathname();
   const { user } = useCurrentUser();
   const staff = estStaffUser(user);
   const [rows, setRows] = useState<any[]>([]);
+  const [recherche, setRecherche] = useState("");
 
   const charger = () => fetch("/api/cabinet/dossiers").then(r => r.json()).then(d => setRows(d.rows || [])).catch(() => {});
 
@@ -21,13 +22,20 @@ export default function ListeDossiers() {
     return () => window.removeEventListener("dossiers-maj", maj);
   }, []);
 
-  const actifs = rows.filter(d => d.statut !== "archive");
-  const archives = rows.filter(d => d.statut === "archive");
+  // Recherche par titre, client ou prestation
+  const filtres = useMemo(() => {
+    const q = recherche.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter(d => [d.titre, d.client_nom, d.prestation].some(v => (v || "").toLowerCase().includes(q)));
+  }, [rows, recherche]);
+
+  const actifs = filtres.filter(d => d.statut !== "archive");
+  const archives = filtres.filter(d => d.statut === "archive");
 
   const groupe = (titre: string, liste: any[]) => (
     <div style={{ marginBottom: "1.2rem" }}>
       <div style={{ fontFamily: "'Cinzel', serif", color: "var(--gold)", fontSize: "0.8rem", marginBottom: "0.4rem", textTransform: "uppercase" }}>{titre}</div>
-      {liste.length === 0 && <div style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>Aucun</div>}
+      {liste.length === 0 && <div style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>{recherche ? "Aucun résultat" : "Aucun"}</div>}
       {liste.map(d => {
         const actif = pathname === `/avocat/dossiers/${d.id}`;
         return (
@@ -44,7 +52,13 @@ export default function ListeDossiers() {
 
   return (
     <div>
-      <Link href="/avocat/dossiers" className="btn btn-sm" style={{ marginBottom: "1rem", textDecoration: "none", display: "inline-block" }}>+ Nouveau dossier</Link>
+      <Link href="/avocat/dossiers" className="btn btn-sm" style={{ marginBottom: "0.8rem", textDecoration: "none", display: "inline-block" }}>+ Nouveau dossier</Link>
+      <input
+        value={recherche}
+        onChange={e => setRecherche(e.target.value)}
+        placeholder="Rechercher un dossier..."
+        style={{ width: "100%", padding: "0.5rem 0.6rem", marginBottom: "0.9rem", borderRadius: 6, border: "1px solid var(--border, #333)", background: "transparent", color: "inherit", fontSize: "0.85rem" }}
+      />
       {groupe("Dossiers", actifs)}
       {groupe("Archives", archives)}
     </div>

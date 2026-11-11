@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useTempsReel } from "@/lib/useTempsReel";
 
 interface Props { direction: boolean; }
 
@@ -9,11 +10,19 @@ const CHOIX = [
   { id: "contre", label: "Contre" },
   { id: "abstention", label: "Abstention" },
 ] as const;
+const RESULTATS: Record<string, { label: string; color: string }> = {
+  adopte: { label: "Adopté : majorité atteinte", color: "#5fb878" },
+  rejete: { label: "Rejeté : majorité atteinte", color: "#f87171" },
+  clos: { label: "Clos sans majorité", color: "#9ca3af" },
+};
 
-// Votes internes : une proposition, un motif libre, un vote par employé (modifiable tant que le vote est ouvert)
+// Votes internes : un titre, un motif libre, un vote par employé (modifiable tant que le vote est ouvert).
+// Le vote se clôt dès que la majorité des employés est atteinte. Mise à jour en temps réel.
 export default function VotesCabinet({ direction }: Props) {
   const [rows, setRows] = useState<any[]>([]);
   const [moiId, setMoiId] = useState("");
+  const [employes, setEmployes] = useState(0);
+  const [topic, setTopic] = useState<string | null>(null);
   const [titre, setTitre] = useState("");
   const [motif, setMotif] = useState("");
   const [erreur, setErreur] = useState("");
@@ -23,8 +32,13 @@ export default function VotesCabinet({ direction }: Props) {
     if (d.error) return setErreur(d.error);
     setRows(d.rows || []);
     setMoiId(d.moiId || "");
+    setEmployes(d.employes || 0);
+    setTopic(d.topic || null);
   });
   useEffect(() => { charger(); }, []);
+  useTempsReel(topic, charger);
+
+  const seuil = Math.floor(employes / 2) + 1;
 
   async function proposer() {
     if (titre.trim().length < 3) return setErreur("Donne un titre (3 caractères minimum).");
@@ -64,32 +78,36 @@ export default function VotesCabinet({ direction }: Props) {
           style={{ width: "100%", padding: "0.6rem", marginBottom: "0.6rem", borderRadius: 6, border: "1px solid var(--border, #333)", background: "transparent", color: "inherit", resize: "vertical" }}
         />
         <button className="btn btn-gold btn-sm" onClick={proposer} disabled={envoi}>{envoi ? "Envoi..." : "Lancer le vote"}</button>
+        <div className="cab-muted" style={{ fontSize: "0.75rem", marginTop: "0.5rem" }}>
+          Majorité : {seuil} voix sur {employes} employé(s). Le vote se clôt dès que la majorité est atteinte.
+        </div>
         {erreur && <div style={{ color: "#f87171", fontSize: "0.8rem", marginTop: "0.5rem" }}>{erreur}</div>}
       </div>
 
-      {rows.length === 0 && <div className="empty-state"><div className="empty-title">Aucun vote en cours</div></div>}
+      {rows.length === 0 && <div className="empty-state"><div className="empty-title">Aucun vote</div></div>}
 
       {rows.map(v => {
         const reponses: any[] = v.cabinet_votes_reponses || [];
         const monChoix = reponses.find(x => x.voter_discord_id === moiId)?.choix;
         const ouvert = v.statut === "ouvert";
-        const peutFermer = ouvert ? (v.auteur_discord_id === moiId || direction) : (v.auteur_discord_id === moiId || direction);
+        const peutGerer = v.auteur_discord_id === moiId || direction;
+        const res = !ouvert && v.resultat ? RESULTATS[v.resultat] : null;
         return (
           <div key={v.id} className="cab-card" style={{ marginBottom: "0.8rem" }}>
             <div style={{ fontWeight: 600 }}>{v.titre}</div>
             <div className="cab-muted" style={{ fontSize: "0.75rem", marginBottom: "0.4rem" }}>
-              Par {v.auteur_nom || "un employé"} · {heure(v.created_at)} · {ouvert ? "Ouvert" : "Fermé"}
+              Par {v.auteur_nom || "un employé"} · {heure(v.created_at)} · {ouvert ? "Ouvert" : "Clos"}
             </div>
+            {res && <div style={{ color: res.color, fontWeight: 700, fontSize: "0.85rem", marginBottom: "0.4rem" }}>{res.label}</div>}
             {v.motif && <div style={{ whiteSpace: "pre-wrap", fontSize: "0.9rem", marginBottom: "0.6rem" }}>{v.motif}</div>}
 
             <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
               {CHOIX.map(c => {
                 const n = reponses.filter(x => x.choix === c.id).length;
-                const actif = monChoix === c.id;
                 return ouvert ? (
                   <button
                     key={c.id}
-                    className={actif ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"}
+                    className={monChoix === c.id ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"}
                     onClick={() => action(v.id, { action: "voter", choix: c.id })}
                   >
                     {c.label} ({n})
@@ -109,7 +127,7 @@ export default function VotesCabinet({ direction }: Props) {
               </div>
             )}
 
-            {peutFermer && (
+            {peutGerer && (
               <button className="btn btn-outline btn-sm" onClick={() => action(v.id, { action: ouvert ? "fermer" : "rouvrir" })}>
                 {ouvert ? "Clore le vote" : "Rouvrir le vote"}
               </button>
