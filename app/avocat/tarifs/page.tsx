@@ -14,7 +14,7 @@ export default function Page() {
           <CabinetCrud
             table="cabinet_tarifs"
             libelle="tarif"
-            canWrite={hasWriteAccess(user, "cabinet_tarifs")}
+            canWrite={false}
             groupKey="categorie"
             titleKey="nom"
             subKey="prix"

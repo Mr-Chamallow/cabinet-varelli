@@ -10,7 +10,7 @@ export default function Page() {
         <CabinetCrud
           table="cabinet_membres"
           libelle="membre"
-          canWrite={hasWriteAccess(user, "cabinet_organigramme")}
+          canWrite={false}
           titleKey="nom_rp"
           subKey="poste"
           fields={[
