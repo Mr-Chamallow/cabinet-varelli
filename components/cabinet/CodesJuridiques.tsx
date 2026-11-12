@@ -248,7 +248,7 @@ function ParCode({ donnees }: { donnees: Record<string, Row[]> | null }) {
       <section className="cj-groupe" style={{ gap: "1rem" }}>
         <div className="cj-entete">
           <h2>{code.titre}</h2>
-          <div className="cj-meta">{rows === null ? "Chargement…" : `${rows.length} entrée(s)`}</div>
+          <div className="cj-meta">{code.slug === "etat_urgence" ? "Image" : rows === null ? "Chargement…" : `${rows.length} entrée(s)`}</div>
         </div>
 
         <div className="cj-outils">
@@ -261,7 +261,11 @@ function ParCode({ donnees }: { donnees: Record<string, Row[]> | null }) {
           </div>
         </div>
 
-        {rows === null ? null : filtres.length === 0 ? (
+        {code.slug === "etat_urgence" ? (
+          <div className="cj-liste">
+            <img src="/codes/etat-urgence.png" alt="Classification de l'état d'urgence" style={{ width: "100%", height: "auto", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)" }} />
+          </div>
+        ) : rows === null ? null : filtres.length === 0 ? (
           <div className="cj-vide">Aucune entrée trouvée.</div>
         ) : (
           <div className="cj-liste">
