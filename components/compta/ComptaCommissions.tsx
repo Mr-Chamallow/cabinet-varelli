@@ -2,12 +2,14 @@
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
 import { champ, dateFr } from "@/components/compta/commun";
+import { semaineCourante } from "@/lib/compta";
+import { weekStartOf } from "@/lib/weekStart";
 
 const MOYENS = ["Virement", "Espèces", "Autre"];
 
 // Salaires à la prestation : relevé par employé, commissions dues, versements
 export default function ComptaCommissions() {
-  const [mois, setMois] = useState(() => new Date().toISOString().slice(0, 7));
+  const [semaine, setSemaine] = useState(() => semaineCourante());
   const [resume, setResume] = useState<any>(null);
   const [versements, setVersements] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -16,10 +18,10 @@ export default function ComptaCommissions() {
   const [form, setForm] = useState({ employe_discord_id: "", montant: "", moyen: "Virement", date_versement: new Date().toISOString().slice(0, 10) });
 
   const charger = () => {
-    fetch(`/api/cabinet/compta/resume?mois=${mois}`).then(r => r.json()).then(d => d.error ? setErreur(d.error) : setResume(d));
+    fetch(`/api/cabinet/compta/resume?semaine=${semaine}`).then(r => r.json()).then(d => d.error ? setErreur(d.error) : setResume(d));
     fetch("/api/cabinet/compta/versements").then(r => r.json()).then(d => setVersements(d.rows || []));
   };
-  useEffect(() => { charger(); }, [mois]);
+  useEffect(() => { charger(); }, [semaine]);
   useEffect(() => { fetch("/api/cabinet/staff").then(r => r.json()).then(d => setStaff(d.rows || [])); }, []);
 
   async function verser() {
@@ -43,11 +45,12 @@ export default function ComptaCommissions() {
       {erreur && <div style={{ color: "#f87171", fontSize: "0.85rem" }}>{erreur}</div>}
 
       <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
-        <input type="month" style={{ ...champ, width: "auto" }} value={mois} onChange={e => setMois(e.target.value)} />
-        <a className="btn btn-gold btn-sm" href={`/api/cabinet/compta/resume?mois=${mois}&format=csv`}>Relevé CSV</a>
+        <input type="date" style={{ ...champ, width: "auto" }} value={semaine} onChange={e => e.target.value && setSemaine(weekStartOf(e.target.value))} />
+        <a className="btn btn-gold btn-sm" href={`/api/cabinet/compta/resume?semaine=${semaine}&format=csv`}>Relevé CSV</a>
+        <span className="cab-muted" style={{ fontSize: "0.85rem" }}>Semaine du lundi {dateFr(semaine)} au dimanche</span>
       </div>
 
-      {resume && resume.releves.length === 0 && <div className="cab-muted">Aucune commission ni versement pour ce mois.</div>}
+      {resume && resume.releves.length === 0 && <div className="cab-muted">Aucune commission ni versement pour cette semaine.</div>}
 
       {resume?.releves.map((rel: any) => (
         <div key={rel.employe_discord_id} className="cab-card">
@@ -58,8 +61,10 @@ export default function ComptaCommissions() {
             </button>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0.6rem", marginTop: "0.6rem" }}>
-            <div><div className="cab-muted" style={{ fontSize: "0.75rem" }}>Commissions du mois</div><strong>{montant(rel.commissionMois)}</strong></div>
-            <div><div className="cab-muted" style={{ fontSize: "0.75rem" }}>Versé ce mois</div><strong>{montant(rel.versementsMois)}</strong></div>
+            <div><div className="cab-muted" style={{ fontSize: "0.75rem" }}>Commissions de la semaine</div><strong>{montant(rel.commissionSemaine)}</strong></div>
+            <div><div className="cab-muted" style={{ fontSize: "0.75rem" }}>Versé cette semaine</div><strong>{montant(rel.versementsSemaine)}</strong></div>
+            <div><div className="cab-muted" style={{ fontSize: "0.75rem" }}>Comparutions : part (semaine)</div><strong>{montant(rel.ciSemaine)}</strong></div>
+            <div><div className="cab-muted" style={{ fontSize: "0.75rem" }}>Comparutions : part (total)</div><strong>{montant(rel.ciCumul)}</strong></div>
             <div><div className="cab-muted" style={{ fontSize: "0.75rem" }}>Solde dû (total)</div><strong style={{ color: rel.solde > 0 ? "#e0b050" : "#5fb878" }}>{montant(rel.solde)}</strong></div>
           </div>
           {ouvert === rel.employe_discord_id && (

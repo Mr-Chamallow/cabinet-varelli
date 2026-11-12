@@ -22,7 +22,6 @@ const PERIODS = [
   { k: "all", label: "Tout", ms: 0 },
   { k: "day", label: "24 h", ms: 86400_000 },
   { k: "week", label: "7 jours", ms: 7 * 86400_000 },
-  { k: "month", label: "30 jours", ms: 30 * 86400_000 },
 ];
 
 interface Entry { id: string; membre: string; action: string; montant: number; type_argent?: string; notes?: string; created_by?: string; created_at: string; }

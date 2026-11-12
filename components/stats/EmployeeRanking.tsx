@@ -7,13 +7,13 @@ import { useRealtimeTable } from "@/lib/useRealtimeTable";
 import { fetchAll } from "@/lib/fetchAll";
 
 const fmt = (n: number) => money(n);
-const PERIODS = [{ k: "week", label: "Semaine", days: 7 }, { k: "month", label: "30 jours", days: 30 }, { k: "all", label: "Tout", days: 0 }];
+const PERIODS = [{ k: "week", label: "Semaine", days: 7 }, { k: "all", label: "Tout", days: 0 }];
 
 // Classement par employé : net des actions illégales, arrestations, amendes.
 export function EmployeeRanking() {
   const [actions, setActions] = useState<any[]>([]);
   const [arrests, setArrests] = useState<any[]>([]);
-  const [period, setPeriod] = useState("month");
+  const [period, setPeriod] = useState("week");
 
   useEffect(() => { load(); }, []);
   useRealtimeTable(["actions_illegales", "arrestations"], load);
