@@ -45,7 +45,10 @@ alter table cabinet_membres
   add column if not exists barreau text,
   add column if not exists numero_barreau text,
   add column if not exists annee_inscription text,
-  add column if not exists specialites text;
+  add column if not exists specialites text,
+  add column if not exists slogan text,
+  add column if not exists telephone text,
+  add column if not exists email text;
 
 create table if not exists cabinet_avis (
   id uuid primary key default gen_random_uuid(),

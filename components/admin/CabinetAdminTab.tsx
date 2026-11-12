@@ -54,12 +54,12 @@ export function CabinetAdminTab() {
           fields={[
             { key: "nom_rp", label: "Nom RP", placeholder: "Ex : Marco Varelli" },
             { key: "poste", label: "Poste", placeholder: "Ex : Associé Gérant" },
-            { key: "description", label: "Présentation courte", type: "textarea" },
+            { key: "slogan", label: "Slogan", placeholder: "Ex : La justice, sans compromis" },
+            { key: "description", label: "Bio", type: "textarea" },
             { key: "photo_url", label: "Lien de la photo (image en ligne)", placeholder: "https://..." },
-            { key: "barreau", label: "Barreau", placeholder: "Ex : Los Santos" },
-            { key: "numero_barreau", label: "Numéro d'inscription", placeholder: "Ex : LS-2024-017" },
-            { key: "annee_inscription", label: "Année d'inscription", placeholder: "Ex : 2024" },
-            { key: "specialites", label: "Spécialités (séparées par des virgules)", placeholder: "Ex : Pénal, Civil" },
+            { key: "specialites", label: "Spécialisations (séparées par des virgules)", placeholder: "Ex : Pénal, Civil" },
+            { key: "telephone", label: "Téléphone", placeholder: "Ex : 9072671" },
+            { key: "email", label: "Email", placeholder: "Ex : nom@cabinet.fr" },
             { key: "ordre", label: "Ordre d'affichage", type: "number" },
           ]}
         />
