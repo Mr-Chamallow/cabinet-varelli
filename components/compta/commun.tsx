@@ -1,5 +1,6 @@
 "use client";
 import { prixDepuisTexte } from "@/lib/montant";
+import { tarifsGroupes } from "@/lib/tarifs";
 
 export const champ: React.CSSProperties = { width: "100%", padding: "0.55rem", borderRadius: 6, border: "1px solid var(--border, #333)", background: "transparent", color: "inherit" };
 export const dateFr = (s?: string | null) => (s ? new Date(s).toLocaleDateString("fr-FR") : "-");
@@ -36,7 +37,7 @@ export function LignesEditor({ lignes, setLignes, staff, tarifs }: { lignes: Lig
     const t = tarifs.find((x: any) => x.id === id);
     if (!t) return;
     const prix = t.prix_montant != null ? Number(t.prix_montant) : prixDepuisTexte(t.prix);
-    setLignes(ls => ls.map((l, k) => (k === i ? { ...l, description: t.nom, prix: prix !== null ? String(prix) : "", pct: String(Number(t.commission_pct) || 0) } : l)));
+    setLignes(ls => ls.map((l, k) => (k === i ? { ...l, description: t.nom, prix: prix !== null ? String(prix) : "" } : l)));
   };
   const retirer = (i: number) => setLignes(ls => (ls.length > 1 ? ls.filter((_, k) => k !== i) : ls));
   return (
@@ -47,7 +48,7 @@ export function LignesEditor({ lignes, setLignes, staff, tarifs }: { lignes: Lig
             <input style={champ} placeholder="Désignation" value={l.description} onChange={e => maj(i, "description", e.target.value)} />
             <select style={{ ...champ, fontSize: "0.75rem" }} value="" onChange={e => prestation(i, e.target.value)}>
               <option value="">Prendre une prestation du cabinet…</option>
-              {tarifs.map((t: any) => <option key={t.id} value={t.id}>{t.categorie} : {t.nom}</option>)}
+              {tarifsGroupes(tarifs).map(([cat, items]) => <optgroup key={cat} label={cat}>{items.map(t => <option key={t.id} value={t.id}>{t.nom}</option>)}</optgroup>)}
             </select>
           </div>
           <input style={champ} placeholder="Qté" inputMode="numeric" value={l.quantite} onChange={e => maj(i, "quantite", e.target.value)} />

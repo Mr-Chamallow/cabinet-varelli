@@ -1,4 +1,5 @@
 "use client";
+import { tarifsGroupes } from "@/lib/tarifs";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -57,7 +58,7 @@ export default function FormulaireDossier({ staff, onCree }: Props) {
       <div className="form-group"><label>Prestation (grille tarifaire)</label>
         <select value={prestation} onChange={e => setPrestation(e.target.value)}>
           <option value="">Choisir une prestation</option>
-          {tarifs.map(t => <option key={t.id} value={`${t.nom}${t.prix ? ` (${t.prix})` : ""}`}>{t.categorie} : {t.nom}{t.prix ? ` (${t.prix})` : ""}</option>)}
+          {tarifsGroupes(tarifs).map(([cat, items]) => <optgroup key={cat} label={cat}>{items.map(t => <option key={t.id} value={t.nom}>{t.nom}</option>)}</optgroup>)}
         </select>
       </div>
       <div className="form-group"><label>Titre du dossier</label><input value={titre} onChange={e => setTitre(e.target.value)} placeholder="Ex : Changement de nom de Jean Dupont" /></div>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import CalendrierRdv, { CreneauRdv } from "@/components/cabinet/CalendrierRdv";
 import { RDV_STATUT } from "@/lib/rdvStatuts";
+import { tarifsGroupes } from "@/lib/tarifs";
 import { useCabinetTemps } from "@/lib/useCabinetTemps";
 
 interface Props {
@@ -127,7 +128,7 @@ export default function CabinetRdv({ employe, direction, moiId, vueStaff }: Prop
             <label>Prestation</label>
             <select value={form.prestation} onChange={e => setForm({ ...form, prestation: e.target.value })}>
               <option value="">Choisir une prestation</option>
-              {tarifs.map(t => <option key={t.id} value={`${t.nom}${t.prix ? ` (${t.prix})` : ""}`}>{t.categorie} : {t.nom}{t.prix ? ` (${t.prix})` : ""}</option>)}
+              {tarifsGroupes(tarifs).map(([cat, items]) => <optgroup key={cat} label={cat}>{items.map(t => <option key={t.id} value={t.nom}>{t.nom}</option>)}</optgroup>)}
             </select>
           </div>
           <div className="form-group"><label>Motif</label><input value={form.motif} onChange={e => setForm({ ...form, motif: e.target.value })} placeholder="Ex : divorce, changement de nom" /></div>

@@ -2,7 +2,7 @@ import { hasPermission } from "@/lib/auth";
 
 // Rôles des employés du cabinet. Le client a le rôle "Clients Varelli & Associés" : il n'est jamais employé.
 export const ROLE_SECRETAIRE = "Secrétaire juridique";
-export const CABINET_STAFF_ROLES = ["Secrétaire juridique", "Collaborateur", "Associé", "Associé Sénior", "Associé Gérant", "Associé / Patron"];
+export const CABINET_STAFF_ROLES = ["Secrétaire juridique", "Collaborateur", "Associé", "Associé Sénior", "Associé Gérant"];
 
 // Fonctionne côté serveur (site_role) et côté client (role)
 const roleDe = (user: any): string => user?.site_role || user?.role || "";
