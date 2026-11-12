@@ -58,14 +58,64 @@ const CSS = `
 
 export default function CodesJuridiques() {
   const [onglet, setOnglet] = useState<"codes" | "tags">("codes");
+  const [donnees, setDonnees] = useState<Record<string, Row[]> | null>(null);
+  const [recherche, setRecherche] = useState("");
+
+  useEffect(() => {
+    let vivant = true;
+    Promise.all(CODES.map((c) => charger(c.table).then((r) => [c.slug, r] as const))).then((paires) => {
+      if (vivant) setDonnees(Object.fromEntries(paires));
+    });
+    return () => { vivant = false; };
+  }, []);
+
+  const mot = normaliser(recherche.trim());
   return (
     <div className="cj">
       <style>{CSS}</style>
-      <div className="cj-seg">
-        <button className={onglet === "codes" ? "on" : ""} onClick={() => setOnglet("codes")}>Par code</button>
-        <button className={onglet === "tags" ? "on" : ""} onClick={() => setOnglet("tags")}># Par thème</button>
-      </div>
-      {onglet === "codes" ? <ParCode /> : <ParTag />}
+      <input className="cj-recherche" value={recherche} onChange={(e) => setRecherche(e.target.value)}
+        placeholder="Rechercher dans tout le code juridique (article, mot, infraction…)" />
+      {mot ? (
+        <Recherche donnees={donnees} mot={mot} />
+      ) : (
+        <>
+          <div className="cj-seg">
+            <button className={onglet === "codes" ? "on" : ""} onClick={() => setOnglet("codes")}>Par code</button>
+            <button className={onglet === "tags" ? "on" : ""} onClick={() => setOnglet("tags")}># Par thème</button>
+          </div>
+          {onglet === "codes" ? <ParCode donnees={donnees} /> : <ParTag donnees={donnees} />}
+        </>
+      )}
+    </div>
+  );
+}
+
+// Met en minuscules et retire les accents, pour que « arme » trouve « Arme »
+function normaliser(t: string) {
+  return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+// Texte de recherche d'une ligne : seulement les valeurs, pas les noms de champs
+function cherchable(r: Row) {
+  return normaliser(Object.values(r).map((v) => (Array.isArray(v) ? v.join(" ") : String(v ?? ""))).join(" "));
+}
+
+function Recherche({ donnees, mot }: { donnees: Record<string, Row[]> | null; mot: string }) {
+  if (donnees === null) return <p className="cj-meta">Chargement…</p>;
+  const groupes = CODES.map((c) => ({ c, liste: (donnees[c.slug] || []).filter((r) => cherchable(r).includes(mot)) })).filter((g) => g.liste.length > 0);
+  const total = groupes.reduce((n, g) => n + g.liste.length, 0);
+  return (
+    <div className="cj-groupe">
+      <div className="cj-meta">{total} résultat(s) dans {groupes.length} code(s)</div>
+      {total === 0 && <div className="cj-vide">Aucun résultat pour « {mot} ».</div>}
+      {groupes.map(({ c, liste }) => (
+        <div key={c.slug} className="cj-groupe">
+          <h3>{c.titre} · {liste.length}</h3>
+          <div className="cj-liste">
+            {liste.map((r, i) => <Entree key={r.id || i} row={r} code={c} />)}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -154,27 +204,20 @@ function Entree({ row, code }: { row: Row; code: CodeInfo }) {
   );
 }
 
-function ParCode() {
+function ParCode({ donnees }: { donnees: Record<string, Row[]> | null }) {
   const [slug, setSlug] = useState(CODES[0].slug);
-  const [rows, setRows] = useState<Row[] | null>(null);
   const [q, setQ] = useState("");
   const [tag, setTag] = useState<string | null>(null);
   const [menuOuvert, setMenuOuvert] = useState(false);
   const code = CODES.find((c) => c.slug === slug) || CODES[0];
-
-  useEffect(() => {
-    let vivant = true;
-    setRows(null);
-    charger(code.table).then((r) => vivant && setRows(r));
-    return () => { vivant = false; };
-  }, [code.table]);
+  const rows = donnees ? donnees[code.slug] || [] : null;
 
   const filtres = useMemo(() => {
     if (!rows) return [];
-    const mot = q.trim().toLowerCase();
+    const mot = normaliser(q.trim());
     return rows.filter((r) => {
       if (tag && !(r.tags || []).includes(tag)) return false;
-      return !mot || JSON.stringify(r).toLowerCase().includes(mot);
+      return !mot || cherchable(r).includes(mot);
     });
   }, [rows, q, tag]);
 
@@ -209,7 +252,7 @@ function ParCode() {
         </div>
 
         <div className="cj-outils">
-          <input className="cj-recherche" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher dans ce code (mot, numéro d'article…)" />
+          <input className="cj-recherche" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filtrer ce code…" />
           <div className="cj-pills">
             <button className={`cj-pill ${!tag ? "on" : ""}`} onClick={() => setTag(null)}>Tous</button>
             {TAGS.map((t) => (
@@ -230,17 +273,8 @@ function ParCode() {
   );
 }
 
-function ParTag() {
+function ParTag({ donnees }: { donnees: Record<string, Row[]> | null }) {
   const [tag, setTag] = useState(TAGS[0].slug);
-  const [donnees, setDonnees] = useState<Record<string, Row[]> | null>(null);
-
-  useEffect(() => {
-    let vivant = true;
-    Promise.all(CODES.map((c) => charger(c.table).then((r) => [c.slug, r] as const))).then((paires) => {
-      if (vivant) setDonnees(Object.fromEntries(paires));
-    });
-    return () => { vivant = false; };
-  }, []);
 
   const compte = (slugTag: string) =>
     donnees ? Object.values(donnees).reduce((n, rs) => n + rs.filter((r) => (r.tags || []).includes(slugTag)).length, 0) : 0;
