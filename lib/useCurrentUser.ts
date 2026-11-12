@@ -12,7 +12,7 @@ export function useCurrentUser(): {
   realUser: AppUser | null;
   previewRole: string | null;
 } {
-  const sessionState = useSession();
+  const { data: session, status } = useSession();
   const [previewRoleRaw, setPreviewRoleRaw] = useState<string | null>(null);
   const [previewPerms, setPreviewPerms] = useState<string[] | null>(null);
 
@@ -25,11 +25,6 @@ export function useCurrentUser(): {
     return () => window.removeEventListener(PREVIEW_ROLE_EVENT, handler);
   }, []);
 
-  if (!sessionState) {
-    return { user: null, loading: true, realUser: null, previewRole: null };
-  }
-
-  const { data: session, status } = sessionState;
   const s = session?.user as any;
 
   const discordId = s?.discord_id;

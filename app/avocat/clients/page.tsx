@@ -32,7 +32,7 @@ export default function ComptesClients() {
 
   return (
     <div className="page-container">
-      <a className="back-link" href="/avocat">Retour à l'espace avocat</a>
+      <a className="back-link" href="/avocat">Retour à l&apos;espace avocat</a>
       <div className="page-header">
         <div>
           <h1 className="page-title">👥 Comptes clients</h1>

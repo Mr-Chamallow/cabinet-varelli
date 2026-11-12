@@ -25,7 +25,7 @@ export default function CabinetShell({ title, icon, desc, perms, children }: Pro
   return (
     <div className="page-container cab-enter">
       <CabinetStyles />
-      <a className="back-link" href="/avocat">Retour à l'espace avocat</a>
+      <a className="back-link" href="/avocat">Retour à l&apos;espace avocat</a>
       <div className="page-header">
         <div>
           <h1 className="page-title">{icon} {title}</h1>

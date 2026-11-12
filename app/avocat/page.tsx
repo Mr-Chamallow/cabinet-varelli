@@ -50,7 +50,7 @@ export default function AvocatAccueil() {
       </div>
 
       {profil && !hasPermission(user, "avocat") && (
-        <div className="cab-card" style={{ marginBottom: "1rem" }}>Accès en cours d'activation. Recharge la page.</div>
+        <div className="cab-card" style={{ marginBottom: "1rem" }}>Accès en cours d&apos;activation. Recharge la page.</div>
       )}
 
       <AccueilCabinet />

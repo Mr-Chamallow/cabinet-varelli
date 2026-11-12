@@ -42,7 +42,7 @@ export default function AttributionDossier({ id, direction, acces, onChange }: P
   return (
     <div className="cab-card" style={{ marginBottom: "1rem" }}>
       <div style={{ fontWeight: 700, marginBottom: "0.5rem" }}>Membres du dossier</div>
-      {acces.length === 0 && <div style={{ fontSize: "0.85rem", color: "var(--text-dim)" }}>Aucun membre pour l'instant.</div>}
+      {acces.length === 0 && <div style={{ fontSize: "0.85rem", color: "var(--text-dim)" }}>Aucun membre pour l&apos;instant.</div>}
       {acces.map(a => (
         <div key={a.avocat_discord_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem" }}>
           <span>{a.avocat_nom}</span>

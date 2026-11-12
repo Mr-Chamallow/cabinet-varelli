@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche } from "@/lib/cabinetServer";
+import { journaliser } from "@/lib/journal";
 import { CABINET_STAFF_ROLES, diffuser, estDirection, estStaff } from "@/lib/cabinetAcces";
 
 // Majorité = plus de la moitié des employés du cabinet. Dès qu'elle est atteinte, le vote se clôt.
@@ -52,6 +53,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
         : { statut: "ouvert", resultat: null };
       const { error } = await db.from("cabinet_votes").update(patch).eq("id", id);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      await journaliser(db, nomAffiche(user), b.action === "fermer" ? "Vote fermé" : "Vote rouvert", v.titre, null);
       await diffuser("liste:votes", { id });
       return NextResponse.json({ ok: true });
     }

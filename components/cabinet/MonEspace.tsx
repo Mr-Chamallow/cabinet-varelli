@@ -46,7 +46,7 @@ export default function MonEspace() {
         ) : prochain ? (
           <div style={{ marginTop: "0.4rem" }}>Prochain rendez-vous le {new Date(prochain.date_rdv).toLocaleString("fr-FR")}.</div>
         ) : (
-          <div style={{ marginTop: "0.4rem" }}>Rien d'urgent pour le moment.</div>
+          <div style={{ marginTop: "0.4rem" }}>Rien d&apos;urgent pour le moment.</div>
         )}
       </div>
 

@@ -106,7 +106,7 @@ export default function CabinetCrud({ table, fields, canWrite, titleKey, subKey,
 
       {erreur && <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>{erreur}</div>}
       {chargement ? <div style={{ color: "var(--text-dim)" }}>Chargement...</div>
-        : rows.length === 0 ? <div className="empty-state"><div className="empty-title">Rien pour l'instant</div></div>
+        : rows.length === 0 ? <div className="empty-state"><div className="empty-title">Rien pour l&apos;instant</div></div>
         : groupKey
           ? groupes.map(([nom, items]) => (
               <div key={nom} style={{ marginBottom: "1.2rem" }}>

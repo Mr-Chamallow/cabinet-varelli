@@ -49,7 +49,7 @@ export default function AccueilCabinet() {
       <section>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.8rem" }}>
           <h2 className="cab-section-titre" style={{ margin: 0 }}>Notre équipe</h2>
-          <Link href="/avocat/organigramme" className="cab-muted" style={{ color: "var(--gold)" }}>Voir tout l'organigramme</Link>
+          <Link href="/avocat/organigramme" className="cab-muted" style={{ color: "var(--gold)" }}>Voir tout l&apos;organigramme</Link>
         </div>
         <CartesMembres />
       </section>

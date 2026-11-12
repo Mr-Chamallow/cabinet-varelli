@@ -50,7 +50,7 @@ export default function CabinetPresentation({ canWrite }: { canWrite: boolean })
       <div style={{ textAlign: "center", marginBottom: "2.2rem" }}>
         <div className="cab-ornement">◆ ◆ ◆</div>
         <div className="cab-title" style={{ fontSize: "1.7rem" }}>Cabinet Varelli & Associés</div>
-        <div className="cab-muted" style={{ textTransform: "uppercase", letterSpacing: "0.3em", fontSize: "0.7rem", marginTop: "0.5rem" }}>Cabinet d'avocats</div>
+        <div className="cab-muted" style={{ textTransform: "uppercase", letterSpacing: "0.3em", fontSize: "0.7rem", marginTop: "0.5rem" }}>Cabinet d&apos;avocats</div>
       </div>
 
       {canWrite && !editer && (

@@ -36,7 +36,7 @@ export default function DiplomeBarreau({ nom, poste, barreau, numero, annee, spe
 
       <div className="cab-diplome-haut">Cabinet Varelli & Associés</div>
       <div className="cab-ornement-diplome">═════════ ◆ ═════════</div>
-      <div className="cab-titre-diplome">Diplôme d'avocat</div>
+      <div className="cab-titre-diplome">Diplôme d&apos;avocat</div>
       <div className="cab-decerne">Le Barreau atteste que</div>
 
       {photo && <img className="cab-photo" src={photo} alt={nom} style={{ width: 110, height: 110, marginTop: ".8rem" }} />}
@@ -51,7 +51,7 @@ export default function DiplomeBarreau({ nom, poste, barreau, numero, annee, spe
 
       {specialites.length > 0 && (
         <>
-          <div className="cab-ornement-diplome" style={{ fontSize: ".6rem" }}>Domaines d'exercice</div>
+          <div className="cab-ornement-diplome" style={{ fontSize: ".6rem" }}>Domaines d&apos;exercice</div>
           <div className="cab-chips">{specialites.map(x => <span key={x} className="cab-chip">{x}</span>)}</div>
         </>
       )}

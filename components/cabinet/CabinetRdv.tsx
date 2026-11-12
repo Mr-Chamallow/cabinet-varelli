@@ -103,7 +103,7 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
       {ouvrirForm && (
         <div className="cab-card">
           <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>Nouvelle demande</div>
-          <div className="form-group"><label>Date et heure (créneau d'une heure)</label><input type="datetime-local" value={form.date_rdv} onChange={e => setForm({ ...form, date_rdv: e.target.value })} /></div>
+          <div className="form-group"><label>Date et heure (créneau d&apos;une heure)</label><input type="datetime-local" value={form.date_rdv} onChange={e => setForm({ ...form, date_rdv: e.target.value })} /></div>
           {data.staff && (
             <>
               <div className="form-group"><label>ID Discord du client (laisse vide si le RDV est pour toi)</label><input value={form.discord_id} onChange={e => setForm({ ...form, discord_id: e.target.value })} /></div>
@@ -165,7 +165,7 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
               {monRdv && r.statut === "demande" && (
                 <div style={{ marginTop: "0.7rem" }}>
                   <div style={{ fontSize: "0.82rem", marginBottom: "0.3rem" }}>Choisis un avocat parmi ceux qui demandent ce RDV :</div>
-                  {candidats.length === 0 && <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>Aucune demande de prise en charge pour l'instant.</div>}
+                  {candidats.length === 0 && <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>Aucune demande de prise en charge pour l&apos;instant.</div>}
                   <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                     {candidats.map(c => <button key={c.avocat_discord_id} className="btn btn-outline btn-sm" onClick={() => appel("PATCH", { id: r.id, action: "choisir", avocat_discord_id: c.avocat_discord_id })}>{c.avocat_nom}</button>)}
                     <button className="btn btn-outline btn-sm" onClick={() => appel("PATCH", { id: r.id, action: "choisir", aucune_preference: true })}>Aucune préférence</button>

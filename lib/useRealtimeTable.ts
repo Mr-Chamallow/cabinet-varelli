@@ -10,7 +10,8 @@ export function useRealtimeTable(tables: string | string[], onChange: () => void
   const list = Array.isArray(tables) ? tables : [tables];
   const key = list.join(",");
   const cbRef = useRef(onChange);
-  cbRef.current = onChange;
+
+  useEffect(() => { cbRef.current = onChange; });
 
   useEffect(() => {
     if (!supabase) return;

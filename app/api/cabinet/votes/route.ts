@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
 import { CABINET_STAFF_ROLES, diffuser, estStaff, topicPour } from "@/lib/cabinetAcces";
+import { journaliser } from "@/lib/journal";
 
 // Votes internes : tous les employés voient les propositions, les résultats et le nombre d'employés
 export async function GET() {
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
     }]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await diffuser("liste:votes", { id: data.id });
+    await journaliser(r.supabaseAdmin, nomAffiche(user), "Vote lancé", titre, null);
     await notifyDiscord(`**Nouveau vote interne** : ${titre}`);
     return NextResponse.json(data);
   } catch (e: any) {

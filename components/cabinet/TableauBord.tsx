@@ -47,7 +47,7 @@ export default function TableauBord() {
       </div>
 
       <h2 className="cab-section-titre">Rendez-vous du jour</h2>
-      {d.rdvJour.length === 0 && <div className="cab-muted" style={{ marginBottom: "1rem" }}>Aucun rendez-vous aujourd'hui.</div>}
+      {d.rdvJour.length === 0 && <div className="cab-muted" style={{ marginBottom: "1rem" }}>Aucun rendez-vous aujourd&apos;hui.</div>}
       {d.rdvJour.map((r: any) => (
         <div key={r.id} className="cab-card" style={{ marginBottom: "0.5rem" }}>
           <div style={{ fontWeight: 600 }}>{heure(r.date_rdv)} · {r.client_nom || "Client"}</div>
@@ -77,7 +77,7 @@ export default function TableauBord() {
       <h2 className="cab-section-titre" style={{ marginTop: "1.6rem" }}>Bilan et suivi</h2>
       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
         <a className="btn btn-gold btn-sm" href="/api/cabinet/bilan" target="_blank" rel="noreferrer">Bilan de la semaine (PDF)</a>
-        <Link className="btn btn-outline btn-sm" href="/avocat/journal">Journal d'activité</Link>
+        <Link className="btn btn-outline btn-sm" href="/avocat/journal">Journal d&apos;activité</Link>
       </div>
 
       <h2 className="cab-section-titre" style={{ marginTop: "1.6rem" }}>Suppression définitive</h2>      <h2 className="cab-section-titre" style={{ marginTop: "1.6rem" }}>Suppression définitive</h2>

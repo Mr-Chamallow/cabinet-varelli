@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche } from "@/lib/cabinetServer";
+import { journaliser } from "@/lib/journal";
 import { diffuser, estDirection, estStaff, topicPour } from "@/lib/cabinetAcces";
 
 // Plaintes internes : visibles uniquement par la direction et par l'auteur du ticket
@@ -35,6 +36,7 @@ export async function POST(req: Request) {
     }]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await diffuser("liste:plaintes", { id: data.id });
+    await journaliser(r.supabaseAdmin, nomAffiche(user), "Plainte déposée", "Plainte interne", null);
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
