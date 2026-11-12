@@ -199,6 +199,11 @@ function Entree({ row, code }: { row: Row; code: CodeInfo }) {
       {row.chapitre && <div className="cj-chap">{row.chapitre}</div>}
       {row.partie && <div className="cj-chap">{row.partie}</div>}
       <div className="cj-texte">{row.texte}</div>
+      {row.lien && (
+        <a href={row.lien} target="_blank" rel="noopener noreferrer" className="cj-pill on" style={{ alignSelf: "flex-start", textDecoration: "none" }}>
+          📎 Ouvrir le décret (Google Doc)
+        </a>
+      )}
       <Tags tags={tags} />
     </div>
   );

@@ -25,7 +25,7 @@ const TABLES: Record<string, { write: string; cols: string[]; order: string; key
   cabinet_codes_route: { write: "cabinet_dossiers", cols: ["numero", "partie", "titre_rubrique", "chapitre", "texte", "applicable", "ordre"], order: "ordre", key: "id" },
   cabinet_codes_armes: { write: "cabinet_dossiers", cols: ["numero", "partie", "titre_rubrique", "chapitre", "texte", "applicable", "ordre"], order: "ordre", key: "id" },
   cabinet_codes_etat_urgence: { write: "cabinet_dossiers", cols: ["numero", "partie", "titre_rubrique", "chapitre", "texte", "applicable", "ordre"], order: "ordre", key: "id" },
-  cabinet_codes_autres_lois: { write: "cabinet_dossiers", cols: ["numero", "partie", "titre_rubrique", "chapitre", "texte", "applicable", "ordre"], order: "ordre", key: "id" },
+  cabinet_codes_autres_lois: { write: "cabinet_dossiers", cols: ["numero", "partie", "titre_rubrique", "chapitre", "texte", "applicable", "lien", "ordre"], order: "ordre", key: "id" },
   cabinet_codes_livret: { write: "cabinet_dossiers", cols: ["article", "categorie_id", "titre", "contenu", "amende", "detention", "procureur", "bracelet", "autres_sanctions", "ordre"], order: "ordre", key: "id" },
 };
 
