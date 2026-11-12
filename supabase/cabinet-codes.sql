@@ -2,11 +2,11 @@
 -- Relancer ce fichier remplace toutes les tables de codes (les retouches faites dans la base sont alors perdues).
 
 -- Constitution des États-Unis (Bill of Rights)
-drop table if exists cabinet_code_constitution_usa;
-create table cabinet_code_constitution_usa (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_constitution_usa enable row level security;
+drop table if exists cabinet_codes_constitution_usa;
+create table cabinet_codes_constitution_usa (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_constitution_usa enable row level security;
 
-insert into cabinet_code_constitution_usa (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_constitution_usa (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('constitution_usa_0001', 'BILL OF RIGHTS', null, 'CONSTITUTION (USA)', null, 'BILL OF RIGHTS', null, '{}', 1),
   ('constitution_usa_0002', 'CONSTITUTION DES ETATS-UNIS D''AMÉRIQUE', null, 'CONSTITUTION (USA)', null, 'CONSTITUTION DES ETATS-UNIS D''AMÉRIQUE', null, '{}', 2),
   ('constitution_usa_0003', 'Texte', null, 'CONSTITUTION (USA)', null, 'Texte', null, '{}', 3),
@@ -23,11 +23,11 @@ insert into cabinet_code_constitution_usa (id, numero, partie, titre_rubrique, c
   ('constitution_usa_0014', 'Xe Amendement', null, 'CONSTITUTION (USA)', null, 'Les pouvoirs qui ne sont pas délégués aux États-Unis par la Constitution, ni refusés par elle aux États, sont réservés aux États ou au peuple.', null, '{}', 14);
 
 -- Constitution de l'État de San Andreas
-drop table if exists cabinet_code_constitution_sa;
-create table cabinet_code_constitution_sa (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_constitution_sa enable row level security;
+drop table if exists cabinet_codes_constitution_sa;
+create table cabinet_codes_constitution_sa (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_constitution_sa enable row level security;
 
-insert into cabinet_code_constitution_sa (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_constitution_sa (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('constitution_sa_0001', 'CONSTITUTION DE L''ETAT DE SAN ANDREAS', null, 'CONSTITUTION (SA)', null, 'CONSTITUTION DE L''ETAT DE SAN ANDREAS', null, '{}', 1),
   ('constitution_sa_0002', 'Préambule', null, 'CONSTITUTION (SA)', null, 'Préambule', null, '{}', 2),
   ('constitution_sa_0003', 'Nous, le Peuple de l''Etat de San Andreas, reconnaissant envers Dieu Tout-Puissant pour notre liberté, afin d''assurer et ', null, 'CONSTITUTION (SA)', null, 'Nous, le Peuple de l''Etat de San Andreas, reconnaissant envers Dieu Tout-Puissant pour notre liberté, afin d''assurer et de perpétuer ses bénédictions, établissons cette Constitution.', null, '{homicide}', 3),
@@ -109,11 +109,11 @@ Cette présomption s’exerce dans le respect du droit à la défense, du princi
   ('constitution_sa_0067', 'Texte voté en 1959', null, 'CONSTITUTION (SA)', null, 'Texte voté en 1959', null, '{}', 67);
 
 -- Code de l'aviation civile
-drop table if exists cabinet_code_aviation;
-create table cabinet_code_aviation (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_aviation enable row level security;
+drop table if exists cabinet_codes_aviation;
+create table cabinet_codes_aviation (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_aviation enable row level security;
 
-insert into cabinet_code_aviation (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_aviation (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('aviation_0001', '1101', 'PARTIE I', 'Titre I Dispositions générales', 'Chapitre 1 - Définitions', 'Est considéré comme aéronef tout appareil capable de s’élever dans l’atmosphère et de s’y déplacer, avec ou sans équipage.', null, '{armes,circulation}', 1),
   ('aviation_0002', '1102', 'PARTIE I', 'Titre I Dispositions générales', 'Chapitre 1 - Définitions', 'La circulation des aéronefs civils est libre dans l’espace aérien relevant de la juridiction de l’Etat de San Andreas, sous réserve du respect des dispositions du présent Code et des mesures de sécurité publique.', null, '{circulation}', 2),
   ('aviation_0003', '1201', 'PARTIE I', 'Titre I Dispositions générales', 'Chapitre 2 - Brevet de pilotage', 'Le pilotage d’un aéronef nécessite la reconnaissance préalable de l’aptitude médicale et psychologique du candidat. Cette aptitude est évaluée par un service médical agréé par l’Etat de San Andreas.', null, '{violence,circulation}', 3),
@@ -162,11 +162,11 @@ Les exceptions faites pour les hélicoptères sont autorisées à atterrir sur u
   ('aviation_0028', '4014', 'PARTIE II - INFRACTIONS', 'Titre IV Infractions', 'Chapitre unique', 'Le fait d’abandonner, sur une piste ou sur un tarmac d’aéroport, un aéronef, ou le fait de laisser un aéronef stationné, sans pilote et sans autorisation de stationnement est reconnu comme abandon d''aéronef et constitue une infraction.', null, '{circulation}', 28);
 
 -- Code civil
-drop table if exists cabinet_code_civil;
-create table cabinet_code_civil (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_civil enable row level security;
+drop table if exists cabinet_codes_civil;
+create table cabinet_codes_civil (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_civil enable row level security;
 
-insert into cabinet_code_civil (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_civil (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('civil_0001', '1101', null, 'Titre I Droits civils et capacité juridique', 'Chapitre 1 - Personnalité juridique', 'Toute personne physique dispose de la personnalité juridique et est titulaire de droits et d’obligations civils.', null, '{}', 1),
   ('civil_0002', '1102', null, 'Titre I Droits civils et capacité juridique', 'Chapitre 1 - Personnalité juridique', 'La personnalité juridique de la personne physique prend fin à son décès, constaté conformément aux règles en vigueur.', null, '{}', 2),
   ('civil_0003', '1103', null, 'Titre I Droits civils et capacité juridique', 'Chapitre 1 - Personnalité juridique', 'Les personnes morales légalement constituées en vertu des lois de l’Etat de San Andreas ou reconnues par celui-ci disposent de la personnalité juridique. Elles exercent leurs droits civils et assument leurs obligations dans les limites fixées par la loi, leur objet social et l’ordre public.', null, '{ordre_public}', 3),
@@ -271,11 +271,11 @@ Si les deux fiancés acquiescent et que personne n’a d’objection fondée à 
   ('civil_0090', '6503', null, 'Titre VI Procédures civiles', 'Chapitre 5 - Dispositions complémentaires', 'Les parties peuvent recourir à des modes alternatifs de résolution des litiges, notamment la médiation ou l’arbitrage, lorsque la loi le permet.', null, '{procedure}', 90);
 
 -- Code électoral
-drop table if exists cabinet_code_electoral;
-create table cabinet_code_electoral (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_electoral enable row level security;
+drop table if exists cabinet_codes_electoral;
+create table cabinet_codes_electoral (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_electoral enable row level security;
 
-insert into cabinet_code_electoral (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_electoral (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('electoral_0001', '1101', null, 'Titre I Des élections du Gouverneur de l''Etat de San Andreas', 'Chapitre 1 - Dispositions générales', 'Le Gouverneur de l''Etat de San Andreas est élu au suffrage indirect.', null, '{organisation}', 1),
   ('electoral_0002', '1102', null, 'Titre I Des élections du Gouverneur de l''Etat de San Andreas', 'Chapitre 1 - Dispositions générales', 'Peut être candidate à la fonction de Gouverneur de l''Etat de San Andreas, toute personne remplissant les conditions d''éligibilité prévues par la Constitution de l''Etat de San Andreas.', null, '{organisation}', 2),
   ('electoral_0003', '1103', null, 'Titre I Des élections du Gouverneur de l''Etat de San Andreas', 'Chapitre 1 - Dispositions générales', 'Est élu Gouverneur de l''Etat de San Andreas, le candidat qui, lors des élections, réunis le plus grand nombre de voix des grands électeurs de l''Etat de San Andreas.', null, '{organisation}', 3),
@@ -353,11 +353,11 @@ Les signatures, une fois réunies, doivent être déposées auprès du Gouvernem
   ('electoral_0057', '10002', null, 'Titre X Processus électoral et intégrité du scrutin', 'Chapitre unique', 'Toute personne peut procéder à sa première inscription au recensement électoral jusqu’à quatre (4) jours avant la tenue d’une élection officielle. Toute inscription réalisée dans ce délai permet la participation au scrutin dans le comté concerné. Toutefois, cette disposition ne permet pas de modifier un comté de recensement existant dans la période prévue à l’article 10001.', null, '{}', 57);
 
 -- Code environnemental (chasse, pêche, parcs)
-drop table if exists cabinet_code_environnemental;
-create table cabinet_code_environnemental (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_environnemental enable row level security;
+drop table if exists cabinet_codes_environnemental;
+create table cabinet_codes_environnemental (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_environnemental enable row level security;
 
-insert into cabinet_code_environnemental (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_environnemental (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('environnemental_0001', '1101', 'PARTIE I', 'Titre I Parcs nationaux et espaces protégés', 'Chapitre 1 - Création et gestion des parcs nationaux', 'Un parc national est un espace terrestre ou maritime présentant un intérêt environnemental, écologique, paysager ou culturel particulier, justifiant une protection renforcée afin de préserver les écosystèmes naturels contre les dégradations.', null, '{environnement}', 1),
   ('environnemental_0002', '1102', 'PARTIE I', 'Titre I Parcs nationaux et espaces protégés', 'Chapitre 1 - Création et gestion des parcs nationaux', 'La création d’un parc national est décidée par décret du Gouvernement de l’Etat de San Andreas, après consultation de l’autorité compétente en matière de gestion des parcs naturels. Le décret de création délimite les zones protégées, fixe les règles générales applicables au parc et approuve, le cas échéant, une charte de gestion.', null, '{environnement}', 2),
   ('environnemental_0003', '1103', 'PARTIE I', 'Titre I Parcs nationaux et espaces protégés', 'Chapitre 1 - Création et gestion des parcs nationaux', 'La gestion, la surveillance et l’aménagement des parcs nationaux relèvent du Bureau des Park Rangers de l’Etat de San Andreas, agissant sous l’autorité du Gouvernement de l’Etat et des mairies de comté.', null, '{environnement}', 3),
@@ -408,11 +408,11 @@ Titre', 'Applicable uniquement à Blaine County.', '{procedure,environnement}', 
   ('environnemental_0035', '4304', 'PARTIE II - INFRACTIONS', 'Titre IV Infractions', 'Chapitre 3 - Espaces urbanisés  Applicable uniquement à Los Santos.', 'Il est institué une amende pécuniaire de 2,500$ à l’encontre de toute personne jetant des objets sur la voie publique, en dehors des emplacements prévus à cet effet.', 'Applicable uniquement à Los Santos.', '{ordre_public}', 35);
 
 -- Code gouvernemental
-drop table if exists cabinet_code_gouvernemental;
-create table cabinet_code_gouvernemental (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_gouvernemental enable row level security;
+drop table if exists cabinet_codes_gouvernemental;
+create table cabinet_codes_gouvernemental (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_gouvernemental enable row level security;
 
-insert into cabinet_code_gouvernemental (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_gouvernemental (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('gouvernemental_0001', '1101', null, 'Titre I Gouvernement de l''Etat de San Andreas', 'Chapitre 1 - Dispositions générales', 'Le pouvoir exécutif de l''Etat fédéré de San Andreas est incarné par le Gouvernement de l''Etat de San Andreas. Le Gouvernement de l''Etat de San Andreeas met en œuvre les lois et conduit la politique de l''Etat.', null, '{circulation}', 1),
   ('gouvernemental_0002', '1102', null, 'Titre I Gouvernement de l''Etat de San Andreas', 'Chapitre 1 - Dispositions générales', 'Le Gouvernement de l''Etat de San Andreas est composé de plusieurs départements exécutifs dont le Bureau du Gouverneur qui est le principal organe et organe directeur du Gouvernement de l''Etat de San Andreas.', null, '{organisation}', 2),
   ('gouvernemental_0003', '1201', null, 'Titre I Gouvernement de l''Etat de San Andreas', 'Chapitre 2 - Bureau du Gouverneur', 'Le Bureau du Gouverneur de l''Etat de San Andreas est le principal département exécutif de l''Etat de San Andreas.', null, '{organisation}', 3),
@@ -676,11 +676,11 @@ G-I
 170 000', null, '{organisation}', 62);
 
 -- Code général des impôts
-drop table if exists cabinet_code_impots;
-create table cabinet_code_impots (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_impots enable row level security;
+drop table if exists cabinet_codes_impots;
+create table cabinet_codes_impots (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_impots enable row level security;
 
-insert into cabinet_code_impots (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_impots (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('impots_0001', '1101', null, 'Titre I Dispositions générales', 'Chapitre 1 - Impôt sur les entreprises', 'Toute entité exerçant une activité commerciale, industrielle, artisanale ou libérale sur le territoire de l’Etat de San Andreas est soumise à l’imposition prévue par le présent Code, sauf exonération expresse.', null, '{fraude}', 1),
   ('impots_0002', '1102', null, 'Titre I Dispositions générales', 'Chapitre 1 - Impôt sur les entreprises', 'L’impôt sur les sociétés est calculé sur le résultat net imposable, correspondant aux recettes perçues sur la période fiscale auquel on soustrait les charges liées à l''achat des fournitures essentielles à l''exercice.', null, '{fraude}', 2),
   ('impots_0003', '1103', null, 'Titre I Dispositions générales', 'Chapitre 1 - Impôt sur les entreprises', 'Le taux de l’impôt sur les entreprises, fixé par le Gouvernement de l''Etat de San Andreas, est le suivant :
@@ -723,11 +723,11 @@ insert into cabinet_code_impots (id, numero, partie, titre_rubrique, chapitre, t
   ('impots_0019', '2103', null, 'Titre II Autres dispositions', 'Chapitre 1 - Contrôles fiscaux', 'En cas de constatation d''une infraction pénales constatée lors d''un contrôle fiscal, l''agent fiscal se doit de transmettre les information au Bureau du Procureur de son comté pour que des poursuites pénales soient engagées.', null, '{organisation,procedure}', 19);
 
 -- Code général du travail et des entreprises
-drop table if exists cabinet_code_travail;
-create table cabinet_code_travail (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_travail enable row level security;
+drop table if exists cabinet_codes_travail;
+create table cabinet_codes_travail (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_travail enable row level security;
 
-insert into cabinet_code_travail (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_travail (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('travail_0001', '1101', null, 'Titre I Les entreprises', 'Chapitre 1 - Définition et existence juridique', 'Constitue une entreprise toute activité économique organisée visant la production, la transformation ou la fourniture de biens ou de services, exercée de manière habituelle.', null, '{}', 1),
   ('travail_0002', '1102', null, 'Titre I Les entreprises', 'Chapitre 1 - Définition et existence juridique', 'Un statut juridique permet de situer l’entreprise dans son activité productive et de la reconnaître administrativement.', null, '{homicide}', 2),
   ('travail_0003', '1103', null, 'Titre I Les entreprises', 'Chapitre 1 - Définition et existence juridique', 'Toute entreprise exerçant une activité à San Andreas doit être déclarée auprès de la Mairie du comté dans lequel se trouve son siège social dans un délai raisonnable suivant sa création ou sa reprise. Le défaut de déclaration n’affecte pas l’existence de l’entreprise mais peut entraîner des sanctions administratives.', null, '{procedure}', 3),
@@ -871,11 +871,11 @@ Les associations sont soumises au contrôle des autorités, conformément au Cod
   ('travail_0089', '5301', null, 'Titre V Autres dispositions', 'Chapitre 3 - Autre', 'Toute entreprise dont l''activité principale ou secondaire est la vente ou la location de véhicules motorisés (voitures, motos, utilitaires) est autorisée à vérifier la validité du permis de conduire du futur propriétaire du véhicule avant tout prêt ou achat.', null, '{circulation}', 89);
 
 -- Code maritime civil
-drop table if exists cabinet_code_maritime;
-create table cabinet_code_maritime (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_maritime enable row level security;
+drop table if exists cabinet_codes_maritime;
+create table cabinet_codes_maritime (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_maritime enable row level security;
 
-insert into cabinet_code_maritime (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_maritime (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('maritime_0001', '1101', 'PARTIE I', 'Titre I Dispositions générales', 'Chapitre 1 - Définitions', 'Est considérée comme embarcation tout engin flottant, motorisé ou non, conçu ou utilisé pour transporter une ou plusieurs personnes sur les eaux intérieures ou maritimes.', null, '{circulation}', 1),
   ('maritime_0002', '1102', 'PARTIE I', 'Titre I Dispositions générales', 'Chapitre 1 - Définitions', 'La navigation des embarcations civiles est libre dans les eaux de l’Etat de San Andreas, sous réserve du respect des règles prévues par le présent Code et des mesures de sécurité publique.', null, '{circulation}', 2),
   ('maritime_0003', '1201', 'PARTIE I', 'Titre I Dispositions générales', 'Chapitre 2 - Catégories d''embarcation  et permis', 'Il existe deux catégories d''embarcations :
@@ -922,11 +922,11 @@ Titre', null, '{circulation,organisation}', 23),
   ('maritime_0027', '4104', 'PARTIE II - INFRACTIONS', 'Titre IV Infractions', 'Chapitre unique', 'Tout non respect des vitesses réglementaires définies par le présent Code constitue une infraction.', null, '{}', 27);
 
 -- Code pénal (texte)
-drop table if exists cabinet_code_penal_texte;
-create table cabinet_code_penal_texte (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_penal_texte enable row level security;
+drop table if exists cabinet_codes_penal_texte;
+create table cabinet_codes_penal_texte (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_penal_texte enable row level security;
 
-insert into cabinet_code_penal_texte (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_penal_texte (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('penal_0001', 'Préambule', 'Partie I', 'Préambule et définitions générales', null, 'Le présent Code pénal est adopté par l’Etat fédéré de San Andreas conformément à la Constitution des Etats-Unis, aux Amendements constitutionnels applicables, ainsi qu’à la Constitution de l’État de San Andreas.
 
 Les dispositions du présent Code sont interprétées conformément au Statut d’interprétation et d’application des lois de l’Etat de San Andreas.
@@ -1214,11 +1214,11 @@ Toutefois, par dérogation, la conduite d’un véhicule de type Faggio ou Caddi
   ('penal_0184', '11108.3', 'PARTIE 2', 'Titre XI Infractions pénales au Code de l''environnement', 'Chapitre unique', 'La destruction de la flore est passible d’une amende nominale de 5 000 $ et d’une détention nominale de 15 minutes.', 'Applicable uniquement à Blaine County.', '{environnement}', 184);
 
 -- Code de procédure pénale
-drop table if exists cabinet_code_procedure_penale;
-create table cabinet_code_procedure_penale (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_procedure_penale enable row level security;
+drop table if exists cabinet_codes_procedure_penale;
+create table cabinet_codes_procedure_penale (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_procedure_penale enable row level security;
 
-insert into cabinet_code_procedure_penale (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_procedure_penale (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('procedure_penale_0001', '1101', null, 'Titre I Principes fondamentaux', 'Chapitre 1 - Application régulière de la loi', 'Toute personne poursuivie bénéficie du droit à une procédure régulière, équitable et contradictoire.', null, '{procedure}', 1),
   ('procedure_penale_0002', '1102', null, 'Titre I Principes fondamentaux', 'Chapitre 1 - Application régulière de la loi', 'Toute personne est présumée innocente tant que sa culpabilité n’a pas été légalement établie.', null, '{}', 2),
   ('procedure_penale_0003', '1103', null, 'Titre I Principes fondamentaux', 'Chapitre 1 - Application régulière de la loi', 'La charge de la preuve incombe à l’accusation, qui doit établir la culpabilité au-delà de tout doute raisonnable.', null, '{procedure}', 3),
@@ -1362,11 +1362,11 @@ La durée de mise en fourrière est fixée à 72 heures pour un crime, 24 heures
   ('procedure_penale_0051', '7102.2', null, 'Titre VII  La détention de véhicules', 'Chapitre 2 - Procédure applicable à la peine capitale', 'Tout véhicule abandonné ou saisi par les forces de l''ordre pourra être revendu ou détruit par le biais d''un professionnel.', null, '{corruption,circulation,procedure}', 51);
 
 -- Code de la route
-drop table if exists cabinet_code_route;
-create table cabinet_code_route (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_code_route enable row level security;
+drop table if exists cabinet_codes_route;
+create table cabinet_codes_route (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_route enable row level security;
 
-insert into cabinet_code_route (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_route (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('route_0001', '1101', 'PARTIE I', 'Titre I Dispositions générales', 'Chapitre 1 - Responsabilité et permis de conduire', 'Les infractions prévues par le présent Code engagent la responsabilité administrative personnelle du conducteur. Aucune responsabilité pénale automatique du titulaire du certificat d’immatriculation ne peut être retenue sur le fondement du présent Code.', null, '{circulation}', 1),
   ('route_0002', '1102', 'PARTIE I', 'Titre I Dispositions générales', 'Chapitre 1 - Responsabilité et permis de conduire', 'Nul ne peut conduire un véhicule motorisé sans être titulaire d’un permis de conduire valide correspondant à la catégorie du véhicule.', null, '{circulation}', 2),
   ('route_0003', '1103', 'PARTIE I', 'Titre I Dispositions générales', 'Chapitre 1 - Responsabilité et permis de conduire', 'Le permis de conduire peut être passé auprès d''une organisation agréée par l''Etat de San Andreas dès l''âge de seize (16) ans.', null, '{circulation,organisation}', 3),
@@ -1419,11 +1419,11 @@ Titre', null, '{procedure}', 19),
   ('route_0036', '3307', 'PARTIE II - INFRACTIONS', 'Titre III Infractions', 'Chapitre 3 - Non-respect des signalisations', 'Le fait de ne pas céder le passage à un usager bénéficiant d’une priorité légalement établie est reconnu comme refus de priorité et constitue une infraction.', null, '{}', 36);
 
 -- Réglementation des armes
-drop table if exists cabinet_reglementation_armes;
-create table cabinet_reglementation_armes (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_reglementation_armes enable row level security;
+drop table if exists cabinet_codes_armes;
+create table cabinet_codes_armes (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_armes enable row level security;
 
-insert into cabinet_reglementation_armes (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_armes (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('armes_reglementation_0001', 'Couteau', null, 'Armes', 'Cat. 1 - Armes Blanches', 'Autorisée : Oui · Collection : Non · Interdite : Non', null, '{armes}', 1),
   ('armes_reglementation_0002', 'Marteau', null, 'Armes', 'Cat. 1 - Armes Blanches', 'Autorisée : Oui · Collection : Non · Interdite : Non', null, '{armes}', 2),
   ('armes_reglementation_0003', 'Pied-de-biche', null, 'Armes', 'Cat. 1 - Armes Blanches', 'Autorisée : Oui · Collection : Non · Interdite : Non', null, '{armes}', 3),
@@ -1516,11 +1516,11 @@ insert into cabinet_reglementation_armes (id, numero, partie, titre_rubrique, ch
   ('armes_reglementation_0090', 'Grenade lacrymogène', null, 'Armes', 'Cat. 4 - Explosifs et autres', 'Autorisée : Non · Collection : Non · Interdite : Oui', null, '{armes}', 90);
 
 -- Classification de l'état d'urgence
-drop table if exists cabinet_etat_urgence;
-create table cabinet_etat_urgence (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_etat_urgence enable row level security;
+drop table if exists cabinet_codes_etat_urgence;
+create table cabinet_codes_etat_urgence (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_etat_urgence enable row level security;
 
-insert into cabinet_etat_urgence (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_etat_urgence (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('etat_urgence_0001', 'q', null, 'État d''urgence', null, 'q', null, '{etat_urgence}', 1),
   ('etat_urgence_0002', 'CLASSIFICATION DES NIVEAUX D’ÉTAT D’URGENCE - ÉTAT DE SAN ANDREAS', null, 'État d''urgence', null, 'CLASSIFICATION DES NIVEAUX D’ÉTAT D’URGENCE - ÉTAT DE SAN ANDREAS', null, '{etat_urgence}', 2),
   ('etat_urgence_0003', 'Code', null, 'État d''urgence', null, 'Niveau 4 | Niveau 4 | Niveau 3 | Niveau 2 | Niveau 1', null, '{etat_urgence}', 3),
@@ -1542,11 +1542,11 @@ Utilisation en usage dissuasif lors d''un contrôle de périmètre. | Gilet pare
 (SWAT, BCSS)', null, 'État d''urgence', null, 'N/A | N/A | N/A | Mobilisables en 10 minutes | Déploiement et présence permanente des unités d''intervention.', null, '{etat_urgence}', 15);
 
 -- Autres lois et décrets
-drop table if exists cabinet_autres_lois;
-create table cabinet_autres_lois (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
-alter table cabinet_autres_lois enable row level security;
+drop table if exists cabinet_codes_autres_lois;
+create table cabinet_codes_autres_lois (id text primary key, numero text not null, partie text, titre_rubrique text, chapitre text, texte text not null default '', applicable text, tags text[] not null default '{}', ordre integer not null default 0, created_at timestamptz not null default now());
+alter table cabinet_codes_autres_lois enable row level security;
 
-insert into cabinet_autres_lois (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
+insert into cabinet_codes_autres_lois (id, numero, partie, titre_rubrique, chapitre, texte, applicable, tags, ordre) values
   ('autres_lois_0001', 'Autres Lois et Décrets', null, 'Autres Lois et Décrets', null, 'Autres Lois et Décrets', null, '{}', 1),
   ('autres_lois_0002', 'Date', null, 'Autres Lois et Décrets', null, 'Loi / Décret | Juridiction | Enoncé | Texte', null, '{}', 2),
   ('autres_lois_0003', '21/07/2026', null, 'Autres Lois et Décrets', null, 'Décret | Etat de San Andreas | Relatif à l''intégration du compté de Cayo Perico | DÉCRET RAPPEL COMTE DE CAYO PERICO.docx', null, '{}', 3),
@@ -1584,11 +1584,11 @@ insert into cabinet_autres_lois (id, numero, partie, titre_rubrique, chapitre, t
   ('autres_lois_0035', '21/10/2026', null, 'Autres Lois et Décrets', null, 'Décret | Etat de San Andreas | Relatif à la fermeture administrative d’une entreprise pour absence de déclarations ou déclarations nulles depuis plus de quatre semaines | DÉCRET N° 2026-27', null, '{}', 35);
 
 -- Livret des peines (feuille « Livret des peines » du guide)
-drop table if exists cabinet_code_penal;
-create table cabinet_code_penal (id text primary key, article text not null, categorie_id text not null, titre text not null, contenu text, amende text, detention text, procureur boolean not null default false, bracelet boolean not null default false, autres_sanctions text, ordre integer not null default 0, tags text[] not null default '{}', created_at timestamptz not null default now());
-alter table cabinet_code_penal enable row level security;
+drop table if exists cabinet_codes_livret;
+create table cabinet_codes_livret (id text primary key, article text not null, categorie_id text not null, titre text not null, contenu text, amende text, detention text, procureur boolean not null default false, bracelet boolean not null default false, autres_sanctions text, ordre integer not null default 0, tags text[] not null default '{}', created_at timestamptz not null default now());
+alter table cabinet_codes_livret enable row level security;
 
-insert into cabinet_code_penal (id, article, categorie_id, titre, contenu, amende, detention, procureur, bracelet, autres_sanctions, ordre, tags) values
+insert into cabinet_codes_livret (id, article, categorie_id, titre, contenu, amende, detention, procureur, bracelet, autres_sanctions, ordre, tags) values
   ('L001', 'CR. 3101.', '0 - Infraction non pénale', 'Absence d''immatriculation', null, '$2,500', null, false, false, null, 1, '{circulation}',
   ('L002', 'CR. 3102.', '0 - Infraction non pénale', 'Installation de plaque illégale', null, '$1,000', null, false, false, null, 2, '{}',
   ('L003', 'CR. 3103.', '0 - Infraction non pénale', 'Installation de sirène ou klaxon illégal', null, '$500', null, false, false, null, 3, '{}',
