@@ -23,7 +23,7 @@ const NAV_SECTIONS = [
     { href: "/avocat",                 label: "Accueil",         icon: <ObsLogo size={18} />, perms: ["avocat"] },
     { href: "/avocat/mon-espace",      label: "Mon espace",      icon: "🧭", perms: ["avocat"] },
     { href: "/avocat/tarifs",          label: "Tarifs",          icon: "💰", perms: ["avocat", "cabinet_tarifs"] },
-    { href: "/avocat/rdv",             label: "Prise de RDV",    icon: "📅", perms: ["avocat", "cabinet_rdv"] },
+    { href: "/avocat/rdv",             label: "Prise de RDV",    icon: "📅", perms: ["cabinet_rdv"], staffOnly: true },
     { href: "/avocat/presentation",    label: "Présentation",    icon: "📜", perms: ["avocat", "cabinet_presentation"] },
     { href: "/avocat/organigramme",    label: "Organigramme",    icon: "🏛️", perms: ["avocat", "cabinet_organigramme"] },
     { href: "/avocat/codes", label: "Codes juridiques", icon: "📚", perms: ["avocat"] },

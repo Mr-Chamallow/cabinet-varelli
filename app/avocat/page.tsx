@@ -9,7 +9,7 @@ import { CabinetStyles } from "@/components/cabinet/CabinetStyles";
 
 const SECTIONS = [
   { label: "Tarifs", icon: "💰", desc: "Grille des honoraires", href: "/avocat/tarifs", perms: ["avocat", "cabinet_tarifs"] },
-  { label: "Prise de RDV", icon: "📅", desc: "Réserver un rendez-vous", href: "/avocat/rdv", perms: ["avocat", "cabinet_rdv"] },
+  { label: "Prise de RDV", icon: "📅", desc: "Réserver un rendez-vous", href: "/avocat/rdv", perms: ["cabinet_rdv"] },
   { label: "Présentation", icon: <ObsLogo size={26} />, desc: "Qui nous sommes", href: "/avocat/presentation", perms: ["avocat", "cabinet_presentation"] },
   { label: "Organigramme", icon: "🏛️", desc: "Notre équipe", href: "/avocat/organigramme", perms: ["avocat", "cabinet_organigramme"] },
   { label: "Dossiers", icon: "📁", desc: "Ouvrir ou suivre un dossier", href: "/avocat/dossiers", perms: ["avocat", "cabinet_dossiers"] },

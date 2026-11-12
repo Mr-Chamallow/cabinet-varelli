@@ -12,7 +12,7 @@ const STATUT_OCCUPE = ["attribue", "confirme"];
 // et, pour le calendrier, les créneaux occupés sans aucun détail.
 export async function GET() {
   try {
-    const r = await requireAnyPermission(["avocat", "cabinet_rdv"]);
+    const r = await requireAnyPermission(["cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const user = r.user as any;
     const db = r.supabaseAdmin;
@@ -37,7 +37,7 @@ export async function GET() {
 // Création : le client demande un RDV (statut demande). Un employé peut créer un RDV déjà attribué à lui-même.
 export async function POST(req: Request) {
   try {
-    const r = await requireAnyPermission(["avocat", "cabinet_rdv"]);
+    const r = await requireAnyPermission(["cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const user = r.user as any;
     const db = r.supabaseAdmin;
@@ -86,7 +86,7 @@ export async function POST(req: Request) {
 // candidature (employé), choisir (client), attribuer (direction), valider (avocat), terminer, annuler
 export async function PATCH(req: Request) {
   try {
-    const r = await requireAnyPermission(["avocat", "cabinet_rdv"]);
+    const r = await requireAnyPermission(["cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const user = r.user as any;
     const db = r.supabaseAdmin;
