@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { montant } from "@/lib/montant";
 import { champ, dateFr } from "@/components/compta/commun";
 import { dateISO, heureISO } from "@/lib/dates";
+import { honorairePour } from "@/lib/honoraires";
 
 // Comparutions immédiates : suivi séparé de la compta client (payées par le gouvernement).
 type Ligne = {
@@ -21,6 +22,7 @@ const videForm = () => ({ date_audience: dateISO(), heure: heureISO(), tribunal:
 export default function Comparutions() {
   const [rows, setRows] = useState<Ligne[] | null>(null);
   const [infractions, setInfractions] = useState<string[]>([]);
+  const [livret, setLivret] = useState<{ titre: string; cat: string }[]>([]);
   const [form, setForm] = useState<any>(videForm);
   const [editId, setEditId] = useState<string | null>(null);
   const [filtre, setFiltre] = useState("tous");
@@ -32,8 +34,20 @@ export default function Comparutions() {
 
   useEffect(() => {
     charger();
-    fetch("/api/cabinet/cabinet_codes_livret").then(r => r.json()).then(d => setInfractions((d.rows || []).map((x: any) => x.titre).filter(Boolean)));
+    fetch("/api/cabinet/cabinet_codes_livret").then(r => r.json()).then(d => {
+      const rows = d.rows || [];
+      setInfractions(rows.map((x: any) => x.titre).filter(Boolean));
+      setLivret(rows.filter((x: any) => x.titre).map((x: any) => ({ titre: x.titre, cat: x.categorie_id })));
+    });
   }, []);
+
+  // Honoraire automatique : la gravité la plus haute parmi les infractions choisies
+  const majChefs = (valeur: string) => {
+    const morceaux = valeur.split(/[,;+]/).map(m => m.trim().toLowerCase()).filter(Boolean);
+    const trouves = livret.filter(l => morceaux.includes(l.titre.toLowerCase()));
+    const max = trouves.length ? Math.max(...trouves.map(l => honorairePour(l.cat))) : null;
+    setForm((f: any) => ({ ...f, chefs: valeur, ...(max !== null ? { montant: String(max) } : {}) }));
+  };
 
   const liste = useMemo(() => (rows || []).filter(r => filtre === "tous" || r.statut === filtre), [rows, filtre]);
   const totalPec = (rows || []).filter(r => r.statut === "prise_en_charge").reduce((s, r) => s + (r.montant || 0), 0);
@@ -95,12 +109,12 @@ export default function Comparutions() {
           {champFormulaire("Client", "client_nom", "text", { required: true })}
           <div className="form-group" style={{ marginBottom: 0, gridColumn: "span 2" }}>
             <label style={{ fontSize: "0.75rem" }}>Chef(s) d&apos;accusation (tape pour chercher dans le Livret)</label>
-            <input list="liste-infractions" style={champ} value={form.chefs} onChange={e => setForm({ ...form, chefs: e.target.value })} />
+            <input list="liste-infractions" style={champ} value={form.chefs} onChange={e => majChefs(e.target.value)} />
             <datalist id="liste-infractions">{infractions.map(t => <option key={t} value={t} />)}</datalist>
           </div>
           {champFormulaire("Juge / procureur", "juge_proc")}
           {champFormulaire("Matricule(s) des officiers prenant", "matricules_officiers")}
-          {champFormulaire("Montant (gouvernement, $)", "montant", "number", { min: 0 })}
+          {champFormulaire("Honoraire ($) : automatique selon la gravité", "montant", "number", { min: 0 })}
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label style={{ fontSize: "0.75rem" }}>Statut</label>
             <select style={champ} value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>
@@ -135,7 +149,7 @@ export default function Comparutions() {
                 <div className="cab-muted" style={{ fontSize: "0.8rem", marginTop: "0.2rem" }}>
                   {r.juge_proc && <>Juge/proc : {r.juge_proc} · </>}
                   {r.matricules_officiers && <>Officiers : {r.matricules_officiers} · </>}
-                  Montant gouvernement : <strong>{montant(r.montant)}</strong> · Part avocat : <strong style={{ color: "#5fb878" }}>{montant(r.part_avocat || 0)}</strong> ({Number(r.taux_pct || 0)} %)
+                  Honoraire : <strong>{montant(r.montant)}</strong> · Part avocat : <strong style={{ color: "#5fb878" }}>{montant(r.part_avocat || 0)}</strong> ({Number(r.taux_pct || 0)} %)
                 </div>
                 {r.notes && <div className="cab-muted" style={{ fontSize: "0.8rem" }}>Notes : {r.notes}</div>}
                 <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.5rem" }}>

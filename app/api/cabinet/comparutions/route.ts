@@ -86,10 +86,14 @@ export async function PATCH(req: Request) {
     const champs = ["date_audience", "heure", "tribunal", "client_nom", "chefs", "juge_proc", "matricules_officiers", "statut", "montant", "notes"];
     const maj: Record<string, any> = {};
     for (const c of champs) if (c in b) maj[c] = c === "montant" ? Math.max(0, Math.round(Number(b[c]) || 0)) : (b[c] === "" ? null : b[c]);
-    if ("montant" in maj) {
-      const { data: actuel } = await db.from("cabinet_comparutions").select("taux_pct").eq("id", id).single();
-      maj.part_avocat = Math.round((maj.montant * (Number(actuel?.taux_pct) || 0)) / 100);
-    }
+    // La part est recalculée à chaque modification avec le grade ACTUEL de l'avocat (corrige les parts à 0 %)
+    const { data: actuel } = await db.from("cabinet_comparutions").select("avocat_discord_id, montant").eq("id", id).single();
+    const { data: g } = await db.from("cabinet_avocat_grades").select("grade").eq("avocat_discord_id", actuel?.avocat_discord_id || "").maybeSingle();
+    const { data: t } = g?.grade ? await db.from("cabinet_grades").select("taux_pct").eq("grade", g.grade).maybeSingle() : { data: null };
+    const taux = Number(t?.taux_pct) || 0;
+    const montantFinal = "montant" in maj ? maj.montant : Number(actuel?.montant) || 0;
+    maj.taux_pct = taux;
+    maj.part_avocat = Math.round((montantFinal * taux) / 100);
     if (maj.statut && !STATUTS.includes(maj.statut)) return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
     const { data, error } = await db.from("cabinet_comparutions").update(maj).eq("id", id).select("*, rdv_id").single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });

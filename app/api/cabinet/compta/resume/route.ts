@@ -47,7 +47,7 @@ export async function GET(req: Request) {
 
     // Détail des comparutions immédiates, à transmettre au gouvernement pour paiement
     if (params.get("format") === "ci-csv") {
-      const entete = ["Date", "Heure", "Tribunal", "Client", "Chef(s) d'accusation", "Juge / proc", "Matricule(s) officiers", "Avocat", "Montant gouvernement ($)", "Taux (%)", "Part avocat ($)"];
+      const entete = ["Date", "Heure", "Tribunal", "Client", "Chef(s) d'accusation", "Juge / proc", "Matricule(s) officiers", "Avocat", "Honoraire ($)", "Taux (%)", "Part avocat ($)"];
       const lignes = resume.ciSemaineListe.map((c: any) => [c.date_audience, c.heure, c.tribunal, c.client_nom, c.chefs, c.juge_proc, c.matricules_officiers, c.avocat_nom, c.montant, c.taux_pct, c.part_avocat]);
       const csv = "\uFEFF" + [entete, ...lignes].map(l => l.map(cellule).join(";")).join("\r\n");
       return new NextResponse(csv, { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="comparutions-immediates-${semaine}.csv"` } });
