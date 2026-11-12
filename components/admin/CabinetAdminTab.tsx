@@ -10,6 +10,7 @@ const ONGLETS: [string, string][] = [
   ["avis", "Avis clients"],
   ["factures", "Facturation"],
   ["types", "Types de dossiers"],
+  ["grades", "Grades et %"],
 ];
 
 // Tout le contenu du cabinet se modifie ici, depuis l'admin
@@ -99,6 +100,33 @@ export function CabinetAdminTab() {
             { key: "statut", label: "Statut : publie ou en_attente", placeholder: "publie" },
           ]}
         />
+      )}
+
+      {onglet === "grades" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          <CabinetCrud
+            table="cabinet_grades"
+            libelle="grade"
+            canWrite={true}
+            titleKey="grade"
+            fields={[
+              { key: "grade", label: "Grade (nom exact)", placeholder: "Ex : Associé" },
+              { key: "taux_pct", label: "Pourcentage de la représentation (%)", type: "number" },
+              { key: "ordre", label: "Ordre", type: "number" },
+            ]}
+          />
+          <CabinetCrud
+            table="cabinet_avocat_grades"
+            libelle="grade d'un avocat"
+            canWrite={true}
+            titleKey="avocat_nom"
+            fields={[
+              { key: "avocat_discord_id", label: "Identifiant Discord de l'avocat", placeholder: "Ex : 123456789012345678" },
+              { key: "avocat_nom", label: "Nom affiché" },
+              { key: "grade", label: "Grade (identique à la liste ci-dessus)" },
+            ]}
+          />
+        </div>
       )}
 
       {onglet === "types" && (
