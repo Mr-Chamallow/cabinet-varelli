@@ -35,8 +35,8 @@ export default function ComptaBilan() {
       </div>
 
       <div className="cab-card">
-        <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>Comparutions immédiates (payées 100 % par le gouvernement à l'entreprise)</div>
-        <div className="cab-muted" style={{ fontSize: "0.8rem", marginBottom: "0.5rem" }}>Déjà inclus dans l'encaissé. Les parts des avocats (selon leur grade) sont dans les commissions.</div>
+        <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>Comparutions immédiates (payées 100 % par le gouvernement à l&apos;entreprise)</div>
+        <div className="cab-muted" style={{ fontSize: "0.8rem", marginBottom: "0.5rem" }}>Déjà inclus dans l&apos;encaissé. Les parts des avocats (selon leur grade) sont dans les commissions.</div>
         <div style={{ display: "flex", justifyContent: "space-between", padding: "0.3rem 0" }}><span>Total payé par le gouvernement ({resume.ciSemaineListe.length})</span><strong>{montant(resume.ciSemaine)}</strong></div>
         <a className="btn btn-gold btn-sm" style={{ marginTop: "0.5rem" }} href={`/api/cabinet/compta/resume?semaine=${semaine}&format=ci-csv`}>Détail des comparutions (CSV)</a>
       </div>
