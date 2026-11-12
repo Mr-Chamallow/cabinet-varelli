@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche } from "@/lib/cabinetServer";
+import { gradeParRole } from "@/lib/grades";
+
+// Taux de l'avocat : grade enregistré, sinon grade déduit de son rôle (et enregistré pour la suite)
+async function tauxAvocat(db: any, discordId: string, nom: string, roles: (string | null | undefined)[]) {
+  const { data: g } = await db.from("cabinet_avocat_grades").select("grade").eq("avocat_discord_id", discordId).maybeSingle();
+  let grade = g?.grade as string | null | undefined;
+  if (!grade) {
+    grade = roles.map(gradeParRole).find(Boolean) || null;
+    if (grade && discordId) await db.from("cabinet_avocat_grades").insert([{ avocat_discord_id: discordId, avocat_nom: nom, grade }]);
+  }
+  const { data: t } = grade ? await db.from("cabinet_grades").select("taux_pct").eq("grade", grade).maybeSingle() : { data: null };
+  return Number(t?.taux_pct) || 0;
+}
 
 const STATUTS = ["prise_en_charge", "en_attente", "refusee"];
 
@@ -32,9 +45,7 @@ export async function POST(req: Request) {
     const avocatId = (r.user as any).discord_id;
 
     // Pourcentage selon le grade de l'avocat (figé au moment de la saisie)
-    const { data: g } = await db.from("cabinet_avocat_grades").select("grade").eq("avocat_discord_id", avocatId).maybeSingle();
-    const { data: t } = g?.grade ? await db.from("cabinet_grades").select("taux_pct").eq("grade", g.grade).maybeSingle() : { data: null };
-    const taux = Number(t?.taux_pct) || 0;
+    const taux = await tauxAvocat(db, avocatId, avocatNom, [(r.user as any).role, (r.user as any).site_role]);
     const montantCI = Math.max(0, Math.round(Number(b.montant) || 0));
     const partAvocat = Math.round((montantCI * taux) / 100);
 
@@ -87,10 +98,9 @@ export async function PATCH(req: Request) {
     const maj: Record<string, any> = {};
     for (const c of champs) if (c in b) maj[c] = c === "montant" ? Math.max(0, Math.round(Number(b[c]) || 0)) : (b[c] === "" ? null : b[c]);
     // La part est recalculée à chaque modification avec le grade ACTUEL de l'avocat (corrige les parts à 0 %)
-    const { data: actuel } = await db.from("cabinet_comparutions").select("avocat_discord_id, montant").eq("id", id).single();
-    const { data: g } = await db.from("cabinet_avocat_grades").select("grade").eq("avocat_discord_id", actuel?.avocat_discord_id || "").maybeSingle();
-    const { data: t } = g?.grade ? await db.from("cabinet_grades").select("taux_pct").eq("grade", g.grade).maybeSingle() : { data: null };
-    const taux = Number(t?.taux_pct) || 0;
+    const { data: actuel } = await db.from("cabinet_comparutions").select("avocat_discord_id, avocat_nom, montant").eq("id", id).single();
+    const estMoi = actuel?.avocat_discord_id === (r.user as any).discord_id;
+    const taux = await tauxAvocat(db, actuel?.avocat_discord_id || "", actuel?.avocat_nom || "", estMoi ? [(r.user as any).role, (r.user as any).site_role] : []);
     const montantFinal = "montant" in maj ? maj.montant : Number(actuel?.montant) || 0;
     maj.taux_pct = taux;
     maj.part_avocat = Math.round((montantFinal * taux) / 100);
