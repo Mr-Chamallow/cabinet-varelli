@@ -77,8 +77,8 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
-      {/* Indicateurs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(190px,1fr))", gap: "0.8rem" }}>
+      {/* Indicateurs (personnel uniquement) */}
+      {data.staff && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(190px,1fr))", gap: "0.8rem" }}>
         {data.staff ? (
           <>
             {indicateur("En attente de prise en charge", compte("demande"), "#e0b050")}
@@ -93,15 +93,15 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
             {indicateur("RDV confirmés", compte("confirme", "en_cours"), "#5fb878")}
           </>
         )}
-      </div>
+      </div>}
 
       {/* Titre et bouton d'action */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.6rem" }}>
-        <h2 className="cab-section-titre" style={{ margin: 0 }}>{data.staff ? "Agenda du cabinet" : "Mes rendez-vous"}</h2>
+        <h2 className="cab-section-titre" style={{ margin: 0 }}>{data.staff ? "Agenda du cabinet" : "Prendre rendez-vous"}</h2>
         {data.staff ? (
           <button className="btn btn-sm" onClick={() => setOuvrirForm(!ouvrirForm)}>{ouvrirForm ? "Fermer" : "+ Ajouter un RDV"}</button>
         ) : (
-          <span className="cab-muted" style={{ fontSize: "0.85rem" }}>Clique sur une case verte du calendrier pour réserver</span>
+          <span className="cab-muted" style={{ fontSize: "0.85rem" }}>Case verte = libre · Case rouge = déjà pris</span>
         )}
       </div>
 
@@ -138,9 +138,10 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
 
       {erreur && <div style={{ color: "var(--danger)" }}>{erreur}</div>}
 
-      {data.rows.length === 0 && <div className="empty-state"><div className="empty-title">Aucun rendez-vous</div></div>}
+      {/* Liste des RDV : personnel uniquement, le client ne voit que le planning */}
+      {data.staff && data.rows.length === 0 && <div className="empty-state"><div className="empty-title">Aucun rendez-vous</div></div>}
 
-      {data.rows.map(r => {
+      {data.staff && data.rows.map(r => {
         const s = RDV_STATUT[r.statut] || { txt: r.statut, color: "var(--text-dim)" };
         const candidats: any[] = r.cabinet_rdv_candidats || [];
         const estAvocat = r.avocat_discord_id === moiId;
