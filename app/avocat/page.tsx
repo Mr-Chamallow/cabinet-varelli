@@ -5,6 +5,8 @@ import { ObsLogo } from "@/components/ObsLogo";
 import { hasPermission } from "@/lib/auth";
 import InscriptionModal from "@/components/avocat/InscriptionModal";
 import AccueilCabinet from "@/components/cabinet/AccueilCabinet";
+import TableauBordStaff from "@/components/cabinet/TableauBordStaff";
+import { estStaffUser } from "@/lib/cabinetRoles";
 import { CabinetStyles } from "@/components/cabinet/CabinetStyles";
 import EcranChargement from "@/components/cabinet/EcranChargement";
 
@@ -53,6 +55,8 @@ export default function AvocatAccueil() {
       {profil && !hasPermission(user, "avocat") && (
         <div className="cab-card" style={{ marginBottom: "1rem" }}>Accès en cours d&apos;activation. Recharge la page.</div>
       )}
+
+      {estStaffUser(user) && <TableauBordStaff />}
 
       <AccueilCabinet />
 
