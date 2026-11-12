@@ -6,6 +6,7 @@ import { hasPermission } from "@/lib/auth";
 import InscriptionModal from "@/components/avocat/InscriptionModal";
 import AccueilCabinet from "@/components/cabinet/AccueilCabinet";
 import { CabinetStyles } from "@/components/cabinet/CabinetStyles";
+import EcranChargement from "@/components/cabinet/EcranChargement";
 
 const SECTIONS = [
   { label: "Tarifs", icon: "💰", desc: "Grille des honoraires", href: "/avocat/tarifs", perms: ["avocat", "cabinet_tarifs"] },
@@ -29,7 +30,7 @@ export default function AvocatAccueil() {
       .then(d => { setProfil(d.profil); setDiscord(d.discord); setPret(true); });
   }, [loading, user]);
 
-  if (loading || !user) return null;
+  if (loading || !user) return <EcranChargement />;
   if (!pret) return <div className="page-container" style={{ color: "var(--text-dim)" }}>Chargement...</div>;
 
   const recharger = () => window.location.reload();

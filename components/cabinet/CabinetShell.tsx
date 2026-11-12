@@ -4,6 +4,7 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
 import { roleDeUser, estStaffUser } from "@/lib/cabinetRoles";
 import { CabinetStyles } from "@/components/cabinet/CabinetStyles";
+import EcranChargement from "@/components/cabinet/EcranChargement";
 
 interface Props {
   title: string;
@@ -22,7 +23,7 @@ export default function CabinetShell({ title, icon, desc, perms, roles, staff, c
     if (!loading && !user) window.location.href = "/login";
   }, [loading, user]);
 
-  if (loading || !user) return null;
+  if (loading || !user) return <EcranChargement />;
   const acces = (roles ? roles.includes(roleDeUser(user)) : perms.some(p => hasPermission(user, p))) && (!staff || estStaffUser(user));
 
   return (
