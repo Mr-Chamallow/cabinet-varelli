@@ -2,6 +2,7 @@
 import { ClipboardEvent, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { estStaffUser } from "@/lib/cabinetRoles";
 
 interface Props {
   url: string;          // route GET/POST des messages (dossier ou canal interne)
@@ -44,6 +45,18 @@ const CSS = `
 .msg-points i:nth-child(2) { animation-delay: .15s; }
 .msg-points i:nth-child(3) { animation-delay: .3s; }
 @keyframes msgBond { 0%, 60%, 100% { opacity: .25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-2px); } }
+.msg-cite { border-left: 2px solid var(--gold); padding: 0.1rem 0.5rem; margin-bottom: 0.35rem; font-size: 0.76rem; opacity: 0.85; white-space: pre-wrap; word-break: break-word; }
+.msg-ligne.moi .msg-cite { border-left-color: #111; }
+.msg-actions { display: flex; gap: 0.4rem; margin: 0.25rem 0.3rem 0; }
+.msg-actions button { font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; }
+.msg-actions button:hover { color: var(--gold); border-color: var(--gold); }
+.msg-bulle { cursor: pointer; }
+.msg-epingle { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); background: rgba(212,175,55,0.07); font-size: 0.8rem; }
+.msg-epingle b { color: var(--gold); white-space: nowrap; }
+.msg-epingle span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); }
+.msg-chip { flex-basis: 100%; display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; color: var(--text-dim); padding: 0.3rem 0.6rem; border-left: 2px solid var(--gold); background: rgba(255,255,255,0.03); border-radius: 6px; }
+.msg-chip span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg-chip button { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.9rem; }
 .msg-erreur { color: #e88a86; font-size: 0.8rem; padding: 0.4rem 1rem; border-top: 1px solid var(--border); }
 .msg-saisie { border-top: 1px solid var(--border); padding: 0.6rem; display: flex; align-items: flex-end; gap: 0.5rem; background: rgba(0,0,0,0.15); }
 .msg-champ { flex: 1; min-width: 0; display: flex; align-items: flex-end; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 20px; padding: 0.3rem 0.4rem 0.3rem 0.8rem; }
@@ -89,6 +102,9 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
   const [texte, setTexte] = useState("");
   const [erreur, setErreur] = useState("");
   const [envoi, setEnvoi] = useState(false);
+  const [reponseA, setReponseA] = useState<any>(null);
+  const [actif, setActif] = useState<string | null>(null);
+  const peutEpingler = estStaffUser(user);
   const [frappe, setFrappe] = useState<Record<string, { nom: string; at: number }>>({});
   const fin = useRef<HTMLDivElement>(null);
   const canalRef = useRef<any>(null);
@@ -111,7 +127,7 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
       .on("broadcast", { event: "message" }, (msg: any) => {
         const row = msg.payload;
         if (!row) return;
-        setMessages(prev => (prev.some(m => m.id === row.id) ? prev : [...prev, row]));
+        setMessages(prev => (prev.some(m => m.id === row.id) ? prev.map(m => (m.id === row.id ? row : m)) : [...prev, row]));
       })
       .on("broadcast", { event: "typing" }, (msg: any) => {
         const p = msg.payload;
@@ -145,7 +161,7 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
     c.send({ type: "broadcast", event: "typing", payload: { id: moiId, nom: moiNom } });
   };
 
-  const envoyer = async (corps: { contenu?: string; image_url?: string; fichier_url?: string; fichier_nom?: string }) => {
+  const envoyer = async (corps: { contenu?: string; image_url?: string; fichier_url?: string; fichier_nom?: string; reponse_a?: string }) => {
     setErreur(""); setEnvoi(true);
     const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
     const d = await r.json();
@@ -159,8 +175,21 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
     const t = texte.trim();
     if (!t) return;
     setTexte("");
-    envoyer({ contenu: t });
+    const reponse_a = reponseA?.id;
+    setReponseA(null);
+    envoyer({ contenu: t, reponse_a });
   };
+
+  // Épingle (ou désépingle) un message : un seul message épinglé par fil
+  const epingler = async (m: any) => {
+    setActif(null);
+    const r = await fetch(url, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: m.id, epingle: !m.epingle }) });
+    const d = await r.json();
+    if (!r.ok || d.error) return setErreur(d.error || "Action impossible");
+    setMessages(prev => prev.map(x => (x.id === d.id ? d : (!m.epingle ? { ...x, epingle: false } : x))));
+  };
+
+  const extrait = (m: any) => (m?.contenu ? m.contenu.slice(0, 90) : m?.fichier_nom ? `📄 ${m.fichier_nom}` : m?.image_url ? "🖼️ Image" : "");
 
   const envoyerFichier = async (fichier: File, type: "image" | "document") => {
     const f = new FormData();
@@ -190,6 +219,11 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
     <div className="msg-fil">
       <style>{CSS}</style>
 
+      {messages.some(m => m.epingle) && (() => {
+        const ep = messages.find(m => m.epingle);
+        return <div className="msg-epingle"><b>📌 Épinglé</b><span>{ep.auteur_nom} : {extrait(ep)}</span></div>;
+      })()}
+
       <div className="msg-zone">
         {messages.length === 0 && <div className="msg-vide">{titreVide}</div>}
         {messages.map((m, i) => {
@@ -209,7 +243,11 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
                 <div className={`msg-avatar${m.est_staff ? " cab" : ""}${finGroupe ? "" : " vide"}`}>{initiales(m.auteur_nom)}</div>
                 <div className="msg-corps">
                   {debutGroupe && !moi && <div className="msg-nom">{m.auteur_nom}{m.est_staff ? " · cabinet" : ""}</div>}
-                  <div className="msg-bulle" title={heure(m.created_at)}>
+                  <div className="msg-bulle" title={heure(m.created_at)} onClick={() => setActif(actif === m.id ? null : m.id)}>
+                    {m.reponse_a && (() => {
+                      const parent = messages.find(x => x.id === m.reponse_a);
+                      return parent ? <div className="msg-cite"><b>{parent.auteur_nom}</b> : {extrait(parent)}</div> : null;
+                    })()}
                     {m.contenu && <div className="msg-texte">{avecLiens(m.contenu)}</div>}
                     {m.fichier_url && (
                       <a href={m.fichier_url} target="_blank" rel="noreferrer" className="msg-fichier">
@@ -219,6 +257,12 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
                     )}
                     {m.image_url && <a href={m.image_url} target="_blank" rel="noreferrer"><img src={m.image_url} alt="Image" className="msg-image" /></a>}
                   </div>
+                  {actif === m.id && !lecture && (
+                    <div className="msg-actions">
+                      <button onClick={() => { setReponseA(m); setActif(null); }}>↩ Répondre</button>
+                      {peutEpingler && <button onClick={() => epingler(m)}>{m.epingle ? "Désépingler" : "📌 Épingler"}</button>}
+                    </div>
+                  )}
                   {finGroupe && <div className="msg-nom" style={{ margin: "0.2rem 0.6rem 0", opacity: 0.8 }}>{heure(m.created_at)}</div>}
                 </div>
               </div>
@@ -247,6 +291,12 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
             📎
             <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.odt" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) envoyerFichier(f, "document"); e.target.value = ""; }} />
           </label>
+          {reponseA && (
+            <div className="msg-chip">
+              <span>↩ Réponse à <b>{reponseA.auteur_nom}</b> : {extrait(reponseA)}</span>
+              <button onClick={() => setReponseA(null)} aria-label="Annuler la réponse">✕</button>
+            </div>
+          )}
           <div className="msg-champ">
             <textarea
               rows={1}

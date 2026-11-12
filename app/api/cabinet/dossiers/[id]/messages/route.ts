@@ -3,6 +3,8 @@ import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
 import { accesDossier, diffuser, topicPour } from "@/lib/cabinetAcces";
 
+const uuidOk = (s: unknown) => typeof s === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
 // Messagerie client <-> cabinet d'un dossier, en temps réel
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
@@ -47,6 +49,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       image_url,
       fichier_url,
       fichier_nom,
+      reponse_a: uuidOk(b.reponse_a) ? b.reponse_a : null,
     }]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
@@ -54,6 +57,31 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     if (!est_staff) {
       await notifyDiscord(`**Message client** : ${a.dossier.client_nom || "Client"}, dossier ${a.dossier.titre}\n${contenu ? contenu.slice(0, 300) : "image envoyée"}`);
     }
+    return NextResponse.json(data);
+  } catch (e: any) {
+    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  }
+}
+
+// Épingler / désépingler un message du dossier (employés uniquement)
+export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await ctx.params;
+    const r = await requireAnyPermission(["avocat", "cabinet_dossiers"]);
+    if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    const a = await accesDossier(r.supabaseAdmin, r.user, id);
+    if (!a.peutVoir || a.client) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    const b = await req.json();
+    if (!uuidOk(b.id)) return NextResponse.json({ error: "Message inconnu" }, { status: 400 });
+    const epingle = !!b.epingle;
+    const db = r.supabaseAdmin;
+    if (epingle) {
+      const { data: anciens } = await db.from("cabinet_messages").update({ epingle: false }).eq("dossier_id", id).eq("epingle", true).select();
+      for (const x of anciens || []) await diffuser(`dossier:${id}`, x);
+    }
+    const { data, error } = await db.from("cabinet_messages").update({ epingle }).eq("id", b.id).eq("dossier_id", id).select().single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    await diffuser(`dossier:${id}`, data);
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

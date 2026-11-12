@@ -3,6 +3,8 @@ import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche } from "@/lib/cabinetServer";
 import { SALONS, accesDossier, diffuser, estDirection, estStaff, topicPour } from "@/lib/cabinetAcces";
 
+const uuidOk = (s: unknown) => typeof s === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
 // Messagerie interne. Le nom de canal (slug) dans l'URL :
 //   salon-general, salon-juridique : salons par équipe (salon-juridique = liaison secrétaire juridique)
 //   bureau-<ID Discord> : bureau d'un avocat (visible par tous les employés)
@@ -74,9 +76,34 @@ export async function POST(req: Request, ctx: { params: Promise<{ canal: string 
       image_url,
       fichier_url,
       fichier_nom,
+      reponse_a: uuidOk(b.reponse_a) ? b.reponse_a : null,
     }]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
+    await diffuser(a.canal, data);
+    return NextResponse.json(data);
+  } catch (e: any) {
+    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  }
+}
+
+// Épingler / désépingler un message du salon ou du bureau (un seul message épinglé à la fois)
+export async function PATCH(req: Request, ctx: { params: Promise<{ canal: string }> }) {
+  try {
+    const { canal: slug } = await ctx.params;
+    const r = await requireAnyPermission(["cabinet_dossiers", "cabinet_rdv"]);
+    if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    const a = await acces(r.user, r.supabaseAdmin, slug); if (a.err) return a.err;
+    const b = await req.json();
+    if (!uuidOk(b.id)) return NextResponse.json({ error: "Message inconnu" }, { status: 400 });
+    const epingle = !!b.epingle;
+    const db = r.supabaseAdmin;
+    if (epingle) {
+      const { data: anciens } = await db.from("cabinet_internes").update({ epingle: false }).eq("canal", a.canal).eq("epingle", true).select();
+      for (const x of anciens || []) await diffuser(a.canal, x);
+    }
+    const { data, error } = await db.from("cabinet_internes").update({ epingle }).eq("id", b.id).eq("canal", a.canal).select().single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await diffuser(a.canal, data);
     return NextResponse.json(data);
   } catch (e: any) {
