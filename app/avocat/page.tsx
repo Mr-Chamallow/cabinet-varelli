@@ -58,19 +58,30 @@ export default function AvocatAccueil() {
 
       {estStaffUser(user) && <TableauBordStaff />}
 
-      <AccueilCabinet />
-
-      <div className="cab-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: "1rem" }}>
+      <style>{`
+        .ac-label { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
+        .ac-acces { display: grid; grid-template-columns: 1fr; gap: 0.7rem; margin-bottom: 2.6rem; }
+        @media (min-width: 640px) { .ac-acces { grid-template-columns: repeat(2, 1fr); } }
+        .ac-lien { display: flex; align-items: center; gap: 0.9rem; padding: 0.9rem 1rem; border: 1px solid var(--border); border-radius: 12px; text-decoration: none; color: inherit; transition: border-color .15s, background .15s; }
+        .ac-lien:hover { border-color: var(--gold); background: rgba(176,138,62,0.05); }
+        .ac-lien-icone { font-size: 1.2rem; width: 2rem; text-align: center; flex: 0 0 auto; }
+        .ac-lien-texte { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .ac-lien-texte b { font-size: 0.95rem; }
+        .ac-lien-texte small { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
+        .ac-lien-fleche { color: var(--text-dim); font-size: 1.2rem; }
+      `}</style>
+      <div className="ac-label" style={{ marginBottom: "0.8rem" }}>Accès rapides</div>
+      <div className="ac-acces">
         {SECTIONS.filter(s => s.perms.some(p => hasPermission(user, p))).map(s => (
-          <a key={s.label} href={s.href} style={{ textDecoration: "none", color: "inherit" }}>
-            <div className="cab-card">
-              <div style={{ fontSize: "1.6rem", marginBottom: "0.5rem" }}>{s.icon}</div>
-              <div style={{ fontWeight: 700 }}>{s.label}</div>
-              <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>{s.desc}</div>
-            </div>
+          <a key={s.label} href={s.href} className="ac-lien">
+            <span className="ac-lien-icone">{s.icon}</span>
+            <span className="ac-lien-texte"><b>{s.label}</b><small>{s.desc}</small></span>
+            <span className="ac-lien-fleche" aria-hidden>›</span>
           </a>
         ))}
       </div>
+
+      <AccueilCabinet />
 
       {!profil && <InscriptionModal discord={infosDiscord} onDone={recharger} />}
       {profil && editer && <InscriptionModal profil={profil} discord={infosDiscord} onClose={() => setEditer(false)} onDone={recharger} />}
