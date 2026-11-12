@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import CartesMembres from "@/components/cabinet/CartesMembres";
+import OrganigrammeEquipe from "@/components/cabinet/OrganigrammeEquipe";
 import AvisCabinet from "@/components/cabinet/AvisCabinet";
 
 // Mise en page sobre : séparations fines, listes au lieu de cartes
@@ -71,7 +71,7 @@ export default function AccueilCabinet() {
           <div className="ac-label">Notre équipe</div>
           <Link href="/avocat/organigramme" className="ac-voir">Voir tout</Link>
         </div>
-        <CartesMembres limite={3} />
+        <OrganigrammeEquipe limite={3} sansTitre />
       </section>
 
       <AvisCabinet />

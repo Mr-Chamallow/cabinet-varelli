@@ -26,12 +26,14 @@ const CSS = `
 .og-contact { font-size: 0.78rem; color: var(--text-dim); margin-top: 0.8rem; padding-top: 0.6rem; border-top: 1px solid var(--border); }
 `;
 
-interface Props { titre?: string; intro?: string; }
+interface Props { titre?: string; intro?: string; limite?: number; sansTitre?: boolean; }
 
 // Organigramme complet : une carte par membre du cabinet (données de la table cabinet_membres)
 export default function OrganigrammeEquipe({
   titre = "Des avocats indépendants, une seule exigence.",
   intro = "Chaque membre du cabinet suit ses propres dossiers, avec la même exigence de rigueur et de discrétion.",
+  limite,
+  sansTitre = false,
 }: Props) {
   const [rows, setRows] = useState<any[] | null>(null);
 
@@ -41,15 +43,16 @@ export default function OrganigrammeEquipe({
 
   if (rows === null) return <div style={{ color: "var(--text-dim)" }}>Chargement...</div>;
   if (rows.length === 0) return <div className="empty-state"><div className="empty-title">Organigramme vide</div></div>;
+  const affiches = limite ? rows.slice(0, limite) : rows;
 
   return (
     <section>
       <style>{CSS}</style>
-      <h2 className="og-titre">{titre}</h2>
-      <p className="og-intro">{intro}</p>
+      {!sansTitre && <h2 className="og-titre">{titre}</h2>}
+      {!sansTitre && <p className="og-intro">{intro}</p>}
 
       <div className="og-grille">
-        {rows.map(m => {
+        {affiches.map(m => {
           const vacant = /pourvoir/i.test(m.nom_rp || "");
           return (
             <article key={m.id} className={`og-carte${vacant ? " vacant" : ""}`}>
