@@ -18,7 +18,8 @@ export default function CartesMembres({ limite }: Props) {
   if (rows.length === 0) return <div className="empty-state"><div className="empty-title">Organigramme vide</div></div>;
   const liste = limite ? rows.slice(0, limite) : rows;
 
-  const carte: React.CSSProperties = { padding: "1.2rem", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border)", textAlign: "center" };
+  // Carte sobre : fond discret, filet doré en haut, pas d'effet décoratif
+  const carte: React.CSSProperties = { padding: "1.6rem 1.2rem 1.3rem", borderRadius: 4, background: "var(--surface)", border: "1px solid var(--border)", borderTop: "2px solid var(--gold)", boxShadow: "0 10px 24px -18px rgba(0,0,0,.6)", textAlign: "center" };
 
   return (
     <div className="cab-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: "1rem" }}>
@@ -27,7 +28,7 @@ export default function CartesMembres({ limite }: Props) {
         return (
           <div key={m.id} style={{ ...carte, ...(vacant ? { borderStyle: "dashed", opacity: 0.6 } : {}) }}>
             {!vacant && m.photo_url
-              ? <img className="cab-photo" src={m.photo_url} alt={m.nom_rp} />
+              ? <img className="cab-photo" src={m.photo_url} alt={m.nom_rp} style={{ boxShadow: "none", borderColor: "var(--border)" }} />
               : <div className="cab-avatar">{vacant ? "?" : initiales(m.nom_rp || "")}</div>}
             <div className="cab-title cab-nom">{m.nom_rp}</div>
             {m.poste && <div className="cab-poste">{m.poste}</div>}
@@ -36,7 +37,7 @@ export default function CartesMembres({ limite }: Props) {
             {m.specialites && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: ".35rem", justifyContent: "center", margin: "0 0 .6rem" }}>
                 {String(m.specialites).split(",").map(s => s.trim()).filter(Boolean).map(s => (
-                  <span key={s} style={{ fontSize: ".72rem", padding: ".15rem .5rem", borderRadius: 999, border: "1px solid var(--gold)", color: "var(--gold-light)" }}>{s}</span>
+                  <span key={s} style={{ fontSize: ".66rem", padding: ".12rem .45rem", borderRadius: 2, border: "1px solid var(--border)", color: "var(--text-muted)", letterSpacing: ".06em", textTransform: "uppercase" }}>{s}</span>
                 ))}
               </div>
             )}
