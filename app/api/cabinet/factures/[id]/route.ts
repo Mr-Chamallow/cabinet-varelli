@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
+import { estBureauUser, PERMS_BUREAU } from "@/lib/cabinetRoles";
 import { nomAffiche } from "@/lib/cabinetServer";
 import { diffuser, estStaff } from "@/lib/cabinetAcces";
 import { historiser, numeroAvoir } from "@/lib/factures";
@@ -12,8 +13,8 @@ const MODES = ["Virement", "Espèces", "Carte", "Chèque", "Autre"];
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await ctx.params;
-    const r = await requireAnyPermission(["cabinet_compta"]);
-    if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    const r = await requireAnyPermission(PERMS_BUREAU);
+    if (!r.authorized || !estBureauUser(r.user)) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     if (!estStaff(r.user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const db = r.supabaseAdmin;
     const { data: facture } = await db.from("cabinet_factures").select("*").eq("id", id).maybeSingle();
@@ -33,8 +34,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await ctx.params;
-    const r = await requireAnyPermission(["cabinet_compta"]);
-    if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    const r = await requireAnyPermission(PERMS_BUREAU);
+    if (!r.authorized || !estBureauUser(r.user)) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     if (!estStaff(r.user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const user = r.user as any;
     const auteur = nomAffiche(user);

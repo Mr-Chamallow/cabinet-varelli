@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
-import { estDirection } from "@/lib/cabinetAcces";
+import { PERMS_BUREAU, estBureauUser } from "@/lib/cabinetRoles";
 import { calculerBilan } from "@/lib/bilan";
 import { bilanPdf } from "@/lib/bilanPdf";
 
 // Bilan hebdomadaire PDF (7 derniers jours), réservé à la direction
 export async function GET() {
   try {
-    const r = await requireAnyPermission(["cabinet_attribution"]);
-    if (!r.authorized || !estDirection(r.user)) return NextResponse.json({ error: "Réservé à la direction" }, { status: 403 });
+    const r = await requireAnyPermission(PERMS_BUREAU);
+    if (!r.authorized || !estBureauUser(r.user)) return NextResponse.json({ error: "Réservé à la direction" }, { status: 403 });
     const maintenant = new Date();
     const depuis = new Date(maintenant.getTime() - 7 * 86400_000);
     const b = await calculerBilan(r.supabaseAdmin, depuis.toISOString(), maintenant.toISOString());

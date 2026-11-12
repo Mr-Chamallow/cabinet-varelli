@@ -2,7 +2,7 @@
 import CabinetShell from "@/components/cabinet/CabinetShell";
 import Comparutions from "@/components/cabinet/Comparutions";
 import CabinetCrud from "@/components/cabinet/CabinetCrud";
-import { hasPermission } from "@/lib/auth";
+import { estBureauUser } from "@/lib/cabinetRoles";
 
 // Comparutions immédiates : suivi séparé de la compta client, visible par tous les avocats.
 // Les grades et pourcentages ne sont modifiables que par la comptabilité.
@@ -12,7 +12,7 @@ export default function Page() {
       {(user) => (
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           <Comparutions />
-          {hasPermission(user, "cabinet_compta") && (
+          {estBureauUser(user) && (
             <>
               <div className="cab-section-titre" style={{ fontSize: "0.95rem" }}>Grades et pourcentage par représentation</div>
               <CabinetCrud

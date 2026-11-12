@@ -1,14 +1,12 @@
 "use client";
 import { useState } from "react";
 import ComptaFactures from "@/components/compta/ComptaFactures";
-import ComptaDevis from "@/components/compta/ComptaDevis";
 import ComptaDepenses from "@/components/compta/ComptaDepenses";
 import ComptaCommissions from "@/components/compta/ComptaCommissions";
 import ComptaBilan from "@/components/compta/ComptaBilan";
 
 const ONGLETS = [
   { id: "factures", label: "Factures", composant: ComptaFactures },
-  { id: "devis", label: "Devis", composant: ComptaDevis },
   { id: "depenses", label: "Dépenses", composant: ComptaDepenses },
   { id: "commissions", label: "Commissions", composant: ComptaCommissions },
   { id: "bilan", label: "Bilan", composant: ComptaBilan },

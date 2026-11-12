@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
-import { estDirection } from "@/lib/cabinetAcces";
+import { estPatron } from "@/lib/cabinetAcces";
+import { PERMS_BUREAU } from "@/lib/cabinetRoles";
 import { nomAffiche } from "@/lib/cabinetServer";
 import { journaliser } from "@/lib/journal";
 import { supprimerDossiers, supprimerFacture } from "@/lib/purge";
@@ -8,9 +9,9 @@ import { supprimerDossiers, supprimerFacture } from "@/lib/purge";
 // Suppression définitive : direction uniquement, et seulement si l'utilisateur tape SUPPRIMER
 export async function POST(req: Request) {
   try {
-    const r = await requireAnyPermission(["cabinet_attribution"]);
+    const r = await requireAnyPermission(PERMS_BUREAU);
     if (!r.authorized) return NextResponse.json({ error: "Réservé à la direction" }, { status: 403 });
-    if (!estDirection(r.user)) return NextResponse.json({ error: "Réservé à la direction" }, { status: 403 });
+    if (!estPatron(r.user)) return NextResponse.json({ error: "Réservé à la direction" }, { status: 403 });
     const b = await req.json();
     if (b.confirmation !== "SUPPRIMER") return NextResponse.json({ error: "Confirmation requise : tape SUPPRIMER" }, { status: 400 });
     const db = r.supabaseAdmin;

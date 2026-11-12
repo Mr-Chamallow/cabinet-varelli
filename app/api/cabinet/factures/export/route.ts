@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
+import { estBureauUser, PERMS_BUREAU } from "@/lib/cabinetRoles";
 import { estStaff } from "@/lib/cabinetAcces";
 
 // Export CSV d'une période (séparateur ;, compatible Excel français). Montants en $ entiers.
@@ -13,8 +14,8 @@ const dateValide = (s: string | null) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s
 
 export async function GET(req: Request) {
   try {
-    const r = await requireAnyPermission(["cabinet_compta"]);
-    if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    const r = await requireAnyPermission(PERMS_BUREAU);
+    if (!r.authorized || !estBureauUser(r.user)) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     if (!estStaff(r.user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const db = r.supabaseAdmin;
 

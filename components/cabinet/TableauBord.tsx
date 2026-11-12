@@ -8,7 +8,7 @@ import { supprimerDefinitivement } from "@/lib/suppression";
 const heure = (s: string) => new Date(s).toLocaleString("fr-FR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 // Tableau de bord direction : vue d'ensemble, mise à jour en temps réel
-export default function TableauBord() {
+export default function TableauBord({ lecture = false }: { lecture?: boolean }) {
   const [d, setD] = useState<any>(null);
   const [erreur, setErreur] = useState("");
   const [info, setInfo] = useState("");
@@ -81,6 +81,7 @@ export default function TableauBord() {
       </div>
 
       <h2 className="cab-section-titre" style={{ marginTop: "1.6rem" }}>Suppression définitive</h2>      <h2 className="cab-section-titre" style={{ marginTop: "1.6rem" }}>Suppression définitive</h2>
+      {!lecture && (<>
       <div className="cab-muted" style={{ fontSize: "0.8rem", marginBottom: "0.6rem" }}>
         Irréversible. Efface aussi les messages, notes internes et membres liés. Réservé à la direction.
       </div>
@@ -88,6 +89,7 @@ export default function TableauBord() {
         <button className="btn btn-outline btn-sm" style={{ color: "#f87171", borderColor: "#f87171" }} onClick={() => purger({ type: "toutes_factures" }, "toutes les factures")}>Supprimer toutes les factures</button>
         <button className="btn btn-outline btn-sm" style={{ color: "#f87171", borderColor: "#f87171" }} onClick={() => purger({ type: "tous_dossiers" }, "tous les dossiers, avec leurs messages et leurs factures")}>Supprimer tous les dossiers</button>
       </div>
+      </>)}
       {info && <div style={{ marginTop: "0.6rem", fontSize: "0.85rem", color: "var(--gold)" }}>{info}</div>}
     </div>
   );

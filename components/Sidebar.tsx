@@ -11,6 +11,7 @@ import ListeDossiers from "@/components/cabinet/ListeDossiers";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { ObsLogo } from "@/components/ObsLogo";
 import { useTempsReel } from "@/lib/useTempsReel";
+import { ROLES_BUREAU, ROLE_PATRON, roleDeUser } from "@/lib/cabinetRoles";
 
 interface SidebarProps {
   open?: boolean;
@@ -30,10 +31,11 @@ const NAV_SECTIONS = [
     { href: "/avocat/mes-commissions", label: "Mes commissions", icon: "💰", perms: ["avocat"], staffOnly: true },
     { href: "/avocat/dossiers", label: "Dossiers", icon: "📁", perms: ["avocat", "cabinet_dossiers"] },
     { href: "/avocat/messagerie", label: "Messagerie interne", icon: "💬", perms: ["cabinet_dossiers", "cabinet_rdv"], staffOnly: true },
-    { href: "/avocat/comptabilite", label: "Comptabilité", icon: "🧾", perms: ["cabinet_compta"], staffOnly: true },
-    { href: "/avocat/direction", label: "Tableau de bord", icon: "📊", perms: ["cabinet_attribution"], staffOnly: true },
+    { href: "/avocat/comptabilite", label: "Comptabilité", icon: "🧾", roles: ROLES_BUREAU },
+    { href: "/avocat/devis", label: "Devis", icon: "📝", roles: ROLES_BUREAU },
+    { href: "/avocat/direction", label: "Tableau de bord", icon: "📊", roles: ROLES_BUREAU },
     { href: "/avocat/recherche", label: "Recherche", icon: "🔎", perms: ["cabinet_dossiers"], staffOnly: true },
-    { href: "/avocat/journal", label: "Journal", icon: "📖", perms: ["cabinet_attribution"], staffOnly: true },
+    { href: "/avocat/journal", label: "Journal", icon: "📖", roles: [ROLE_PATRON] },
     { href: "/avocat/clients", label: "Comptes clients", icon: "👥", perms: ["avocat_clients"] },
   ]},
   { label: "Obsidian Logistique", items: [
@@ -91,7 +93,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
       <nav className="sidebar-nav">
         {NAV_SECTIONS.map(section => {
           // Un lien est visible si l'utilisateur a AU MOINS une de ses permissions (perms) ou sa permission (permission)
-          const visibleItems = section.items.filter((i: any) => (!i.staffOnly || estStaffUser(user)) && (i.perms ? i.perms.some((p: string) => hasPermission(user, p)) : hasPermission(user, i.permission)));
+          const visibleItems = section.items.filter((i: any) => i.roles ? i.roles.includes(roleDeUser(user)) : (!i.staffOnly || estStaffUser(user)) && (i.perms ? i.perms.some((p: string) => hasPermission(user, p)) : hasPermission(user, i.permission)));
           if (visibleItems.length === 0) return null;
           return (
             <div key={section.label}>

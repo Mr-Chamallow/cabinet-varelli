@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
+import { PERMS_BUREAU } from "@/lib/cabinetRoles";
 import { estCompta } from "@/lib/cabinetAcces";
 import { calculerResume, fenetreSemaine, semaineCourante, tauxParId } from "@/lib/compta";
 
@@ -11,7 +12,7 @@ const cellule = (v: any) => {
 // Bilan hebdomadaire et relevés des commissions. ?semaine=AAAA-MM-JJ (lundi de la semaine, défaut : semaine courante). ?format=csv pour le relevé des prestations.
 export async function GET(req: Request) {
   try {
-    const r = await requireAnyPermission(["cabinet_compta"]);
+    const r = await requireAnyPermission(PERMS_BUREAU);
     if (!r.authorized || !estCompta(r.user)) return NextResponse.json({ error: "Réservé à la comptabilité" }, { status: 403 });
     const db = r.supabaseAdmin;
     const params = new URL(req.url).searchParams;

@@ -16,3 +16,12 @@ export function estStaffUser(user: any): boolean {
 export function estSecretaireUser(user: any): boolean {
   return roleDe(user) === ROLE_SECRETAIRE;
 }
+
+// Accès au bureau : comptabilité, factures, devis, tableau de bord (lecture seule pour la secrétaire), journal (patron seul)
+export const ROLE_PATRON = "Associé / Patron";
+export const ROLES_BUREAU = [ROLE_PATRON, ROLE_SECRETAIRE];
+export const roleDeUser = (user: any): string => roleDe(user);
+export const estPatronUser = (user: any): boolean => roleDe(user) === ROLE_PATRON;
+export const estBureauUser = (user: any): boolean => ROLES_BUREAU.includes(roleDe(user));
+// Permissions techniques larges : la vraie règle est le rôle (estBureauUser), contrôlé juste après
+export const PERMS_BUREAU = ["avocat", "cabinet_compta", "cabinet_dossiers", "cabinet_rdv", "cabinet_attribution"];

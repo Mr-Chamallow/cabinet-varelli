@@ -2,6 +2,7 @@
 import { ReactNode, useEffect } from "react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
+import { roleDeUser } from "@/lib/cabinetRoles";
 import { CabinetStyles } from "@/components/cabinet/CabinetStyles";
 
 interface Props {
@@ -9,10 +10,11 @@ interface Props {
   icon: ReactNode;
   desc: string;
   perms: string[]; // accès si l'utilisateur possède AU MOINS une de ces permissions
+  roles?: string[]; // si fourni : accès réservé à ces rôles (remplace perms)
   children: (user: any) => ReactNode;
 }
 
-export default function CabinetShell({ title, icon, desc, perms, children }: Props) {
+export default function CabinetShell({ title, icon, desc, perms, roles, children }: Props) {
   const { user, loading } = useCurrentUser();
 
   useEffect(() => {
@@ -20,7 +22,7 @@ export default function CabinetShell({ title, icon, desc, perms, children }: Pro
   }, [loading, user]);
 
   if (loading || !user) return null;
-  const acces = perms.some(p => hasPermission(user, p));
+  const acces = roles ? roles.includes(roleDeUser(user)) : perms.some(p => hasPermission(user, p));
 
   return (
     <div className="page-container cab-enter">

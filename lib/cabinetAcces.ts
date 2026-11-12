@@ -1,7 +1,7 @@
 import { createHmac } from "crypto";
 import { hasPermission } from "@/lib/auth";
 import { appUser } from "@/lib/cabinetServer";
-import { estStaffUser, estSecretaireUser, CABINET_STAFF_ROLES } from "@/lib/cabinetRoles";
+import { estStaffUser, estSecretaireUser, estBureauUser, estPatronUser, CABINET_STAFF_ROLES } from "@/lib/cabinetRoles";
 
 export { CABINET_STAFF_ROLES };
 
@@ -12,7 +12,8 @@ export const SALONS = ["general", "juridique"] as const;
 export const estStaff = (user: any) => estStaffUser(user);
 export const estSecretaire = (user: any) => estStaffUser(user) && estSecretaireUser(user);
 export const estDirection = (user: any) => hasPermission(appUser(user), "cabinet_attribution");
-export const estCompta = (user: any) => hasPermission(appUser(user), "cabinet_compta");
+export const estCompta = (user: any) => estBureauUser(user);
+export const estPatron = (user: any) => estPatronUser(user);
 
 // Nom de canal de temps réel : impossible à deviner sans passer par l'API (signé avec un secret serveur)
 export function topicPour(canal: string) {
