@@ -19,7 +19,7 @@ const STATUTS: { k: string; label: string; couleur: string }[] = [
 const statutDe = (k: string) => STATUTS.find(s => s.k === k) || STATUTS[1];
 const videForm = () => ({ date_audience: dateISO(), heure: heureISO(), tribunal: "", client_nom: "", chefs: "", juge_proc: "", matricules_officiers: "", montant: "0", statut: "prise_en_charge", notes: "" });
 
-export default function Comparutions() {
+export default function Comparutions({ patron = false }: { patron?: boolean }) {
   const [rows, setRows] = useState<Ligne[] | null>(null);
   const [infractions, setInfractions] = useState<string[]>([]);
   const [livret, setLivret] = useState<{ titre: string; cat: string }[]>([]);
@@ -62,6 +62,13 @@ export default function Comparutions() {
     const d = await res.json();
     if (d.error) return setErreur(d.error);
     setForm(videForm()); setEditId(null); setOuvert(false); charger();
+  };
+
+  const supprimer = async (id: string) => {
+    if (!window.confirm("Supprimer définitivement cette comparution ? Le rendez-vous lié sera aussi supprimé.")) return;
+    const res = await fetch(`/api/cabinet/comparutions?id=${id}`, { method: "DELETE" });
+    const d = await res.json();
+    if (d.error) setErreur(d.error); else charger();
   };
 
   const changerStatut = async (id: string, statut: string) => {
@@ -157,6 +164,7 @@ export default function Comparutions() {
                     <button key={x.k} className="btn btn-outline btn-sm" onClick={() => changerStatut(r.id, x.k)}>→ {x.label}</button>
                   ))}
                   <button className="btn btn-ghost btn-sm" onClick={() => modifier(r)}>Modifier</button>
+                  {patron && <button className="btn btn-outline btn-sm" style={{ color: "#f87171", borderColor: "#f87171" }} onClick={() => supprimer(r.id)}>Supprimer</button>}
                 </div>
               </div>
             );

@@ -2,7 +2,7 @@
 import CabinetShell from "@/components/cabinet/CabinetShell";
 import Comparutions from "@/components/cabinet/Comparutions";
 import CabinetCrud from "@/components/cabinet/CabinetCrud";
-import { estBureauUser } from "@/lib/cabinetRoles";
+import { estBureauUser, estPatronUser } from "@/lib/cabinetRoles";
 
 // Comparutions immédiates : suivi séparé de la compta client, visible par tous les avocats.
 // Les grades et pourcentages ne sont modifiables que par la comptabilité.
@@ -11,7 +11,7 @@ export default function Page() {
     <CabinetShell title="Comparutions immédiates" icon="⚖️" desc="Prises en charge payées par le gouvernement" perms={["avocat"]}>
       {(user) => (
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          <Comparutions />
+          <Comparutions patron={estPatronUser(user)} />
           {estBureauUser(user) && (
             <>
               <div className="cab-section-titre" style={{ fontSize: "0.95rem" }}>Grades et pourcentage par représentation</div>

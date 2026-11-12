@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche } from "@/lib/cabinetServer";
 import { gradeParRole } from "@/lib/grades";
+import { estPatronUser } from "@/lib/cabinetRoles";
 
 // Taux de l'avocat : grade enregistré, sinon grade déduit de son rôle (et enregistré pour la suite)
 async function tauxAvocat(db: any, discordId: string, nom: string, roles: (string | null | undefined)[]) {
@@ -111,6 +112,24 @@ export async function PATCH(req: Request) {
       await db.from("cabinet_rdv").update({ statut: maj.statut === "refusee" ? "annule" : "attribue" }).eq("id", data.rdv_id);
     }
     return NextResponse.json(data);
+  } catch (e: any) {
+    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  }
+}
+
+// Suppression définitive : réservée au patron. Supprime aussi le rendez-vous lié au calendrier.
+export async function DELETE(req: Request) {
+  try {
+    const r = await requireAnyPermission(["avocat"]);
+    if (!r.authorized || !estPatronUser(r.user)) return NextResponse.json({ error: "Réservé au patron" }, { status: 403 });
+    const db = r.supabaseAdmin;
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Identifiant manquant" }, { status: 400 });
+    const { data: ci } = await db.from("cabinet_comparutions").select("rdv_id").eq("id", id).maybeSingle();
+    const { error } = await db.from("cabinet_comparutions").delete().eq("id", id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (ci?.rdv_id) await db.from("cabinet_rdv").delete().eq("id", ci.rdv_id);
+    return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
   }
