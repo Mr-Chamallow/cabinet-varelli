@@ -5,7 +5,8 @@ import { montant } from "@/lib/montant";
 
 // Recherche globale : clients, dossiers, factures
 export default function Recherche() {
-  const [q, setQ] = useState("");
+  // Pré-remplissage depuis l'URL (?q=...) : utilisé par le raccourci Ctrl+K
+  const [q, setQ] = useState(() => (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("q") || "" : ""));
   const [res, setRes] = useState<any>(null);
   const [erreur, setErreur] = useState("");
 
@@ -20,7 +21,7 @@ export default function Recherche() {
     return () => clearTimeout(t);
   }, [q]);
 
-  const vide = res && !res.clients.length && !res.dossiers.length && !res.factures.length;
+  const vide = res && !res.clients.length && !res.dossiers.length && !res.factures.length && !(res.devis || []).length;
   const carte: React.CSSProperties = { display: "block", marginBottom: "0.5rem", color: "inherit", textDecoration: "none" };
 
   return (
@@ -52,6 +53,17 @@ export default function Recherche() {
           {res.dossiers.map((d: any) => (
             <Link key={d.id} href={`/avocat/dossiers/${d.id}`} className="cab-card" style={carte}>
               <b>{d.titre}</b><span className="cab-muted"> · {d.client_nom} · {d.statut}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {res?.devis?.length > 0 && (
+        <div>
+          <h2 className="cab-section-titre">Devis</h2>
+          {res.devis.map((d: any) => (
+            <Link key={d.id} href="/avocat/facturation" className="cab-card" style={carte}>
+              <b>{d.numero}</b><span className="cab-muted"> · {d.client_nom} · {montant(Number(d.montant))} · {d.statut}</span>
             </Link>
           ))}
         </div>

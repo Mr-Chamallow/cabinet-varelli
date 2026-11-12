@@ -71,6 +71,18 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
     fetch("/api/cabinet/notifications").then(r => r.json()).then(d => { if (!d.error) setNotifs(d); }).catch(() => {});
   };
   useEffect(() => { chargerNotifs(); }, [user?.discord_id, pathname]);
+  // Raccourci Ctrl+K (Cmd+K sur Mac) : ouvre la recherche globale
+  useEffect(() => {
+    if (!user || !estStaffUser(user)) return;
+    const raccourci = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        window.location.href = "/avocat/recherche";
+      }
+    };
+    window.addEventListener("keydown", raccourci);
+    return () => window.removeEventListener("keydown", raccourci);
+  }, [user]);
   useTempsReel(notifs?.topics?.plaintes, chargerNotifs);
   useTempsReel(notifs?.topics?.votes, chargerNotifs);
   const badgeFor = (href: string) =>
