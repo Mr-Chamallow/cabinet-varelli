@@ -1,3 +1,4 @@
+import { MENTIONS_CABINET } from "@/lib/factureMentions";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
     if (total <= 0) return NextResponse.json({ error: "Le total doit être supérieur à 0" }, { status: 400 });
 
     const numero = await numeroFacture(db);
-    const echeance = b.date_echeance || null;
+    const echeance = b.date_echeance || new Date(Date.now() + MENTIONS_CABINET.delaiPaiementJours * 86400_000).toISOString().slice(0, 10);
     const { data: facture, error } = await db.from("cabinet_factures").insert([{
       numero,
       dossier_id: dossier.id,

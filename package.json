@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "stats": "node scripts/stats-projet.mjs"
+    "stats": "node scripts/stats-projet.mjs",
+    "lint": "eslint"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.7",
@@ -24,6 +25,8 @@
     "@types/leaflet.markercluster": "^1.5.5",
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.16",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.2.7",
     "typescript": "^6.0.3"
   }
 }

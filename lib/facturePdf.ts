@@ -1,3 +1,4 @@
+import { MENTIONS_CABINET } from "@/lib/factureMentions";
 import { jsPDF } from "jspdf";
 import { CABINET_LOGO_PNG } from "@/lib/cabinetLogo";
 import { montant } from "@/lib/montant";
@@ -100,7 +101,8 @@ export function facturePdf(f: any): Buffer {
   // Pied de page
   doc.setDrawColor(...OR); doc.setLineWidth(0.4); doc.line(gauche, 280, droite, 280);
   doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...GRIS);
-  doc.text("Cabinet Varelli & Associés · Document généré automatiquement", W / 2, 286, { align: "center" });
+  doc.text(`${MENTIONS_CABINET.nom} · ${MENTIONS_CABINET.adresse} · ${MENTIONS_CABINET.telephone}`, W / 2, 284, { align: "center" });
+  doc.text(doc.splitTextToSize(MENTIONS_CABINET.mention, droite - gauche), W / 2, 288, { align: "center" });
 
   return Buffer.from(doc.output("arraybuffer"));
 }
