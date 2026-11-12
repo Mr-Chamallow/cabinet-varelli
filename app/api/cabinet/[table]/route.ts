@@ -10,8 +10,6 @@ const TABLES: Record<string, { write: string; cols: string[]; order: string; key
   cabinet_avis:          { write: "cabinet_presentation",   cols: ["auteur_nom", "note", "contenu", "statut"],          order: "created_at", key: "id", staffOnly: true },
   cabinet_pages:         { write: "cabinet_presentation",  cols: ["cle", "contenu"],                                   order: "cle",   key: "cle" },
   cabinet_dossier_types: { write: "cabinet_dossiers",      cols: ["nom", "description", "template", "ordre"],          order: "ordre", key: "id" },
-  cabinet_code_penal_texte: { write: "cabinet_dossiers", cols: ["numero", "partie", "titre_rubrique", "chapitre", "texte", "applicable", "ordre"], order: "ordre", key: "id" },
-  cabinet_code_penal:    { write: "cabinet_dossiers",      cols: ["article", "categorie_id", "titre", "contenu", "amende", "detention", "procureur", "bracelet", "autres_sanctions", "ordre"], order: "ordre", key: "id" },
   cabinet_codes_constitution_usa: { write: "cabinet_dossiers", cols: ["numero", "partie", "titre_rubrique", "chapitre", "texte", "applicable", "ordre"], order: "ordre", key: "id" },
   cabinet_codes_constitution_sa: { write: "cabinet_dossiers", cols: ["numero", "partie", "titre_rubrique", "chapitre", "texte", "applicable", "ordre"], order: "ordre", key: "id" },
   cabinet_codes_aviation: { write: "cabinet_dossiers", cols: ["numero", "partie", "titre_rubrique", "chapitre", "texte", "applicable", "ordre"], order: "ordre", key: "id" },
