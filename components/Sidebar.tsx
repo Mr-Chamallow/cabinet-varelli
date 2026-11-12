@@ -27,7 +27,7 @@ const NAV_SECTIONS = [
     { href: "/avocat/organigramme",    label: "Organigramme",    icon: "🏛️", perms: ["avocat", "cabinet_organigramme"] },
     { href: "/avocat/dossiers", label: "Dossiers", icon: "📁", perms: ["avocat", "cabinet_dossiers"] },
     { href: "/avocat/messagerie", label: "Messagerie interne", icon: "💬", perms: ["cabinet_dossiers", "cabinet_rdv"], staffOnly: true },
-    { href: "/avocat/comptabilite", label: "Comptabilité", icon: "🧾", perms: ["cabinet_dossiers"], staffOnly: true },
+    { href: "/avocat/comptabilite", label: "Comptabilité", icon: "🧾", perms: ["cabinet_compta"], staffOnly: true },
     { href: "/avocat/direction", label: "Tableau de bord", icon: "📊", perms: ["cabinet_attribution"], staffOnly: true },
     { href: "/avocat/recherche", label: "Recherche", icon: "🔎", perms: ["cabinet_dossiers"], staffOnly: true },
     { href: "/avocat/journal", label: "Journal", icon: "📖", perms: ["cabinet_attribution"], staffOnly: true },

@@ -12,6 +12,7 @@ export const SALONS = ["general", "juridique"] as const;
 export const estStaff = (user: any) => estStaffUser(user);
 export const estSecretaire = (user: any) => estStaffUser(user) && estSecretaireUser(user);
 export const estDirection = (user: any) => hasPermission(appUser(user), "cabinet_attribution");
+export const estCompta = (user: any) => hasPermission(appUser(user), "cabinet_compta");
 
 // Nom de canal de temps réel : impossible à deviner sans passer par l'API (signé avec un secret serveur)
 export function topicPour(canal: string) {

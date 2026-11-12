@@ -256,3 +256,71 @@ on conflict (cle) do nothing;
 
 -- Optionnel : efface les anciens messages de l'ancien salon direction (supprimé du site)
 -- delete from cabinet_internes where canal = 'salon:direction';
+
+-- ---------- Comptabilité avancée : commissions, paiements, dépenses, versements, avoirs, devis ----------
+alter table cabinet_tarifs add column if not exists commission_pct numeric not null default 0;
+alter table cabinet_factures add column if not exists montant_paye numeric not null default 0;
+update cabinet_factures set montant_paye = montant where statut = 'payee' and montant_paye = 0;
+
+create table if not exists cabinet_paiements (
+  id uuid primary key default gen_random_uuid(),
+  facture_id uuid not null references cabinet_factures(id) on delete cascade,
+  montant numeric not null,
+  mode text not null default 'non précisé',
+  auteur_nom text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists cabinet_depenses (
+  id uuid primary key default gen_random_uuid(),
+  date_depense date not null default current_date,
+  categorie text not null default 'Autre',
+  libelle text not null,
+  montant numeric not null default 0,
+  auteur_nom text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists cabinet_versements (
+  id uuid primary key default gen_random_uuid(),
+  employe_discord_id text not null,
+  employe_nom text,
+  montant numeric not null,
+  moyen text,
+  date_versement date not null default current_date,
+  auteur_nom text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists cabinet_avoirs (
+  id uuid primary key default gen_random_uuid(),
+  numero text unique,
+  facture_id uuid references cabinet_factures(id) on delete set null,
+  montant numeric not null default 0,
+  motif text,
+  auteur_nom text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists cabinet_devis (
+  id uuid primary key default gen_random_uuid(),
+  numero text unique,
+  dossier_id uuid references cabinet_dossiers(id) on delete set null,
+  client_discord_id text,
+  client_nom text,
+  lignes jsonb not null default '[]'::jsonb,
+  sous_total numeric not null default 0,
+  tva_taux numeric not null default 0,
+  montant numeric not null default 0,
+  statut text not null default 'envoye',
+  facture_id uuid references cabinet_factures(id) on delete set null,
+  note text,
+  auteur_nom text,
+  created_at timestamptz not null default now()
+);
+
+alter table cabinet_paiements enable row level security;
+alter table cabinet_depenses enable row level security;
+alter table cabinet_versements enable row level security;
+alter table cabinet_avoirs enable row level security;
+alter table cabinet_devis enable row level security;

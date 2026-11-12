@@ -9,7 +9,7 @@ const STATUTS = ["ouvert", "ferme", "archive"];
 // Liste des dossiers : le client voit les siens, la direction et la secrétaire voient tout, l'avocat voit ceux qui lui sont attribués
 export async function GET(req: Request) {
   try {
-    const r = await requireAnyPermission(["avocat", "cabinet_dossiers"]);
+    const r = await requireAnyPermission(["avocat", "cabinet_dossiers", "cabinet_compta"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const user = r.user as any;
     const db = r.supabaseAdmin;

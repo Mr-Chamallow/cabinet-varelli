@@ -10,7 +10,7 @@ import { journaliser } from "@/lib/journal";
 // Liste des factures (employés) avec totaux : encaissé, en attente, en retard
 export async function GET() {
   try {
-    const r = await requireAnyPermission(["cabinet_dossiers"]);
+    const r = await requireAnyPermission(["cabinet_compta"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     if (!estStaff(r.user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const { data, error } = await r.supabaseAdmin.from("cabinet_factures").select("*").order("created_at", { ascending: false }).limit(500);
@@ -32,7 +32,7 @@ export async function GET() {
 // message automatique dans le dossier (le client la voit dans Mon espace et dans le dossier)
 export async function POST(req: Request) {
   try {
-    const r = await requireAnyPermission(["cabinet_dossiers"]);
+    const r = await requireAnyPermission(["cabinet_compta"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     if (!estStaff(r.user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const user = r.user as any;

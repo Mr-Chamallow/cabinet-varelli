@@ -15,6 +15,7 @@ export default function Page() {
       moiId={(user as any).discord_id}
       staff={estStaffUser(user)}
       direction={hasPermission(user, "cabinet_attribution")}
+      compta={hasPermission(user, "cabinet_compta")}
     />
   );
 }

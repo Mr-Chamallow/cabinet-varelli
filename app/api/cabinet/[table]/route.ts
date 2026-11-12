@@ -5,7 +5,7 @@ import { journaliser } from "@/lib/journal";
 
 // Tables éditables du cabinet (tarifs, organigramme, présentation, types de dossiers)
 const TABLES: Record<string, { write: string; cols: string[]; order: string; key: string; staffOnly?: boolean }> = {
-  cabinet_tarifs:        { write: "cabinet_tarifs",        cols: ["categorie", "nom", "prix", "prix_montant", "description", "ordre"], order: "ordre", key: "id" },
+  cabinet_tarifs:        { write: "cabinet_tarifs",        cols: ["categorie", "nom", "prix", "prix_montant", "commission_pct", "description", "ordre"], order: "ordre", key: "id" },
   cabinet_membres:       { write: "cabinet_organigramme",  cols: ["nom_rp", "poste", "description", "ordre", "photo_url", "barreau", "numero_barreau", "annee_inscription", "specialites"], order: "ordre", key: "id" },
   cabinet_avis:          { write: "cabinet_presentation",   cols: ["auteur_nom", "note", "contenu", "statut"],          order: "created_at", key: "id", staffOnly: true },
   cabinet_pages:         { write: "cabinet_presentation",  cols: ["cle", "contenu"],                                   order: "cle",   key: "cle" },
@@ -16,7 +16,7 @@ async function guard(table: string, mode: "read" | "write") {
   const c = TABLES[table];
   if (!c) return { err: NextResponse.json({ error: "Table inconnue" }, { status: 404 }) } as any;
   // Table réservée au cabinet (ex : avis non publiés) : même la lecture est réservée aux employés
-  const r = await requireAnyPermission(mode === "read" && !c.staffOnly ? ["avocat", c.write] : [c.write]);
+  const r = await requireAnyPermission(mode === "read" && !c.staffOnly ? ["avocat", c.write, "cabinet_compta"] : [c.write]);
   if (!r.authorized) return { err: NextResponse.json({ error: "Non autorisé" }, { status: 403 }) } as any;
   if (mode === "write" && !canWrite(r.user, c.write)) return { err: NextResponse.json({ error: "Lecture seule pour toi sur cet onglet" }, { status: 403 }) } as any;
   return { db: r.supabaseAdmin, c, user: r.user };

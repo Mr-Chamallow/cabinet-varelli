@@ -19,7 +19,7 @@ export const ALL_PERMISSIONS = [
   "obsidian_fiches", "gm_tribunal", "gm_pactes", "gm_audits", "gm_evenements", "gm_reputation", "organigramme", "gm_stats",
   "obsidian_reglement", "obsidian_taxes", "obsidian_recrutement", "obsidian_guerres",
   "avocat", "avocat_clients",
-  "cabinet_tarifs", "cabinet_presentation", "cabinet_organigramme", "cabinet_rdv", "cabinet_dossiers", "cabinet_attribution",
+  "cabinet_tarifs", "cabinet_presentation", "cabinet_organigramme", "cabinet_rdv", "cabinet_dossiers", "cabinet_attribution", "cabinet_compta",
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
@@ -43,6 +43,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   cabinet_organigramme: "Cabinet Varelli : Organigramme (édition)", cabinet_rdv: "Cabinet Varelli : Agenda RDV (gestion)",
   cabinet_dossiers: "Cabinet Varelli : Dossiers & messagerie (gestion)",
   cabinet_attribution: "Cabinet Varelli : Attribution des dossiers et RDV (direction)",
+  cabinet_compta: "Cabinet Varelli : Comptabilité (factures, salaires, dépenses, bilan)",
 };
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {

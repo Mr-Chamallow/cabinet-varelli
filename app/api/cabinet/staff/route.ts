@@ -5,7 +5,7 @@ import { CABINET_STAFF_ROLES } from "@/lib/cabinetAcces";
 // Liste des avocats et employés du cabinet (pour attribuer un dossier, choisir un avocat, bureaux)
 export async function GET() {
   try {
-    const r = await requireAnyPermission(["cabinet_dossiers", "cabinet_rdv"]);
+    const r = await requireAnyPermission(["cabinet_dossiers", "cabinet_rdv", "cabinet_compta"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const { data, error } = await r.supabaseAdmin
       .from("site_logins")

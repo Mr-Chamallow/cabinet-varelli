@@ -6,7 +6,7 @@ import AttributionDossier from "@/components/cabinet/AttributionDossier";
 import { montant } from "@/lib/montant";
 import { supprimerDefinitivement } from "@/lib/suppression";
 
-interface Props { id: string; moiId: string; staff: boolean; direction: boolean; }
+interface Props { id: string; moiId: string; staff: boolean; direction: boolean; compta: boolean; }
 
 // Préviens la liste des dossiers qu'un titre ou un statut a changé
 const avertirListe = () => window.dispatchEvent(new Event("dossiers-maj"));
@@ -21,7 +21,7 @@ const STATUT_FAC: Record<string, string> = { en_attente: "En attente", payee: "P
 type Onglet = "messages" | "membres" | "factures" | "notes";
 
 // Un dossier : une en-tête sobre, puis un seul panneau à la fois (onglets)
-export default function DossierChat({ id, moiId, staff, direction }: Props) {
+export default function DossierChat({ id, moiId, staff, direction, compta }: Props) {
   const [dossier, setDossier] = useState<any>(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
@@ -39,7 +39,7 @@ export default function DossierChat({ id, moiId, staff, direction }: Props) {
 
   // Factures du dossier (employés seulement)
   useEffect(() => {
-    if (!staff || onglet !== "factures") return;
+    if (!compta || onglet !== "factures") return;
     fetch("/api/cabinet/factures").then(r => r.json()).then(d => setFactures((d.rows || []).filter((f: any) => f.dossier_id === id)));
   }, [onglet, id, staff]);
 
@@ -80,7 +80,7 @@ export default function DossierChat({ id, moiId, staff, direction }: Props) {
   const onglets: { id: Onglet; label: string; visible: boolean }[] = [
     { id: "messages", label: "Messages", visible: true },
     { id: "membres", label: `Membres (${(dossier.cabinet_dossier_acces || []).length})`, visible: staff },
-    { id: "factures", label: "Factures", visible: staff },
+    { id: "factures", label: "Factures", visible: compta },
     { id: "notes", label: "Notes internes", visible: peutGerer },
   ];
 
@@ -170,7 +170,7 @@ export default function DossierChat({ id, moiId, staff, direction }: Props) {
       )}
 
       {/* Panneau : Factures */}
-      {onglet === "factures" && staff && (
+      {onglet === "factures" && compta && (
         <div>
           {peutGerer && (
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.8rem" }}>
