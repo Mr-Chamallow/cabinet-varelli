@@ -27,6 +27,8 @@ export default function ComptaBilan() {
         <a className="btn btn-gold btn-sm" href={`/api/cabinet/compta/resume?semaine=${semaine}&format=csv`}>Relevé CSV</a>
       </div>
 
+      <FacturesGouvernement semaine={semaine} />
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: "0.7rem" }}>
         <Stat label="Encaissé (clients + gouvernement)" valeur={montant(resume.encaisse)} couleur="#5fb878" />
         <Stat label="Dépenses" valeur={montant(resume.depenses)} couleur="#f87171" />
@@ -41,8 +43,6 @@ export default function ComptaBilan() {
         <div style={{ display: "flex", justifyContent: "space-between", padding: "0.3rem 0" }}><span>Total payé par le gouvernement ({resume.ciSemaineListe.length})</span><strong>{montant(resume.ciSemaine)}</strong></div>
         <a className="btn btn-gold btn-sm" style={{ marginTop: "0.5rem" }} href={`/api/cabinet/compta/resume?semaine=${semaine}&format=ci-csv`}>Détail des comparutions (CSV)</a>
       </div>
-
-      <FacturesGouvernement semaine={semaine} />
 
       <div className="cab-card">
         <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>Encaissements par moyen de paiement</div>
