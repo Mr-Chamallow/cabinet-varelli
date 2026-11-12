@@ -1,6 +1,7 @@
 "use client";
 import { useParams } from "next/navigation";
 import DossierChat from "@/components/cabinet/DossierChat";
+import ModelesDocuments from "@/components/cabinet/ModelesDocuments";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
 import { estStaffUser } from "@/lib/cabinetRoles";
@@ -10,6 +11,8 @@ export default function Page() {
   const { user } = useCurrentUser();
   if (!user) return null;
   return (
+    <>
+    {estStaffUser(user) && <ModelesDocuments dossierId={id} />}
     <DossierChat
       id={id}
       moiId={(user as any).discord_id}
@@ -17,5 +20,6 @@ export default function Page() {
       direction={hasPermission(user, "cabinet_attribution")}
       compta={hasPermission(user, "cabinet_facturation")}
     />
+    </>
   );
 }
