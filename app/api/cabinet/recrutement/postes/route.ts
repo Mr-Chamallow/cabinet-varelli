@@ -8,8 +8,9 @@ import { journaliser } from "@/lib/journal";
 // Postes libres : tout le monde les lit, la direction les crée / modifie / supprime
 export async function GET() {
   try {
-    const r = await requireAnyPermission(["avocat", "cabinet_dossiers", "cabinet_rdv"]);
-    if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    // Lecture ouverte à tout compte connecté (rôle client par défaut inclus)
+    const r = await requireAnyPermission([]);
+    if (!r.user) return NextResponse.json({ error: "Connecte-toi pour voir les postes" }, { status: 401 });
     const { data, error } = await r.supabaseAdmin.from("cabinet_postes").select("*").order("ordre", { ascending: true });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [] });

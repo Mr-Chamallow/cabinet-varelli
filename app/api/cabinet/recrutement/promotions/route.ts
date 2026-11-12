@@ -8,8 +8,8 @@ import { appliquerRole, roleAccesValide } from "@/lib/cabinetRecrutement";
 // Promotions : changer le poste d'un membre et, si le poste le prévoit, son rôle d'accès
 export async function GET() {
   try {
-    const r = await requireAnyPermission(["avocat", "cabinet_dossiers", "cabinet_rdv"]);
-    if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    const r = await requireAnyPermission([]);
+    if (!r.user) return NextResponse.json({ error: "Connecte-toi" }, { status: 401 });
     const { data, error } = await r.supabaseAdmin.from("cabinet_promotions").select("*").order("created_at", { ascending: false }).limit(100);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [] });
