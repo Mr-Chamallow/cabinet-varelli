@@ -95,7 +95,8 @@ export default function ComptaDevis() {
             </div>
             {d.statut !== "facture" && (
               <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
-                {d.statut !== "accepte" && <button className="btn btn-outline btn-sm" onClick={() => action(d.id, "accepter")}>Accepté</button>}
+                <a className="btn btn-outline btn-sm" href={`/api/cabinet/compta/devis/${d.id}/pdf`} target="_blank" rel="noreferrer">PDF</a>
+                {d.statut !== "accepte" &&<button className="btn btn-outline btn-sm" onClick={() => action(d.id, "accepter")}>Accepté</button>}
                 {d.statut !== "refuse" && <button className="btn btn-outline btn-sm" onClick={() => action(d.id, "refuser")}>Refusé</button>}
                 {d.statut === "accepte" && <button className="btn btn-sm" onClick={() => action(d.id, "transformer")}>Transformer en facture</button>}
               </div>

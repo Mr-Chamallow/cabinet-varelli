@@ -13,9 +13,13 @@ const STATUT: Record<string, { label: string; couleur: [number, number, number] 
   en_attente: { label: "EN ATTENTE", couleur: [176, 138, 62] },
   payee: { label: "PAYÉE", couleur: [60, 140, 90] },
   annulee: { label: "ANNULÉE", couleur: [180, 60, 60] },
+  envoye: { label: "ENVOYÉ", couleur: [176, 138, 62] },
+  accepte: { label: "ACCEPTÉ", couleur: [60, 140, 90] },
+  refuse: { label: "REFUSÉ", couleur: [180, 60, 60] },
 };
 
-export function facturePdf(f: any): Buffer {
+// titre : "FACTURE" (défaut) ou "DEVIS"
+export function facturePdf(f: any, titre = "FACTURE"): Buffer {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = 210;
   const gauche = 16;
@@ -24,11 +28,11 @@ export function facturePdf(f: any): Buffer {
   // Bandeau : logo à gauche, titre à droite
   doc.addImage(CABINET_LOGO_PNG, "PNG", gauche, 12, 58, 58 * 369 / 676);
   doc.setFont("helvetica", "bold"); doc.setFontSize(26); doc.setTextColor(...NOIR);
-  doc.text("FACTURE", droite, 24, { align: "right" });
+  doc.text(titre, droite, 24, { align: "right" });
   doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(...GRIS);
   doc.text(String(f.numero || ""), droite, 31, { align: "right" });
-  doc.text(`Émise le ${dateFr(f.created_at)}`, droite, 37, { align: "right" });
-  doc.text(`Échéance : ${dateFr(f.date_echeance)}`, droite, 43, { align: "right" });
+  doc.text(`${titre === "FACTURE" ? "Émise" : "Émis"} le ${dateFr(f.created_at)}`, droite, 37, { align: "right" });
+  if (titre === "FACTURE") doc.text(`Échéance : ${dateFr(f.date_echeance)}`, droite, 43, { align: "right" });
 
   // Filet doré
   doc.setDrawColor(...OR); doc.setLineWidth(0.8); doc.line(gauche, 52, droite, 52);
