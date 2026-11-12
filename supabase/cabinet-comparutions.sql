@@ -40,3 +40,11 @@ alter table cabinet_avocat_grades enable row level security;
 -- Le taux et la part de l'avocat sont figés au moment de la saisie (l'historique ne bouge pas si le grade change)
 alter table cabinet_comparutions add column if not exists taux_pct numeric not null default 0;
 alter table cabinet_comparutions add column if not exists part_avocat integer not null default 0;
+
+-- Pourcentages par grade (modifiables ensuite dans la page Comparutions, panneau compta)
+insert into cabinet_grades (grade, taux_pct, ordre) values
+  ('Collaborateur', 50, 1),
+  ('Associé', 60, 2),
+  ('Associé Sénior', 70, 3),
+  ('Secrétaire juridique & Associé Gérant', 80, 4)
+on conflict (grade) do update set taux_pct = excluded.taux_pct, ordre = excluded.ordre;
