@@ -27,7 +27,7 @@ const NAV_SECTIONS = [
     { href: "/avocat/presentation",    label: "Présentation",    icon: "📜", perms: ["avocat", "cabinet_presentation"] },
     { href: "/avocat/organigramme",    label: "Organigramme",    icon: "🏛️", perms: ["avocat", "cabinet_organigramme"] },
     { href: "/avocat/codes", label: "Codes juridiques", icon: "📚", perms: ["avocat"] },
-    { href: "/avocat/comparutions", label: "Comparutions immédiates", icon: "⚖️", perms: ["avocat"] },
+    { href: "/avocat/comparutions", label: "Comparutions immédiates", icon: "⚖️", perms: ["avocat"], staffOnly: true },
     { href: "/avocat/mes-commissions", label: "Mes commissions", icon: "💰", perms: ["avocat"], staffOnly: true },
     { href: "/avocat/dossiers", label: "Dossiers", icon: "📁", perms: ["avocat", "cabinet_dossiers"] },
     { href: "/avocat/messagerie", label: "Messagerie interne", icon: "💬", perms: ["cabinet_dossiers", "cabinet_rdv"], staffOnly: true },

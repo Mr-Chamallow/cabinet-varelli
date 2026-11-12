@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche } from "@/lib/cabinetServer";
 import { gradeParRole } from "@/lib/grades";
-import { estPatronUser } from "@/lib/cabinetRoles";
+import { estPatronUser, estStaffUser } from "@/lib/cabinetRoles";
 
 // Taux de l'avocat : grade enregistré, sinon grade déduit de son rôle (et enregistré pour la suite)
 async function tauxAvocat(db: any, discordId: string, nom: string, roles: (string | null | undefined)[]) {
@@ -22,6 +22,7 @@ const STATUTS = ["prise_en_charge", "en_attente", "refusee"];
 export async function GET() {
   try {
     const r = await requireAnyPermission(["avocat"]);
+    if (!r.authorized || !estStaffUser(r.user)) return NextResponse.json({ error: "Réservé au personnel du cabinet" }, { status: 403 });
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const { data, error } = await r.supabaseAdmin.from("cabinet_comparutions").select("*").order("date_audience", { ascending: false }).order("heure", { ascending: false });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -35,6 +36,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const r = await requireAnyPermission(["avocat"]);
+    if (!r.authorized || !estStaffUser(r.user)) return NextResponse.json({ error: "Réservé au personnel du cabinet" }, { status: 403 });
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const db = r.supabaseAdmin;
     const b = await req.json();
@@ -90,6 +92,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const r = await requireAnyPermission(["avocat"]);
+    if (!r.authorized || !estStaffUser(r.user)) return NextResponse.json({ error: "Réservé au personnel du cabinet" }, { status: 403 });
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const db = r.supabaseAdmin;
     const id = new URL(req.url).searchParams.get("id");
@@ -121,6 +124,7 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const r = await requireAnyPermission(["avocat"]);
+    if (!r.authorized || !estStaffUser(r.user)) return NextResponse.json({ error: "Réservé au personnel du cabinet" }, { status: 403 });
     if (!r.authorized || !estPatronUser(r.user)) return NextResponse.json({ error: "Réservé au patron" }, { status: 403 });
     const db = r.supabaseAdmin;
     const id = new URL(req.url).searchParams.get("id");
