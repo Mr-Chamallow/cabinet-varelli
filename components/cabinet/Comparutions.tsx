@@ -4,6 +4,7 @@ import { montant } from "@/lib/montant";
 import { champ, dateFr } from "@/components/compta/commun";
 import { dateISO, heureISO } from "@/lib/dates";
 import { honorairePour } from "@/lib/honoraires";
+import { useCabinetTemps } from "@/lib/useCabinetTemps";
 
 // Comparutions immédiates : suivi séparé de la compta client (payées par le gouvernement).
 type Ligne = {
@@ -31,6 +32,9 @@ export default function Comparutions({ patron = false }: { patron?: boolean }) {
 
   const charger = () =>
     fetch("/api/cabinet/comparutions").then(r => r.json()).then(d => d.error ? setErreur(d.error) : setRows(d.rows));
+
+  // Temps réel : les comparutions se mettent à jour pour tous les avocats
+  useCabinetTemps(["cabinet_comparutions"], () => charger());
 
   useEffect(() => {
     charger();

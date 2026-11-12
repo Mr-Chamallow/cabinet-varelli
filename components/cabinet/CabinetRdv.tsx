@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import CalendrierRdv, { CreneauRdv } from "@/components/cabinet/CalendrierRdv";
 import { RDV_STATUT } from "@/lib/rdvStatuts";
+import { useCabinetTemps } from "@/lib/useCabinetTemps";
 
 interface Props {
   employe: boolean;    // peut demander la prise en charge et valider (cabinet_rdv en écriture)
@@ -34,13 +35,13 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
     setChargement(false);
   }).catch(() => setChargement(false));
 
+  // Temps réel : la liste se met à jour dès qu'un RDV change
+  useCabinetTemps(["cabinet_rdv"], charger);
+
   useEffect(() => {
     charger();
-    // Mise à jour automatique : la liste se rafraîchit toutes les 30 secondes
-    const t = setInterval(charger, 30000);
     fetch("/api/cabinet/cabinet_tarifs").then(r => r.json()).then(d => setTarifs(d.rows || []));
     if (direction || employe) fetch("/api/cabinet/staff").then(r => r.json()).then(d => setStaffListe(d.rows || []));
-    return () => clearInterval(t);
   }, []);
 
   const appel = async (method: string, corps: any) => {

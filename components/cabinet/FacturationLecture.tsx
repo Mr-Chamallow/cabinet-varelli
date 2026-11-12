@@ -2,6 +2,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
+import { useCabinetTemps } from "@/lib/useCabinetTemps";
 
 const dateFr = (d?: string | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : "—");
 const totalLignes = (ls: any[]) => (ls || []).reduce((s, l) => s + (Number(l.quantite) || 0) * (Number(l.prix) || 0), 0);
@@ -12,9 +13,11 @@ export default function FacturationLecture() {
   const [erreur, setErreur] = useState("");
   const [recherche, setRecherche] = useState("");
 
-  useEffect(() => {
+  const charger = () =>
     fetch("/api/cabinet/facturation").then(r => r.json()).then(d => d.error ? setErreur(d.error) : setData(d)).catch(() => setErreur("Chargement impossible"));
-  }, []);
+
+  useEffect(() => { charger(); }, []);
+  useCabinetTemps(["cabinet_devis", "cabinet_factures"], charger);
 
   if (erreur) return <div style={{ color: "var(--danger)" }}>{erreur}</div>;
   if (!data) return <div style={{ color: "var(--text-dim)" }}>Chargement...</div>;

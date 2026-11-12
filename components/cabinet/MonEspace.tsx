@@ -8,6 +8,7 @@ const dateFr = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "nu
 const dateHeure = (d: string) => new Date(d).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 
 import { RDV_STATUT } from "@/lib/rdvStatuts";
+import { useCabinetTemps } from "@/lib/useCabinetTemps";
 const STATUT_DOSSIER: Record<string, { txt: string; color: string }> = {
   ouvert: { txt: "Ouvert", color: "#5fb878" },
   ferme: { txt: "Fermé", color: "#e0b050" },
@@ -26,11 +27,11 @@ export default function MonEspace() {
 
   useEffect(() => {
     charger();
-    // Suivi automatique des RDV : rafraîchissement toutes les 30 secondes
-    const t = setInterval(charger, 30000);
     fetch("/api/cabinet/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ section: "messages-client" }) }).catch(() => {});
-    return () => clearInterval(t);
   }, []);
+
+  // Temps réel : rendez-vous, factures, devis et dossiers se mettent à jour seuls
+  useCabinetTemps(["cabinet_rdv", "cabinet_factures", "cabinet_devis", "cabinet_dossiers"], charger);
 
   const confirmerReport = async (id: string) => {
     await fetch("/api/cabinet/rdv", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "confirmer_report" }) });
