@@ -36,6 +36,7 @@ export function CabinetAdminTab() {
             { key: "categorie", label: "Catégorie", placeholder: "Ex : Civil" },
             { key: "nom", label: "Prestation", placeholder: "Ex : Mariage" },
             { key: "prix", label: "Prix", placeholder: "Ex : 70 000 $ ou Sur devis" },
+            { key: "prix_montant", label: "Montant facturé ($)", type: "number", placeholder: "Ex : 70000 (vide = prix du texte)" },
             { key: "description", label: "Description", type: "textarea" },
             { key: "ordre", label: "Ordre d'affichage", type: "number" },
           ]}

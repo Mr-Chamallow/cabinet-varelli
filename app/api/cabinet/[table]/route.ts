@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
-import { canWrite } from "@/lib/cabinetServer";
+import { canWrite, nomAffiche } from "@/lib/cabinetServer";
+import { journaliser } from "@/lib/journal";
 
 // Tables éditables du cabinet (tarifs, organigramme, présentation, types de dossiers)
 const TABLES: Record<string, { write: string; cols: string[]; order: string; key: string; staffOnly?: boolean }> = {
-  cabinet_tarifs:        { write: "cabinet_tarifs",        cols: ["categorie", "nom", "prix", "description", "ordre"], order: "ordre", key: "id" },
+  cabinet_tarifs:        { write: "cabinet_tarifs",        cols: ["categorie", "nom", "prix", "prix_montant", "description", "ordre"], order: "ordre", key: "id" },
   cabinet_membres:       { write: "cabinet_organigramme",  cols: ["nom_rp", "poste", "description", "ordre", "photo_url", "barreau", "numero_barreau", "annee_inscription", "specialites"], order: "ordre", key: "id" },
   cabinet_avis:          { write: "cabinet_presentation",   cols: ["auteur_nom", "note", "contenu", "statut"],          order: "created_at", key: "id", staffOnly: true },
   cabinet_pages:         { write: "cabinet_presentation",  cols: ["cle", "contenu"],                                   order: "cle",   key: "cle" },
@@ -18,7 +19,7 @@ async function guard(table: string, mode: "read" | "write") {
   const r = await requireAnyPermission(mode === "read" && !c.staffOnly ? ["avocat", c.write] : [c.write]);
   if (!r.authorized) return { err: NextResponse.json({ error: "Non autorisé" }, { status: 403 }) } as any;
   if (mode === "write" && !canWrite(r.user, c.write)) return { err: NextResponse.json({ error: "Lecture seule pour toi sur cet onglet" }, { status: 403 }) } as any;
-  return { db: r.supabaseAdmin, c };
+  return { db: r.supabaseAdmin, c, user: r.user };
 }
 
 const pick = (b: any, cols: string[]) =>
@@ -69,8 +70,13 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ table: string
     const key = a.c.key;
     if (!body[key]) return NextResponse.json({ error: `${key} requis` }, { status: 400 });
     const patch = pick(body, a.c.cols.filter(c => c !== key));
+    const avant = table === "cabinet_tarifs" ? (await a.db.from(table).select("*").eq(key, body[key]).maybeSingle()).data : null;
     const { data, error } = await a.db.from(table).update(patch).eq(key, body[key]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (avant && (avant.prix !== data.prix || avant.prix_montant !== data.prix_montant)) {
+      await a.db.from("cabinet_tarifs_historique").insert([{ tarif_id: data.id, nom: data.nom, ancien_prix: String(avant.prix ?? ""), nouveau_prix: String(data.prix ?? ""), auteur_nom: nomAffiche(a.user) }]);
+    }
+    if (table !== "cabinet_pages") await journaliser(a.db, nomAffiche(a.user), "Modification", `${table} : ${data.nom || data.nom_rp || ""}`, null);
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

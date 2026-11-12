@@ -34,7 +34,8 @@ export default function Comptabilite() {
   const [tva, setTva] = useState("0");
   const [echeance, setEcheance] = useState("");
   const [note, setNote] = useState("");
-  const [moisExport, setMoisExport] = useState(new Date().toISOString().slice(0, 7));
+  const [du, setDu] = useState(() => new Date(Date.now() - 6 * 86400_000).toISOString().slice(0, 10));
+  const [au, setAu] = useState(() => new Date().toISOString().slice(0, 10));
   const [envoi, setEnvoi] = useState(false);
 
   const charger = () => fetch("/api/cabinet/factures").then(r => r.json()).then(d => {
@@ -59,7 +60,8 @@ export default function Comptabilite() {
   const ajouterPrestation = (id: string) => {
     const t = tarifs.find((x: any) => x.id === id);
     if (!t) return;
-    const prix = prixDepuisTexte(t.prix);
+
+    const prix = t.prix_montant != null ? Number(t.prix_montant) : prixDepuisTexte(t.prix);
     setLignes(ls => {
       const vide = ls.length === 1 && !ls[0].description && !ls[0].prix;
       const nouvelle = { description: t.nom, quantite: "1", prix: prix !== null ? String(prix) : "" };
@@ -160,9 +162,11 @@ export default function Comptabilite() {
       </div>
 
       <div className="cab-card" style={{ marginBottom: "1rem", display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
-        <div style={{ fontWeight: 600 }}>Export comptable</div>
-        <input type="month" value={moisExport} onChange={e => setMoisExport(e.target.value)} style={{ ...champ, width: "auto" }} />
-        <a className="btn btn-gold btn-sm" href={`/api/cabinet/factures/export?mois=${moisExport}`}>Télécharger le CSV</a>
+        <div style={{ fontWeight: 600 }}>Export comptable (par période, 7 jours par défaut)</div>
+        <input type="date" value={du} onChange={e => setDu(e.target.value)} style={{ ...champ, width: "auto" }} />
+        <span className="cab-muted">au</span>
+        <input type="date" value={au} onChange={e => setAu(e.target.value)} style={{ ...champ, width: "auto" }} />
+        <a className="btn btn-gold btn-sm" href={`/api/cabinet/factures/export?du=${du}&au=${au}`}>Télécharger le CSV</a>
       </div>
 
       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.8rem" }}>

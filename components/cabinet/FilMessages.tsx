@@ -51,7 +51,7 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
 
   useEffect(() => { fin.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length]);
 
-  const envoyer = async (corps: { contenu?: string; image_url?: string }) => {
+  const envoyer = async (corps: { contenu?: string; image_url?: string; fichier_url?: string; fichier_nom?: string }) => {
     setErreur(""); setEnvoi(true);
     const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
     const d = await r.json();
@@ -77,6 +77,17 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
     setEnvoi(false);
     if (!r.ok || d.error) return setErreur(d.error || "Upload impossible");
     envoyer({ image_url: d.url });
+  };
+
+  const envoyerDocument = async (fichier: File) => {
+    const f = new FormData();
+    f.append("file", fichier);
+    setEnvoi(true);
+    const r = await fetch("/api/cabinet/upload", { method: "POST", body: f });
+    const d = await r.json();
+    setEnvoi(false);
+    if (!r.ok || d.error) return setErreur(d.error || "Upload impossible");
+    envoyer({ fichier_url: d.url, fichier_nom: d.nom });
   };
 
   const coller = (e: ClipboardEvent<HTMLTextAreaElement>) => {
@@ -125,6 +136,10 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
             <label className="btn btn-outline btn-sm" style={{ cursor: "pointer" }}>
               Joindre une image
               <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) envoyerImage(f); e.target.value = ""; }} />
+            </label>
+            <label className="btn btn-outline btn-sm" style={{ cursor: "pointer" }}>
+              Joindre un document
+              <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.odt" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) envoyerDocument(f); e.target.value = ""; }} />
             </label>
           </div>
         </div>

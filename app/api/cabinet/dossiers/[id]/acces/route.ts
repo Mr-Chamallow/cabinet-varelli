@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { CABINET_STAFF_ROLES, accesDossier, nomStaff } from "@/lib/cabinetAcces";
 import { nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
+import { journaliser } from "@/lib/journal";
 
 // Membres d'un dossier : ajout et retrait par la direction ou un avocat déjà assigné au dossier.
 // On ne peut ajouter que des employés du cabinet (rôle du cabinet).
@@ -25,6 +26,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     }], { onConflict: "dossier_id,avocat_discord_id" });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     const { data: dossier } = await db.from("cabinet_dossiers").select("titre").eq("id", id).maybeSingle();
+    await journaliser(db, nomAffiche(r.user), "Membre ajouté", dossier?.titre || "", nom);
     await notifyDiscord(`**Attribution** : le dossier ${dossier?.titre || ""} est attribué à ${nom} (par ${nomAffiche(r.user)})`);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
@@ -43,6 +45,7 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }
     if (!acces.peutGerer) return NextResponse.json({ error: "Réservé à la direction et aux avocats assignés" }, { status: 403 });
     const { error } = await r.supabaseAdmin.from("cabinet_dossier_acces").delete().eq("dossier_id", id).eq("avocat_discord_id", b.avocat_discord_id);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    await journaliser(r.supabaseAdmin, nomAffiche(r.user), "Membre retiré", id, b.avocat_discord_id);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });

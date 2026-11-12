@@ -4,6 +4,7 @@ import { nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
 import { diffuser, estStaff, topicPour } from "@/lib/cabinetAcces";
 import { calculer, historiser, nettoyerLignes, numeroFacture } from "@/lib/factures";
 import { montant } from "@/lib/montant";
+import { journaliser } from "@/lib/journal";
 
 // Liste des factures (employés) avec totaux : encaissé, en attente, en retard
 export async function GET() {
@@ -67,6 +68,7 @@ export async function POST(req: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
     await historiser(db, facture.id, "creation", `Montant ${montant(total)}`, nomAffiche(user));
+    await journaliser(db, nomAffiche(user), "Facture émise", numero, montant(total));
 
     const texte = `Facture ${numero} émise : ${montant(total)}` + (echeance ? `, échéance le ${new Date(echeance).toLocaleDateString("fr-FR")}` : "") + ".";
     const { data: msg } = await db.from("cabinet_messages").insert([{

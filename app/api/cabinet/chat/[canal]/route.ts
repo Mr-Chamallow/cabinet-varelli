@@ -62,7 +62,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ canal: string 
     const b = await req.json();
     const contenu = String(b.contenu || "").trim().slice(0, 4000);
     const image_url = b.image_url ? String(b.image_url) : null;
-    if (!contenu && !image_url) return NextResponse.json({ error: "Message vide" }, { status: 400 });
+    const fichier_url = b.fichier_url ? String(b.fichier_url) : null;
+    const fichier_nom = b.fichier_nom ? String(b.fichier_nom).slice(0, 120) : null;
+    if (!contenu && !image_url && !fichier_url) return NextResponse.json({ error: "Message vide" }, { status: 400 });
 
     const { data, error } = await r.supabaseAdmin.from("cabinet_internes").insert([{
       canal: a.canal,
@@ -70,6 +72,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ canal: string 
       auteur_nom: nomAffiche(user),
       contenu: contenu || null,
       image_url,
+      fichier_url,
+      fichier_nom,
     }]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 

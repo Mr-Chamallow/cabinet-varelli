@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { estDirection } from "@/lib/cabinetAcces";
+import { nomAffiche } from "@/lib/cabinetServer";
+import { journaliser } from "@/lib/journal";
 import { supprimerDossiers, supprimerFacture } from "@/lib/purge";
 
 // Suppression définitive : direction uniquement, et seulement si l'utilisateur tape SUPPRIMER
@@ -34,7 +36,8 @@ export async function POST(req: Request) {
     }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ ok: true, supprimes: nombre });
+    await journaliser(db, nomAffiche(r.user), "Suppression définitive", b.type, `${nombre} élément(s)`);
+    return NextResponse.json({ ok: true, supprimes: nombre });    return NextResponse.json({ ok: true, supprimes: nombre });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
   }

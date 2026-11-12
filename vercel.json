@@ -11,6 +11,14 @@
     {
       "path": "/api/cron/relances-factures",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/bilan-hebdo",
+      "schedule": "5 7 * * 1"
+    },
+    {
+      "path": "/api/cron/rappels-rdv",
+      "schedule": "0 18 * * *"
     }
   ]
 }

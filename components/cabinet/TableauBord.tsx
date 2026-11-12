@@ -74,7 +74,13 @@ export default function TableauBord() {
         <Link className="btn btn-outline btn-sm" href="/avocat/rdv">Rendez-vous</Link>
       </div>
 
-      <h2 className="cab-section-titre" style={{ marginTop: "1.6rem" }}>Suppression définitive</h2>
+      <h2 className="cab-section-titre" style={{ marginTop: "1.6rem" }}>Bilan et suivi</h2>
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <a className="btn btn-gold btn-sm" href="/api/cabinet/bilan" target="_blank" rel="noreferrer">Bilan de la semaine (PDF)</a>
+        <Link className="btn btn-outline btn-sm" href="/avocat/journal">Journal d'activité</Link>
+      </div>
+
+      <h2 className="cab-section-titre" style={{ marginTop: "1.6rem" }}>Suppression définitive</h2>      <h2 className="cab-section-titre" style={{ marginTop: "1.6rem" }}>Suppression définitive</h2>
       <div className="cab-muted" style={{ fontSize: "0.8rem", marginBottom: "0.6rem" }}>
         Irréversible. Efface aussi les messages, notes internes et membres liés. Réservé à la direction.
       </div>

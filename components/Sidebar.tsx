@@ -29,6 +29,8 @@ const NAV_SECTIONS = [
     { href: "/avocat/messagerie", label: "Messagerie interne", icon: "💬", perms: ["cabinet_dossiers", "cabinet_rdv"], staffOnly: true },
     { href: "/avocat/comptabilite", label: "Comptabilité", icon: "🧾", perms: ["cabinet_dossiers"], staffOnly: true },
     { href: "/avocat/direction", label: "Tableau de bord", icon: "📊", perms: ["cabinet_attribution"], staffOnly: true },
+    { href: "/avocat/recherche", label: "Recherche", icon: "🔎", perms: ["cabinet_dossiers"], staffOnly: true },
+    { href: "/avocat/journal", label: "Journal", icon: "📖", perms: ["cabinet_attribution"], staffOnly: true },
     { href: "/avocat/clients", label: "Comptes clients", icon: "👥", perms: ["avocat_clients"] },
   ]},
   { label: "Obsidian Logistique", items: [
@@ -61,7 +63,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   const [notifs, setNotifs] = useState<any>(null);
   const staffUser = estStaffUser(user);
   const chargerNotifs = () => {
-    if (!staffUser) return;
+    if (!user) return;
     fetch("/api/cabinet/notifications").then(r => r.json()).then(d => { if (!d.error) setNotifs(d); }).catch(() => {});
   };
   useEffect(() => { chargerNotifs(); }, [user?.discord_id, pathname]);
@@ -69,6 +71,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   useTempsReel(notifs?.topics?.votes, chargerNotifs);
   const badgeFor = (href: string) =>
     href === "/avocat/messagerie" ? (notifs?.plaintes || 0) + (notifs?.votes || 0)
+    : href === "/avocat/mon-espace" ? (notifs?.messages || 0)
     : href === "/avocat/direction" ? (notifs?.plaintes || 0)
     : 0;
 

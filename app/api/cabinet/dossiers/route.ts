@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { canWrite, nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
+import { journaliser } from "@/lib/journal";
 import { accesDossier, estDirection, estSecretaire, estStaff } from "@/lib/cabinetAcces";
 
 const STATUTS = ["ouvert", "ferme", "archive"];
@@ -88,6 +89,7 @@ export async function POST(req: Request) {
       }]);
     }
 
+    await journaliser(db, nomAffiche(user), "Nouveau dossier", titre, client_nom);
     await notifyDiscord(`**Nouveau dossier** : ${titre}${type ? ` (${type.nom})` : ""}${dossier.prestation ? `\nPrestation : ${dossier.prestation}` : ""}\nClient : ${client_nom}\nOuvert par : ${nomAffiche(user)}`);
     return NextResponse.json(dossier);
   } catch (e: any) {
@@ -114,6 +116,7 @@ export async function PATCH(req: Request) {
     if (b.titre) patch.titre = String(b.titre).trim();
     const { data, error } = await r.supabaseAdmin.from("cabinet_dossiers").update(patch).eq("id", b.id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    await journaliser(r.supabaseAdmin, nomAffiche(user), "Dossier modifié", data.titre, b.statut ? `statut ${b.statut}` : "titre renommé");
     if (b.statut) await notifyDiscord(`**Dossier** ${data.titre} : statut ${b.statut} (par ${nomAffiche(user)})`);
     return NextResponse.json(data);
   } catch (e: any) {

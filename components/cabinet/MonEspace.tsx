@@ -23,6 +23,7 @@ export default function MonEspace() {
 
   useEffect(() => {
     fetch("/api/cabinet/mon-espace").then(r => r.json()).then(d => d.error ? setErreur(d.error) : setData(d));
+    fetch("/api/cabinet/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ section: "messages-client" }) }).catch(() => {});
   }, []);
 
   if (erreur) return <div style={{ color: "var(--danger)" }}>{erreur}</div>;
@@ -34,7 +35,22 @@ export default function MonEspace() {
 
   return (
     <div className="cab-stagger" style={{ display: "flex", flexDirection: "column", gap: "1.8rem" }}>
-      {/* Indicateurs */}
+      {/* À faire */}
+      <div className="cab-card" style={{ borderLeft: "3px solid var(--gold, #b08a3e)" }}>
+        <div className="cab-muted">À faire</div>
+        {enAttente.length > 0 ? (
+          <div style={{ marginTop: "0.4rem" }}>
+            Régler la facture <b>{enAttente[0].libelle}</b> : <b>{montant(Number(enAttente[0].montant))}</b>
+            {enAttente[0].date_echeance ? ` (échéance le ${new Date(enAttente[0].date_echeance).toLocaleDateString("fr-FR")})` : ""}.
+          </div>
+        ) : prochain ? (
+          <div style={{ marginTop: "0.4rem" }}>Prochain rendez-vous le {new Date(prochain.date_rdv).toLocaleString("fr-FR")}.</div>
+        ) : (
+          <div style={{ marginTop: "0.4rem" }}>Rien d'urgent pour le moment.</div>
+        )}
+      </div>
+
+      {/* Indicateurs */}      {/* Indicateurs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: "1rem" }}>
         <div className="cab-card">
           <div className="cab-muted">Dossiers en cours</div>
