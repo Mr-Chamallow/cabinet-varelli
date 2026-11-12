@@ -3,14 +3,13 @@ import { useEffect, useState } from "react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { ObsLogo } from "@/components/ObsLogo";
 import { hasPermission } from "@/lib/auth";
-import { estStaffUser } from "@/lib/cabinetRoles";
 import InscriptionModal from "@/components/avocat/InscriptionModal";
 import AccueilCabinet from "@/components/cabinet/AccueilCabinet";
 import { CabinetStyles } from "@/components/cabinet/CabinetStyles";
 
 const SECTIONS = [
   { label: "Tarifs", icon: "💰", desc: "Grille des honoraires", href: "/avocat/tarifs", perms: ["avocat", "cabinet_tarifs"] },
-  { label: "Prise de RDV", icon: "📅", desc: "Réserver un rendez-vous", href: "/avocat/rdv", perms: ["cabinet_rdv"] },
+  { label: "Prise de RDV", icon: "📅", desc: "Réserver un rendez-vous", href: "/avocat/rdv", perms: ["avocat", "cabinet_rdv"] },
   { label: "Présentation", icon: <ObsLogo size={26} />, desc: "Qui nous sommes", href: "/avocat/presentation", perms: ["avocat", "cabinet_presentation"] },
   { label: "Organigramme", icon: "🏛️", desc: "Notre équipe", href: "/avocat/organigramme", perms: ["avocat", "cabinet_organigramme"] },
   { label: "Dossiers", icon: "📁", desc: "Ouvrir ou suivre un dossier", href: "/avocat/dossiers", perms: ["avocat", "cabinet_dossiers"] },
@@ -54,7 +53,7 @@ export default function AvocatAccueil() {
         <div className="cab-card" style={{ marginBottom: "1rem" }}>Accès en cours d&apos;activation. Recharge la page.</div>
       )}
 
-      <AccueilCabinet staff={estStaffUser(user)} />
+      <AccueilCabinet />
 
       <div className="cab-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: "1rem" }}>
         {SECTIONS.filter(s => s.perms.some(p => hasPermission(user, p))).map(s => (

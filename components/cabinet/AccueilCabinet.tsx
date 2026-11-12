@@ -5,7 +5,7 @@ import CartesMembres from "@/components/cabinet/CartesMembres";
 import AvisCabinet from "@/components/cabinet/AvisCabinet";
 
 // Page d'accueil du cabinet : présentation, domaines, équipe, avis clients
-export default function AccueilCabinet({ staff = false }: { staff?: boolean }) {
+export default function AccueilCabinet() {
   const [domaines, setDomaines] = useState<[string, number][]>([]);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function AccueilCabinet({ staff = false }: { staff?: boolean }) {
         </p>
         <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", marginTop: "1.1rem" }}>
           <Link className="btn btn-gold btn-sm" href="/avocat/mon-espace">Mon espace</Link>
-          {staff && <Link className="btn btn-outline btn-sm" href="/avocat/rdv">Prise de RDV</Link>}
+          <Link className="btn btn-outline btn-sm" href="/avocat/rdv">Prendre rendez-vous</Link>
           <Link className="btn btn-outline btn-sm" href="/avocat/dossiers">Ouvrir un dossier</Link>
           <Link className="btn btn-outline btn-sm" href="/avocat/tarifs">Voir les tarifs</Link>
         </div>

@@ -5,7 +5,7 @@ import { hasPermission, hasWriteAccess } from "@/lib/auth";
 
 export default function Page() {
   return (
-    <CabinetShell title="Prise de RDV" icon="" desc="Calendrier et demandes de rendez-vous" perms={["cabinet_rdv"]} staff>
+    <CabinetShell title="Prise de RDV" icon="" desc="Calendrier et demandes de rendez-vous" perms={["avocat", "cabinet_rdv"]}>
       {(user) => (
         <CabinetRdv
           employe={hasWriteAccess(user, "cabinet_rdv")}

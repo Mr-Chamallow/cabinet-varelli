@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 const dateFr = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 const dateHeure = (d: string) => new Date(d).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 
-const STATUT_RDV: Record<string, string> = { demande: "En attente de validation", attribue: "Avocat attribué", confirme: "Confirmé" };
+import { RDV_STATUT } from "@/lib/rdvStatuts";
 const STATUT_DOSSIER: Record<string, { txt: string; color: string }> = {
   ouvert: { txt: "Ouvert", color: "#5fb878" },
   ferme: { txt: "Fermé", color: "#e0b050" },
@@ -22,10 +22,20 @@ export default function MonEspace() {
   const [data, setData] = useState<any>(null);
   const [erreur, setErreur] = useState("");
 
+  const charger = () => fetch("/api/cabinet/mon-espace").then(r => r.json()).then(d => d.error ? setErreur(d.error) : setData(d)).catch(() => {});
+
   useEffect(() => {
-    fetch("/api/cabinet/mon-espace").then(r => r.json()).then(d => d.error ? setErreur(d.error) : setData(d));
+    charger();
+    // Suivi automatique des RDV : rafraîchissement toutes les 30 secondes
+    const t = setInterval(charger, 30000);
     fetch("/api/cabinet/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ section: "messages-client" }) }).catch(() => {});
+    return () => clearInterval(t);
   }, []);
+
+  const confirmerReport = async (id: string) => {
+    await fetch("/api/cabinet/rdv", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "confirmer_report" }) });
+    charger();
+  };
 
   if (erreur) return <div style={{ color: "var(--danger)" }}>{erreur}</div>;
   if (!data) return <div style={{ color: "var(--text-dim)" }}>Chargement...</div>;
@@ -141,7 +151,10 @@ export default function MonEspace() {
                     {[r.prestation || r.motif, r.avocat_nom ? `avec ${r.avocat_nom}` : "avocat à définir"].filter(Boolean).join(" · ")}
                   </div>
                 </div>
-                <Badge txt={STATUT_RDV[r.statut] || r.statut} color="#c9a24d" />
+                <Badge txt={RDV_STATUT[r.statut]?.txt || r.statut} color={RDV_STATUT[r.statut]?.color || "#c9a24d"} />
+                {r.statut === "reporte" && (
+                  <button className="btn btn-sm" onClick={() => confirmerReport(r.id)}>Confirmer le nouveau créneau</button>
+                )}
               </div>
             ))}
           </div>

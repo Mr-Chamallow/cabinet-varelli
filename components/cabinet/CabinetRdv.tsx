@@ -1,15 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import CalendrierRdv, { CreneauRdv } from "@/components/cabinet/CalendrierRdv";
-import { dateHeureLocale } from "@/lib/dates";
-
-const STATUT: Record<string, { txt: string; color: string }> = {
-  demande: { txt: "En attente de prise en charge", color: "#e0b050" },
-  attribue: { txt: "Attribué, à valider", color: "#e0b050" },
-  confirme: { txt: "Confirmé", color: "#5fb878" },
-  termine: { txt: "Terminé", color: "#8a8a8a" },
-  annule: { txt: "Annulé", color: "#d9534f" },
-};
+import { RDV_STATUT } from "@/lib/rdvStatuts";
 
 interface Props {
   employe: boolean;    // peut demander la prise en charge et valider (cabinet_rdv en écriture)
@@ -24,25 +16,31 @@ const indicateur = (label: string, valeur: number, couleur: string) => (
   </div>
 );
 
+const DATE_FR = (iso: string) => new Date(iso).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+
 export default function CabinetRdv({ employe, direction, moiId }: Props) {
   const [data, setData] = useState<{ rows: any[]; occupes: any[]; staff: boolean }>({ rows: [], occupes: [], staff: false });
   const [tarifs, setTarifs] = useState<any[]>([]);
   const [staffListe, setStaffListe] = useState<any[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
-  const [form, setForm] = useState({ date_rdv: dateHeureLocale(), motif: "", prestation: "", discord_id: "", client_nom: "" });
+  const [form, setForm] = useState({ date_rdv: "", motif: "", prestation: "", discord_id: "", client_nom: "" });
   const [ouvrirForm, setOuvrirForm] = useState(false);
   const [choixAvocat, setChoixAvocat] = useState<Record<string, string>>({});
+  const [nouvelleDate, setNouvelleDate] = useState<Record<string, string>>({});
 
   const charger = () => fetch("/api/cabinet/rdv").then(r => r.json()).then(d => {
     if (d.error) setErreur(d.error); else setData({ rows: d.rows || [], occupes: d.occupes || [], staff: !!d.staff });
     setChargement(false);
-  });
+  }).catch(() => setChargement(false));
 
   useEffect(() => {
     charger();
+    // Mise à jour automatique : la liste se rafraîchit toutes les 30 secondes
+    const t = setInterval(charger, 30000);
     fetch("/api/cabinet/cabinet_tarifs").then(r => r.json()).then(d => setTarifs(d.rows || []));
     if (direction || employe) fetch("/api/cabinet/staff").then(r => r.json()).then(d => setStaffListe(d.rows || []));
+    return () => clearInterval(t);
   }, []);
 
   const appel = async (method: string, corps: any) => {
@@ -55,11 +53,12 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
   };
 
   const demander = async () => {
-    const ok = await appel("POST", form);
-    if (ok) { setOuvrirForm(false); setForm({ date_rdv: dateHeureLocale(), motif: "", prestation: "", discord_id: "", client_nom: "" }); }
+    const corps = data.staff ? form : { date_rdv: form.date_rdv, motif: form.motif, prestation: form.prestation };
+    const ok = await appel("POST", corps);
+    if (ok) { setOuvrirForm(false); setForm({ date_rdv: "", motif: "", prestation: "", discord_id: "", client_nom: "" }); }
   };
 
-  // Clic sur une case verte du calendrier : pré-remplit la date et ouvre le formulaire
+  // Clic sur un créneau libre du calendrier : le créneau est fixé, le client précise la prestation
   const choisirCreneau = (iso: string) => {
     setForm({ ...form, date_rdv: iso.slice(0, 16) });
     setOuvrirForm(true);
@@ -82,29 +81,37 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
         {data.staff ? (
           <>
             {indicateur("En attente de prise en charge", compte("demande"), "#e0b050")}
-            {indicateur("À valider", compte("attribue"), "#e0b050")}
+            {indicateur("À confirmer", compte("attribue", "reporte"), "#e0b050")}
             {indicateur("Confirmés", compte("confirme"), "#5fb878")}
+            {indicateur("En cours", compte("en_cours"), "#4a9eff")}
           </>
         ) : (
           <>
-            {indicateur("Mes demandes en cours", compte("demande", "attribue"), "#e0b050")}
-            {indicateur("RDV confirmés", compte("confirme"), "#5fb878")}
+            {indicateur("Demandes en cours", compte("demande", "attribue"), "#e0b050")}
+            {indicateur("À confirmer", compte("reporte"), "#e08a3c")}
+            {indicateur("RDV confirmés", compte("confirme", "en_cours"), "#5fb878")}
           </>
         )}
       </div>
 
       {/* Titre et bouton d'action */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.6rem" }}>
-        <h2 className="cab-section-titre" style={{ margin: 0 }}>{data.staff ? "Tous les rendez-vous" : "Mes rendez-vous"}</h2>
-        <button className="btn btn-sm" onClick={() => setOuvrirForm(!ouvrirForm)}>
-          {ouvrirForm ? "Fermer" : (data.staff ? "+ Ajouter un RDV" : "+ Demander un RDV")}
-        </button>
+        <h2 className="cab-section-titre" style={{ margin: 0 }}>{data.staff ? "Agenda du cabinet" : "Mes rendez-vous"}</h2>
+        {data.staff ? (
+          <button className="btn btn-sm" onClick={() => setOuvrirForm(!ouvrirForm)}>{ouvrirForm ? "Fermer" : "+ Ajouter un RDV"}</button>
+        ) : (
+          <span className="cab-muted" style={{ fontSize: "0.85rem" }}>Clique sur une case verte du calendrier pour réserver</span>
+        )}
       </div>
 
       {ouvrirForm && (
         <div className="cab-card">
-          <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>Nouvelle demande</div>
-          <div className="form-group"><label>Date et heure (créneau d&apos;une heure)</label><input type="datetime-local" value={form.date_rdv} onChange={e => setForm({ ...form, date_rdv: e.target.value })} /></div>
+          <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>{data.staff ? "Nouveau RDV" : "Ta demande de RDV"}</div>
+          {data.staff ? (
+            <div className="form-group"><label>Date et heure (créneau d&apos;une heure)</label><input type="datetime-local" value={form.date_rdv} onChange={e => setForm({ ...form, date_rdv: e.target.value })} /></div>
+          ) : (
+            <div style={{ marginBottom: "0.8rem" }}>Créneau choisi : <strong>{form.date_rdv && DATE_FR(form.date_rdv)}</strong></div>
+          )}
           {data.staff && (
             <>
               <div className="form-group"><label>ID Discord du client (laisse vide si le RDV est pour toi)</label><input value={form.discord_id} onChange={e => setForm({ ...form, discord_id: e.target.value })} /></div>
@@ -119,24 +126,31 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
             </select>
           </div>
           <div className="form-group"><label>Motif</label><input value={form.motif} onChange={e => setForm({ ...form, motif: e.target.value })} placeholder="Ex : divorce, changement de nom" /></div>
-          <button className="btn btn-sm" onClick={demander}>Envoyer la demande</button>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button className="btn btn-sm" onClick={demander}>{data.staff ? "Enregistrer" : "Envoyer la demande"}</button>
+            <button className="btn btn-outline btn-sm" onClick={() => setOuvrirForm(false)}>Annuler</button>
+          </div>
         </div>
       )}
 
-      <CalendrierRdv rdvs={creneaux} staff={data.staff} onPick={choisirCreneau} />
+      <CalendrierRdv rdvs={creneaux} staff={data.staff} onPick={data.staff ? undefined : choisirCreneau} />
 
       {erreur && <div style={{ color: "var(--danger)" }}>{erreur}</div>}
 
       {data.rows.length === 0 && <div className="empty-state"><div className="empty-title">Aucun rendez-vous</div></div>}
 
       {data.rows.map(r => {
-        const s = STATUT[r.statut] || { txt: r.statut, color: "var(--text-dim)" };
+        const s = RDV_STATUT[r.statut] || { txt: r.statut, color: "var(--text-dim)" };
         const candidats: any[] = r.cabinet_rdv_candidats || [];
         const estAvocat = r.avocat_discord_id === moiId;
         const dejaCandidat = candidats.some(c => c.avocat_discord_id === moiId);
         const monRdv = !data.staff && r.discord_id === moiId;
-        const peutValider = (estAvocat || direction) && r.statut === "attribue";
-        const peutTerminer = (estAvocat || direction) && r.statut === "confirme";
+        const peutGerer = (estAvocat || direction) && data.staff;
+        const peutValider = peutGerer && r.statut === "attribue";
+        const peutDemarrer = peutGerer && r.statut === "confirme";
+        const peutTerminer = peutGerer && (r.statut === "confirme" || r.statut === "en_cours");
+        const peutReporter = peutGerer && ["attribue", "confirme", "en_cours", "reporte"].includes(r.statut);
+        const peutConfirmerReport = monRdv && r.statut === "reporte";
         const peutAnnuler = r.statut !== "termine" && r.statut !== "annule" && (monRdv || estAvocat || direction);
         const jour = new Date(r.date_rdv);
 
@@ -160,6 +174,7 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
                 {r.avocat_nom
                   ? <div>Avocat : {r.avocat_nom}</div>
                   : (r.aucune_preference ? <div>Avocat : aucune préférence, en attente de la direction</div> : null)}
+                {r.statut === "reporte" && r.date_precedente && <div>Ancien créneau : {DATE_FR(r.date_precedente)} (reporté{r.reporte_par ? ` par ${r.reporte_par}` : ""})</div>}
               </div>
 
               {/* Client : choisir l'avocat parmi les candidats */}
@@ -186,7 +201,7 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
               )}
 
               {/* Direction : attribuer */}
-              {direction && (r.statut === "demande" || r.statut === "attribue") && (
+              {direction && data.staff && (r.statut === "demande" || r.statut === "attribue") && (
                 <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.7rem", flexWrap: "wrap" }}>
                   <select value={choixAvocat[r.id] || ""} onChange={e => setChoixAvocat({ ...choixAvocat, [r.id]: e.target.value })} style={{ flex: 1, minWidth: 160 }}>
                     <option value="">Attribuer à</option>
@@ -196,11 +211,29 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
                 </div>
               )}
 
-              {(peutValider || peutTerminer || peutAnnuler) && (
+              {/* Client : confirmer le nouveau créneau après un report */}
+              {peutConfirmerReport && (
+                <div style={{ marginTop: "0.7rem", padding: "0.6rem", border: "1px solid #e08a3c", borderRadius: "var(--radius)" }}>
+                  <div style={{ fontSize: "0.85rem", marginBottom: "0.4rem" }}>Ton rendez-vous a été reporté à <strong>{DATE_FR(r.date_rdv)}</strong>. Tu confirmes ce nouveau créneau ?</div>
+                  <button className="btn btn-sm" onClick={() => appel("PATCH", { id: r.id, action: "confirmer_report" })}>Confirmer le nouveau créneau</button>
+                </div>
+              )}
+
+              {/* Avocat / direction : actions de suivi */}
+              {(peutValider || peutDemarrer || peutTerminer || peutAnnuler) && (
                 <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.7rem", flexWrap: "wrap" }}>
-                  {peutValider && <button className="btn btn-sm" onClick={() => appel("PATCH", { id: r.id, action: "valider" })}>Valider le RDV</button>}
+                  {peutValider && <button className="btn btn-sm" onClick={() => appel("PATCH", { id: r.id, action: "valider" })}>Confirmer le RDV</button>}
+                  {peutDemarrer && <button className="btn btn-sm" onClick={() => appel("PATCH", { id: r.id, action: "demarrer" })}>Démarrer (en cours)</button>}
                   {peutTerminer && <button className="btn btn-outline btn-sm" onClick={() => appel("PATCH", { id: r.id, action: "terminer" })}>Marquer terminé</button>}
                   {peutAnnuler && <button className="btn btn-outline btn-sm" onClick={() => appel("PATCH", { id: r.id, action: "annuler" })}>Annuler</button>}
+                </div>
+              )}
+
+              {/* Avocat / direction : reporter à un nouveau créneau */}
+              {peutReporter && (
+                <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.6rem", flexWrap: "wrap" }}>
+                  <input type="datetime-local" value={nouvelleDate[r.id] || ""} onChange={e => setNouvelleDate({ ...nouvelleDate, [r.id]: e.target.value })} style={{ flex: 1, minWidth: 180 }} />
+                  <button className="btn btn-outline btn-sm" onClick={() => nouvelleDate[r.id] && appel("PATCH", { id: r.id, action: "reporter", nouvelle_date: nouvelleDate[r.id] })}>Reporter</button>
                 </div>
               )}
             </div>

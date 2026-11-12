@@ -2,17 +2,26 @@ import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { canRead, canWrite, nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
 import { estDirection, nomStaff } from "@/lib/cabinetAcces";
+import { STATUT_OCCUPE } from "@/lib/rdvStatuts";
 
-// Workflow d'un RDV :
-// demande -> (employés demandent la prise en charge) -> attribue (client choisit, ou direction attribue)
-// -> confirme (l'avocat valide) -> termine. Annulé possible à tout moment par le client, l'avocat ou la direction.
-const STATUT_OCCUPE = ["attribue", "confirme"];
+// Cycle d'un RDV :
+// demande -> attribue (client choisit l'avocat, ou direction attribue) -> confirme (avocat valide)
+// -> en_cours (avocat démarre) -> termine.
+// reporte : l'avocat déplace le RDV, le client doit confirmer le nouveau créneau -> confirme.
+// annule : possible par le client, l'avocat ou la direction.
 
-// Lecture : le staff voit tous les RDV (avec motif et candidatures), le client voit les siens
-// et, pour le calendrier, les créneaux occupés sans aucun détail.
+// Heure actuelle à Paris, au format "AAAA-MM-JJTHH:MM" (même format que les créneaux)
+const maintenantParis = () =>
+  new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })
+    .format(new Date()).replace(" ", "T");
+
+const quand = (iso: string) => new Date(iso).toLocaleString("fr-FR", { dateStyle: "full", timeStyle: "short", timeZone: "Europe/Paris" });
+
+// Lecture : le personnel voit tous les RDV (motif, candidatures). Le client voit les siens
+// et, pour choisir un créneau, seulement les créneaux déjà pris (sans aucun détail).
 export async function GET() {
   try {
-    const r = await requireAnyPermission(["cabinet_rdv"]);
+    const r = await requireAnyPermission(["avocat", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const user = r.user as any;
     const db = r.supabaseAdmin;
@@ -25,7 +34,7 @@ export async function GET() {
 
     let occupes: { date_rdv: string; statut: string }[] = [];
     if (!staff) {
-      const { data: occ } = await db.from("cabinet_rdv").select("date_rdv,statut").in("statut", ["demande", ...STATUT_OCCUPE]);
+      const { data: occ } = await db.from("cabinet_rdv").select("date_rdv,statut").in("statut", STATUT_OCCUPE);
       occupes = (occ || []) as any[];
     }
     return NextResponse.json({ rows: data || [], occupes, staff });
@@ -34,20 +43,20 @@ export async function GET() {
   }
 }
 
-// Création : le client demande un RDV (statut demande). Un employé peut créer un RDV déjà attribué à lui-même.
+// Création : le client réserve un créneau libre (statut demande). Un employé peut créer un RDV déjà attribué à lui-même.
 export async function POST(req: Request) {
   try {
-    const r = await requireAnyPermission(["cabinet_rdv"]);
+    const r = await requireAnyPermission(["avocat", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const user = r.user as any;
     const db = r.supabaseAdmin;
     const b = await req.json();
-    if (!b.date_rdv) return NextResponse.json({ error: "Date requise" }, { status: 400 });
+    if (!b.date_rdv) return NextResponse.json({ error: "Choisis un créneau" }, { status: 400 });
     const staff = canWrite(user, "cabinet_rdv");
 
-    // Créneau déjà pris ?
+    if (String(b.date_rdv).slice(0, 16) < maintenantParis()) return NextResponse.json({ error: "Ce créneau est passé" }, { status: 400 });
     const { data: deja } = await db.from("cabinet_rdv").select("id").eq("date_rdv", b.date_rdv).in("statut", STATUT_OCCUPE).limit(1);
-    if (deja && deja.length) return NextResponse.json({ error: "Ce créneau est déjà pris, choisis-en un autre" }, { status: 400 });
+    if (deja && deja.length) return NextResponse.json({ error: "Ce créneau vient d'être pris, choisis-en un autre" }, { status: 400 });
 
     let discord_id: string = user.discord_id;
     let client_nom: string | null = null;
@@ -74,19 +83,19 @@ export async function POST(req: Request) {
     }]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-    const quand = new Date(b.date_rdv).toLocaleString("fr-FR", { dateStyle: "full", timeStyle: "short" });
-    await notifyDiscord(`**${avocatSoi ? "RDV ajouté" : "Nouvelle demande de RDV"}** : ${client_nom}\nDate : ${quand}${data.prestation ? `\nPrestation : ${data.prestation}` : ""}${data.motif ? `\nMotif : ${data.motif}` : ""}`);
+    await notifyDiscord(`**${avocatSoi ? "RDV ajouté" : "Nouvelle demande de RDV"}** : ${client_nom}\nDate : ${quand(b.date_rdv)}${data.prestation ? `\nPrestation : ${data.prestation}` : ""}${data.motif ? `\nMotif : ${data.motif}` : ""}`);
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
   }
 }
 
-// Actions sur un RDV, selon action :
-// candidature (employé), choisir (client), attribuer (direction), valider (avocat), terminer, annuler
+// Actions sur un RDV (champ action) :
+// candidature (employé), choisir (client), attribuer (direction), valider (avocat),
+// demarrer (avocat), reporter (avocat/direction), confirmer_report (client), terminer, annuler
 export async function PATCH(req: Request) {
   try {
-    const r = await requireAnyPermission(["cabinet_rdv"]);
+    const r = await requireAnyPermission(["avocat", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const user = r.user as any;
     const db = r.supabaseAdmin;
@@ -139,12 +148,36 @@ export async function PATCH(req: Request) {
     if (b.action === "valider") {
       if (!(assigne || direction) || rdv.statut !== "attribue") return interdit();
       const row = await maj({ statut: "confirme" });
-      await notifyDiscord(`**RDV confirmé** : ${rdv.client_nom} avec ${rdv.avocat_nom || nom}`);
+      await notifyDiscord(`**RDV confirmé** : ${rdv.client_nom} avec ${rdv.avocat_nom || nom} le ${quand(rdv.date_rdv)}`);
+      return NextResponse.json(row);
+    }
+
+    if (b.action === "demarrer") {
+      if (!(assigne || direction) || rdv.statut !== "confirme") return interdit();
+      return NextResponse.json(await maj({ statut: "en_cours" }));
+    }
+
+    if (b.action === "reporter") {
+      if (!(assigne || direction) || !["attribue", "confirme", "en_cours", "reporte"].includes(rdv.statut)) return interdit();
+      const nouvelle = String(b.nouvelle_date || "");
+      if (!nouvelle) return NextResponse.json({ error: "Choisis le nouveau créneau" }, { status: 400 });
+      if (nouvelle.slice(0, 16) < maintenantParis()) return NextResponse.json({ error: "Ce créneau est passé" }, { status: 400 });
+      const { data: pris } = await db.from("cabinet_rdv").select("id").eq("date_rdv", nouvelle).in("statut", STATUT_OCCUPE).neq("id", b.id).limit(1);
+      if (pris && pris.length) return NextResponse.json({ error: "Ce créneau est déjà pris" }, { status: 400 });
+      const row = await maj({ date_precedente: rdv.date_rdv, date_rdv: nouvelle, statut: "reporte", reporte_par: nom });
+      await notifyDiscord(`**RDV reporté** : ${rdv.client_nom}\nAncien créneau : ${quand(rdv.date_rdv)}\nNouveau créneau : ${quand(nouvelle)} (par ${nom}) — le client doit confirmer`);
+      return NextResponse.json(row);
+    }
+
+    if (b.action === "confirmer_report") {
+      if (!client || rdv.statut !== "reporte") return interdit();
+      const row = await maj({ statut: "confirme" });
+      await notifyDiscord(`**Report confirmé par le client** : ${rdv.client_nom} le ${quand(rdv.date_rdv)}`);
       return NextResponse.json(row);
     }
 
     if (b.action === "terminer") {
-      if (!(assigne || direction) || rdv.statut !== "confirme") return interdit();
+      if (!(assigne || direction) || !["confirme", "en_cours"].includes(rdv.statut)) return interdit();
       return NextResponse.json(await maj({ statut: "termine" }));
     }
 
