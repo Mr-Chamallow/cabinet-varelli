@@ -41,7 +41,8 @@ export async function diffuser(canal: string, payload: any) {
 export async function accesDossier(db: any, user: any, dossierId: string) {
   const { data: dossier } = await db.from("cabinet_dossiers").select("*").eq("id", dossierId).maybeSingle();
   if (!dossier) return { dossier: null, client: false, direction: false, secretaire: false, assigne: false, peutVoir: false, peutGerer: false };
-  const client = dossier.client_discord_id === user.discord_id;
+  const { data: coClient } = await db.from("cabinet_dossier_clients").select("dossier_id").eq("dossier_id", dossierId).eq("client_discord_id", user.discord_id).maybeSingle();
+  const client = dossier.client_discord_id === user.discord_id || !!coClient;
   const direction = estDirection(user);
   const secretaire = estSecretaire(user);
   let assigne = false;

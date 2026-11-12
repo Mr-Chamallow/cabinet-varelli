@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import FilMessages from "@/components/cabinet/FilMessages";
 import AttributionDossier from "@/components/cabinet/AttributionDossier";
+import ClientsDossier from "@/components/cabinet/ClientsDossier";
 import { montant } from "@/lib/montant";
 import { supprimerDefinitivement } from "@/lib/suppression";
 
@@ -166,7 +167,10 @@ export default function DossierChat({ id, moiId, staff, direction, compta }: Pro
 
       {/* Panneau : Membres */}
       {onglet === "membres" && staff && (
-        <AttributionDossier id={id} direction={gerer} acces={dossier.cabinet_dossier_acces || []} onChange={() => { charger(); avertirListe(); }} />
+        <>
+          <AttributionDossier id={id} direction={gerer} acces={dossier.cabinet_dossier_acces || []} onChange={() => { charger(); avertirListe(); }} />
+          <ClientsDossier id={id} peutGerer={gerer} onChange={() => { charger(); avertirListe(); }} />
+        </>
       )}
 
       {/* Panneau : Factures */}

@@ -16,7 +16,8 @@ export async function GET() {
       const { data: vu } = await db.from("cabinet_vus").select("vu_at").eq("discord_id", user.discord_id).eq("section", "messages-client").maybeSingle();
       const depuis = vu?.vu_at || "1970-01-01T00:00:00Z";
       const { data: dossiers } = await db.from("cabinet_dossiers").select("id").eq("client_discord_id", user.discord_id);
-      const ids = (dossiers || []).map((d: any) => d.id);
+      const { data: co } = await db.from("cabinet_dossier_clients").select("dossier_id").eq("client_discord_id", user.discord_id);
+      const ids = [...new Set([...(dossiers || []).map((d: any) => d.id), ...(co || []).map((x: any) => x.dossier_id)])];
       let messages = 0;
       if (ids.length) {
         const { count } = await db.from("cabinet_messages").select("id", { count: "exact", head: true })

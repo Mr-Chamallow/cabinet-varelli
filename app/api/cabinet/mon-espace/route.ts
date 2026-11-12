@@ -12,8 +12,10 @@ export async function GET() {
 
     const { data: masques } = await db.from("cabinet_dossier_masques").select("dossier_id").eq("discord_id", moi);
     const caches = (masques || []).map((m: any) => m.dossier_id);
+    const { data: coRows } = await db.from("cabinet_dossier_clients").select("dossier_id").eq("client_discord_id", moi);
+    const coIds = (coRows || []).map((x: any) => x.dossier_id);
     let dq = db.from("cabinet_dossiers").select("id,titre,statut,prestation,created_at")
-      .eq("client_discord_id", moi).neq("statut", "archive").order("created_at", { ascending: false }).limit(30);
+      .or(coIds.length ? `client_discord_id.eq.${moi},id.in.(${coIds.join(",")})` : `client_discord_id.eq.${moi}`).neq("statut", "archive").order("created_at", { ascending: false }).limit(30);
     if (caches.length) dq = dq.not("id", "in", `(${caches.join(",")})`);
 
     const [{ data: dossiers }, { data: factures }, { data: rdv }] = await Promise.all([

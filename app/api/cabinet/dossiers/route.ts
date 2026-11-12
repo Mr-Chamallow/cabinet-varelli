@@ -21,7 +21,9 @@ export async function GET(req: Request) {
     if (id) q = q.eq("id", id);
 
     if (!estStaff(user)) {
-      q = q.eq("client_discord_id", user.discord_id);
+      const { data: co } = await db.from("cabinet_dossier_clients").select("dossier_id").eq("client_discord_id", user.discord_id);
+      const coIds = (co || []).map((x: any) => x.dossier_id);
+      q = coIds.length ? q.or(`client_discord_id.eq.${user.discord_id},id.in.(${coIds.join(",")})`) : q.eq("client_discord_id", user.discord_id);
     } else if (!estDirection(user) && !estSecretaire(user)) {
       const { data: acces } = await db.from("cabinet_dossier_acces").select("dossier_id").eq("avocat_discord_id", user.discord_id);
       const ids = (acces || []).map((a: any) => a.dossier_id);

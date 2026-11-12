@@ -324,3 +324,14 @@ alter table cabinet_depenses enable row level security;
 alter table cabinet_versements enable row level security;
 alter table cabinet_avoirs enable row level security;
 alter table cabinet_devis enable row level security;
+
+-- ---------- Clients supplémentaires d'un dossier (ex : deux personnes pour un même dossier) ----------
+create table if not exists cabinet_dossier_clients (
+  dossier_id uuid not null references cabinet_dossiers(id) on delete cascade,
+  client_discord_id text not null,
+  client_nom text,
+  ajoute_par text,
+  created_at timestamptz not null default now(),
+  primary key (dossier_id, client_discord_id)
+);
+alter table cabinet_dossier_clients enable row level security;
