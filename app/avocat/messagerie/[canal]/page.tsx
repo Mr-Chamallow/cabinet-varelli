@@ -13,6 +13,14 @@ export default function Page() {
   const { canal } = useParams<{ canal: string }>();
   const [titre, setTitre] = useState("Messagerie");
 
+  // Marque le canal comme lu à l'ouverture et à la fermeture (les messages reçus pendant la lecture restent comptés après)
+  useEffect(() => {
+    if (!canal || canal.startsWith("plainte-") || canal.startsWith("dossier-")) return;
+    const marquer = () => fetch("/api/cabinet/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ section: `canal:${canal}` }), keepalive: true }).catch(() => {});
+    marquer();
+    return () => { marquer(); };
+  }, [canal]);
+
   // Titre : nom du salon, du bureau de l'avocat ou de la plainte
   useEffect(() => {
     if (!canal) return;

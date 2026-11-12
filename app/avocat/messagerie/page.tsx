@@ -61,7 +61,7 @@ function Liste() {
         <div className="mz-section-titre">Salons</div>
         <div className="mz-liste">
           {SALONS.map(s => (
-            <Ligne key={s.slug} href={`/avocat/messagerie/${s.slug}`} icone={s.icone} nom={s.nom} desc={s.desc} />
+            <Ligne key={s.slug} href={`/avocat/messagerie/${s.slug}`} icone={s.icone} nom={s.nom} desc={s.desc} badge={notifs.canaux?.[s.slug] || 0} />
           ))}
         </div>
       </section>
@@ -86,7 +86,9 @@ function Liste() {
                 <div className="mz-nom">Bureau de {s.nom}</div>
                 {s.role && <div className="mz-desc">{s.role}</div>}
               </div>
-              <span className="mz-fleche">›</span>
+              {(notifs.canaux?.[`bureau-${s.discord_id}`] || 0) > 0
+                ? <span className="mz-badge">{notifs.canaux[`bureau-${s.discord_id}`]}</span>
+                : <span className="mz-fleche">›</span>}
             </Link>
           ))}
         </div>

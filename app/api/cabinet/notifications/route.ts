@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
-import { estDirection, estStaff, topicPour } from "@/lib/cabinetAcces";
+import { CABINET_STAFF_ROLES, estDirection, estStaff, topicPour } from "@/lib/cabinetAcces";
 
 // Pastilles : plaintes nouvelles (direction), votes à traiter (employés), messages du cabinet non lus (client)
 export async function GET() {
@@ -39,7 +39,21 @@ export async function GET() {
     const { data: votes } = await db.from("cabinet_votes").select("id, cabinet_votes_reponses(voter_discord_id)").eq("statut", "ouvert");
     const aVoter = (votes || []).filter((v: any) => !(v.cabinet_votes_reponses || []).some((x: any) => x.voter_discord_id === user.discord_id)).length;
 
-    return NextResponse.json({ plaintes, votes: aVoter, messages: 0, topics });
+    // Non-lus de la messagerie : salons et bureaux (un canal sans visite antérieure compte 0 jusqu'à la première ouverture)
+    const { data: staffRows } = await db.from("site_logins").select("discord_id").in("site_role", CABINET_STAFF_ROLES);
+    const canaux: Record<string, string> = { "salon-general": "salon:general", "salon-juridique": "salon:juridique" };
+    for (const s of staffRows || []) if (s.discord_id) canaux[`bureau-${s.discord_id}`] = `bureau:${s.discord_id}`;
+    const { data: vus } = await db.from("cabinet_vus").select("section,vu_at").eq("discord_id", user.discord_id).like("section", "canal:%");
+    const vuPar: Record<string, string> = Object.fromEntries((vus || []).map((v: any) => [v.section.slice(6), v.vu_at]));
+    const compteurs = await Promise.all(Object.entries(canaux).map(async ([slug, canal]) => {
+      const depuis = vuPar[slug];
+      if (!depuis) return [slug, 0] as const;
+      const { count } = await db.from("cabinet_internes").select("id", { count: "exact", head: true })
+        .eq("canal", canal).gt("created_at", depuis).neq("auteur_discord_id", user.discord_id);
+      return [slug, count || 0] as const;
+    }));
+    const messagerie = compteurs.reduce((total, [, n]) => total + n, 0);
+    return NextResponse.json({ plaintes, votes: aVoter, messages: 0, canaux: Object.fromEntries(compteurs), messagerie, topics });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
   }
@@ -52,7 +66,8 @@ export async function POST(req: Request) {
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const user = r.user as any;
     const b = await req.json();
-    if (!["plaintes", "messages-client"].includes(b.section)) return NextResponse.json({ error: "Section inconnue" }, { status: 400 });
+    const canalOk = typeof b.section === "string" && /^canal:(salon-general|salon-juridique|bureau-[A-Za-z0-9_-]+)$/.test(b.section);
+    if (!["plaintes", "messages-client"].includes(b.section) && !canalOk) return NextResponse.json({ error: "Section inconnue" }, { status: 400 });
     await r.supabaseAdmin.from("cabinet_vus").upsert([{ discord_id: user.discord_id, section: b.section, vu_at: new Date().toISOString() }], { onConflict: "discord_id,section" });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
