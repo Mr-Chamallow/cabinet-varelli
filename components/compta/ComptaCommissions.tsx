@@ -4,6 +4,7 @@ import { montant } from "@/lib/montant";
 import { champ, dateFr } from "@/components/compta/commun";
 import { semaineCourante } from "@/lib/compta";
 import { weekStartOf } from "@/lib/weekStart";
+import { dateISO } from "@/lib/dates";
 
 const MOYENS = ["Virement", "Espèces", "Autre"];
 
@@ -15,7 +16,7 @@ export default function ComptaCommissions() {
   const [staff, setStaff] = useState<any[]>([]);
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [erreur, setErreur] = useState("");
-  const [form, setForm] = useState({ employe_discord_id: "", montant: "", moyen: "Virement", date_versement: new Date().toISOString().slice(0, 10) });
+  const [form, setForm] = useState({ employe_discord_id: "", montant: "", moyen: "Virement", date_versement: dateISO() });
 
   const charger = () => {
     fetch(`/api/cabinet/compta/resume?semaine=${semaine}`).then(r => r.json()).then(d => d.error ? setErreur(d.error) : setResume(d));

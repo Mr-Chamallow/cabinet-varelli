@@ -6,6 +6,7 @@ import { supprimerDefinitivement } from "@/lib/suppression";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
 import { LignesEditor, LigneForm, LIGNE_VIDE, MODES, STATUTS, Stat, champ, dateFr, totalLignes, versPayload } from "@/components/compta/commun";
+import { dansJours } from "@/lib/dates";
 
 // Factures : création, encaissements (partiels ou totaux), avoirs, historique, export
 export default function ComptaFactures() {
@@ -21,7 +22,7 @@ export default function ComptaFactures() {
   const [dossierId, setDossierId] = useState("");
   const [lignes, setLignes] = useState<LigneForm[]>([{ ...LIGNE_VIDE }]);
   const [tva, setTva] = useState("0");
-  const [echeance, setEcheance] = useState("");
+  const [echeance, setEcheance] = useState(() => dansJours(7));
   const [note, setNote] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [encaissement, setEncaissement] = useState<{ id: string; montant: string; mode: string } | null>(null);
@@ -67,7 +68,7 @@ export default function ComptaFactures() {
     const d = await r.json();
     setEnvoi(false);
     if (!r.ok) return setErreur(d.error || "Erreur");
-    setLignes([{ ...LIGNE_VIDE }]); setTva("0"); setEcheance(""); setNote(""); setDossierId("");
+    setLignes([{ ...LIGNE_VIDE }]); setTva("0"); setEcheance(dansJours(7)); setNote(""); setDossierId("");
     charger();
   }
 

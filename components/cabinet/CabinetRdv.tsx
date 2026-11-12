@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import CalendrierRdv, { CreneauRdv } from "@/components/cabinet/CalendrierRdv";
+import { dateHeureLocale } from "@/lib/dates";
 
 const STATUT: Record<string, { txt: string; color: string }> = {
   demande: { txt: "En attente de prise en charge", color: "#e0b050" },
@@ -29,7 +30,7 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
   const [staffListe, setStaffListe] = useState<any[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
-  const [form, setForm] = useState({ date_rdv: "", motif: "", prestation: "", discord_id: "", client_nom: "" });
+  const [form, setForm] = useState({ date_rdv: dateHeureLocale(), motif: "", prestation: "", discord_id: "", client_nom: "" });
   const [ouvrirForm, setOuvrirForm] = useState(false);
   const [choixAvocat, setChoixAvocat] = useState<Record<string, string>>({});
 
@@ -55,7 +56,7 @@ export default function CabinetRdv({ employe, direction, moiId }: Props) {
 
   const demander = async () => {
     const ok = await appel("POST", form);
-    if (ok) { setOuvrirForm(false); setForm({ date_rdv: "", motif: "", prestation: "", discord_id: "", client_nom: "" }); }
+    if (ok) { setOuvrirForm(false); setForm({ date_rdv: dateHeureLocale(), motif: "", prestation: "", discord_id: "", client_nom: "" }); }
   };
 
   // Clic sur une case verte du calendrier : pré-remplit la date et ouvre le formulaire

@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { montant } from "@/lib/montant";
 import { champ, dateFr } from "@/components/compta/commun";
+import { dateISO, heureISO } from "@/lib/dates";
 
 // Comparutions immédiates : suivi séparé de la compta client (payées par le gouvernement).
 type Ligne = {
@@ -15,12 +16,12 @@ const STATUTS: { k: string; label: string; couleur: string }[] = [
   { k: "refusee", label: "Refusée", couleur: "#f87171" },
 ];
 const statutDe = (k: string) => STATUTS.find(s => s.k === k) || STATUTS[1];
-const VIDE = { date_audience: new Date().toISOString().slice(0, 10), heure: "09:00", tribunal: "", client_nom: "", chefs: "", juge_proc: "", matricules_officiers: "", montant: "0", statut: "prise_en_charge", notes: "" };
+const videForm = () => ({ date_audience: dateISO(), heure: heureISO(), tribunal: "", client_nom: "", chefs: "", juge_proc: "", matricules_officiers: "", montant: "0", statut: "prise_en_charge", notes: "" });
 
 export default function Comparutions() {
   const [rows, setRows] = useState<Ligne[] | null>(null);
   const [infractions, setInfractions] = useState<string[]>([]);
-  const [form, setForm] = useState<any>(VIDE);
+  const [form, setForm] = useState<any>(videForm);
   const [editId, setEditId] = useState<string | null>(null);
   const [filtre, setFiltre] = useState("tous");
   const [erreur, setErreur] = useState("");
@@ -46,7 +47,7 @@ export default function Comparutions() {
     });
     const d = await res.json();
     if (d.error) return setErreur(d.error);
-    setForm(VIDE); setEditId(null); setOuvert(false); charger();
+    setForm(videForm()); setEditId(null); setOuvert(false); charger();
   };
 
   const changerStatut = async (id: string, statut: string) => {
@@ -72,7 +73,7 @@ export default function Comparutions() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
-        <button className="btn btn-gold btn-sm" onClick={() => { setForm(VIDE); setEditId(null); setOuvert(!ouvert || editId !== null); }}>
+        <button className="btn btn-gold btn-sm" onClick={() => { setForm(videForm()); setEditId(null); setOuvert(!ouvert || editId !== null); }}>
           {ouvert && !editId ? "Fermer" : "+ Nouvelle comparution"}
         </button>
         <span className="cab-muted" style={{ fontSize: "0.85rem" }}>Total pris en charge : <strong style={{ color: "#5fb878" }}>{montant(totalPec)}</strong></span>
@@ -112,7 +113,7 @@ export default function Comparutions() {
           </div>
           <div style={{ gridColumn: "1 / -1", display: "flex", gap: "0.5rem" }}>
             <button className="btn btn-gold btn-sm" type="submit">{editId ? "Enregistrer" : "Ajouter"}</button>
-            <button className="btn btn-outline btn-sm" type="button" onClick={() => { setForm(VIDE); setEditId(null); setOuvert(false); }}>Annuler</button>
+            <button className="btn btn-outline btn-sm" type="button" onClick={() => { setForm(videForm()); setEditId(null); setOuvert(false); }}>Annuler</button>
           </div>
         </form>
       )}

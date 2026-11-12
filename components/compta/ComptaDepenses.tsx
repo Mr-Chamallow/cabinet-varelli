@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
 import { Stat, dateFr } from "@/components/compta/commun";
+import { dateISO } from "@/lib/dates";
 
 const CATEGORIES = ["Fournitures", "Loyer", "Abonnements", "Transport", "Frais bancaires", "Matériel", "Autre"];
 
@@ -9,7 +10,7 @@ const CATEGORIES = ["Fournitures", "Loyer", "Abonnements", "Transport", "Frais b
 export default function ComptaDepenses() {
   const [rows, setRows] = useState<any[]>([]);
   const [erreur, setErreur] = useState("");
-  const [form, setForm] = useState({ date_depense: new Date().toISOString().slice(0, 10), categorie: "Fournitures", libelle: "", montant: "" });
+  const [form, setForm] = useState({ date_depense: dateISO(), categorie: "Fournitures", libelle: "", montant: "" });
 
   const charger = () => fetch("/api/cabinet/compta/depenses").then(r => r.json()).then(d => d.error ? setErreur(d.error) : setRows(d.rows || []));
   useEffect(() => { charger(); }, []);
