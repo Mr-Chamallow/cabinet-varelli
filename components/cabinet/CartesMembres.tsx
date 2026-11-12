@@ -63,7 +63,6 @@ export default function CartesMembres({ limite }: Props) {
               )}
               {m.description && <p className="cab-muted" style={{ margin: 0 }}>{m.description}</p>}
               {!vacant && <div className="cab-muted" style={{ fontSize: ".7rem", marginTop: ".8rem" }}>Cliquer pour voir le diplôme</div>}
-              <div className="cab-sceau">CV</div>
             </div>
           );
         })}

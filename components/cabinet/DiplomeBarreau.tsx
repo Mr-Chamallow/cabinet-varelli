@@ -32,7 +32,6 @@ export default function DiplomeBarreau({ nom, poste, barreau, numero, annee, spe
     <div className="cab-diplome-grand" style={{ position: "relative" }}>
       <button className="cab-fermer" onClick={onFermer} aria-label="Fermer">×</button>
       <Coin pos="tl" /><Coin pos="tr" /><Coin pos="bl" /><Coin pos="br" />
-      <div className="cab-filigrane">CV</div>
 
       <div className="cab-diplome-haut">Cabinet Varelli & Associés</div>
       <div className="cab-ornement-diplome">═════════ ◆ ═════════</div>
@@ -73,7 +72,6 @@ export default function DiplomeBarreau({ nom, poste, barreau, numero, annee, spe
           <text fill="#2a1c06" fontFamily="Cinzel, serif" fontSize="8.4" letterSpacing="1.4">
             <textPath href={`#cercle${uid}`}>{texteSceau}</textPath>
           </text>
-          <text x="70" y="82" textAnchor="middle" fontFamily="Playfair Display, serif" fontSize="34" fontWeight="700" fill="#2a1c06">CV</text>
         </svg>
         <div className="cab-signature-bloc">
           <div className="cab-signature">{poste || "Cabinet Varelli & Associés"}</div>
