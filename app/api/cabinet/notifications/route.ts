@@ -53,7 +53,15 @@ export async function GET() {
       return [slug, count || 0] as const;
     }));
     const messagerie = compteurs.reduce((total, [, n]) => total + n, 0);
-    return NextResponse.json({ plaintes, votes: aVoter, messages: 0, canaux: Object.fromEntries(compteurs), messagerie, topics });
+    // Aperçu : dernier message de chaque canal
+    const derniers = await Promise.all(Object.entries(canaux).map(async ([slug, canal]) => {
+      const { data } = await db.from("cabinet_internes").select("auteur_nom,contenu,fichier_nom,image_url,created_at")
+        .eq("canal", canal).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (!data) return [slug, null] as const;
+      const texte = data.contenu ? data.contenu.slice(0, 80) : data.fichier_nom ? `📄 ${data.fichier_nom}` : data.image_url ? "🖼️ Image" : "";
+      return [slug, { auteur: data.auteur_nom, texte, created_at: data.created_at }] as const;
+    }));
+    return NextResponse.json({ plaintes, votes: aVoter, messages: 0, canaux: Object.fromEntries(compteurs), derniers: Object.fromEntries(derniers), messagerie, topics });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
   }

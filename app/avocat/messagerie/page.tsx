@@ -53,6 +53,12 @@ function Liste() {
   useTempsReel(topics.plaintes, charger);
   useTempsReel(topics.votes, charger);
 
+  // Aperçu du dernier message : « Auteur : texte » (vide si aucun message)
+  const apercu = (slug: string) => {
+    const d = notifs.derniers?.[slug];
+    return d ? `${d.auteur} : ${d.texte}` : "";
+  };
+
   return (
     <div className="mz">
       <style>{CSS}</style>
@@ -61,7 +67,7 @@ function Liste() {
         <div className="mz-section-titre">Salons</div>
         <div className="mz-liste">
           {SALONS.map(s => (
-            <Ligne key={s.slug} href={`/avocat/messagerie/${s.slug}`} icone={s.icone} nom={s.nom} desc={s.desc} badge={notifs.canaux?.[s.slug] || 0} />
+            <Ligne key={s.slug} href={`/avocat/messagerie/${s.slug}`} icone={s.icone} nom={s.nom} desc={apercu(s.slug) || s.desc} badge={notifs.canaux?.[s.slug] || 0} />
           ))}
         </div>
       </section>
@@ -84,7 +90,7 @@ function Liste() {
               <div className="mz-bureau-avatar">{initiales(s.nom)}</div>
               <div className="mz-texte">
                 <div className="mz-nom">Bureau de {s.nom}</div>
-                {s.role && <div className="mz-desc">{s.role}</div>}
+                <div className="mz-desc">{apercu(`bureau-${s.discord_id}`) || s.role}</div>
               </div>
               {(notifs.canaux?.[`bureau-${s.discord_id}`] || 0) > 0
                 ? <span className="mz-badge">{notifs.canaux[`bureau-${s.discord_id}`]}</span>
