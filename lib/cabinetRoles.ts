@@ -18,7 +18,8 @@ export function estSecretaireUser(user: any): boolean {
 }
 
 // Accès au bureau : comptabilité, factures, devis, tableau de bord (lecture seule pour la secrétaire), journal (patron seul)
-export const ROLE_PATRON = "Associé / Patron";
+// Le patron du bureau = Associé Gérant (compta, journal, suppression des comparutions)
+export const ROLE_PATRON = "Associé Gérant";
 export const ROLES_BUREAU = [ROLE_PATRON, ROLE_SECRETAIRE];
 export const roleDeUser = (user: any): string => roleDe(user);
 export const estPatronUser = (user: any): boolean => roleDe(user) === ROLE_PATRON;
