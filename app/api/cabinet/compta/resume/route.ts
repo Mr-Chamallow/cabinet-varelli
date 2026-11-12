@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { PERMS_BUREAU } from "@/lib/cabinetRoles";
-import { estCompta } from "@/lib/cabinetAcces";
+import { estResumeCompta } from "@/lib/cabinetAcces";
 import { calculerResume, fenetreSemaine, semaineCourante, tauxParId } from "@/lib/compta";
 
 const cellule = (v: any) => {
@@ -13,7 +13,7 @@ const cellule = (v: any) => {
 export async function GET(req: Request) {
   try {
     const r = await requireAnyPermission(PERMS_BUREAU);
-    if (!r.authorized || !estCompta(r.user)) return NextResponse.json({ error: "Réservé à la comptabilité" }, { status: 403 });
+    if (!r.authorized || !estResumeCompta(r.user)) return NextResponse.json({ error: "Réservé à la comptabilité" }, { status: 403 });
     const db = r.supabaseAdmin;
     const params = new URL(req.url).searchParams;
     const semaine = /^\d{4}-\d{2}-\d{2}$/.test(params.get("semaine") || "") ? params.get("semaine")! : semaineCourante();

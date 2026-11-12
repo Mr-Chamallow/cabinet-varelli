@@ -2,7 +2,7 @@ import { MENTIONS_CABINET } from "@/lib/factureMentions";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { PERMS_BUREAU } from "@/lib/cabinetRoles";
-import { estCompta } from "@/lib/cabinetAcces";
+import { estFacturation } from "@/lib/cabinetAcces";
 import { nomAffiche } from "@/lib/cabinetServer";
 import { calculer, historiser, nettoyerLignes, numeroDevis, numeroFacture } from "@/lib/factures";
 import { journaliser } from "@/lib/journal";
@@ -10,7 +10,7 @@ import { journaliser } from "@/lib/journal";
 // Devis : créés par la comptabilité, puis acceptés et transformés en facture
 async function controle() {
   const r = await requireAnyPermission(PERMS_BUREAU);
-  if (!r.authorized || !estCompta(r.user)) return null;
+  if (!r.authorized || !estFacturation(r.user)) return null;
   return r;
 }
 

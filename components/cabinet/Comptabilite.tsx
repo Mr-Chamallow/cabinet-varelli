@@ -1,27 +1,28 @@
 "use client";
 import { useState } from "react";
-import ComptaFactures from "@/components/compta/ComptaFactures";
 import ComptaDepenses from "@/components/compta/ComptaDepenses";
 import ComptaCommissions from "@/components/compta/ComptaCommissions";
 import ComptaBilan from "@/components/compta/ComptaBilan";
+import { hasPermission } from "@/lib/auth";
 
+// Chaque onglet a sa propre permission (Administration → Rôles & Permissions)
 const ONGLETS = [
-  { id: "factures", label: "Factures", composant: ComptaFactures },
-  { id: "depenses", label: "Dépenses", composant: ComptaDepenses },
-  { id: "commissions", label: "Commissions", composant: ComptaCommissions },
-  { id: "bilan", label: "Bilan", composant: ComptaBilan },
+  { id: "depenses", label: "Dépenses", perm: "cabinet_depenses", composant: ComptaDepenses },
+  { id: "commissions", label: "Commissions", perm: "cabinet_commissions", composant: ComptaCommissions },
+  { id: "bilan", label: "Bilan", perm: "cabinet_bilan", composant: ComptaBilan },
 ];
 
-// Comptabilité du cabinet : réservée à la permission "Comptabilité"
-export default function Comptabilite() {
-  const [onglet, setOnglet] = useState("factures");
-  const actif = ONGLETS.find(o => o.id === onglet) || ONGLETS[0];
+export default function Comptabilite({ user }: { user: any }) {
+  const visibles = ONGLETS.filter(o => hasPermission(user, o.perm));
+  const [onglet, setOnglet] = useState(visibles[0]?.id || "");
+  const actif = visibles.find(o => o.id === onglet) || visibles[0];
+  if (!actif) return <div className="empty-state"><div className="empty-title">Aucun onglet autorisé pour ton rôle</div></div>;
   const Composant = actif.composant;
   return (
     <div>
       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-        {ONGLETS.map(o => (
-          <button key={o.id} className={`btn btn-sm ${onglet === o.id ? "" : "btn-outline"}`} onClick={() => setOnglet(o.id)}>{o.label}</button>
+        {visibles.map(o => (
+          <button key={o.id} className={`btn btn-sm ${actif.id === o.id ? "" : "btn-outline"}`} onClick={() => setOnglet(o.id)}>{o.label}</button>
         ))}
       </div>
       <Composant />

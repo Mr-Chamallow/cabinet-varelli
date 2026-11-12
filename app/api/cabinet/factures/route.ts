@@ -1,9 +1,9 @@
 import { MENTIONS_CABINET } from "@/lib/factureMentions";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
-import { estBureauUser, PERMS_BUREAU } from "@/lib/cabinetRoles";
+import { PERMS_BUREAU } from "@/lib/cabinetRoles";
 import { nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
-import { diffuser, estStaff, topicPour } from "@/lib/cabinetAcces";
+import { diffuser, estFacturation, estStaff, topicPour } from "@/lib/cabinetAcces";
 import { calculer, historiser, nettoyerLignes, numeroFacture } from "@/lib/factures";
 import { montant } from "@/lib/montant";
 import { journaliser } from "@/lib/journal";
@@ -12,7 +12,7 @@ import { journaliser } from "@/lib/journal";
 export async function GET() {
   try {
     const r = await requireAnyPermission(PERMS_BUREAU);
-    if (!r.authorized || !estBureauUser(r.user)) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    if (!r.authorized || !estFacturation(r.user)) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     if (!estStaff(r.user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const { data, error } = await r.supabaseAdmin.from("cabinet_factures").select("*").order("created_at", { ascending: false }).limit(500);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -34,7 +34,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const r = await requireAnyPermission(PERMS_BUREAU);
-    if (!r.authorized || !estBureauUser(r.user)) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    if (!r.authorized || !estFacturation(r.user)) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     if (!estStaff(r.user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const user = r.user as any;
     const db = r.supabaseAdmin;

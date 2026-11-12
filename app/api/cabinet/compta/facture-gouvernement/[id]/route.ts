@@ -1,5 +1,6 @@
 import { requireAnyPermission } from "@/lib/serverAuth";
-import { estBureauUser, PERMS_BUREAU } from "@/lib/cabinetRoles";
+import { estBilan } from "@/lib/cabinetAcces";
+import { PERMS_BUREAU } from "@/lib/cabinetRoles";
 
 const echap = (s: any) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
 const montantTxt = (n: number) => `${Math.round(Number(n) || 0).toLocaleString("fr-FR")} $`;
@@ -9,7 +10,7 @@ const dateFr = (s?: string | null) => (s ? new Date(s + (s.length === 10 ? "T12:
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   const r = await requireAnyPermission(PERMS_BUREAU);
-  if (!r.authorized || !estBureauUser(r.user)) return new Response("Réservé au bureau", { status: 403 });
+  if (!r.authorized || !estBilan(r.user)) return new Response("Réservé au bureau", { status: 403 });
   const { data: f } = await r.supabaseAdmin.from("cabinet_factures_gouvernement").select("*").eq("id", id).maybeSingle();
   if (!f) return new Response("Facture introuvable", { status: 404 });
   const lignes = (f.detail || []).map((l: any) => `<tr><td>${echap(dateFr(l.date))} ${echap(l.heure || "")}</td><td>${echap(l.tribunal || "")}</td><td>${echap(l.client)}</td><td>${echap(l.chefs || "")}</td><td>${echap(l.avocat || "")}</td><td class="r">${montantTxt(l.honoraire)}</td></tr>`).join("");

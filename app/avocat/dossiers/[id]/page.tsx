@@ -1,6 +1,5 @@
 "use client";
 import { useParams } from "next/navigation";
-import { estBureauUser } from "@/lib/cabinetRoles";
 import DossierChat from "@/components/cabinet/DossierChat";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
@@ -16,7 +15,7 @@ export default function Page() {
       moiId={(user as any).discord_id}
       staff={estStaffUser(user)}
       direction={hasPermission(user, "cabinet_attribution")}
-      compta={estBureauUser(user)}
+      compta={hasPermission(user, "cabinet_facturation")}
     />
   );
 }

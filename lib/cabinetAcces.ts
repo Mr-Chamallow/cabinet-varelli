@@ -12,7 +12,16 @@ export const SALONS = ["general", "juridique"] as const;
 export const estStaff = (user: any) => estStaffUser(user);
 export const estSecretaire = (user: any) => estStaffUser(user) && estSecretaireUser(user);
 export const estDirection = (user: any) => hasPermission(appUser(user), "cabinet_attribution");
-export const estCompta = (user: any) => estBureauUser(user);
+// Permissions par onglet (configurables dans Administration → Rôles & Permissions)
+const perm = (user: any, p: string) => hasPermission(appUser(user), p);
+export const estCompta = (user: any) => perm(user, "cabinet_compta");          // grades et % (admin)
+export const estFacturation = (user: any) => perm(user, "cabinet_facturation"); // devis & factures
+export const estDepenses = (user: any) => perm(user, "cabinet_depenses");
+export const estCommissions = (user: any) => perm(user, "cabinet_commissions");
+export const estBilan = (user: any) => perm(user, "cabinet_bilan");
+export const estResumeCompta = (user: any) => estBilan(user) || estCommissions(user);
+export const estTableauBord = (user: any) => perm(user, "cabinet_direction");
+export const estJournal = (user: any) => perm(user, "cabinet_journal");
 export const estPatron = (user: any) => estPatronUser(user);
 
 // Nom de canal de temps réel : impossible à deviner sans passer par l'API (signé avec un secret serveur)

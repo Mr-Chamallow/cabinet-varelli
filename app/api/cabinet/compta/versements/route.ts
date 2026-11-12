@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { PERMS_BUREAU } from "@/lib/cabinetRoles";
-import { estCompta, nomStaff } from "@/lib/cabinetAcces";
+import { estCommissions, nomStaff } from "@/lib/cabinetAcces";
 import { nomAffiche } from "@/lib/cabinetServer";
 import { journaliser } from "@/lib/journal";
 
 // Versements de commissions aux employés. Réservé à la comptabilité.
 async function controle() {
   const r = await requireAnyPermission(PERMS_BUREAU);
-  if (!r.authorized || !estCompta(r.user)) return null;
+  if (!r.authorized || !estCommissions(r.user)) return null;
   return r;
 }
 

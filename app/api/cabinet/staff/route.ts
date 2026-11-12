@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { CABINET_STAFF_ROLES } from "@/lib/cabinetAcces";
+import { gradeParRole } from "@/lib/grades";
 
 // Liste des avocats et employés du cabinet (pour attribuer un dossier, choisir un avocat, bureaux)
 export async function GET() {
   try {
-    const r = await requireAnyPermission(["cabinet_dossiers", "cabinet_rdv", "cabinet_compta"]);
+    const r = await requireAnyPermission(["cabinet_dossiers", "cabinet_rdv", "cabinet_compta", "cabinet_facturation", "cabinet_depenses", "cabinet_commissions", "cabinet_bilan"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     const { data, error } = await r.supabaseAdmin
       .from("site_logins")
@@ -21,6 +22,18 @@ export async function GET() {
     const moi: any = r.user;
     if (moi?.discord_id && !rows.some(x => x.discord_id === moi.discord_id)) {
       rows.push({ discord_id: moi.discord_id, nom: moi.nom_perso || moi.discord_name || "?", role: moi.site_role || "" });
+    }
+    // Taux de chaque employé : grade (rôle, ou grade choisi dans Administration) puis barème
+    const [{ data: grades }, { data: ovr }] = await Promise.all([
+      r.supabaseAdmin.from("cabinet_grades").select("grade,taux_pct"),
+      r.supabaseAdmin.from("cabinet_avocat_grades").select("avocat_discord_id,grade"),
+    ]);
+    const tauxParGrade: Record<string, number> = Object.fromEntries((grades || []).map((g: any) => [g.grade, Number(g.taux_pct) || 0]));
+    const gradeChoisi: Record<string, string> = Object.fromEntries((ovr || []).map((g: any) => [g.avocat_discord_id, g.grade]));
+    for (const x of rows) {
+      const grade = gradeChoisi[x.discord_id] || gradeParRole(x.role) || null;
+      x.grade = grade;
+      x.taux = grade ? (tauxParGrade[grade] ?? 0) : 0;
     }
     rows.sort((a: any, b: any) => a.nom.localeCompare(b.nom));
     return NextResponse.json({ rows });

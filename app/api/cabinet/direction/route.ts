@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
-import { PERMS_BUREAU, estBureauUser } from "@/lib/cabinetRoles";
-import { topicPour } from "@/lib/cabinetAcces";
+import { PERMS_BUREAU } from "@/lib/cabinetRoles";
+import { estTableauBord, topicPour } from "@/lib/cabinetAcces";
 
 // Tableau de bord direction : chiffres du jour, dossiers, votes, plaintes, facturation
 const jourParis = (d: string | Date) => new Date(d).toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
@@ -9,7 +9,7 @@ const jourParis = (d: string | Date) => new Date(d).toLocaleDateString("en-CA", 
 export async function GET() {
   try {
     const r = await requireAnyPermission(PERMS_BUREAU);
-    if (!r.authorized || !estBureauUser(r.user)) return NextResponse.json({ error: "Réservé au bureau" }, { status: 403 });
+    if (!r.authorized || !estTableauBord(r.user)) return NextResponse.json({ error: "Réservé au bureau" }, { status: 403 });
     const db = r.supabaseAdmin;
     const maintenant = Date.now();
     const aujourdHui = jourParis(new Date());

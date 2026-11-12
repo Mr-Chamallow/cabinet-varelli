@@ -25,4 +25,4 @@ export const roleDeUser = (user: any): string => roleDe(user);
 export const estPatronUser = (user: any): boolean => roleDe(user) === ROLE_PATRON;
 export const estBureauUser = (user: any): boolean => ROLES_BUREAU.includes(roleDe(user));
 // Permissions techniques larges : la vraie règle est le rôle (estBureauUser), contrôlé juste après
-export const PERMS_BUREAU = ["avocat", "cabinet_compta", "cabinet_dossiers", "cabinet_rdv", "cabinet_attribution"];
+export const PERMS_BUREAU = ["avocat", "cabinet_compta", "cabinet_dossiers", "cabinet_rdv", "cabinet_attribution", "cabinet_facturation", "cabinet_depenses", "cabinet_commissions", "cabinet_bilan", "cabinet_direction", "cabinet_journal"];

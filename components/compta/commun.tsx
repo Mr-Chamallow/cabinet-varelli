@@ -52,9 +52,13 @@ export function LignesEditor({ lignes, setLignes, staff, tarifs }: { lignes: Lig
           </div>
           <input style={champ} placeholder="Qté" inputMode="numeric" value={l.quantite} onChange={e => maj(i, "quantite", e.target.value)} />
           <input style={champ} placeholder="Prix $" inputMode="numeric" value={l.prix} onChange={e => maj(i, "prix", e.target.value)} />
-          <select style={champ} value={l.employe} onChange={e => maj(i, "employe", e.target.value)}>
+          <select style={champ} value={l.employe} onChange={e => {
+            // Le % se remplit tout seul selon le grade de l'employé (barème)
+            const emp = staff.find((s: any) => s.discord_id === e.target.value);
+            setLignes(ls => ls.map((x, k) => (k === i ? { ...x, employe: e.target.value, pct: emp?.taux != null ? String(emp.taux) : x.pct } : x)));
+          }}>
             <option value="">Réalisé par…</option>
-            {staff.map((s: any) => <option key={s.discord_id} value={s.discord_id}>{s.nom}</option>)}
+            {staff.map((s: any) => <option key={s.discord_id} value={s.discord_id}>{s.nom}{s.taux ? ` (${s.taux} %)` : ""}</option>)}
           </select>
           <input style={champ} placeholder="Comm. %" inputMode="decimal" value={l.pct} onChange={e => maj(i, "pct", e.target.value)} title="Commission de l'employé sur cette ligne (%)" />
           <button className="btn btn-outline btn-sm" onClick={() => retirer(i)} title="Retirer la ligne">✕</button>

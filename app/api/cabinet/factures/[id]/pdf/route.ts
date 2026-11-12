@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
-import { estCompta } from "@/lib/cabinetAcces";
+import { estFacturation } from "@/lib/cabinetAcces";
 import { facturePdf } from "@/lib/facturePdf";
 
 // PDF d'une facture : employés, ou le client à qui elle appartient
@@ -13,7 +13,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     const db = r.supabaseAdmin;
     const { data: facture } = await db.from("cabinet_factures").select("*").eq("id", id).maybeSingle();
     if (!facture) return NextResponse.json({ error: "Facture introuvable" }, { status: 404 });
-    if (!estCompta(user) && facture.client_discord_id !== user.discord_id) {
+    if (!estFacturation(user) && facture.client_discord_id !== user.discord_id) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
     let dossier_titre = "";

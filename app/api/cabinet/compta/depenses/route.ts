@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { PERMS_BUREAU } from "@/lib/cabinetRoles";
-import { estCompta } from "@/lib/cabinetAcces";
+import { estDepenses } from "@/lib/cabinetAcces";
 import { nomAffiche } from "@/lib/cabinetServer";
 import { journaliser } from "@/lib/journal";
 
 // Dépenses du cabinet (fournitures, loyers, abonnements...). Réservé à la comptabilité.
 async function controle() {
   const r = await requireAnyPermission(PERMS_BUREAU);
-  if (!r.authorized || !estCompta(r.user)) return null;
+  if (!r.authorized || !estDepenses(r.user)) return null;
   return r;
 }
 
