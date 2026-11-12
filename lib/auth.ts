@@ -80,9 +80,16 @@ function parsePermEntry(entry: string): { key: string; level: PermLevel } {
   return { key: entry, level: "write" };
 }
 
+// Retraits par rôle : accès jamais accordés à ce rôle, même via la base de données ou la permission "admin"
+export const RETRAITS_PAR_ROLE: Record<string, (perm: string) => boolean> = {
+  // Associé Gérant : aucun accès à Obsidian Logistique (menu, pages, API)
+  "Associé Gérant": (p) => p.startsWith("obsidian_") || ["cahier_vente", "juridique", "carte-enqueteur"].includes(p),
+};
+
 export function getPermLevel(userOrRole: AppUser | string | null, permission: string): PermLevel {
   if (!userOrRole) return "none";
   const role = typeof userOrRole === "string" ? userOrRole : userOrRole.role;
+  if (RETRAITS_PAR_ROLE[role]?.(permission)) return "none";
   const supaPerms = typeof userOrRole === "string" ? [] : (userOrRole.permissions || []);
   const defaultPerms = DEFAULT_PERMISSIONS[role] || [];
   const all = [...new Set([...supaPerms, ...defaultPerms])];
