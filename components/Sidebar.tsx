@@ -33,6 +33,7 @@ const NAV_SECTIONS = [
     { href: "/avocat/comptabilite", label: "Comptabilité", icon: "🧾", perms: ["cabinet_depenses", "cabinet_commissions", "cabinet_bilan"] },
     { href: "/avocat/facturation", label: "Devis & factures", icon: "🧾", perms: ["cabinet_facturation"] },
     { href: "/avocat/direction", label: "Tableau de bord", icon: "📊", perms: ["cabinet_direction"] },
+    { href: "/avocat/stats-avocats", label: "Stats par avocat", icon: "📈", perms: ["cabinet_direction"] },
     { href: "/avocat/recherche", label: "Recherche", icon: "🔎", perms: ["cabinet_dossiers"], staffOnly: true },
     { href: "/avocat/journal", label: "Journal", icon: "📖", perms: ["cabinet_journal"] },
     { href: "/avocat/clients", label: "Comptes clients", icon: "👥", perms: ["avocat_clients"] },
