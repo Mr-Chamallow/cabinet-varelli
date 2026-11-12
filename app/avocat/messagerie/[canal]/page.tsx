@@ -28,7 +28,7 @@ export default function Page() {
   }, [canal]);
 
   return (
-    <CabinetShell title={titre} icon="" desc="Messagerie interne, visible par les employés autorisés" perms={["cabinet_dossiers", "cabinet_rdv"]}>
+    <CabinetShell title={titre} icon="" desc="Messagerie interne · employés uniquement" perms={["cabinet_dossiers", "cabinet_rdv"]}>
       {() => <FilMessages url={`/api/cabinet/chat/${canal}`} titreVide="Aucun message pour l'instant." />}
     </CabinetShell>
   );

@@ -6,12 +6,42 @@ import { estStaffUser } from "@/lib/cabinetRoles";
 import { useTempsReel } from "@/lib/useTempsReel";
 
 const SALONS = [
-  { slug: "salon-general", nom: "Salon général" },
-  { slug: "salon-juridique", nom: "Liaison secrétaire juridique" },
+  { slug: "salon-general", nom: "Salon général", desc: "Discussion ouverte à tout le cabinet", icone: "💬" },
+  { slug: "salon-juridique", nom: "Liaison secrétaire juridique", desc: "Échanges entre avocats et secrétariat", icone: "⚖️" },
 ];
 
-// Petite pastille de notification (nombre à traiter)
-const pastille = (n: number) => (n > 0 ? <span style={{ marginLeft: "auto", background: "#e0b050", color: "#111", borderRadius: 10, padding: "0 7px", fontSize: "0.7rem", fontWeight: 700 }}>{n}</span> : null);
+const CSS = `
+.mz { display: flex; flex-direction: column; gap: 1.6rem; }
+.mz-section-titre { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 0.6rem 0.2rem; font-weight: 600; }
+.mz-liste { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 14px; background: var(--card, #161616); overflow: hidden; }
+.mz-ligne { display: flex; align-items: center; gap: 0.9rem; padding: 0.85rem 1rem; text-decoration: none; color: inherit; border-top: 1px solid var(--border); transition: background .15s; }
+.mz-ligne:first-child { border-top: none; }
+.mz-ligne:hover { background: rgba(212,175,55,0.06); }
+.mz-icone { flex: 0 0 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-size: 1.05rem; background: rgba(212,175,55,0.1); }
+.mz-texte { flex: 1; min-width: 0; }
+.mz-nom { font-weight: 600; font-size: 0.92rem; }
+.mz-desc { font-size: 0.74rem; color: var(--text-dim); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mz-badge { min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: var(--gold); color: #111; font-size: 0.72rem; font-weight: 700; display: grid; place-items: center; }
+.mz-fleche { color: var(--text-dim); font-size: 1rem; }
+.mz-bureau-avatar { flex: 0 0 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; background: rgba(255,255,255,0.06); color: var(--gold); border: 1px solid var(--border); }
+.mz-note { font-size: 0.75rem; color: var(--text-dim); margin: 0 0 0.6rem 0.2rem; line-height: 1.5; }
+.mz-vide { padding: 1rem; color: var(--text-dim); font-size: 0.85rem; }
+`;
+
+const initiales = (nom: string) => (nom || "?").split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join("").toUpperCase();
+
+function Ligne({ href, icone, nom, desc, badge = 0 }: { href: string; icone: React.ReactNode; nom: string; desc?: string; badge?: number }) {
+  return (
+    <Link href={href} className="mz-ligne">
+      <div className="mz-icone">{icone}</div>
+      <div className="mz-texte">
+        <div className="mz-nom">{nom}</div>
+        {desc && <div className="mz-desc">{desc}</div>}
+      </div>
+      {badge > 0 ? <span className="mz-badge">{badge}</span> : <span className="mz-fleche">›</span>}
+    </Link>
+  );
+}
 
 function Liste() {
   const [staff, setStaff] = useState<any[]>([]);
@@ -23,49 +53,44 @@ function Liste() {
   useTempsReel(topics.plaintes, charger);
   useTempsReel(topics.votes, charger);
 
-  const lien: React.CSSProperties = { textDecoration: "none", color: "inherit", display: "block" };
-
   return (
-    <div>
-      <div style={{ fontFamily: "'Cinzel', serif", color: "var(--gold)", marginBottom: "0.6rem" }}>Salons</div>
-      {SALONS.map(s => (
-        <Link key={s.slug} href={`/avocat/messagerie/${s.slug}`} style={lien}>
-          <div className="cab-card" style={{ marginBottom: "0.5rem", fontWeight: 600 }}>{s.nom}</div>
-        </Link>
-      ))}
+    <div className="mz">
+      <style>{CSS}</style>
 
-      <div style={{ fontFamily: "'Cinzel', serif", color: "var(--gold)", margin: "1.4rem 0 0.6rem" }}>Vie interne</div>
-      <Link href="/avocat/votes" style={lien}>
-        <div className="cab-card" style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <div>
-            <div style={{ fontWeight: 600 }}>Votes</div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>Proposer un changement et voter</div>
-          </div>
-          {pastille(notifs.votes || 0)}
+      <section>
+        <div className="mz-section-titre">Salons</div>
+        <div className="mz-liste">
+          {SALONS.map(s => (
+            <Ligne key={s.slug} href={`/avocat/messagerie/${s.slug}`} icone={s.icone} nom={s.nom} desc={s.desc} />
+          ))}
         </div>
-      </Link>
-      <Link href="/avocat/plaintes" style={lien}>
-        <div className="cab-card" style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <div>
-            <div style={{ fontWeight: 600 }}>Plaintes internes</div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>Visibles uniquement par la direction et par toi</div>
-          </div>
-          {pastille(notifs.plaintes || 0)}
-        </div>
-      </Link>
+      </section>
 
-      <div style={{ fontFamily: "'Cinzel', serif", color: "var(--gold)", margin: "1.4rem 0 0.6rem" }}>Bureaux</div>
-      <div style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "0.6rem" }}>
-        Chaque avocat a son bureau. On y dépose des notes et des messages, visibles par tous les employés.
-      </div>
-      {staff.map(s => (
-        <Link key={s.discord_id} href={`/avocat/messagerie/bureau-${s.discord_id}`} style={lien}>
-          <div className="cab-card" style={{ marginBottom: "0.5rem" }}>
-            <div style={{ fontWeight: 600 }}>Bureau de {s.nom}</div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>{s.role}</div>
-          </div>
-        </Link>
-      ))}
+      <section>
+        <div className="mz-section-titre">Vie interne</div>
+        <div className="mz-liste">
+          <Ligne href="/avocat/votes" icone="🗳️" nom="Votes" desc="Proposer un changement et voter" badge={notifs.votes || 0} />
+          <Ligne href="/avocat/plaintes" icone="🔒" nom="Plaintes internes" desc="Visibles uniquement par la direction et par toi" badge={notifs.plaintes || 0} />
+        </div>
+      </section>
+
+      <section>
+        <div className="mz-section-titre">Bureaux</div>
+        <p className="mz-note">Chaque avocat a son bureau : notes et messages visibles par tous les employés.</p>
+        <div className="mz-liste">
+          {staff.length === 0 && <div className="mz-vide">Aucun bureau pour l&apos;instant.</div>}
+          {staff.map(s => (
+            <Link key={s.discord_id} href={`/avocat/messagerie/bureau-${s.discord_id}`} className="mz-ligne">
+              <div className="mz-bureau-avatar">{initiales(s.nom)}</div>
+              <div className="mz-texte">
+                <div className="mz-nom">Bureau de {s.nom}</div>
+                {s.role && <div className="mz-desc">{s.role}</div>}
+              </div>
+              <span className="mz-fleche">›</span>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
