@@ -2,6 +2,7 @@
 import CabinetShell from "@/components/cabinet/CabinetShell";
 import CabinetRdv from "@/components/cabinet/CabinetRdv";
 import { hasPermission, hasWriteAccess } from "@/lib/auth";
+import { estStaffUser } from "@/lib/cabinetRoles";
 
 export default function Page() {
   return (
@@ -11,6 +12,7 @@ export default function Page() {
           employe={hasWriteAccess(user, "cabinet_rdv")}
           direction={hasPermission(user, "cabinet_attribution")}
           moiId={user.discord_id || ""}
+          vueStaff={estStaffUser(user)}
         />
       )}
     </CabinetShell>
