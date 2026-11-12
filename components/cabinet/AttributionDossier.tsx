@@ -38,6 +38,7 @@ export default function AttributionDossier({ id, direction, acces, onChange }: P
   };
 
   const dejaAttribues = new Set(acces.map(a => a.avocat_discord_id));
+  const disponibles = staff.filter(s => !dejaAttribues.has(s.discord_id));
 
   return (
     <div className="cab-card" style={{ marginBottom: "1rem" }}>
@@ -50,13 +51,25 @@ export default function AttributionDossier({ id, direction, acces, onChange }: P
         </div>
       ))}
       {direction && (
-        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem", flexWrap: "wrap" }}>
-          <select value={choix} onChange={e => setChoix(e.target.value)} style={{ flex: 1, minWidth: 180 }}>
-            <option value="">Choisir un employé</option>
-            {staff.filter(s => !dejaAttribues.has(s.discord_id)).map(s => <option key={s.discord_id} value={s.discord_id}>{s.nom} ({s.role})</option>)}
-          </select>
-          <button className="btn btn-sm" onClick={ajouter}>Ajouter</button>
+        <div style={{ marginTop: "0.8rem", paddingTop: "0.8rem", borderTop: "1px solid var(--border)" }}>
+          <div style={{ fontSize: "0.82rem", marginBottom: "0.4rem", color: "var(--text-dim)" }}>Attribuer un avocat à ce dossier</div>
+          {disponibles.length === 0 ? (
+            <div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>
+              Aucun autre employé disponible. Chaque employé doit avoir un rôle du cabinet (Administration → Membres) pour apparaître ici.
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <select value={choix} onChange={e => setChoix(e.target.value)} style={{ flex: 1, minWidth: 180 }}>
+                <option value="">Choisir un employé ({disponibles.length})</option>
+                {disponibles.map(s => <option key={s.discord_id} value={s.discord_id}>{s.nom} ({s.role})</option>)}
+              </select>
+              <button className="btn btn-sm" onClick={ajouter} disabled={!choix}>Attribuer</button>
+            </div>
+          )}
         </div>
+      )}
+      {!direction && (
+        <div style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginTop: "0.6rem" }}>Seule la direction ou un avocat du dossier peut ajouter un membre.</div>
       )}
       {erreur && <div style={{ color: "var(--danger)", marginTop: "0.5rem" }}>{erreur}</div>}
     </div>
