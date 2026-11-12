@@ -28,7 +28,7 @@ function CodePenal() {
     if (cat && r.categorie_id !== cat) return false;
     if (!q.trim()) return true;
     const t = q.toLowerCase();
-    return [r.id, r.titre, r.contenu].some(v => String(v || "").toLowerCase().includes(t));
+    return [r.article, r.titre, r.contenu, r.autres_sanctions].some(v => String(v || "").toLowerCase().includes(t));
   });
 
   return (
@@ -44,15 +44,17 @@ function CodePenal() {
       {filtres.map(a => (
         <div key={a.id} className="cab-card">
           <div style={{ display: "flex", justifyContent: "space-between", gap: ".5rem", flexWrap: "wrap" }}>
-            <strong>{a.id} : {a.titre}</strong>
+            <strong>{a.article} {a.titre}</strong>
             <span className="cab-muted" style={{ fontSize: ".78rem" }}>{a.categorie_id}</span>
           </div>
-          <p style={{ margin: ".5rem 0" }}>{a.contenu}</p>
+          {a.contenu && <p className="cab-muted" style={{ margin: ".4rem 0", fontSize: ".82rem" }}>{a.contenu}</p>}
           <div className="cab-muted" style={{ fontSize: ".8rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
             {a.amende && <span>Amende : {a.amende}</span>}
             {a.detention && <span>Détention : {a.detention}</span>}
-            {a.niveau && <span>Niveau : {a.niveau}</span>}
+            {a.procureur && <span>Procureur obligatoire</span>}
+            {a.bracelet && <span>Bracelet</span>}
           </div>
+          {a.autres_sanctions && <div style={{ fontSize: ".82rem", marginTop: ".4rem" }}>{a.autres_sanctions}</div>}
         </div>
       ))}
     </div>
