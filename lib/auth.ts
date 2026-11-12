@@ -133,6 +133,7 @@ export const canAccess = hasPermission;
 // carte enquêteur). Avant ce correctif, ces rôles étaient renvoyés vers /login,
 // qui les renvoyait vers /, qui les renvoyait vers /login... boucle infinie.
 const LANDING_PRIORITY: { path: string; permission: string }[] = [
+  { path: "/avocat", permission: "avocat" }, // Cabinet Varelli : accueil par défaut
   { path: "/", permission: "obsidian_dashboard" },
   { path: "/obsidian/prix", permission: "obsidian_prix" },
   { path: "/obsidian/stocks", permission: "obsidian_stocks" },
@@ -164,7 +165,6 @@ const LANDING_PRIORITY: { path: string; permission: string }[] = [
   { path: "/obsidian/taxes", permission: "obsidian_taxes" },
   { path: "/obsidian/recrutement", permission: "obsidian_recrutement" },
   { path: "/obsidian/guerres", permission: "obsidian_guerres" },
-  { path: "/avocat", permission: "avocat" },
   { path: "/admin", permission: "admin" },
   { path: "/supervision", permission: "supervision" },
 ];
