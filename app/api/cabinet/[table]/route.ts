@@ -7,7 +7,7 @@ import { journaliser } from "@/lib/journal";
 
 // Tables éditables du cabinet (tarifs, organigramme, présentation, types de dossiers)
 const TABLES: Record<string, { write: string; cols: string[]; order: string; key: string; staffOnly?: boolean }> = {
-  cabinet_tarifs:        { write: "cabinet_tarifs",        cols: ["categorie", "nom", "prix", "prix_montant", "commission_pct", "description", "image_url", "ordre"], order: "ordre", key: "id" },
+  cabinet_tarifs:        { write: "cabinet_tarifs",        cols: ["categorie", "nom", "prix", "prix_montant", "description", "image_url", "ordre"], order: "ordre", key: "id" },
   cabinet_offres:        { write: "cabinet_tarifs",        cols: ["nom", "description", "image_url", "prix", "prix_montant", "prestations", "ordre"], order: "ordre", key: "id" },
   cabinet_membres:       { write: "cabinet_organigramme",  cols: ["nom_rp", "poste", "description", "ordre", "photo_url", "barreau", "numero_barreau", "annee_inscription", "specialites", "slogan", "telephone", "email"], order: "ordre", key: "id" },
   cabinet_avis:          { write: "cabinet_presentation",   cols: ["auteur_nom", "note", "contenu", "statut"],          order: "created_at", key: "id", staffOnly: true },
