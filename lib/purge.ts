@@ -13,6 +13,8 @@ export async function supprimerDossiers(db: any, ids: string[]) {
 export async function supprimerFacture(db: any, id: string) {
   // Le message du dossier qui contenait le PDF disparaît avec la facture
   await db.from("cabinet_messages").delete().eq("fichier_url", `/api/cabinet/factures/${id}/pdf`);
+  // Les devis liés à cette facture sont supprimés avec elle
+  await db.from("cabinet_devis").delete().eq("facture_id", id);
   const { error } = await db.from("cabinet_factures").delete().eq("id", id);
   return error;
 }
