@@ -77,7 +77,7 @@ export function CabinetAdminTab() {
             { key: "poste", label: "Poste", placeholder: "Ex : Associé Gérant" },
             { key: "slogan", label: "Slogan", placeholder: "Ex : La justice, sans compromis" },
             { key: "description", label: "Bio", type: "textarea" },
-            { key: "photo_url", label: "Lien de la photo (image en ligne)", placeholder: "https://..." },
+            { key: "photo_url", label: "Photo du membre", type: "image", placeholder: "Ou colle un lien https://..." },
             { key: "specialites", label: "Spécialisations (séparées par des virgules)", placeholder: "Ex : Pénal, Civil" },
             { key: "telephone", label: "Téléphone", placeholder: "Ex : 9072671" },
             { key: "email", label: "Email", placeholder: "Ex : nom@cabinet.fr" },

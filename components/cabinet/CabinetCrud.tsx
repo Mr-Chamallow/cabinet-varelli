@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-export interface CrudField { key: string; label: string; type?: "text" | "textarea" | "number"; placeholder?: string; }
+export interface CrudField { key: string; label: string; type?: "text" | "textarea" | "number" | "image"; placeholder?: string; }
 
 interface Props {
   table: string;              // nom de la table (route /api/cabinet/[table])
@@ -92,9 +92,24 @@ export default function CabinetCrud({ table, fields, canWrite, titleKey, subKey,
           {fields.map(f => (
             <div key={f.key} className="form-group">
               <label>{f.label}</label>
+              {f.type === "image" && (
+                <>
+                  <input type="file" accept="image/*" onChange={async e => {
+                    const fichier = e.target.files?.[0];
+                    if (!fichier) return;
+                    const corps = new FormData();
+                    corps.append("file", fichier);
+                    const r = await fetch("/api/cabinet/upload", { method: "POST", body: corps });
+                    const d = await r.json();
+                    if (d.error) alert(d.error);
+                    else setForm({ ...form, [f.key]: d.url });
+                  }} />
+                  <input type="text" placeholder={f.placeholder} value={form[f.key] ?? ""} onChange={e => setForm({ ...form, [f.key]: e.target.value })} style={{ marginTop: 6 }} />
+                </>
+              )}
               {f.type === "textarea"
                 ? <textarea rows={4} placeholder={f.placeholder} value={form[f.key] ?? ""} onChange={e => setForm({ ...form, [f.key]: e.target.value })} />
-                : <input type={f.type === "number" ? "number" : "text"} placeholder={f.placeholder} value={form[f.key] ?? ""} onChange={e => setForm({ ...form, [f.key]: e.target.value })} />}
+                : f.type === "image" ? null : <input type={f.type === "number" ? "number" : "text"} placeholder={f.placeholder} value={form[f.key] ?? ""} onChange={e => setForm({ ...form, [f.key]: e.target.value })} />}
             </div>
           ))}
           <div style={{ display: "flex", gap: "0.5rem" }}>
