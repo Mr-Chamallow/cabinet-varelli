@@ -4,6 +4,7 @@ import { montant } from "@/lib/montant";
 import { semaineCourante } from "@/lib/compta";
 import { weekStartOf } from "@/lib/weekStart";
 import { Stat, champ, dateFr } from "@/components/compta/commun";
+import FacturesGouvernement from "@/components/compta/FacturesGouvernement";
 
 // Bilan hebdomadaire : encaissements, charges, TVA, résultat net
 export default function ComptaBilan() {
@@ -40,6 +41,8 @@ export default function ComptaBilan() {
         <div style={{ display: "flex", justifyContent: "space-between", padding: "0.3rem 0" }}><span>Total payé par le gouvernement ({resume.ciSemaineListe.length})</span><strong>{montant(resume.ciSemaine)}</strong></div>
         <a className="btn btn-gold btn-sm" style={{ marginTop: "0.5rem" }} href={`/api/cabinet/compta/resume?semaine=${semaine}&format=ci-csv`}>Détail des comparutions (CSV)</a>
       </div>
+
+      <FacturesGouvernement semaine={semaine} />
 
       <div className="cab-card">
         <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>Encaissements par moyen de paiement</div>

@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/rappels-rdv",
       "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/facture-gouvernement",
+      "schedule": "10 6 * * 1"
     }
   ]
 }
