@@ -91,14 +91,14 @@ export default function TarifsCabinet() {
           </div>
           {fichesPrestations.length === 0
             ? <div className="empty-state"><div className="empty-title">Grille en cours de mise à jour</div></div>
-            : <AnimatedTestimonials key={categorie} testimonials={fichesPrestations} />}
+            : <AnimatedTestimonials key={categorie} testimonials={fichesPrestations} grand />}
         </>
       )}
 
       {onglet === "offres" && (
         fichesOffres.length === 0
           ? <div className="empty-state"><div className="empty-title">Aucune offre groupée pour le moment</div></div>
-          : <AnimatedTestimonials testimonials={fichesOffres} />
+          : <AnimatedTestimonials testimonials={fichesOffres} grand />
       )}
     </div>
   );

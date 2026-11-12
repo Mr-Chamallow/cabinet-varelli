@@ -34,14 +34,24 @@ const CSS = `
   .at-buttons { padding-top: 0; }
 }
 @media (min-width: 1024px) { .at-root { padding-left: 3rem; padding-right: 3rem; } }
+.at-root.grand { max-width: 90rem; padding-top: 2.5rem; padding-bottom: 2.5rem; }
+@media (min-width: 768px) {
+  .at-root.grand .at-grid { gap: 4rem; align-items: center; }
+  .at-root.grand .at-image-box { height: 30rem; }
+  .at-root.grand .at-name { font-size: 2.25rem; }
+  .at-root.grand .at-designation { font-size: 1rem; }
+  .at-root.grand .at-quote { font-size: 1.3rem; margin-top: 2.5rem; }
+}
 `;
 
 export const AnimatedTestimonials = ({
   testimonials,
   autoplay = false,
+  grand = false,
 }: {
   testimonials: Testimonial[];
   autoplay?: boolean;
+  grand?: boolean;
 }) => {
   const [active, setActive] = useState(0);
 
@@ -77,7 +87,7 @@ export const AnimatedTestimonials = ({
     // Mouvement réduit si l'appareil le demande (prefers-reduced-motion)
     <MotionConfig reducedMotion="user">
       <style>{CSS}</style>
-      <div className="at-root">
+      <div className={`at-root${grand ? " grand" : ""}`}>
         <div className="at-grid">
           <div>
             <div className="at-image-box">
