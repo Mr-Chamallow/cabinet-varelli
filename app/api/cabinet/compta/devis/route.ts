@@ -42,6 +42,7 @@ export async function POST(req: Request) {
       numero, dossier_id: dossier.id, client_discord_id: dossier.client_discord_id, client_nom: dossier.client_nom,
       lignes, sous_total: sousTotal, tva_taux: tvaTaux, montant: total, statut: "envoye",
       note: String(b.note || "").slice(0, 1000) || null, auteur_nom: nomAffiche(r.user),
+      signatures: [{ role: "avocat", nom: nomAffiche(r.user), at: new Date().toISOString() }],
     }]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await journaliser(db, nomAffiche(r.user), "Devis créé", numero, `${total} $`);

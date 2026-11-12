@@ -6,7 +6,7 @@ const initiales = (nom: string) => nom.split(/\s+/).filter(Boolean).slice(0, 2).
 
 interface Props { limite?: number; }
 
-// Organigramme : une carte par membre (photo, poste, slogan, bio, spécialisations, coordonnées)
+// Organigramme : une carte par membre (photo, nom, poste, slogan, bio, spécialisations, coordonnées). Pas de logo CV ni de diplôme.
 export default function CartesMembres({ limite }: Props) {
   const [rows, setRows] = useState<any[] | null>(null);
 
@@ -18,14 +18,12 @@ export default function CartesMembres({ limite }: Props) {
   if (rows.length === 0) return <div className="empty-state"><div className="empty-title">Organigramme vide</div></div>;
   const liste = limite ? rows.slice(0, limite) : rows;
 
-  const specialitesDe = (m: any) => (m.specialites || "").split(",").map((x: string) => x.trim()).filter(Boolean);
   const carte: React.CSSProperties = { padding: "1.2rem", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border)", textAlign: "center" };
 
   return (
     <div className="cab-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: "1rem" }}>
       {liste.map(m => {
         const vacant = /pourvoir/i.test(m.nom_rp || "");
-        const specialites = specialitesDe(m);
         return (
           <div key={m.id} style={{ ...carte, ...(vacant ? { borderStyle: "dashed", opacity: 0.6 } : {}) }}>
             {!vacant && m.photo_url
@@ -34,10 +32,14 @@ export default function CartesMembres({ limite }: Props) {
             <div className="cab-title cab-nom">{m.nom_rp}</div>
             {m.poste && <div className="cab-poste">{m.poste}</div>}
             {m.slogan && <div style={{ fontStyle: "italic", color: "var(--gold-light)", margin: ".5rem 0", fontSize: ".85rem" }}>« {m.slogan} »</div>}
-            {specialites.length > 0 && (
-              <div className="cab-chips">{specialites.map((x: string) => <span key={x} className="cab-chip">{x}</span>)}</div>
-            )}
             {m.description && <p className="cab-muted" style={{ margin: "0 0 .6rem" }}>{m.description}</p>}
+            {m.specialites && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: ".35rem", justifyContent: "center", margin: "0 0 .6rem" }}>
+                {String(m.specialites).split(",").map(s => s.trim()).filter(Boolean).map(s => (
+                  <span key={s} style={{ fontSize: ".72rem", padding: ".15rem .5rem", borderRadius: 999, border: "1px solid var(--gold)", color: "var(--gold-light)" }}>{s}</span>
+                ))}
+              </div>
+            )}
             {(m.telephone || m.email) && (
               <div className="cab-muted" style={{ fontSize: ".8rem", borderTop: "1px solid var(--border)", paddingTop: ".6rem" }}>
                 {m.telephone && <div>Tél : {m.telephone}</div>}

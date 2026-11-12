@@ -338,3 +338,6 @@ create table if not exists cabinet_dossier_clients (
   primary key (dossier_id, client_discord_id)
 );
 alter table cabinet_dossier_clients enable row level security;
+
+-- ---------- Signatures des devis (avocat à la création, client à l'acceptation) ----------
+alter table cabinet_devis add column if not exists signatures jsonb not null default '[]'::jsonb;

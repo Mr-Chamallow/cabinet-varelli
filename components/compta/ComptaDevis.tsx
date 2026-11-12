@@ -89,6 +89,10 @@ export default function ComptaDevis() {
               </div>
               <span style={{ alignSelf: "flex-start", color: st.color, border: `1px solid ${st.color}`, borderRadius: 999, padding: "0.15rem 0.6rem", fontSize: "0.72rem" }}>{st.label}</span>
             </div>
+            <div style={{ marginTop: "0.5rem", fontSize: "0.82rem" }}>
+              {(d.signatures || []).map((s: any, i: number) => <div key={i}>✍️ {s.role === "avocat" ? "Avocat" : "Client"} : <b>{s.nom}</b> · {dateFr(s.at)}</div>)}
+              {d.statut === "envoye" && !(d.signatures || []).some((s: any) => s.role === "client") && <div className="cab-muted">En attente de la signature du client</div>}
+            </div>
             {d.statut !== "facture" && (
               <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
                 {d.statut !== "accepte" && <button className="btn btn-outline btn-sm" onClick={() => action(d.id, "accepter")}>Accepté</button>}

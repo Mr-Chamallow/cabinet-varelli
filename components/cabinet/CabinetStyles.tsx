@@ -62,75 +62,15 @@ const CSS = `
 .cab-vacant { border-style: dashed; }
 .cab-vacant .cab-avatar { color: var(--text-dim); border-style: dashed; box-shadow: none; }
 
-/* Carte diplôme (organigramme) */
-.cab-diplome {
-  position: relative; text-align: center; padding: 1.4rem 1.1rem 1.2rem;
-  background: radial-gradient(circle at top, rgba(var(--gold-rgb),.07), transparent 60%), var(--card);
-  border: 1px solid rgba(var(--gold-rgb),.55); border-radius: var(--radius-lg);
-  transition: transform .25s ease, box-shadow .25s ease;
-}
-.cab-diplome:hover { transform: translateY(-3px); box-shadow: 0 14px 32px -14px rgba(0,0,0,.7), 0 0 0 1px rgba(var(--gold-rgb),.2); }
-.cab-diplome::before {
-  content: ""; position: absolute; inset: 6px; pointer-events: none;
-  border: 1px solid rgba(var(--gold-rgb),.25); border-radius: calc(var(--radius-lg) - 4px);
-}
-.cab-diplome-entete { font-family: 'Cinzel', serif; font-size: .6rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold-dark); margin-bottom: .9rem; }
 .cab-photo {
   width: 96px; height: 96px; margin: 0 auto .9rem; display: block; object-fit: cover; border-radius: 50%;
   border: 2px solid rgba(var(--gold-rgb),.6); box-shadow: 0 0 0 5px var(--gold-muted);
 }
 .cab-nom { font-size: 1.05rem; margin-bottom: .35rem; }
 .cab-poste { font-size: .78rem; color: var(--gold-light); letter-spacing: .06em; margin-bottom: .5rem; }
-.cab-barreau { font-size: .7rem; color: var(--text-muted); margin-bottom: .6rem; }
-.cab-chips { display: flex; flex-wrap: wrap; gap: .3rem; justify-content: center; margin-bottom: .6rem; }
-.cab-chip { font-size: .66rem; padding: .15rem .5rem; border-radius: 4px; background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); }
-.cab-sceau {
-  width: 36px; height: 36px; margin: 1rem auto 0; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Cinzel', serif; font-size: .62rem; color: var(--bg);
-  background: linear-gradient(135deg, var(--gold-light), var(--gold-dark)); box-shadow: 0 2px 8px rgba(0,0,0,.5);
-}
-.cab-etoiles { color: var(--gold); letter-spacing: .15em; }
 .cab-section-titre { font-family: 'Cinzel', serif; color: var(--gold); letter-spacing: .08em; font-size: 1rem; margin: 0 0 .8rem; }
-
-/* Diplôme en grand (ouvert au clic sur une carte de l'organigramme) */
-.cab-diplome-grand {
-  position: relative; width: min(560px, 100%); max-height: 90vh; overflow: auto;
-  padding: 2.6rem 2rem 2.2rem; text-align: center; border-radius: 6px;
-  background: radial-gradient(circle at top, rgba(var(--gold-rgb),.14), transparent 55%), linear-gradient(180deg, #181516, #0d0c0c);
-  border: 2px solid rgba(var(--gold-rgb),.75);
-  box-shadow: 0 30px 80px -20px rgba(0,0,0,.9), inset 0 0 0 1px rgba(var(--gold-rgb),.25);
-}
-.cab-diplome-grand::before { content: ""; position: absolute; inset: 10px; border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 3px; pointer-events: none; }
-.cab-diplome-grand::after { content: ""; position: absolute; inset: 16px; border: 1px dashed rgba(var(--gold-rgb),.25); border-radius: 2px; pointer-events: none; }
-.cab-diplome-grand > * { position: relative; z-index: 1; }
+.cab-etoiles { color: var(--gold); letter-spacing: .15em; }
 .cab-ornement { color: var(--gold); letter-spacing: .5em; font-size: .7rem; margin: 1rem 0; opacity: .85; }
-.cab-titre-diplome { font-family: 'Cinzel', serif; font-size: 1.5rem; letter-spacing: .18em; text-transform: uppercase; color: var(--gold-light); margin: .2rem 0 1.2rem; }
-.cab-decerne { font-family: 'Playfair Display', serif; font-style: italic; color: #c5cbdb; font-size: .95rem; }
-.cab-nom-grand { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: var(--gold); margin: .3rem 0 .8rem; }
-.cab-texte-grand { color: #d6dbe7; font-size: .9rem; line-height: 1.8; margin: .3rem auto; max-width: 440px; }
-.cab-signature { margin-top: 1.4rem; font-family: 'Playfair Display', serif; font-style: italic; color: var(--gold-light); font-size: 1rem; }
-.cab-fermer { position: absolute; top: 8px; right: 12px; z-index: 2; background: none; border: none; color: var(--gold); font-size: 1.6rem; line-height: 1; cursor: pointer; }
-
-/* Diplôme du barreau : cadre, coins ornés, filigrane, sceau */
-.cab-diplome-grand {
-  background:
-    radial-gradient(circle at top, rgba(var(--gold-rgb),.14), transparent 55%),
-    repeating-linear-gradient(45deg, rgba(var(--gold-rgb),.025) 0 2px, transparent 2px 9px),
-    linear-gradient(180deg, #181516, #0d0c0c);
-}
-.cab-diplome-grand > .cab-coin { position: absolute; width: 64px; height: 64px; color: var(--gold); z-index: 2; pointer-events: none; }
-.cab-diplome-grand > .cab-coin.tl { top: 6px; left: 6px; }
-.cab-diplome-grand > .cab-coin.tr { top: 6px; right: 6px; transform: scaleX(-1); }
-.cab-diplome-grand > .cab-coin.bl { bottom: 6px; left: 6px; transform: scaleY(-1); }
-.cab-diplome-grand > .cab-coin.br { bottom: 6px; right: 6px; transform: scale(-1, -1); }
-.cab-diplome-grand > .cab-filigrane {
-  position: absolute; inset: 0; z-index: 0; display: flex; align-items: center; justify-content: center;
-  font-family: 'Playfair Display', serif; font-size: 15rem; font-weight: 900; line-height: 1;
-  color: rgba(var(--gold-rgb),.045); pointer-events: none; user-select: none;
-}
-.cab-diplome-haut { font-family: 'Cinzel', serif; font-size: .68rem; letter-spacing: .35em; text-transform: uppercase; color: var(--gold-dark); margin-top: .4rem; }
-.cab-ornement-diplome { color: var(--gold); letter-spacing: .2em; font-size: .75rem; margin: .7rem 0 .2rem; opacity: .9; }
 .cab-pied { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-top: 1.4rem; padding: 0 .5rem; }
 .cab-signature-bloc { text-align: center; min-width: 150px; }
 .cab-ligne-signature { height: 1px; margin: .3rem 0 .2rem; background: linear-gradient(90deg, transparent, var(--gold), transparent); }

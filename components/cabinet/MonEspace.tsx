@@ -1,6 +1,7 @@
 "use client";
 import { montant } from "@/lib/montant";
 import Link from "next/link";
+import DevisClient from "@/components/cabinet/DevisClient";
 import { useEffect, useState } from "react";
 
 const dateFr = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
@@ -50,7 +51,9 @@ export default function MonEspace() {
         )}
       </div>
 
-      {/* Indicateurs */}      {/* Indicateurs */}
+      <DevisClient />
+
+      {/* Indicateurs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: "1rem" }}>
         <div className="cab-card">
           <div className="cab-muted">Dossiers en cours</div>
