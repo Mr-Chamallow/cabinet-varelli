@@ -1,38 +1,72 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { AnimatedTestimonials } from "@/components/ui/animated-testimonials";
 
-// Grille des honoraires : une section par catégorie, une carte par prestation
+// Grille des honoraires en carrousel : une fiche par prestation (image, description, prix)
+// et un second onglet pour les offres groupées
 export default function TarifsCabinet() {
   const [rows, setRows] = useState<any[]>([]);
+  const [offres, setOffres] = useState<any[]>([]);
   const [erreur, setErreur] = useState("");
   const [chargement, setChargement] = useState(true);
+  const [onglet, setOnglet] = useState<"prestations" | "offres">("prestations");
+  const [categorie, setCategorie] = useState("Toutes");
 
   useEffect(() => {
-    fetch("/api/cabinet/cabinet_tarifs")
-      .then(r => r.json())
-      .then(d => { if (d.error) setErreur(d.error); else setRows(d.rows || []); })
+    Promise.all([
+      fetch("/api/cabinet/cabinet_tarifs").then(r => r.json()),
+      fetch("/api/cabinet/cabinet_offres").then(r => r.json()),
+    ])
+      .then(([t, o]) => {
+        if (t.error) setErreur(t.error);
+        else setRows(t.rows || []);
+        if (!o.error) setOffres(o.rows || []);
+      })
       .finally(() => setChargement(false));
   }, []);
 
-  // Regroupe par catégorie, dans l'ordre d'affichage
-  const categories = useMemo(() => {
-    const map = new Map<string, any[]>();
-    [...rows].sort((a, b) => (a.ordre || 0) - (b.ordre || 0)).forEach(t => {
-      const c = t.categorie || "Général";
-      if (!map.has(c)) map.set(c, []);
-      map.get(c)!.push(t);
+  const triees = useMemo(() => [...rows].sort((a, b) => (a.ordre || 0) - (b.ordre || 0)), [rows]);
+  const categories = useMemo(() => ["Toutes", ...Array.from(new Set(triees.map(t => t.categorie || "Général")))], [triees]);
+  const prestations = useMemo(
+    () => triees.filter(t => categorie === "Toutes" || (t.categorie || "Général") === categorie),
+    [triees, categorie]
+  );
+
+  const fichesPrestations = prestations.map(t => ({
+    quote: t.description || "Prestation proposée par le cabinet.",
+    name: t.nom,
+    designation: `${t.categorie || "Général"} · ${t.prix || "Sur devis"}`,
+    src: t.image_url || "",
+  }));
+
+  const fichesOffres = [...offres]
+    .sort((a, b) => (a.ordre || 0) - (b.ordre || 0))
+    .map(o => {
+      const inclus = (o.prestations || "").split("\n").map((x: string) => x.trim()).filter(Boolean);
+      const texte = [o.description, inclus.length ? `Inclus : ${inclus.join(", ")}.` : ""].filter(Boolean).join(" ");
+      return {
+        quote: texte || "Offre groupée proposée par le cabinet.",
+        name: o.nom,
+        designation: o.prix || "Sur devis",
+        src: o.image_url || "",
+      };
     });
-    return Array.from(map.entries());
-  }, [rows]);
 
   if (chargement) return <div className="cab-muted">Chargement de la grille...</div>;
   if (erreur) return <div style={{ color: "#f87171" }}>{erreur}</div>;
+
+  const bouton = (actif: boolean): React.CSSProperties => ({
+    padding: "0.45rem 0.9rem", borderRadius: 999, cursor: "pointer", fontSize: "0.8rem",
+    border: `1px solid ${actif ? "var(--gold)" : "var(--border, #333)"}`,
+    background: actif ? "rgba(176,138,62,0.15)" : "transparent",
+    color: actif ? "var(--gold)" : "inherit",
+  });
 
   return (
     <div>
       {/* Bandeau d'introduction */}
       <div style={{
-        border: "1px solid var(--gold)", borderRadius: "var(--radius)", padding: "1rem 1.2rem", marginBottom: "2rem",
+        border: "1px solid var(--gold)", borderRadius: "var(--radius)", padding: "1rem 1.2rem", marginBottom: "1.2rem",
         background: "linear-gradient(135deg, rgba(176,138,62,0.12), rgba(176,138,62,0.02))",
       }}>
         <div style={{ fontFamily: "'Cinzel', serif", color: "var(--gold)", letterSpacing: "0.12em", fontSize: "0.78rem", textTransform: "uppercase", marginBottom: "0.3rem" }}>
@@ -43,39 +77,29 @@ export default function TarifsCabinet() {
         </div>
       </div>
 
-      {categories.length === 0 && <div className="empty-state"><div className="empty-title">Grille en cours de mise à jour</div></div>}
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.8rem" }}>
+        <button style={bouton(onglet === "prestations")} onClick={() => setOnglet("prestations")}>Prestations</button>
+        <button style={bouton(onglet === "offres")} onClick={() => setOnglet("offres")}>Offres groupées</button>
+      </div>
 
-      {categories.map(([categorie, items]) => (
-        <section key={categorie} style={{ marginBottom: "2.2rem" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "0.8rem", marginBottom: "0.9rem", borderBottom: "1px solid var(--border, #333)", paddingBottom: "0.4rem" }}>
-            <h2 style={{ fontFamily: "'Cinzel', serif", color: "var(--gold)", fontSize: "1.15rem", margin: 0, letterSpacing: "0.06em" }}>{categorie}</h2>
-            <span className="cab-muted" style={{ fontSize: "0.75rem" }}>{items.length} prestation{items.length > 1 ? "s" : ""}</span>
+      {onglet === "prestations" && (
+        <>
+          <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
+            {categories.map(c => (
+              <button key={c} style={bouton(categorie === c)} onClick={() => setCategorie(c)}>{c}</button>
+            ))}
           </div>
+          {fichesPrestations.length === 0
+            ? <div className="empty-state"><div className="empty-title">Grille en cours de mise à jour</div></div>
+            : <AnimatedTestimonials key={categorie} testimonials={fichesPrestations} />}
+        </>
+      )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "0.9rem" }}>
-            {items.map(t => {
-              const surDevis = !t.prix || !/\d/.test(t.prix);
-              return (
-                <article key={t.id} style={{
-                  position: "relative", overflow: "hidden", borderRadius: "var(--radius)", padding: "1.1rem 1.1rem 1rem",
-                  background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))",
-                  border: "1px solid var(--border, #2a2a2a)",
-                }}>
-                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, var(--gold), transparent)" }} />
-                  <h3 style={{ fontWeight: 700, fontSize: "1rem", margin: "0 0 0.5rem" }}>{t.nom}</h3>
-                  <div style={{
-                    fontFamily: "'Cinzel', serif", fontSize: surDevis ? "0.95rem" : "1.35rem", fontWeight: 700,
-                    color: surDevis ? "var(--text-dim)" : "var(--gold)", fontStyle: surDevis ? "italic" : "normal", marginBottom: t.description ? "0.6rem" : 0,
-                  }}>
-                    {t.prix || "Sur devis"}
-                  </div>
-                  {t.description && <div className="cab-muted" style={{ fontSize: "0.82rem", lineHeight: 1.55 }}>{t.description}</div>}
-                </article>
-              );
-            })}
-          </div>
-        </section>
-      ))}
+      {onglet === "offres" && (
+        fichesOffres.length === 0
+          ? <div className="empty-state"><div className="empty-title">Aucune offre groupée pour le moment</div></div>
+          : <AnimatedTestimonials testimonials={fichesOffres} />
+      )}
     </div>
   );
 }

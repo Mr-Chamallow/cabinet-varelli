@@ -5,6 +5,7 @@ import CabinetPresentation from "@/components/cabinet/CabinetPresentation";
 
 const ONGLETS: [string, string][] = [
   ["tarifs", "Prestations et prix"],
+  ["offres", "Offres groupées"],
   ["organigramme", "Organigramme"],
   ["presentation", "Présentation"],
   ["avis", "Avis clients"],
@@ -40,6 +41,26 @@ export function CabinetAdminTab() {
             { key: "prix_montant", label: "Montant facturé ($)", type: "number", placeholder: "Ex : 70000 (vide = prix du texte)" },
             { key: "commission_pct", label: "Commission avocat (%)", type: "number", placeholder: "Ex : 10" },
             { key: "description", label: "Description", type: "textarea" },
+            { key: "image_url", label: "Lien de l'image (image en ligne)", placeholder: "https://..." },
+            { key: "ordre", label: "Ordre d'affichage", type: "number" },
+          ]}
+        />
+      )}
+
+      {onglet === "offres" && (
+        <CabinetCrud
+          table="cabinet_offres"
+          libelle="offre"
+          canWrite={true}
+          titleKey="nom"
+          subKey="prix"
+          fields={[
+            { key: "nom", label: "Nom de l'offre", placeholder: "Ex : Pack Défense complète" },
+            { key: "prix", label: "Prix affiché", placeholder: "Ex : 120 000 $ ou Sur devis" },
+            { key: "prix_montant", label: "Montant ($)", type: "number", placeholder: "Ex : 120000" },
+            { key: "description", label: "Description", type: "textarea" },
+            { key: "prestations", label: "Prestations incluses (une par ligne)", type: "textarea", placeholder: "Défense pénale\nComparution immédiate" },
+            { key: "image_url", label: "Lien de l'image (image en ligne)", placeholder: "https://..." },
             { key: "ordre", label: "Ordre d'affichage", type: "number" },
           ]}
         />
