@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { estCompta } from "@/lib/cabinetAcces";
-import { calculerResume, fenetreSemaine, semaineCourante } from "@/lib/compta";
+import { calculerResume, fenetreSemaine, semaineCourante, tauxParId } from "@/lib/compta";
 
 const cellule = (v: any) => {
   const s = v === null || v === undefined ? "" : String(v);
@@ -30,6 +30,9 @@ export async function GET(req: Request) {
     const err = [paiements, facturesMois, facturesToutes, depenses, versements, avoirs, comparutions].find((x: any) => x.error);
     if (err?.error) return NextResponse.json({ error: err.error.message }, { status: 400 });
 
+    const [gradesRes, avocatGradesRes] = await Promise.all([db.from("cabinet_grades").select("grade,taux_pct"), db.from("cabinet_avocat_grades").select("avocat_discord_id,grade")]);
+    const taux = tauxParId(gradesRes.data || [], avocatGradesRes.data || []);
+
     const resume = calculerResume(semaine, {
       paiements: paiements.data || [],
       facturesMois: facturesMois.data || [],
@@ -38,6 +41,7 @@ export async function GET(req: Request) {
       versements: versements.data || [],
       avoirs: avoirs.data || [],
       comparutions: comparutions.data || [],
+      taux,
     });
 
     // Détail des comparutions immédiates, à transmettre au gouvernement pour paiement

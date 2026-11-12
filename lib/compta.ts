@@ -12,20 +12,29 @@ export function fenetreSemaine(lundi: string) {
 }
 
 export const ligneTotal = (l: any) => Math.round((Number(l?.quantite) || 0) * (Number(l?.prix) || 0));
-export const commissionLigne = (l: any) => Math.round((ligneTotal(l) * (Number(l?.commission_pct) || 0)) / 100);
+// Taux de chaque employé d'après son grade (cabinet_avocat_grades + cabinet_grades)
+export function tauxParId(grades: any[], avocatGrades: any[]): Record<string, number> {
+  const parGrade: Record<string, number> = {};
+  for (const g of grades || []) parGrade[g.grade] = Number(g.taux_pct) || 0;
+  const res: Record<string, number> = {};
+  for (const a of avocatGrades || []) if (a.grade && parGrade[a.grade] !== undefined) res[a.avocat_discord_id] = parGrade[a.grade];
+  return res;
+}
 
 const somme = (liste: any[], f: (x: any) => number) => liste.reduce((s, x) => s + f(x), 0);
 
 // Prestations d'une liste de factures soldées, groupées par employé
-export function relevesDepuisFactures(factures: any[]) {
+export function relevesDepuisFactures(factures: any[], taux: Record<string, number> = {}) {
   const par: Record<string, { employe_discord_id: string; employe_nom: string; prestations: any[]; commission: number }> = {};
   for (const f of factures) {
     for (const l of (Array.isArray(f.lignes) ? f.lignes : [])) {
       if (!l?.employe_discord_id) continue;
       const id = l.employe_discord_id;
       par[id] = par[id] || { employe_discord_id: id, employe_nom: l.employe_nom || id, prestations: [], commission: 0 };
-      const com = commissionLigne(l);
-      par[id].prestations.push({ facture: f.numero, client: f.client_nom || "", description: l.description, total: ligneTotal(l), pct: Number(l.commission_pct) || 0, commission: com });
+      // Grade de l'employé s'il en a un, sinon le % saisi sur la ligne
+      const pct = taux[id] !== undefined ? taux[id] : (Number(l.commission_pct) || 0);
+      const com = Math.round((ligneTotal(l) * pct) / 100);
+      par[id].prestations.push({ facture: f.numero, client: f.client_nom || "", description: l.description, total: ligneTotal(l), pct, commission: com });
       par[id].commission += com;
     }
   }
@@ -34,20 +43,26 @@ export function relevesDepuisFactures(factures: any[]) {
 
 // Comparutions immédiates : payées par le gouvernement, donc HORS encaissements clients et hors résultat net.
 // Leur montant est ajouté au salaire (solde) de l'avocat qui les a prises en charge.
-export function calculerResume(semaine: string, d: { paiements: any[]; facturesMois: any[]; facturesToutes: any[]; depenses: any[]; versements: any[]; avoirs: any[]; comparutions?: any[] }) {
+export function calculerResume(semaine: string, d: { paiements: any[]; facturesMois: any[]; facturesToutes: any[]; depenses: any[]; versements: any[]; avoirs: any[]; comparutions?: any[]; taux?: Record<string, number> }) {
   const { debutJour, finJour } = fenetreSemaine(semaine);
-  const encaisse = somme(d.paiements, p => Number(p.montant) || 0);
+  const taux = d.taux || {};
+  const encaisseClients = somme(d.paiements, p => Number(p.montant) || 0);
   const parMode: Record<string, number> = {};
   for (const p of d.paiements) parMode[p.mode || "non précisé"] = (parMode[p.mode || "non précisé"] || 0) + (Number(p.montant) || 0);
   const depenses = somme(d.depenses, x => Number(x.montant) || 0);
   const tva = somme(d.facturesMois, f => (Number(f.montant) || 0) - (Number(f.sous_total) || 0));
-  const relevesMois = relevesDepuisFactures(d.facturesMois);
-  const relevesCumul = relevesDepuisFactures(d.facturesToutes);
-  const commissions = somme(Object.values(relevesMois), r => r.commission);
+  const relevesMois = relevesDepuisFactures(d.facturesMois, taux);
+  const relevesCumul = relevesDepuisFactures(d.facturesToutes, taux);
+  const commissionsFactures = somme(Object.values(relevesMois), r => r.commission);
 
   const ci = (d.comparutions || []).filter((c: any) => c.statut === "prise_en_charge");
   const ciSemaineListe = ci.filter((c: any) => String(c.date_audience).slice(0, 10) >= debutJour && String(c.date_audience).slice(0, 10) < finJour);
+  // Le gouvernement paie 100 % à l'entreprise : c'est un encaissement
   const ciSemaine = somme(ciSemaineListe, c => Number(c.montant) || 0);
+  const ciSemaineParts = somme(ciSemaineListe, c => Number(c.part_avocat) || 0);
+  const encaisse = encaisseClients + ciSemaine;
+  if (ciSemaine) parMode["Gouvernement (comparutions)"] = ciSemaine;
+  const commissions = commissionsFactures + ciSemaineParts;
 
   const dansSemaine = (v: any) => String(v.date_versement).slice(0, 10) >= debutJour && String(v.date_versement).slice(0, 10) < finJour;
 
@@ -57,7 +72,7 @@ export function calculerResume(semaine: string, d: { paiements: any[]; facturesM
     const c = relevesCumul[id];
     const versementsSemaine = somme(d.versements.filter((v: any) => v.employe_discord_id === id && dansSemaine(v)), v => Number(v.montant) || 0);
     const versementsCumul = somme(d.versements.filter((v: any) => v.employe_discord_id === id), v => Number(v.montant) || 0);
-    // Part de l'avocat (pourcentage selon son grade), pas le montant total payé par le gouvernement
+    // Part de l'avocat (pourcentage selon son grade)
     const ciSemaineAv = somme(ciSemaineListe.filter((x: any) => x.avocat_discord_id === id), x => Number(x.part_avocat) || 0);
     const ciCumulAv = somme(ci.filter((x: any) => x.avocat_discord_id === id), x => Number(x.part_avocat) || 0);
     const nom = m?.employe_nom || c?.employe_nom || d.versements.find((v: any) => v.employe_discord_id === id)?.employe_nom || ci.find((x: any) => x.avocat_discord_id === id)?.avocat_nom || id;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
-import { fenetreSemaine, semaineCourante, relevesDepuisFactures } from "@/lib/compta";
+import { fenetreSemaine, semaineCourante, relevesDepuisFactures, tauxParId } from "@/lib/compta";
 
 // Espace employé : uniquement ses propres prestations, commissions et versements (pas de données compta).
 export async function GET(req: Request) {
@@ -22,8 +22,10 @@ export async function GET(req: Request) {
     const err = [facturesMois, facturesToutes, versements, comparutions].find((x: any) => x.error);
     if (err?.error) return NextResponse.json({ error: err.error.message }, { status: 400 });
 
-    const relevesMois = relevesDepuisFactures(facturesMois.data || [])[moi];
-    const relevesCumul = relevesDepuisFactures(facturesToutes.data || [])[moi];
+    const [gradesRes, avocatGradesRes] = await Promise.all([db.from("cabinet_grades").select("grade,taux_pct"), db.from("cabinet_avocat_grades").select("avocat_discord_id,grade")]);
+    const taux = tauxParId(gradesRes.data || [], avocatGradesRes.data || []);
+    const relevesMois = relevesDepuisFactures(facturesMois.data || [], taux)[moi];
+    const relevesCumul = relevesDepuisFactures(facturesToutes.data || [], taux)[moi];
     const commissionCumul = relevesCumul?.commission || 0;
     const versementsCumul = (versements.data || []).reduce((s: number, v: any) => s + Number(v.montant || 0), 0);
     const ci = comparutions.data || [];

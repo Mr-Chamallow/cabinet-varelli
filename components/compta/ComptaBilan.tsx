@@ -27,7 +27,7 @@ export default function ComptaBilan() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: "0.7rem" }}>
-        <Stat label="Encaissé (paiements reçus)" valeur={montant(resume.encaisse)} couleur="#5fb878" />
+        <Stat label="Encaissé (clients + gouvernement)" valeur={montant(resume.encaisse)} couleur="#5fb878" />
         <Stat label="Dépenses" valeur={montant(resume.depenses)} couleur="#f87171" />
         <Stat label="Commissions (salaires)" valeur={montant(resume.commissions)} couleur="#e0b050" />
         <Stat label="TVA collectée" valeur={montant(resume.tva)} />
@@ -35,9 +35,9 @@ export default function ComptaBilan() {
       </div>
 
       <div className="cab-card">
-        <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>Comparutions immédiates (payées par le gouvernement)</div>
-        <div className="cab-muted" style={{ fontSize: "0.8rem", marginBottom: "0.5rem" }}>Hors encaissements clients et hors résultat net. Les parts sont ajoutées au salaire des avocats.</div>
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "0.3rem 0" }}><span>Total à transmettre au gouvernement ({resume.ciSemaineListe.length})</span><strong>{montant(resume.ciSemaine)}</strong></div>
+        <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>Comparutions immédiates (payées 100 % par le gouvernement à l'entreprise)</div>
+        <div className="cab-muted" style={{ fontSize: "0.8rem", marginBottom: "0.5rem" }}>Déjà inclus dans l'encaissé. Les parts des avocats (selon leur grade) sont dans les commissions.</div>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "0.3rem 0" }}><span>Total payé par le gouvernement ({resume.ciSemaineListe.length})</span><strong>{montant(resume.ciSemaine)}</strong></div>
         <a className="btn btn-gold btn-sm" style={{ marginTop: "0.5rem" }} href={`/api/cabinet/compta/resume?semaine=${semaine}&format=ci-csv`}>Détail des comparutions (CSV)</a>
       </div>
 
@@ -58,7 +58,7 @@ export default function ComptaBilan() {
       </div>
 
       <div className="cab-muted" style={{ fontSize: "0.8rem" }}>
-        Commissions et TVA : calculées sur les factures soldées dans la semaine. Résultat net = encaissé − dépenses − commissions.
+        Commissions : % du grade de chaque avocat sur toutes ses actions (factures et comparutions). Résultat net = encaissé − dépenses − commissions.
       </div>
     </div>
   );
