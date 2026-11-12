@@ -47,9 +47,9 @@ export default function CalendrierRdv({ rdvs, staff, onPick }: Props) {
   }, [rdvs]);
 
   const etat = (d: Date) => {
-    if (d < maintenant) return "passe";
     const liste = index[cle(d)] || [];
     if (liste.some(r => ["attribue", "confirme"].includes(r.statut))) return "occupe";
+    if (d < maintenant) return "passe";
     if (liste.length) return "attente";
     return "libre";
   };
