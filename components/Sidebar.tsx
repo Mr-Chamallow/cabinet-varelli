@@ -74,7 +74,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   useTempsReel(notifs?.topics?.plaintes, chargerNotifs);
   useTempsReel(notifs?.topics?.votes, chargerNotifs);
   const badgeFor = (href: string) =>
-    href === "/avocat/messagerie" ? (notifs?.plaintes || 0) + (notifs?.votes || 0) + (notifs?.messagerie || 0)
+    href === "/avocat/messagerie" ? (notifs?.plaintes || 0) + (notifs?.votes || 0) + (notifs?.messagerie || 0) + (notifs?.mentionsTotal || 0)
     : href === "/avocat/mon-espace" ? (notifs?.messages || 0)
     : href === "/avocat/direction" ? (notifs?.plaintes || 0)
     : 0;

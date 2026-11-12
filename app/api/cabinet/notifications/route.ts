@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { CABINET_STAFF_ROLES, estDirection, estStaff, topicPour } from "@/lib/cabinetAcces";
+import { nomAffiche } from "@/lib/cabinetServer";
 
 // Pastilles : plaintes nouvelles (direction), votes à traiter (employés), messages du cabinet non lus (client)
 export async function GET() {
@@ -53,6 +54,17 @@ export async function GET() {
       return [slug, count || 0] as const;
     }));
     const messagerie = compteurs.reduce((total, [, n]) => total + n, 0);
+    // Mentions @prénom non lues (par canal) : même règle de lecture que les compteurs
+    const prenom = nomAffiche(user).split(/\s+/)[0] || "";
+    const motif = new RegExp(`(^|\\s)@${prenom.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "iu");
+    const mentions = await Promise.all(Object.entries(canaux).map(async ([slug, canal]) => {
+      const depuis = vuPar[slug];
+      if (!depuis || !prenom) return [slug, 0] as const;
+      const { data } = await db.from("cabinet_internes").select("contenu")
+        .eq("canal", canal).gt("created_at", depuis).neq("auteur_discord_id", user.discord_id).ilike("contenu", `%@${prenom}%`);
+      return [slug, (data || []).filter((r: any) => motif.test(r.contenu || "")).length] as const;
+    }));
+    const totalMentions = mentions.reduce((t, [, n]) => t + n, 0);
     // Aperçu : dernier message de chaque canal
     const derniers = await Promise.all(Object.entries(canaux).map(async ([slug, canal]) => {
       const { data } = await db.from("cabinet_internes").select("auteur_nom,contenu,fichier_nom,image_url,created_at")
@@ -61,7 +73,7 @@ export async function GET() {
       const texte = data.contenu ? data.contenu.slice(0, 80) : data.fichier_nom ? `📄 ${data.fichier_nom}` : data.image_url ? "🖼️ Image" : "";
       return [slug, { auteur: data.auteur_nom, texte, created_at: data.created_at }] as const;
     }));
-    return NextResponse.json({ plaintes, votes: aVoter, messages: 0, canaux: Object.fromEntries(compteurs), derniers: Object.fromEntries(derniers), messagerie, topics });
+    return NextResponse.json({ plaintes, votes: aVoter, messages: 0, canaux: Object.fromEntries(compteurs), mentions: Object.fromEntries(mentions), mentionsTotal: totalMentions, derniers: Object.fromEntries(derniers), messagerie, topics });
   } catch (e: any) {
     return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
   }

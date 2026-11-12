@@ -23,6 +23,7 @@ const CSS = `
 .mz-desc { font-size: 0.74rem; color: var(--text-dim); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mz-badge { min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: var(--gold); color: #111; font-size: 0.72rem; font-weight: 700; display: grid; place-items: center; }
 .mz-fleche { color: var(--text-dim); font-size: 1rem; }
+.mz-mention { height: 22px; padding: 0 7px; border-radius: 999px; background: rgba(217,83,79,0.18); color: #e88a86; border: 1px solid rgba(217,83,79,0.4); font-size: 0.72rem; font-weight: 700; display: grid; place-items: center; }
 .mz-bureau-avatar { flex: 0 0 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; background: rgba(255,255,255,0.06); color: var(--gold); border: 1px solid var(--border); }
 .mz-note { font-size: 0.75rem; color: var(--text-dim); margin: 0 0 0.6rem 0.2rem; line-height: 1.5; }
 .mz-vide { padding: 1rem; color: var(--text-dim); font-size: 0.85rem; }
@@ -30,7 +31,7 @@ const CSS = `
 
 const initiales = (nom: string) => (nom || "?").split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join("").toUpperCase();
 
-function Ligne({ href, icone, nom, desc, badge = 0 }: { href: string; icone: React.ReactNode; nom: string; desc?: string; badge?: number }) {
+function Ligne({ href, icone, nom, desc, badge = 0, mention = 0 }: { href: string; icone: React.ReactNode; nom: string; desc?: string; badge?: number; mention?: number }) {
   return (
     <Link href={href} className="mz-ligne">
       <div className="mz-icone">{icone}</div>
@@ -38,6 +39,7 @@ function Ligne({ href, icone, nom, desc, badge = 0 }: { href: string; icone: Rea
         <div className="mz-nom">{nom}</div>
         {desc && <div className="mz-desc">{desc}</div>}
       </div>
+      {mention > 0 && <span className="mz-mention" title="Tu as été mentionné">@{mention}</span>}
       {badge > 0 ? <span className="mz-badge">{badge}</span> : <span className="mz-fleche">›</span>}
     </Link>
   );
@@ -67,7 +69,7 @@ function Liste() {
         <div className="mz-section-titre">Salons</div>
         <div className="mz-liste">
           {SALONS.map(s => (
-            <Ligne key={s.slug} href={`/avocat/messagerie/${s.slug}`} icone={s.icone} nom={s.nom} desc={apercu(s.slug) || s.desc} badge={notifs.canaux?.[s.slug] || 0} />
+            <Ligne key={s.slug} href={`/avocat/messagerie/${s.slug}`} icone={s.icone} nom={s.nom} desc={apercu(s.slug) || s.desc} badge={notifs.canaux?.[s.slug] || 0} mention={notifs.mentions?.[s.slug] || 0} />
           ))}
         </div>
       </section>
@@ -92,6 +94,7 @@ function Liste() {
                 <div className="mz-nom">Bureau de {s.nom}</div>
                 <div className="mz-desc">{apercu(`bureau-${s.discord_id}`) || s.role}</div>
               </div>
+              {(notifs.mentions?.[`bureau-${s.discord_id}`] || 0) > 0 && <span className="mz-mention">@{notifs.mentions[`bureau-${s.discord_id}`]}</span>}
               {(notifs.canaux?.[`bureau-${s.discord_id}`] || 0) > 0
                 ? <span className="mz-badge">{notifs.canaux[`bureau-${s.discord_id}`]}</span>
                 : <span className="mz-fleche">›</span>}

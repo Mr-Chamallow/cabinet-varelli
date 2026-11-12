@@ -23,6 +23,7 @@ const CSS = `
 .msg-bulle { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 14px 14px 14px 4px; padding: 0.55rem 0.8rem; line-height: 1.45; font-size: 0.92rem; }
 .msg-ligne.moi .msg-bulle { background: rgba(212,175,55,0.12); border-color: rgba(212,175,55,0.3); border-radius: 14px 14px 4px 14px; }
 .msg-texte { white-space: pre-wrap; word-break: break-word; }
+.msg-mention { color: var(--gold); font-weight: 600; }
 .msg-lien { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
 .msg-fichier { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.4rem; padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: 10px; color: inherit; text-decoration: none; background: rgba(0,0,0,0.2); }
 .msg-fichier:hover { border-color: var(--gold); }
@@ -45,11 +46,14 @@ const CSS = `
 const initiales = (nom: string) => (nom || "?").split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join("").toUpperCase();
 
 // Découpe le texte pour rendre les liens cliquables
+// Met en valeur les mentions @prénom
 function avecLiens(texte: string) {
-  return texte.split(/(https?:\/\/[^\s]+)/g).map((morceau, i) =>
+  return texte.split(/(https?:\/\/[^\s]+|@[\p{L}\p{N}_-]+)/gu).map((morceau, i) =>
     /^https?:\/\//.test(morceau)
       ? <a key={i} href={morceau} target="_blank" rel="noreferrer" className="msg-lien">{morceau}</a>
-      : <span key={i}>{morceau}</span>
+      : /^@/.test(morceau)
+        ? <span key={i} className="msg-mention">{morceau}</span>
+        : <span key={i}>{morceau}</span>
   );
 }
 
@@ -202,7 +206,7 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
                 Document
                 <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.odt" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) envoyerDocument(f); e.target.value = ""; }} />
               </label>
-              <span className="msg-aide">Entrée pour envoyer · Ctrl+V pour coller une image</span>
+              <span className="msg-aide">Entrée pour envoyer · @prénom pour mentionner</span>
             </div>
             <button className="msg-envoyer" disabled={envoi || !texte.trim()} onClick={envoyerTexte}>
               {envoi ? "Envoi…" : "Envoyer"}
