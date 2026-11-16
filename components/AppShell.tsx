@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { PreviewBanner } from "@/components/PreviewBanner";
 import { PdfPreviewHost } from "@/components/PdfPreviewHost";
 import { MotionFX } from "@/components/MotionFX";
+import CommandPalette from "@/app/CommandPalette";
 import { AmbientBg } from "@/components/AmbientBg";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { BottomBar } from "@/components/BottomBar";
@@ -52,6 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <BottomBar onMenu={() => setOpen(o => !o)} />
       <PdfPreviewHost />
       <MotionFX />
+      <CommandPalette />
     </>
   );
 }

@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "stats": "node scripts/stats-projet.mjs",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run lint && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.7",

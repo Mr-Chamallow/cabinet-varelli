@@ -1,9 +1,15 @@
 import type { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import { DISCORD_SERVER_ID, getHighestRole } from "@/lib/discord-config";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 import { sendSecurityAlert } from "@/lib/discordAlert";
 import { postAlert, GOLD, ORANGE, RED, GREEN } from "@/lib/alerts";
+
+// Client SERVEUR (clé service) : ce fichier ne tourne que côté serveur.
+// Avant, il utilisait la clé publique (anon), ce qui permettait à n'importe qui d'écrire dans site_logins.
+const supabase = (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+  : null;
 
 const ADMIN_DISCORD_ID = process.env.ADMIN_DISCORD_ID || "";
 
