@@ -159,18 +159,15 @@ export default function AdminPage() {
     setLoading(true);
     setFetchError("");
     try {
-      const [{ data: o, error: oErr }, rolesData, { data: l }, { data: b }] = await Promise.all([
-        supabase.from("role_overrides").select("*").order("updated_at", { ascending: false }),
-        loadRolesFromSupabase(),
-        supabase.from("site_logins").select("*").order("last_login", { ascending: false }),
-        supabase.from("site_bans").select("*").order("banned_at", { ascending: false }),
-      ]);
+      const donnees = await fetch("/api/admin/donnees").then(r => r.json());
+      const rolesData = await loadRolesFromSupabase();
+      const oErr = donnees.error ? String(donnees.error) : null;
       if (oErr) {
-        setFetchError(`Erreur lors du chargement des overrides : ${oErr.message}`);
+        setFetchError(`Erreur lors du chargement des données : ${oErr}`);
       }
-      setOverrides(o || []);
-      setLogins(l || []);
-      setBans(b || []);
+      setOverrides(donnees.overrides || []);
+      setLogins(donnees.logins || []);
+      setBans(donnees.bans || []);
       setRoles((rolesData as Role[]) || []);
       if ((!rolesData || rolesData.length === 0) && !oErr) {
         setFetchError("Aucun rôle trouvé. Vérifiez que la table `roles` existe et contient des données.");
@@ -206,8 +203,8 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab !== "membres" || !supabase) return;
     const id = setInterval(async () => {
-      const { data } = await supabase!.from("site_logins").select("*").order("last_login", { ascending: false });
-      if (data) setLogins(data);
+      const r = await fetch("/api/admin/donnees?partie=logins").then(r => r.json());
+      if (r.logins) setLogins(r.logins);
     }, 20000);
     return () => clearInterval(id);
   }, [activeTab]);
@@ -215,8 +212,8 @@ export default function AdminPage() {
   async function loadSessionLog() {
     if (!supabase) return;
     setSessionLogLoading(true);
-    const { data } = await supabase.from("site_session_log").select("*").order("created_at", { ascending: false }).limit(80);
-    setSessionLog(data || []);
+    const r = await fetch("/api/admin/donnees").then(r => r.json());
+    setSessionLog(r.sessionLog || []);
     setSessionLogLoading(false);
   }
 
@@ -226,8 +223,8 @@ export default function AdminPage() {
   async function loadLoginFailures() {
     if (!supabase) return;
     setLoginFailuresLoading(true);
-    const { data } = await supabase.from("site_login_failures").select("*").order("created_at", { ascending: false }).limit(80);
-    setLoginFailures(data || []);
+    const r = await fetch("/api/admin/donnees").then(r => r.json());
+    setLoginFailures(r.loginFailures || []);
     setLoginFailuresLoading(false);
   }
 
@@ -252,7 +249,8 @@ export default function AdminPage() {
   async function saveSiteKey(key: string, val: string) {
     if (!supabase) return;
     setSiteSaving(true);
-    const { error } = await supabase.from("app_settings").upsert({ cle: key, valeur: val }, { onConflict: "cle" });
+    const rep = await fetch("/api/admin/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cle: key, valeur: val }) });
+    const error = rep.ok ? null : { message: (await rep.json().catch(() => ({}))).error || "Erreur" };
     if (error) setFetchError(`Échec de l'enregistrement : ${error.message}`);
     else setSiteSettings(s => ({ ...s, [key]: val }));
     setSiteSaving(false);

@@ -49,7 +49,8 @@ export default function SettingsPage() {
   async function save(key: string, val: string) {
     if (!supabase) return;
     setSaving(true);
-    const { error } = await supabase.from("app_settings").upsert({ cle: key, valeur: val }, { onConflict: "cle" });
+    const rep = await fetch("/api/admin/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cle: key, valeur: val }) });
+    const error = rep.ok ? null : { message: (await rep.json().catch(() => ({}))).error || "Erreur" };
     if (error) {
       showToast(`Échec de l'enregistrement : ${error.message}`, "danger");
     } else {

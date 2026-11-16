@@ -156,7 +156,7 @@ export default function PlanningOperationsPage() {
     if (!supabase) return;
     const { data } = await supabase.from("obsidian_employes").select("nom,actif").order("nom");
     setFiches((data || []).filter((c: any) => c.actif !== false).map((c: any) => c.nom));
-    const { data: lg } = await supabase.from("site_logins").select("discord_name");
+    const lg = (await fetch("/api/membres-liste").then(r => r.json())).membres || [];
     setSiteMembers((lg || []).map((x: any) => x.discord_name).filter(Boolean));
   }
 

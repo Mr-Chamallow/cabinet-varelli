@@ -39,7 +39,7 @@ export default function OrganigrammePage() {
     if (!supabase) return;
     supabase.from("obsidian_employes").select("actif").then(({ data }) => setEffectif((data || []).filter((x: any) => x.actif !== false).length));
     Promise.all([
-      supabase.from("site_logins").select("discord_id,discord_name,nom_perso,site_role"),
+      fetch("/api/membres-liste").then(r => r.json()).then(j => ({ data: j.membres || [] })),
       supabase.from("obsidian_employes").select("discord_id,nom"),
     ]).then(([{ data }, { data: emps }]) => {
       const byId: Record<string, string> = {}; (emps || []).forEach((e: any) => { if (e.discord_id) byId[e.discord_id] = e.nom; });
