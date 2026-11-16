@@ -62,15 +62,15 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   const load = useCallback(async () => {
     if (!supabase) return;
     const [bd, b, ml, v, bv, bp, td, gp, gg] = await Promise.all([
-      supabase.from("obsidian_boards").select("*").order("created_at"),
-      supabase.from("obsidian_board").select("*").order("created_at"),
-      supabase.from("obsidian_board_links").select("*"),
+      lire("obsidian_boards", { order: [["created_at", true]] }),
+      lire("obsidian_board", { order: [["created_at", true]] }),
+      lire("obsidian_board_links"),
       lire("obsidian_garage", { select: "id,modele,plaque,assigne_a,photo_url" }),
       lire("bdd_vehicules", { select: "id,plaque,marque_modele,photos,proprietaire_id" }),
       lire("bdd_personnes", { select: "id,nom,prenom" }),
       lire("tribunal_dossiers", { select: "id,titre,accuse,organisation,statut" }),
-      supabase.from("gm_pactes").select("id,organisation,statut"),
-      supabase.from("carte_gangs").select("id,nom,type").order("nom"),
+      lire("gm_pactes", { select: "id,organisation,statut" }),
+      lire("carte_gangs", { select: "id,nom,type", order: [["nom", true]] }),
     ]);
     if (bd.error) { setErr("Tables du tableau absentes : lance migration-lot44.sql dans Supabase."); return; }
     let list = (bd.data || []) as { id: string; nom: string }[];
@@ -365,7 +365,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   async function openTimeline() {
     if (!supabase) return; const fl = (sel.size ? shown.filter(i => sel.has(i.id)) : shown).filter(i => i.kind === "fiche").map(i => fById.get(i.ref!)!).filter(Boolean);
     const ids = fl.map(f => f.id), orgs = [...new Set(fl.map(f => f.organisation).filter(Boolean) as string[])], noms = fl.map(f => f.nom);
-    const [j, ev] = await Promise.all([ids.length ? supabase.from("obsidian_journal").select("fiche_nom,action,created_at,par").in("fiche_id", ids).order("created_at", { ascending: false }).limit(40) : Promise.resolve({ data: [] as any[] }), orgs.length ? supabase.from("gm_evenements").select("titre,type,statut,partenaire,date_event").in("partenaire", orgs).limit(30) : Promise.resolve({ data: [] as any[] })]);
+    const [j, ev] = await Promise.all([ids.length ? lire("obsidian_journal", { select: "fiche_nom,action,created_at,par", in: [["fiche_id", ids]], order: [["created_at", false]], limit: 40 }) : Promise.resolve({ data: [] as any[] }), orgs.length ? lire("gm_evenements", { select: "titre,type,statut,partenaire,date_event", in: [["partenaire", orgs]], limit: 30 }) : Promise.resolve({ data: [] as any[] })]);
     const out: { at: string; txt: string; icon: string }[] = [];
     (j.data || []).forEach((x: any) => out.push({ at: x.created_at, icon: "🗂️", txt: `${x.fiche_nom} : ${x.action}${x.par ? ` (${x.par})` : ""}` }));
     (ev.data || []).forEach((x: any) => x.date_event && out.push({ at: x.date_event, icon: "🚚", txt: `${x.titre} (${x.partenaire}) · ${x.statut}` }));

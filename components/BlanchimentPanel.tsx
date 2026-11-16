@@ -31,7 +31,7 @@ export function BlanchimentPanel({ onDone }: { onDone?: () => void }) {
     const { data } = await lire("obsidian_comptabilite", { eq: [["source", "blanchiment"], ["type", "dépense"]], order: [["created_at", false]], limit: 15 });
     setHist(data || []);
   }
-  useEffect(() => { load(); supabase?.from("carte_gangs").select("nom").order("nom").then(({ data }) => setOrgs((data || []).map((o: any) => o.nom))); lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }).then(({ data }) => setEmps((data || []).filter((e: any) => e.actif !== false).map((e: any) => e.nom))); }, []);
+  useEffect(() => { load(); lire("carte_gangs", { select: "nom", order: [["nom", true]] }).then(({ data }) => setOrgs((data || []).map((o: any) => o.nom))); lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }).then(({ data }) => setEmps((data || []).filter((e: any) => e.actif !== false).map((e: any) => e.nom))); }, []);
 
   async function go() {
     setBusy(true); setMsg("");

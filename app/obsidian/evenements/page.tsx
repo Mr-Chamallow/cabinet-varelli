@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -56,7 +57,7 @@ export default function EvenementsPage() {
   useRealtimeTable("gm_evenements", load);
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from("gm_evenements").select("*").order("created_at", { ascending: false });
+    const { data } = await lire("gm_evenements", { order: [["created_at", false]] });
     setList((data || []).map((e: any) => ({ ...e, montant: Number(e.montant) || 0 }))); setLoading(false);
   }
   function openNew() { setEditId(null); setForm(empty(tab)); setShow(true); }

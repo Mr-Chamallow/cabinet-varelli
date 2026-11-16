@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -43,7 +44,7 @@ export default function GuerresPage() {
   useRealtimeTable("obsidian_guerres", load);
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from("obsidian_guerres").select("*").order("date_debut", { ascending: false });
+    const { data } = await lire("obsidian_guerres", { order: [["date_debut", false]] });
     setList(data || []); setLoading(false);
   }
   const enCours = list.filter(g => g.statut === "en_cours");

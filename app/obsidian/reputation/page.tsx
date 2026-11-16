@@ -33,8 +33,8 @@ export default function ReputationPage() {
   async function load() {
     if (!supabase) { setLoading(false); return; }
     const [{ data: o }, { data: l }] = await Promise.all([
-      supabase.from("carte_gangs").select("id,nom,type").order("nom"),
-      supabase.from("gm_reputation_log").select("*").order("created_at", { ascending: false }).limit(2000),
+      lire("carte_gangs", { select: "id,nom,type", order: [["nom", true]] }),
+      lire("gm_reputation_log", { order: [["created_at", false]], limit: 2000 }),
     ]);
     setOrgs(o || []); setLogs(l || []); setLoading(false);
   }
@@ -53,10 +53,10 @@ export default function ReputationPage() {
   async function dossierPdf(o: any) {
     if (!supabase) return;
     const [{ data: pactes }, { data: audits }, { data: dossiers }, { data: evenements }, { data: fiches }] = await Promise.all([
-      supabase.from("gm_pactes").select("*").eq("organisation", o.nom),
-      supabase.from("gm_audits").select("*").eq("organisation", o.nom).order("created_at", { ascending: false }),
+      lire("gm_pactes", { eq: [["organisation", o.nom]] }),
+      lire("gm_audits", { eq: [["organisation", o.nom]], order: [["created_at", false]] }),
       lire("tribunal_dossiers", { eq: [["organisation", o.nom]], order: [["created_at", false]] }),
-      supabase.from("gm_evenements").select("*").eq("partenaire", o.nom).order("created_at", { ascending: false }),
+      lire("gm_evenements", { eq: [["partenaire", o.nom]], order: [["created_at", false]] }),
       lire("obsidian_fiches", { select: "nom,metier,priorite,statut", eq: [["organisation", o.nom]] }),
     ]);
     await pdfOrganisation({ ...o, categorie: gangTypeLabel(o.type) }, { pactes: pactes || [], audits: audits || [], dossiers: dossiers || [], evenements: evenements || [], history: o.history, fiches: fiches || [] });

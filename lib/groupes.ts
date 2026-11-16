@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -9,7 +10,7 @@ export function useGroupes() {
   useEffect(() => {
     let off = false;
     if (!supabase) return;
-    supabase.from("carte_gangs").select("id,nom,type").order("nom").then(({ data }) => { if (!off) setGroupes((data || []) as GroupeRef[]); });
+    lire("carte_gangs", { select: "id,nom,type", order: [["nom", true]] }).then(({ data }) => { if (!off) setGroupes((data || []) as GroupeRef[]); });
     return () => { off = true; };
   }, []);
   return groupes;

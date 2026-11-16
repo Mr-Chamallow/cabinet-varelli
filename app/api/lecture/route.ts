@@ -26,6 +26,31 @@ const LECTURE: Record<string, string[]> = {
   obsidian_garage: ["obsidian_garage", "obsidian_dashboard", "base_donnees", "carte-enqueteur", "juridique", "obsidian_employes"],
   obsidian_stocks: ["obsidian_stocks", "obsidian_dashboard", "obsidian_armurerie", "cahier_vente", "obsidian_comptabilite", "obsidian_reglement", "obsidian_arrestations", "obsidian_stats", "supervision"],
   obsidian_fiches: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements"].concat(["gm_pactes", "gm_audits"]),
+  gm_pactes: ["gm_pactes", "gm_audits", "gm_evenements", "gm_reputation", "gm_tribunal", "gm_stats", "obsidian_dashboard"],
+  gm_audits: ["gm_pactes", "gm_audits", "gm_evenements", "gm_reputation", "gm_tribunal", "gm_stats", "obsidian_dashboard"],
+  gm_evenements: ["gm_pactes", "gm_audits", "gm_evenements", "gm_reputation", "gm_tribunal", "gm_stats", "obsidian_dashboard", "obsidian_rdv", "supervision"],
+  gm_reputation_log: ["gm_pactes", "gm_audits", "gm_evenements", "gm_reputation", "gm_tribunal", "gm_stats", "obsidian_dashboard"],
+  obsidian_guerres: ["obsidian_guerres", "obsidian_dashboard", "gm_stats"],
+  obsidian_recrutement: ["obsidian_recrutement", "obsidian_dashboard"],
+  obsidian_recrutement_votes: ["obsidian_recrutement", "obsidian_dashboard"],
+  obsidian_prix: ["obsidian_prix", "obsidian_stocks", "obsidian_armurerie", "cahier_vente", "obsidian_comptabilite", "obsidian_stats", "obsidian_dashboard", "obsidian_reglement"],
+  obsidian_drogues: ["obsidian_prix", "obsidian_stocks", "obsidian_armurerie", "cahier_vente", "obsidian_comptabilite", "obsidian_stats", "obsidian_dashboard", "obsidian_reglement"],
+  obsidian_armes_prix: ["obsidian_prix", "obsidian_stocks", "obsidian_armurerie", "cahier_vente", "obsidian_comptabilite", "obsidian_stats", "obsidian_dashboard", "obsidian_reglement"],
+  obsidian_zones: ["obsidian_prix", "obsidian_stocks", "obsidian_armurerie", "cahier_vente", "obsidian_comptabilite", "obsidian_stats", "obsidian_dashboard", "obsidian_reglement"],
+  obsidian_fournisseurs: ["obsidian_prix", "obsidian_stocks", "obsidian_armurerie", "cahier_vente", "obsidian_comptabilite", "obsidian_stats", "obsidian_dashboard", "obsidian_reglement"],
+  obsidian_settings: ["obsidian_comptabilite", "obsidian_paie", "obsidian_prix", "obsidian_reglement", "obsidian_stats", "obsidian_dashboard"],
+  obsidian_semaines: ["obsidian_comptabilite", "obsidian_paie", "obsidian_stats", "obsidian_dashboard"],
+  obsidian_journal: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements", "gm_pactes", "gm_audits"],
+  obsidian_board: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements", "gm_pactes", "gm_audits"],
+  obsidian_boards: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements", "gm_pactes", "gm_audits"],
+  obsidian_board_links: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements", "gm_pactes", "gm_audits"],
+  carte_points: ["carte-enqueteur", "base_donnees", "obsidian_fiches", "obsidian_dashboard", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements", "gm_pactes", "gm_audits", "gm_stats", "obsidian_comptabilite", "obsidian_stats", "obsidian_garage", "obsidian_rdv", "obsidian_contrats"],
+  carte_dossiers: ["carte-enqueteur", "base_donnees", "obsidian_fiches", "obsidian_dashboard", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements", "gm_pactes", "gm_audits", "gm_stats", "obsidian_comptabilite", "obsidian_stats", "obsidian_garage", "obsidian_rdv", "obsidian_contrats"],
+  carte_categories: ["carte-enqueteur", "base_donnees", "obsidian_fiches", "obsidian_dashboard", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements", "gm_pactes", "gm_audits", "gm_stats", "obsidian_comptabilite", "obsidian_stats", "obsidian_garage", "obsidian_rdv", "obsidian_contrats"],
+  carte_personnes: ["carte-enqueteur", "base_donnees", "obsidian_fiches", "obsidian_dashboard", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements", "gm_pactes", "gm_audits", "gm_stats", "obsidian_comptabilite", "obsidian_stats", "obsidian_garage", "obsidian_rdv", "obsidian_contrats"],
+  carte_plaques: ["carte-enqueteur", "base_donnees", "obsidian_fiches", "obsidian_dashboard", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements", "gm_pactes", "gm_audits", "gm_stats", "obsidian_comptabilite", "obsidian_stats", "obsidian_garage", "obsidian_rdv", "obsidian_contrats"],
+  carte_gangs: ["carte-enqueteur", "base_donnees", "obsidian_fiches", "obsidian_dashboard", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements", "gm_pactes", "gm_audits", "gm_stats", "obsidian_comptabilite", "obsidian_stats", "obsidian_garage", "obsidian_rdv", "obsidian_contrats"],
+  carte_presets: ["carte-enqueteur", "base_donnees", "obsidian_fiches", "obsidian_dashboard", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements", "gm_pactes", "gm_audits", "gm_stats", "obsidian_comptabilite", "obsidian_stats", "obsidian_garage", "obsidian_rdv", "obsidian_contrats"],
 };
 
 export const dynamic = "force-dynamic";
@@ -55,6 +80,8 @@ export async function POST(req: Request) {
     for (const [col, val] of (b.ilike || []) as Filtre[]) q = q.ilike(col, val);
     for (const [col] of (b.is || []) as [string, null][]) q = q.is(col, null);
     for (const [col, val] of (b.gte || []) as Filtre[]) q = q.gte(col, val);
+    for (const [col, val] of (b.gt || []) as Filtre[]) q = q.gt(col, val);
+    for (const [col, vals] of (b.in || []) as [string, any[]][]) q = q.in(col, vals);
     for (const [col, val] of (b.contains || []) as Filtre[]) q = q.contains(col, val);
     if (b.or) q = q.or(String(b.or));
     for (const [col, ascending] of (b.order || []) as [string, boolean][]) q = q.order(col, { ascending: !!ascending });

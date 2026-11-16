@@ -19,13 +19,13 @@ export function PoleHome({ user }: { user: any }) {
       const t: Tile[] = [];
       const now = new Date().toISOString(); const wk = new Date(Date.now() - 7 * 86400000).toISOString();
       if (can("gm_tribunal")) t.push({ i: "⚖️", l: "Dossiers en cours", v: await n(lire("tribunal_dossiers", { select: "id", count: true, head: true, eq: [["verdict", "en_cours"]] })), href: "/obsidian/tribunal", c: "#a78bfa" });
-      if (can("gm_pactes")) t.push({ i: "🤝", l: "Pactes actifs", v: await n(db.from("gm_pactes").select("id", { count: "exact", head: true }).eq("statut", "actif")), href: "/obsidian/pactes", c: "#a78bfa" });
-      if (can("gm_audits")) t.push({ i: "⛔", l: "Sanctions en cours", v: await n(db.from("gm_audits").select("id", { count: "exact", head: true }).gt("sanction_fin", now)), href: "/obsidian/audits", c: "var(--danger)" });
+      if (can("gm_pactes")) t.push({ i: "🤝", l: "Pactes actifs", v: await n(lire("gm_pactes", { select: "id", count: true, head: true, eq: [["statut", "actif"]] })), href: "/obsidian/pactes", c: "#a78bfa" });
+      if (can("gm_audits")) t.push({ i: "⛔", l: "Sanctions en cours", v: await n(lire("gm_audits", { select: "id", count: true, head: true, gt: [["sanction_fin", now]] })), href: "/obsidian/audits", c: "var(--danger)" });
       if (can("obsidian_stocks")) { const { data } = await lire("obsidian_stocks", { select: "quantite,seuil_alerte" }); const low = (data || []).filter((s: any) => s.seuil_alerte > 0 && s.quantite <= s.seuil_alerte).length; t.push({ i: "📦", l: "Stocks bas", v: low, href: "/obsidian/stocks", c: "var(--gold)", warn: low > 0 }); }
-      if (can("gm_evenements")) t.push({ i: "🚚", l: "Convois à venir", v: await n(db.from("gm_evenements").select("id", { count: "exact", head: true }).eq("type", "convoi").in("statut", ["planifie", "en_route"])), href: "/obsidian/evenements", c: "var(--info)" });
-      if (can("gm_evenements")) { const c = await n(db.from("gm_evenements").select("id", { count: "exact", head: true }).eq("type", "capture").in("statut", ["a_faire", "en_cours"])); t.push({ i: "🎯", l: "Captures à faire", v: c, href: "/obsidian/evenements", c: "var(--danger)", warn: c > 0 }); }
+      if (can("gm_evenements")) t.push({ i: "🚚", l: "Convois à venir", v: await n(lire("gm_evenements", { select: "id", count: true, head: true, eq: [["type", "convoi"]], in: [["statut", ["planifie", "en_route"]]] })), href: "/obsidian/evenements", c: "var(--info)" });
+      if (can("gm_evenements")) { const c = await n(lire("gm_evenements", { select: "id", count: true, head: true, eq: [["type", "capture"]], in: [["statut", ["a_faire", "en_cours"]]] })); t.push({ i: "🎯", l: "Captures à faire", v: c, href: "/obsidian/evenements", c: "var(--danger)", warn: c > 0 }); }
       if (can("obsidian_arrestations")) t.push({ i: "🚔", l: "Arrestations (7 j)", v: await n(lire("arrestations", { select: "id", count: true, head: true, gte: [["created_at", wk]] })), href: "/obsidian/arrestations", c: "var(--warning)" });
-      if (can("gm_reputation")) t.push({ i: "⭐", l: "Groupes suivis", v: await n(db.from("carte_gangs").select("id", { count: "exact", head: true })), href: "/obsidian/reputation", c: "var(--gold)" });
+      if (can("gm_reputation")) t.push({ i: "⭐", l: "Groupes suivis", v: await n(lire("carte_gangs", { select: "id", count: true, head: true })), href: "/obsidian/reputation", c: "var(--gold)" });
       if (can("obsidian_actions")) t.push({ i: "💼", l: "Mes actions (7 j)", v: await n(db.from("actions_illegales").select("id", { count: "exact", head: true }).eq("membre", user.nom).gte("created_at", wk)), href: "/obsidian/actions-illegales", c: "var(--gold)" });
       setTiles(t);
     })();

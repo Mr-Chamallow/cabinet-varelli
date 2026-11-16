@@ -1,4 +1,5 @@
 "use client";
+import { lire, lireUn } from "@/lib/lire";
 import Link from "next/link";
 import { drogueAutorisee, drogueFamille, PRODUIT_DEFAUT, REVENDIQUE_DEFAUT } from "@/lib/regles";
 import { useEffect, useState } from "react";
@@ -45,7 +46,7 @@ export default function PrixPage() {
   const [tab,setTab]=useState<"drogues"|"armes"|"accessoires"|"zones">("drogues");
   const [prodL,setProdL]=useState<string[]>(PRODUIT_DEFAUT);
   const [revL,setRevL]=useState<string[]>(REVENDIQUE_DEFAUT);
-  useEffect(()=>{if(!supabase)return;supabase.from("obsidian_settings").select("drogues_produites,drogues_revendiquees").eq("id","default").maybeSingle().then(({data})=>{if(Array.isArray(data?.drogues_produites))setProdL(data!.drogues_produites);if(Array.isArray(data?.drogues_revendiquees))setRevL(data!.drogues_revendiquees);});},[]);
+  useEffect(()=>{if(!supabase)return;lireUn("obsidian_settings", { select: "drogues_produites,drogues_revendiquees", eq: [["id","default"]] }).then(({data})=>{if(Array.isArray(data?.drogues_produites))setProdL(data!.drogues_produites);if(Array.isArray(data?.drogues_revendiquees))setRevL(data!.drogues_revendiquees);});},[]);
   const [drogues,setDrogues]=useState<any[]>([]);
   const [armes,setArmes]=useState<any[]>([]);
   const [zones,setZones]=useState<any[]>([]);
@@ -67,9 +68,9 @@ export default function PrixPage() {
   async function load(){
     if(!supabase){setLoading(false);return;}
     const[{data:d},{data:a},{data:z}]=await Promise.all([
-      supabase.from("obsidian_drogues").select("*").order("ordre"),
-      supabase.from("obsidian_armes_prix").select("*").order("ordre"),
-      supabase.from("obsidian_zones").select("*").order("ordre"),
+      lire("obsidian_drogues", { order: [["ordre", true]] }),
+      lire("obsidian_armes_prix", { order: [["ordre", true]] }),
+      lire("obsidian_zones", { order: [["ordre", true]] }),
     ]);
     setDrogues(d||[]);setArmes(a||[]);setZones(z||[]);setLoading(false);
   }

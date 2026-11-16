@@ -1,3 +1,4 @@
+import { lire } from "@/lib/lire";
 // Adapte l'import ci-dessous au chemin réel de ton client Supabase existant
 // (celui déjà utilisé par Cabinet Varelli & Associés).
 import { supabase } from '@/lib/supabase';
@@ -5,13 +6,13 @@ import type { CartePoint, Category, Dossier, Gang, Personne, Plaque, Preset } fr
 import { dbw } from "@/lib/dbw";
 
 export async function fetchPoints(): Promise<CartePoint[]> {
-  const { data, error } = await supabase.from('carte_points').select('*');
+  const { data, error } = await lire('carte_points');
   if (error) throw error;
   return data ?? [];
 }
 
 export async function fetchDossiers(): Promise<Dossier[]> {
-  const { data, error } = await supabase.from('carte_dossiers').select('*');
+  const { data, error } = await lire('carte_dossiers');
   if (error) throw error;
   return data ?? [];
 }
@@ -44,7 +45,7 @@ export async function upsertDossier(dossier: Dossier): Promise<Dossier> {
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const { data, error } = await supabase.from('carte_categories').select('*').order('sort_order', { ascending: true });
+  const { data, error } = await lire('carte_categories', { order: [['sort_order', true]] });
   if (error) throw error;
   return data ?? [];
 }
@@ -66,7 +67,7 @@ export async function deleteCategory(id: string): Promise<void> {
 }
 
 export async function fetchPersonnes(): Promise<Personne[]> {
-  const { data, error } = await supabase.from('carte_personnes').select('*').order('nom', { ascending: true });
+  const { data, error } = await lire('carte_personnes', { order: [['nom', true]] });
   if (error) throw error;
   return data ?? [];
 }
@@ -88,7 +89,7 @@ export async function deletePersonne(id: string): Promise<void> {
 }
 
 export async function fetchPlaques(): Promise<Plaque[]> {
-  const { data, error } = await supabase.from('carte_plaques').select('*').order('plaque', { ascending: true });
+  const { data, error } = await lire('carte_plaques', { order: [['plaque', true]] });
   if (error) throw error;
   return data ?? [];
 }
@@ -121,7 +122,7 @@ export async function uploadImage(file: File): Promise<string> {
 }
 
 export async function fetchGangs(): Promise<Gang[]> {
-  const { data, error } = await supabase.from('carte_gangs').select('*').order('sort_order', { ascending: true });
+  const { data, error } = await lire('carte_gangs', { order: [['sort_order', true]] });
   if (error) throw error;
   return data ?? [];
 }
@@ -143,7 +144,7 @@ export async function deleteGang(id: string): Promise<void> {
 }
 
 export async function fetchPresets(): Promise<Preset[]> {
-  const { data, error } = await supabase.from('carte_presets').select('*').order('sort_order', { ascending: true });
+  const { data, error } = await lire('carte_presets', { order: [['sort_order', true]] });
   if (error) throw error;
   return data ?? [];
 }

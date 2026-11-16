@@ -1,3 +1,4 @@
+import { lire, lireUn } from "@/lib/lire";
 import { money } from "@/lib/money";
 // Fiches (obsidian_fiches) <-> Base de données (bdd_personnes) : recherche, pré-remplissage et synchronisation.
 type Db = any;
@@ -70,8 +71,8 @@ export async function lookupPeople(db: Db, query: string): Promise<{ candidates:
   const [pers, veh, pla, cpers, fiches] = await Promise.all([
     db.from("bdd_personnes").select("*").or(`nom.ilike.${like},prenom.ilike.${like},surnom.ilike.${like},telephone.ilike.${like}`).limit(25),
     db.from("bdd_vehicules").select("*").ilike("plaque", `%${q}%`).limit(10),
-    db.from("carte_plaques").select("*").ilike("plaque", `%${q}%`).limit(10),
-    db.from("carte_personnes").select("*").or(`nom.ilike.${like},prenom.ilike.${like}`).limit(10),
+    lire("carte_plaques", { ilike: [["plaque", `%${q}%`]], limit: 10 }),
+    lire("carte_personnes", { or: `nom.ilike.${like},prenom.ilike.${like}`, limit: 10 }),
     db.from("obsidian_fiches").select("id,nom,organisation,telephone,personne_id").ilike("nom", `%${q}%`).limit(5),
   ]);
   const match = (p: any) => tokens.every(t => `${p.nom} ${p.prenom || ""} ${p.surnom || ""} ${p.telephone || ""}`.toLowerCase().includes(t.toLowerCase()));
@@ -91,7 +92,7 @@ export async function lookupPeople(db: Db, query: string): Promise<{ candidates:
   }
   // Carte enquêteur : plaque -> personne ; personnes du registre
   for (const pl of pla.data || []) {
-    const { data: cp } = pl.personne_id ? await db.from("carte_personnes").select("*").eq("id", pl.personne_id).maybeSingle() : { data: null };
+    const { data: cp } = pl.personne_id ? await lireUn("carte_personnes", { eq: [["id", pl.personne_id]] }) : { data: null };
     out.push({ key: "pl" + pl.id, source: "San Andreas", label: cp ? `${fullNom(cp)} (plaque ${pl.plaque})` : `Plaque ${pl.plaque}`, detail: pl.notes || "", personne: cp ? { nom: cp.nom, prenom: cp.prenom, notes_publiques: cp.notes || "" } : undefined, vehicules: [{ plaque: pl.plaque }], plaque: pl.plaque });
   }
   for (const cp of cpers.data || []) if (match(cp) && !out.some(c => c.key === "cp" + cp.id)) out.push({ key: "cp" + cp.id, source: "San Andreas", label: fullNom(cp), detail: cp.notes || "", personne: { nom: cp.nom, prenom: cp.prenom, notes_publiques: cp.notes || "" }, vehicules: [] });

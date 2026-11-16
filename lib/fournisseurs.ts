@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ACCS } from "@/lib/priceRef";
@@ -39,7 +40,7 @@ export function useFournisseurs() {
   const [list, setList] = useState<Fournisseur[]>([]);
   const reload = useCallback(async () => {
     if (!supabase) return;
-    const { data } = await supabase.from("obsidian_fournisseurs").select("*").eq("actif", true).order("prix_achat");
+    const { data } = await lire("obsidian_fournisseurs", { eq: [["actif", true]], order: [["prix_achat", true]] });
     setList((data || []).map((x: any) => ({ ...x, prix_achat: Number(x.prix_achat) || 0 })));
   }, []);
   useEffect(() => { reload(); }, [reload]);
@@ -53,9 +54,9 @@ export interface PriceRef { nom: string; categorie: "drogue" | "arme" | "accesso
 export async function loadPriceTable(): Promise<PriceRef[]> {
   if (!supabase) return [];
   const [{ data: d }, { data: a }, { data: f }] = await Promise.all([
-    supabase.from("obsidian_drogues").select("nom,emoji,prix_min,prix_max").order("ordre"),
-    supabase.from("obsidian_armes_prix").select("nom,prix").order("ordre"),
-    supabase.from("obsidian_fournisseurs").select("*").eq("actif", true),
+    lire("obsidian_drogues", { select: "nom,emoji,prix_min,prix_max", order: [["ordre", true]] }),
+    lire("obsidian_armes_prix", { select: "nom,prix", order: [["ordre", true]] }),
+    lire("obsidian_fournisseurs", { eq: [["actif", true]] }),
   ]);
   const fl: Fournisseur[] = (f || []).map((x: any) => ({ ...x, prix_achat: Number(x.prix_achat) || 0 }));
   const mk = (categorie: PriceRef["categorie"], nom: string, emoji: string, vente: number): PriceRef => {

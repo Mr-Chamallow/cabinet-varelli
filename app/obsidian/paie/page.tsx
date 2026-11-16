@@ -1,5 +1,5 @@
 "use client";
-import { lire } from "@/lib/lire";
+import { lire, lireUn } from "@/lib/lire";
 import Link from "next/link";
 import { Stamp } from "@/components/Stamp";
 import { useEffect, useState, useMemo } from "react";
@@ -65,7 +65,7 @@ export default function PaieObsidianPage() {
     const [c, p, { data: s }, ar, { data: dn }, { data: bg }] = await Promise.all([
       fetchAll((a, b) => lire("obsidian_comptabilite", { eq: [["source", "action"]], order: [["created_at", true], ["id", true]], range: [a, b] })),
       fetchAll((a, b) => lire("obsidian_paiements", { order: [["created_at", false], ["id", true]], range: [a, b] })),
-      supabase.from("obsidian_settings").select("*").eq("id", "default").maybeSingle(),
+      lireUn("obsidian_settings", { eq: [["id", "default"]] }),
       fetchAll((a, b) => lire("arrestations", { select: "membre,amende,argent_perdu,type_argent,created_at", order: [["created_at", true], ["id", true]], range: [a, b] })),
       lire("obsidian_dons", { order: [["created_at", false]], limit: 500 }),
       supabase.rpc("obsidian_budget"),

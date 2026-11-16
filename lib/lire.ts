@@ -7,6 +7,8 @@ export type Lecture = {
   eq?: [string, any][];
   ilike?: [string, string][];
   gte?: [string, any][]; // colonne >= valeur
+  gt?: [string, any][]; // colonne > valeur
+  in?: [string, any[]][]; // colonne dans la liste
   contains?: [string, any][]; // tableau contient
   is?: [string, null][]; // colonne IS NULL
   or?: string; // filtre PostgREST, ex: "nom.ilike.%x%,prenom.ilike.%x%"
@@ -30,4 +32,10 @@ export async function lire(table: string, opts: Lecture = {}): Promise<{ data: a
   } catch (e: any) {
     return { data: null, error: { message: String(e?.message || e) }, count: null };
   }
+}
+
+// Comme lire(), mais renvoie une seule ligne (ou null) : remplace maybeSingle().
+export async function lireUn(table: string, opts: Lecture = {}) {
+  const r = await lire(table, { ...opts, limit: 1 });
+  return { data: r.data?.[0] ?? null, error: r.error };
 }

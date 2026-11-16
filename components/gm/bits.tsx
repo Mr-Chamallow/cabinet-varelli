@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { money } from "@/lib/money";
 import { useEffect, useState } from "react";
@@ -20,7 +21,7 @@ export function useGroupes(reload?: number) {
   const [groupes, setGroupes] = useState<Groupe[]>([]);
   useEffect(() => {
     if (!supabase) return;
-    supabase.from("carte_gangs").select("id,nom,type,sort_order").order("sort_order", { ascending: true }).order("nom").then(({ data }) => setGroupes((data || []) as Groupe[]));
+    lire("carte_gangs", { select: "id,nom,type,sort_order", order: [["sort_order", true], ["nom", true]] }).then(({ data }) => setGroupes((data || []) as Groupe[]));
   }, [reload]);
   return groupes;
 }

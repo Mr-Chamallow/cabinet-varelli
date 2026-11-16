@@ -1,5 +1,5 @@
 "use client";
-import { lire } from "@/lib/lire";
+import { lire, lireUn } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -58,9 +58,9 @@ export default function ComptaHubPage() {
       fetchAll((a, b) => lire("obsidian_mouvements", { select: "stock_nom,type,quantite,total,motif,created_at", order: [["created_at", true], ["id", true]], range: [a, b] })),
       fetchAll((a, b) => lire("cahier_transactions", { select: "type,montant,quantite,produit_nom,categorie,created_at", order: [["created_at", true], ["id", true]], range: [a, b] })),
       lire("obsidian_stocks", { select: "nom,categorie,quantite,prix_unitaire", limit: 2000 }),
-      supabase.from("obsidian_semaines").select("*").order("semaine", { ascending: false }).limit(200),
+      lire("obsidian_semaines", { order: [["semaine", false]], limit: 200 }),
       supabase.rpc("obsidian_budget"),
-      supabase.from("obsidian_settings").select("capital_depart,seuil_tresorerie").eq("id", "default").maybeSingle(),
+      lireUn("obsidian_settings", { select: "capital_depart,seuil_tresorerie", eq: [["id", "default"]] }),
     ]);
     setBg(bgd || null); setCapital(Number(stg?.capital_depart) || 0); setSeuil(Number(stg?.seuil_tresorerie) || 0);
     const rows = (data || []).map((e: any) => ({ ...e, montant: Number(e.montant) || 0, source: e.source || "manuel" }));

@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import { money } from "@/lib/money";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -12,7 +13,7 @@ const ref = (id: string) => "OBS-F-" + (parseInt((id || "0").replace(/[^0-9a-f]/
 
 export function FicheDossier({ f, showPrivate = true }: { f: any; showPrivate?: boolean }) {
   const [journal, setJournal] = useState<any[]>([]);
-  useEffect(() => { if (!supabase || !f?.id || !showPrivate) return; supabase.from("obsidian_journal").select("*").eq("fiche_id", f.id).order("created_at", { ascending: false }).limit(8).then(({ data }) => setJournal(data || [])); }, [f?.id, showPrivate]);
+  useEffect(() => { if (!supabase || !f?.id || !showPrivate) return; lire("obsidian_journal", { eq: [["fiche_id", f.id]], order: [["created_at", false]], limit: 8 }).then(({ data }) => setJournal(data || [])); }, [f?.id, showPrivate]);
   const m = metierInfo(f.metier); const col = PCOL[f.priorite] || PCOL.Normale;
   const st = String(f.statut || ""); const bigStamp = /captur|arr[êe]t/i.test(st) ? { t: "Capturé", c: "green" as const } : /class|clos|neutralis/i.test(st) ? { t: "Classé", c: "blue" as const } : null;
   const rows: [string, any][] = [["Âge", f.age ? `${f.age} ans` : ""], ["Origine", f.origine], ["Occupation", f.occupation], ["Téléphone", f.telephone], ["Groupe", f.organisation], ["Statut", f.statut], ["Type", f.type]];

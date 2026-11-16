@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -50,7 +51,7 @@ export default function AuditsPage() {
   useRealtimeTable("gm_audits", load);
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from("gm_audits").select("*").order("created_at", { ascending: false });
+    const { data } = await lire("gm_audits", { order: [["created_at", false]] });
     setList(data || []); setLoading(false);
   }
   function openNew() { setEditId(null); setForm(EMPTY); setShow(true); }

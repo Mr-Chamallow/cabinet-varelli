@@ -35,9 +35,9 @@ export default function RecrutementPage() {
   async function load() {
     if (!supabase) { setLoading(false); return; }
     const [{ data }, { count }, { data: vt }] = await Promise.all([
-      supabase.from("obsidian_recrutement").select("*").order("created_at", { ascending: false }),
+      lire("obsidian_recrutement", { order: [["created_at", false]] }),
       lire("obsidian_employes", { select: "id", count: true, head: true }),
-      supabase.from("obsidian_recrutement_votes").select("recrutement_id,voter_id,voter_nom,vote"),
+      lire("obsidian_recrutement_votes", { select: "recrutement_id,voter_id,voter_nom,vote" }),
     ]);
     setVotes(vt || []);
     setList(data || []); setEffectif(count ?? null);

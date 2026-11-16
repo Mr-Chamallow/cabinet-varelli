@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -34,7 +35,7 @@ export default function PactesPage() {
   useRealtimeTable("gm_pactes", load);
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from("gm_pactes").select("*").order("created_at", { ascending: false });
+    const { data } = await lire("gm_pactes", { order: [["created_at", false]] });
     setList(data || []); setLoading(false);
   }
   function openNew() { setEditId(null); setForm(EMPTY); setShow(true); }
