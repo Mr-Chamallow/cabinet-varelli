@@ -537,6 +537,12 @@ input, select, textarea {
   transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
 }
 
+/* Accessibilité clavier : contour visible sur les boutons et liens (souris non concernée) */
+button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 input:focus, select:focus, textarea:focus {
   border-color: rgba(var(--gold-rgb), 0.45);
   box-shadow: 0 0 0 3px rgba(var(--gold-rgb), 0.06);
