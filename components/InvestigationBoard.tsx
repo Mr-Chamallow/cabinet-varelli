@@ -515,7 +515,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
               <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => removeAct([one.id])}>Retirer du tableau</button>
             </>
           ) : selItems.length > 1 ? (
-            <><b>{selItems.length} pièces</b><div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>Glisse l'une d'elles pour tout déplacer.</div><button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => removeAct([...sel])}>Retirer la sélection (Suppr)</button></>
+            <><b>{selItems.length} pièces</b><div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>Glisse l&apos;une d&apos;elles pour tout déplacer.</div><button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => removeAct([...sel])}>Retirer la sélection (Suppr)</button></>
           ) : (
             <><b style={{ fontSize: "0.78rem" }}>Légende des liens</b>
               {LINK_TYPES.map(t => <div key={t.k} style={{ fontSize: "0.68rem", display: "flex", gap: 6, alignItems: "center" }}><i style={{ width: 22, height: 3, background: t.color, display: "inline-block" }} />{t.label}</div>)}

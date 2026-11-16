@@ -36,7 +36,7 @@ export function WantedPoster({ d }: { d: WantedData }) {
             {d.organisation && <div className="wp-org">🛡️ {d.organisation}</div>}
             <div className="wp-motif">{d.motif || "Pour atteinte aux intérêts du Consortium."}</div>
             <div className="wp-reward"><small>RÉCOMPENSE</small>{Number(d.prime) > 0 ? usd(d.prime) : "À NÉGOCIER"}</div>
-            <div className="wp-foot">Tout renseignement : Tribunal de l'Ombre · Danger : <b>{threat}</b></div>
+            <div className="wp-foot">Tout renseignement : Tribunal de l&apos;Ombre · Danger : <b>{threat}</b></div>
           </div>
           <div className="wp wp-verso">
             <ObsLogo size={30} className="wp-logo" />

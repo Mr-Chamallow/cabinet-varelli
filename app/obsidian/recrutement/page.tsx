@@ -169,7 +169,7 @@ export default function RecrutementPage() {
               <div><label>ID Discord</label><input value={form.discord_id} onChange={e => setForm({ ...form, discord_id: e.target.value })} /></div>
               <div><label>Heures de jeu</label><input type="number" min={0} value={form.heures_jeu} onChange={e => setForm({ ...form, heures_jeu: e.target.value })} /></div>
               <div><label>Ancien groupe</label><input value={form.ancien_groupe} onChange={e => setForm({ ...form, ancien_groupe: e.target.value })} placeholder="Vide si aucun" /></div>
-              <div><label>Date de départ de l'ancien groupe</label><input type="date" value={form.date_depart_ancien} onChange={e => setForm({ ...form, date_depart_ancien: e.target.value })} /></div>
+              <div><label>Date de départ de l&apos;ancien groupe</label><input type="date" value={form.date_depart_ancien} onChange={e => setForm({ ...form, date_depart_ancien: e.target.value })} /></div>
               <div><label>Statut</label><select value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>{Object.entries(STATUTS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}</select></div>
             </div>
             <div style={{ display: "flex", gap: "1.2rem", flexWrap: "wrap", margin: "0.6rem 0" }}>

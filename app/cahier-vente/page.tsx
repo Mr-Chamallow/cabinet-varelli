@@ -484,7 +484,7 @@ export default function CahierVentePage() {
             <div className="section-title" style={{ marginBottom: "1rem" }}>Nouvelle transaction</div>
 
             <div className="form-group">
-              <label>Type d'opération</label>
+              <label>Type d&apos;opération</label>
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 {(["entrée", "sortie"] as const).map(t => (
                   <button key={t} onClick={() => { setHorsStock(false); setForm(f => ({ ...f, type: t, categorie: t === "entrée" && !CATEGORIES.includes(f.categorie) ? "drogue" : f.categorie, produit_nom: "" })); }} style={{
@@ -572,7 +572,7 @@ export default function CahierVentePage() {
             </div>
 
             <div className="form-group" style={{ marginBottom: "1.25rem" }}>
-              <label>Type d'argent</label>
+              <label>Type d&apos;argent</label>
               <div style={{ display: "flex", gap: "0.35rem" }}>
                 {TYPES_ARGENT.map(t => (
                   <button key={t} onClick={() => setForm(f => ({ ...f, type_argent: t }))} style={{

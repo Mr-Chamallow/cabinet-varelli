@@ -82,7 +82,7 @@ export function BootScreen() {
 
         {showBox && (
           <div className={`boot-req${granted ? " granted" : ""}`}>
-            <div className="br-head"><span>⚿ DEMANDE D'ACCÈS - PROTOCOLE OBS-SECURE/7</span><span>{req}</span></div>
+            <div className="br-head"><span>⚿ DEMANDE D&apos;ACCÈS - PROTOCOLE OBS-SECURE/7</span><span>{req}</span></div>
             <div className="br-grid">
               <span>ORIGINE</span><b>{fp}</b>
               <span>ENTITÉ</span><b>Obsidian Logistics</b>

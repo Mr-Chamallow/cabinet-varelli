@@ -86,7 +86,7 @@ export default function TribunalPage() {
     <div className="page-container">
       <Link className="back-link" href="/">Dashboard</Link>
       <div className="page-header">
-        <div><h1 className="page-title">⚖️ Tribunal de l'Ombre</h1><p className="page-subtitle">Instruction · Accusation · Défense · Verdict</p><div className="gold-line" /></div>
+        <div><h1 className="page-title">⚖️ Tribunal de l&apos;Ombre</h1><p className="page-subtitle">Instruction · Accusation · Défense · Verdict</p><div className="gold-line" /></div>
         {canWrite && <button className="btn btn-gold" onClick={openNew}>+ Nouveau dossier</button>}
       </div>
       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1rem" }}>
@@ -110,10 +110,10 @@ export default function TribunalPage() {
                 {isOpen && (
                   <div style={{ marginTop: "0.85rem", display: "flex", flexDirection: "column", gap: "0.7rem", fontSize: "0.82rem" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: "0.5rem" }}>
-                      <div><b>Juge</b><br />{d.juge || " - "}</div><div><b>Procureur</b><br />{d.procureur || " - "}</div><div><b>Avocat commis d'office</b><br />{d.avocat || " - "}</div><div><b>Organisation</b><br />{d.organisation || " - "}</div>
+                      <div><b>Juge</b><br />{d.juge || " - "}</div><div><b>Procureur</b><br />{d.procureur || " - "}</div><div><b>Avocat commis d&apos;office</b><br />{d.avocat || " - "}</div><div><b>Organisation</b><br />{d.organisation || " - "}</div>
                     </div>
                     {d.organisation && <OrgLinks organisation={d.organisation} excludeDossierId={d.id} />}
-                    {d.acte_accusation && <div><b>📜 Acte d'accusation</b><div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{d.acte_accusation}</div></div>}
+                    {d.acte_accusation && <div><b>📜 Acte d&apos;accusation</b><div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{d.acte_accusation}</div></div>}
                     {d.defense && <div><b>🛡️ Défense</b><div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{d.defense}</div></div>}
                     {d.sentence && <div><b>🔨 Sentence</b><div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{d.sentence}</div></div>}
                     <div>
@@ -160,16 +160,16 @@ export default function TribunalPage() {
               <div><label>Organisation</label><GroupeSelect value={form.organisation} groupes={groupes} onChange={v => setForm({ ...form, organisation: v })} placeholder="- Aucun / personne seule - " /></div>
               <div><label>Juge</label><EmployeePicker value={form.juge} onChange={v => setForm({ ...form, juge: v })} /></div>
               <div><label>Procureur</label><EmployeePicker value={form.procureur} onChange={v => setForm({ ...form, procureur: v })} /></div>
-              <div><label>Avocat commis d'office</label><EmployeePicker value={form.avocat} onChange={v => setForm({ ...form, avocat: v })} /></div>
-              <div><label>Date d'audience</label><input type="datetime-local" value={form.date_audience} onChange={e => setForm({ ...form, date_audience: e.target.value })} /></div>
+              <div><label>Avocat commis d&apos;office</label><EmployeePicker value={form.avocat} onChange={v => setForm({ ...form, avocat: v })} /></div>
+              <div><label>Date d&apos;audience</label><input type="datetime-local" value={form.date_audience} onChange={e => setForm({ ...form, date_audience: e.target.value })} /></div>
             </div>
-            <div><label>Acte d'accusation</label><textarea rows={3} value={form.acte_accusation} onChange={e => setForm({ ...form, acte_accusation: e.target.value })} /></div>
+            <div><label>Acte d&apos;accusation</label><textarea rows={3} value={form.acte_accusation} onChange={e => setForm({ ...form, acte_accusation: e.target.value })} /></div>
             <div><label>Défense</label><textarea rows={3} value={form.defense} onChange={e => setForm({ ...form, defense: e.target.value })} /></div>
             <div className="form-grid">
               <div><label>Verdict</label><select value={form.verdict} onChange={e => setForm({ ...form, verdict: e.target.value })}>{Object.entries(VERDICTS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
               <div><label>Sentence</label><input value={form.sentence} onChange={e => setForm({ ...form, sentence: e.target.value })} placeholder="Amende, mort RP (validée staff)..." /></div>
             </div>
-            <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>Les preuves s'ajoutent depuis la carte du dossier. Un verdict « coupable » lié à une organisation baisse sa réputation (-15).</div>
+            <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>Les preuves s&apos;ajoutent depuis la carte du dossier. Un verdict « coupable » lié à une organisation baisse sa réputation (-15).</div>
           </div>
         </Modal>
       )}

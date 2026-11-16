@@ -200,7 +200,7 @@ export default function PaieObsidianPage() {
 
           {!loading && budget && (tresoPropre < seuilTreso || tresoPropre < totaux.restant) && (
             <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.35)", borderRadius: "var(--radius-lg)", padding: "0.75rem 1rem", marginBottom: "1rem", fontSize: "0.8rem", color: "var(--danger)", fontWeight: 600 }}>
-              ⚠️ Trésorerie propre : {fmt(tresoPropre)}{seuilTreso > 0 ? ` (seuil minimum ${fmt(seuilTreso)})` : ""} · reste à payer cette semaine : {fmt(totaux.restant)}. Les paies sortent uniquement de la caisse propre : blanchis de l'argent sale si besoin. Un paiement demandera une confirmation.
+              ⚠️ Trésorerie propre : {fmt(tresoPropre)}{seuilTreso > 0 ? ` (seuil minimum ${fmt(seuilTreso)})` : ""} · reste à payer cette semaine : {fmt(totaux.restant)}. Les paies sortent uniquement de la caisse propre : blanchis de l&apos;argent sale si besoin. Un paiement demandera une confirmation.
             </div>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0.875rem", marginBottom: "1.5rem" }}>
@@ -304,7 +304,7 @@ export default function PaieObsidianPage() {
             <input type="number" min={0} max={100} value={pct} onChange={e => setPct(+e.target.value)} />
           </div>
           <div className="form-group">
-            <label>Ventes minimum de l'employé pour la prime fixe ($)</label>
+            <label>Ventes minimum de l&apos;employé pour la prime fixe ($)</label>
             <input type="number" min={0} value={primeSeuil} onChange={e => setPrimeSeuil(+e.target.value)} />
           </div>
           <div className="form-group">
@@ -313,7 +313,7 @@ export default function PaieObsidianPage() {
           </div>
           <button className="btn btn-gold" onClick={savePct} disabled={savingPct}>{savingPct ? "..." : "Enregistrer"}</button>
           <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.75rem" }}>
-            Seules les actions illégales comptent. Les ventes et achats de produits (Transaction, Stocks) sont des opérations de l'entreprise et ne touchent pas la paie. Le seuil de trésorerie se règle dans Comptabilité, onglet Budget de lancement.
+            Seules les actions illégales comptent. Les ventes et achats de produits (Transaction, Stocks) sont des opérations de l&apos;entreprise et ne touchent pas la paie. Le seuil de trésorerie se règle dans Comptabilité, onglet Budget de lancement.
           </p>
         </div>
       )}

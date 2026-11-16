@@ -433,10 +433,10 @@ async function saveOperation() {
           <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 800, fontSize: "1.1rem", color: operationsAujourdhui.length > 0 ? "var(--gold)" : "var(--text)" }}>
             {operationsAujourdhui.length}
           </span>
-          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>aujourd'hui</span>
+          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>aujourd&apos;hui</span>
         </div>
         <button className="btn btn-outline btn-sm" onClick={goToday} style={{ marginLeft: "auto" }}>
-          📍 Aujourd'hui
+          📍 Aujourd&apos;hui
         </button>
       </div>
 
@@ -649,7 +649,7 @@ async function saveOperation() {
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: operationsAujourdhui.length > 0 ? "var(--gold)" : "var(--text-dim)", boxShadow: operationsAujourdhui.length > 0 ? "0 0 6px var(--gold)" : "none" }} />
                 <h3 style={{ fontSize: "0.875rem", fontWeight: 700, color: operationsAujourdhui.length > 0 ? "var(--gold)" : "var(--text-muted)" }}>
-                  Aujourd'hui
+                  Aujourd&apos;hui
                 </h3>
                 {operationsAujourdhui.length > 0 && (
                   <span style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem", borderRadius: 999, background: "var(--gold-muted)", color: "var(--gold)", border: "1px solid rgba(139,92,246,0.3)", fontWeight: 700 }}>
@@ -663,7 +663,7 @@ async function saveOperation() {
               <div className="skeleton" style={{ height: 48, borderRadius: "var(--radius)" }} />
             ) : operationsAujourdhui.length === 0 ? (
               <div style={{ fontSize: "0.8rem", color: "var(--text-dim)", textAlign: "center", padding: "0.75rem 0", fontStyle: "italic" }}>
-                Aucune opération programmée aujourd'hui
+                Aucune opération programmée aujourd&apos;hui
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>

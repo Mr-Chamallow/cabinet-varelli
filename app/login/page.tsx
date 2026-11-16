@@ -68,7 +68,7 @@ function LoginContent() {
           <p style={{ color: "#ef4444", marginBottom: "1rem", maxWidth: 320 }}>Tu dois être membre du serveur Discord pour accéder au site.{inviteLink}</p>
         ) : discordError === "MissingScope" ? (
           <p style={{ color: "#ef4444", marginBottom: "1rem", maxWidth: 320 }}>
-            Discord n'a pas transmis tes rôles de serveur. Reconnecte-toi et accepte <b>toutes</b> les autorisations demandées (pas juste "identifier").
+            Discord n&apos;a pas transmis tes rôles de serveur. Reconnecte-toi et accepte <b>toutes</b> les autorisations demandées (pas juste &quot;identifier&quot;).
           </p>
         ) : discordError === "AccessDenied" ? (
           <p style={{ color: "#ef4444", marginBottom: "1rem", maxWidth: 320 }}>Tu dois être membre du serveur Discord pour accéder au site.{inviteLink}</p>

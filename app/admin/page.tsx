@@ -369,8 +369,8 @@ export default function AdminPage() {
             {" - "}permissions Supabase : <code style={{ fontSize: "0.75rem" }}>{JSON.stringify(user.permissions || [])}</code>
           </p>
           <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginTop: "0.5rem" }}>
-            Si ce rôle devrait avoir accès, ajoute la permission "admin" à ce rôle dans l'onglet Rôles,
-            ou force le rôle "CEO - Directeur général" pour ce membre via un override.
+            Si ce rôle devrait avoir accès, ajoute la permission &quot;admin&quot; à ce rôle dans l&apos;onglet Rôles,
+            ou force le rôle &quot;CEO - Directeur général&quot; pour ce membre via un override.
           </p>
           <Link href="/" className="btn btn-outline btn-sm" style={{ marginTop: "1rem", display: "inline-block" }}>Retour au tableau de bord</Link>
         </div>
@@ -452,7 +452,7 @@ export default function AdminPage() {
                 </div>
                 {resyncMsg && <div className="card" style={{ padding:"0.5rem 0.9rem", marginBottom:"0.75rem", fontSize:"0.8rem" }}>{resyncMsg}</div>}
                 <p style={{ fontSize:"0.75rem", color:"var(--text-dim)", marginBottom:"1rem" }}>
-                  Les rôles suivent Discord automatiquement (mise à jour ≈ 5 min). Un rôle <b>🔒 forcé</b> prend le dessus jusqu'à ce que tu le retires.
+                  Les rôles suivent Discord automatiquement (mise à jour ≈ 5 min). Un rôle <b>🔒 forcé</b> prend le dessus jusqu&apos;à ce que tu le retires.
                 </p>
 
                 {showBansList && (
@@ -686,7 +686,7 @@ export default function AdminPage() {
                 <div className="card">
                   <div className="section-title" style={{ marginBottom:"0.5rem" }}>🔔 Alertes Discord</div>
                   <p style={{ fontSize:"0.7rem", color:"var(--text-dim)", marginBottom:"0.875rem" }}>
-                    Chaque module a son propre webhook, configuré via variable d'environnement sur Vercel (DISCORD_WEBHOOK_STOCKS, _RDV, _CONTRATS, _FICHES, _BASE_DONNEES, _ARRESTATIONS, _ACTIONS, _COMPTA, _DELAIS, _MEMBRES, _ADMIN, _RAPPORT, _GM (repli : _ADMIN), _CONNEXIONS). Teste ici que chacun est bien branché.
+                    Chaque module a son propre webhook, configuré via variable d&apos;environnement sur Vercel (DISCORD_WEBHOOK_STOCKS, _RDV, _CONTRATS, _FICHES, _BASE_DONNEES, _ARRESTATIONS, _ACTIONS, _COMPTA, _DELAIS, _MEMBRES, _ADMIN, _RAPPORT, _GM (repli : _ADMIN), _CONNEXIONS). Teste ici que chacun est bien branché.
                   </p>
                   <div style={{ display:"flex", flexDirection:"column", gap:"0.6rem" }}>
                     {["stocks","rdv","contrats","fiches","base_donnees","arrestations","actions","compta","delais","membres","admin","rapport","gm"].map(kind => (
@@ -722,7 +722,7 @@ export default function AdminPage() {
       {renameForm && (
         <Modal title="Renommer le membre" onClose={() => setRenameForm(null)} footer={<><button className="btn btn-outline" onClick={() => setRenameForm(null)}>Annuler</button><button className="btn btn-gold" disabled={!renameForm.nom.trim()} onClick={confirmRename}>Renommer</button></>}>
           <div className="form-group"><label>Nouveau nom</label><input autoFocus value={renameForm.nom} onChange={e => setRenameForm({ ...renameForm, nom: e.target.value })} /></div>
-          <label style={{ display:"flex", alignItems:"center", gap:"0.5rem", cursor:"pointer", fontSize:"0.82rem" }}><input type="checkbox" checked={renameForm.employe} onChange={e => setRenameForm({ ...renameForm, employe: e.target.checked })} style={{ width:16, height:16 }} />Renommer aussi l'employé lié (et tout son historique : actions, arrestations, compta, paie)</label>
+          <label style={{ display:"flex", alignItems:"center", gap:"0.5rem", cursor:"pointer", fontSize:"0.82rem" }}><input type="checkbox" checked={renameForm.employe} onChange={e => setRenameForm({ ...renameForm, employe: e.target.checked })} style={{ width:16, height:16 }} />Renommer aussi l&apos;employé lié (et tout son historique : actions, arrestations, compta, paie)</label>
         </Modal>
       )}
       {/* Modals */}
@@ -734,7 +734,7 @@ export default function AdminPage() {
               <div className="form-group">
                 <label>ID Discord *</label>
                 <input placeholder="Ex : 460865920278069248" value={overrideForm.discord_id} onChange={e=>setOverrideForm(f=>({...f,discord_id:e.target.value}))} style={{ fontFamily: "var(--font-mono)" }}/>
-                <div style={{ fontSize:"0.7rem", color:"var(--text-dim)", marginTop:"0.3rem" }}>Mode développeur Discord activé {'->'} clic droit sur le pseudo {'->'} Copier l'ID</div>
+                <div style={{ fontSize:"0.7rem", color:"var(--text-dim)", marginTop:"0.3rem" }}>Mode développeur Discord activé {'->'} clic droit sur le pseudo {'->'} Copier l&apos;ID</div>
               </div>
               <div className="form-group"><label>Rôle à forcer *</label>
                 <select value={overrideForm.role} onChange={e=>setOverrideForm(f=>({...f,role:e.target.value}))}>
@@ -750,7 +750,7 @@ export default function AdminPage() {
               <button className="btn btn-outline" onClick={()=>setShowBanForm(false)}>Annuler</button>
               <button className="btn btn-gold" style={{ background:"var(--danger)" }} onClick={confirmBan} disabled={banningId===banForm.discord_id}>{banningId===banForm.discord_id?"...":"Confirmer le bannissement"}</button></>}>
               <p style={{ fontSize:"0.8rem", color:"var(--text-dim)", marginBottom:"0.875rem" }}>
-                Le membre sera immédiatement redirigé vers une page de bannissement à sa prochaine navigation, et ne pourra plus accéder au site tant que le bannissement n'est pas levé.
+                Le membre sera immédiatement redirigé vers une page de bannissement à sa prochaine navigation, et ne pourra plus accéder au site tant que le bannissement n&apos;est pas levé.
               </p>
               <div className="form-group"><label>ID Discord</label><input value={banForm.discord_id} disabled style={{ fontFamily:"var(--font-mono)", opacity:0.7 }}/></div>
               <div className="form-group" style={{ marginBottom:0 }}><label>Motif</label><textarea rows={3} autoFocus value={banForm.motif} onChange={e=>setBanForm(f=>({...f,motif:e.target.value}))} placeholder="Ex : comportement toxique, triche..."/></div>

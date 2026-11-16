@@ -381,7 +381,7 @@ export default function UtileSampPage() {
           </div>
           <div className="card" style={{ gridColumn: "1 / -1", borderColor: "rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.06)" }}>
             <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: 0, textAlign: "center" }}>
-              L'utilisation de ces fréquences est strictement professionnelle. Tout manquement peut être sanctionné.
+              L&apos;utilisation de ces fréquences est strictement professionnelle. Tout manquement peut être sanctionné.
             </p>
           </div>
         </div>

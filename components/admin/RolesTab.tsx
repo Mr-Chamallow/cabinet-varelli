@@ -137,14 +137,14 @@ export function RolesTab() {
       </div>
 
       <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "1rem" }}>
-        Ces rôles et permissions contrôlent réellement l'accès aux pages (calculé à chaque connexion Discord). Le nom du rôle doit correspondre exactement au rôle attribué (via Discord ou un override dans l'onglet Membres) pour s'appliquer.
+        Ces rôles et permissions contrôlent réellement l&apos;accès aux pages (calculé à chaque connexion Discord). Le nom du rôle doit correspondre exactement au rôle attribué (via Discord ou un override dans l&apos;onglet Membres) pour s&apos;appliquer.
       </p>
 
 
       <details className="card" style={{ marginBottom: "1rem" }}>
         <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: "0.85rem" }}>📖 Guide des permissions (ce que donne chaque accès)</summary>
         <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", margin: "0.6rem 0" }}>
-          ○ Aucun = page cachée · 👁 Lecture seule = voir sans rien modifier (boutons d'action masqués, API refusée) · Écriture = tout faire sur la page.
+          ○ Aucun = page cachée · 👁 Lecture seule = voir sans rien modifier (boutons d&apos;action masqués, API refusée) · Écriture = tout faire sur la page.
         </div>
         {PERMISSION_GUIDE.map(g => (
           <div key={g.titre} style={{ marginBottom: "0.9rem" }}>
@@ -219,7 +219,7 @@ export function RolesTab() {
                 </div>
               )}
 
-              {(() => { const obs = currentPerms.filter(p => !ALL_PERMISSIONS.includes(p.replace(/:(read|write)$/, ""))); return obs.length > 0 ? <div style={{ fontSize: "0.7rem", color: "var(--danger)", marginBottom: "0.5rem" }}>⚠️ Permissions obsolètes (n'existent plus) : {obs.join(", ")} - retirées à l'enregistrement.</div> : null; })()}
+              {(() => { const obs = currentPerms.filter(p => !ALL_PERMISSIONS.includes(p.replace(/:(read|write)$/, ""))); return obs.length > 0 ? <div style={{ fontSize: "0.7rem", color: "var(--danger)", marginBottom: "0.5rem" }}>⚠️ Permissions obsolètes (n&apos;existent plus) : {obs.join(", ")} - retirées à l&apos;enregistrement.</div> : null; })()}
               {isEditing && (
                 <p style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginBottom: "0.5rem" }}>
                   Clique une permission pour faire tourner : ○ Aucun {'->'} 👁 Lecture seule {'->'} Écriture

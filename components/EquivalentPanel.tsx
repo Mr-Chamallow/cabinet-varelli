@@ -24,7 +24,7 @@ export function EquivalentPanel() {
         <div className="form-group" style={{ marginBottom: 0 }}>
           <label>Montant en argent propre ($)</label>
           <input type="number" min={0} value={montant || ""} placeholder="Ex: 500 000" onChange={e => setMontant(Math.max(0, parseInt(e.target.value) || 0))} style={{ fontSize: "1rem", fontWeight: 600 }} />
-          <small style={{ color: "var(--text-dim)" }}>Unités achetables au prix d'achat de référence (fournisseur préféré, sinon le moins cher). Sans fournisseur : prix de vente moyen, marqué « estimé ».</small>
+          <small style={{ color: "var(--text-dim)" }}>Unités achetables au prix d&apos;achat de référence (fournisseur préféré, sinon le moins cher). Sans fournisseur : prix de vente moyen, marqué « estimé ».</small>
         </div>
       </div>
       {eq.length === 0 && <div style={{ color: "var(--text-dim)" }}>Aucun produit dans le Tableau des prix.</div>}

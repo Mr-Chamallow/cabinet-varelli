@@ -112,8 +112,8 @@ export default function GuerresPage() {
         <b>Rappels du règlement (organisation)</b><br />
         Armes en guerre : 3 lourdes, 2 pistolets mitrailleurs, armes de poing et légères illimitées · UMP ou fusil lourd : 1 seul par guerre, 100 munitions max · 2 armes portées max.<br />
         Véhicules : 5 + 1 moto (guerre ouverte), convoi 6 + 1 moto · pas de gros CVC · drive-by interdit en direct aux organisations.<br />
-        Otages : rançon jusqu'à 50.000 $ pour un lead, 30.000 $ pour un membre · reddition = rendez-vous en jeu puis trêve de {TREVE_JOURS} jours.<br />
-        Cooldowns : {COOLDOWN_ZONE_JOURS} jours après perte d'une zone, {COOLDOWN_BUSINESS_JOURS} jours après perte d'un business.
+        Otages : rançon jusqu&apos;à 50.000 $ pour un lead, 30.000 $ pour un membre · reddition = rendez-vous en jeu puis trêve de {TREVE_JOURS} jours.<br />
+        Cooldowns : {COOLDOWN_ZONE_JOURS} jours après perte d&apos;une zone, {COOLDOWN_BUSINESS_JOURS} jours après perte d&apos;un business.
       </div>
       {show && (
         <Modal title={editId ? "Modifier la guerre" : "Nouvelle guerre"} size="lg" onClose={() => setShow(false)}

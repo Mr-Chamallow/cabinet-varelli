@@ -170,7 +170,7 @@ export default function TaxesPage() {
               <div><label>Taux (% du prix de revente)</label><input type="number" min={0} value={form.taux_pct} onChange={e => setForm({ ...form, taux_pct: e.target.value })} placeholder="20 à 30" /></div>
               <div><label>Prix payé par période ($)</label><input type="number" min={0} value={form.montant} onChange={e => setForm({ ...form, montant: e.target.value })} /></div>
               <div><label>Période (jours)</label><input type="number" min={1} value={form.periodicite_jours} onChange={e => setForm({ ...form, periodicite_jours: e.target.value })} /></div>
-              <div><label>Durée de l'accord (jours)</label><input type="number" min={1} value={form.duree_jours} onChange={e => setForm({ ...form, duree_jours: e.target.value })} /></div>
+              <div><label>Durée de l&apos;accord (jours)</label><input type="number" min={1} value={form.duree_jours} onChange={e => setForm({ ...form, duree_jours: e.target.value })} /></div>
               <div><label>Début</label><input type="date" value={form.date_debut} onChange={e => setForm({ ...form, date_debut: e.target.value })} /></div>
               <div><label>Argent</label><select value={form.type_argent} onChange={e => setForm({ ...form, type_argent: e.target.value })}><option value="propre">💵 Propre</option><option value="sale">🕶️ Sale</option></select></div>
               <div><label>Statut</label><select value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}><option value="actif">Actif</option><option value="termine">Terminé</option><option value="suspendu">Suspendu</option></select></div>

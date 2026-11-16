@@ -32,7 +32,7 @@ export function PreviewBanner() {
           fontWeight: 700, cursor: "pointer", flexShrink: 0,
         }}
       >
-        Quitter l'aperçu
+        Quitter l&apos;aperçu
       </button>
     </div>
   );

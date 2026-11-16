@@ -69,7 +69,7 @@ export default function PactesPage() {
     <div className="page-container">
       <Link className="back-link" href="/">Dashboard</Link>
       <div className="page-header">
-        <div><h1 className="page-title">🤝 Pactes d'Obsidienne</h1><p className="page-subtitle">Groupes signataires · Clauses · Violations</p><div className="gold-line" /></div>
+        <div><h1 className="page-title">🤝 Pactes d&apos;Obsidienne</h1><p className="page-subtitle">Groupes signataires · Clauses · Violations</p><div className="gold-line" /></div>
         {canWrite && <button className="btn btn-gold" onClick={openNew}>+ Nouveau pacte</button>}
       </div>
       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1rem" }}>
@@ -128,7 +128,7 @@ export default function PactesPage() {
       {viol && (
         <Modal title={`Violation - ${viol.pact.organisation}`} onClose={() => setViol(null)}
           footer={<><button className="btn btn-outline" onClick={() => setViol(null)}>Annuler</button><button className="btn btn-gold" disabled={!viol.texte.trim()} onClick={addViolation}>Noter</button></>}>
-          <label>Que s'est-il passé ?</label>
+          <label>Que s&apos;est-il passé ?</label>
           <textarea rows={3} autoFocus value={viol.texte} onChange={e => setViol({ ...viol, texte: e.target.value })} />
         </Modal>
       )}

@@ -208,7 +208,7 @@ export default function ArrestationsPage() {
           </div>
           {Number(form.argent) > 0 && (
             <div>
-              <label>Type d'argent perdu</label>
+              <label>Type d&apos;argent perdu</label>
               <div style={{ display: "flex", gap: "0.35rem" }}>
                 {["sale", "propre", "mixte"].map(t => (
                   <button key={t} type="button" onClick={() => setForm({ ...form, type_argent: t })} style={{ padding: "0.3rem 0.7rem", borderRadius: "var(--radius)", cursor: "pointer", fontSize: "0.75rem", fontFamily: "'Inter',sans-serif", fontWeight: form.type_argent === t ? 700 : 400, background: form.type_argent === t ? "var(--gold-muted)" : "var(--surface)", border: `1px solid ${form.type_argent === t ? "rgba(var(--gold-rgb),0.4)" : "var(--border)"}`, color: form.type_argent === t ? "var(--gold)" : "var(--text-muted)" }}>{t}</button>

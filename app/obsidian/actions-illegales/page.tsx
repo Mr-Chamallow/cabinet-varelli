@@ -337,7 +337,7 @@ export default function ActionsIllegalesPage() {
           </div>
           {/\b(otage|rançon|rancon)/i.test(form.action) && Number(form.montant) > RANCON_MAX_PRISE && (
             <div style={{ fontSize: "0.8rem", color: "var(--warning)" }}>
-              ⚠️ Rançon au-dessus du plafond du règlement ({RANCON_MAX_OTAGE.toLocaleString("fr-FR")} $ par otage, {RANCON_MAX_PRISE.toLocaleString("fr-FR")} $ par prise d'otages). Tu peux enregistrer quand même.
+              ⚠️ Rançon au-dessus du plafond du règlement ({RANCON_MAX_OTAGE.toLocaleString("fr-FR")} $ par otage, {RANCON_MAX_PRISE.toLocaleString("fr-FR")} $ par prise d&apos;otages). Tu peux enregistrer quand même.
             </div>
           )}
           {formRemaining > 0 && (

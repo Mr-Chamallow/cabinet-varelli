@@ -156,7 +156,7 @@ export default function SupervisionPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">📡 Supervision</h1>
-          <p className="page-subtitle">Stats globales · Opérations en cours · Activité de l'équipe</p>
+          <p className="page-subtitle">Stats globales · Opérations en cours · Activité de l&apos;équipe</p>
           <div className="gold-line" />
         </div>
       </div>
@@ -193,7 +193,7 @@ export default function SupervisionPage() {
 
           {leaderboard.length > 0 && (
             <div className="card">
-              <div className="section-title" style={{ marginBottom: "1rem" }}>🏆 Membres les plus actifs (30 derniers jours d'activité enregistrée)</div>
+              <div className="section-title" style={{ marginBottom: "1rem" }}>🏆 Membres les plus actifs (30 derniers jours d&apos;activité enregistrée)</div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {leaderboard.map(([nom, count], i) => {
                   const max = leaderboard[0][1];
@@ -218,7 +218,7 @@ export default function SupervisionPage() {
       {activeTab === "operations" && (
         <div>
           <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "1rem" }}>
-            {operations.length} opération{operations.length !== 1 ? "s" : ""} programmée{operations.length !== 1 ? "s" : ""} à partir d'aujourd'hui.
+            {operations.length} opération{operations.length !== 1 ? "s" : ""} programmée{operations.length !== 1 ? "s" : ""} à partir d&apos;aujourd&apos;hui.
           </p>
           {operations.length === 0 ? (
             <div className="empty-state"><div className="empty-icon">🗓️</div><div className="empty-title">Aucune opération à venir</div></div>

@@ -1627,7 +1627,7 @@ function DossierModal({
             </div>
           </div>
 
-          <label style={S.label}>Description / Notes d'enquête</label>
+          <label style={S.label}>Description / Notes d&apos;enquête</label>
           <textarea
             rows={4}
             value={dossier.description}

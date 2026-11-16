@@ -137,7 +137,7 @@ export default function ReglementPage() {
         })}
         {sections.length === 0 && <div className="empty-state"><div className="empty-icon">🔎</div><div className="empty-title">Aucune règle trouvée</div></div>}
       </div>
-      <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginTop: "1rem" }}>Résumé reformulé : en cas de doute, le règlement officiel fait foi. Les alertes de l'app sont informatives et ne bloquent jamais la saisie.</div>
+      <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginTop: "1rem" }}>Résumé reformulé : en cas de doute, le règlement officiel fait foi. Les alertes de l&apos;app sont informatives et ne bloquent jamais la saisie.</div>
       <Toast toast={toast} />
     </div>
   );

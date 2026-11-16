@@ -121,7 +121,7 @@ export function EmployeeCard({ e, flippable = true, onZoom, onOpen, strike = fal
             <div className={`idc verso idc-f-${p.finish}`}>
               <div className="idc-grid" /><div className="idc-shine" />
               <div className="idc-mag" />
-              <div className="idc-vtext">Cette carte est strictement personnelle et reste la propriété d'Obsidian Logistics. Elle atteste l'appartenance de son porteur au Consortium. En cas de perte ou de vol, prévenir immédiatement la Direction. Toute utilisation frauduleuse sera portée devant le Tribunal de l'Ombre.</div>
+              <div className="idc-vtext">Cette carte est strictement personnelle et reste la propriété d&apos;Obsidian Logistics. Elle atteste l&apos;appartenance de son porteur au Consortium. En cas de perte ou de vol, prévenir immédiatement la Direction. Toute utilisation frauduleuse sera portée devant le Tribunal de l&apos;Ombre.</div>
               <div className="idc-acces"><small>HABILITATION {p.hab}/5 - ACCÈS AUTORISÉS</small>{p.acces.map(a => <span key={a}>{a}</span>)}</div>
               <div className="idc-sign"><span>{e.nom}</span><small>SIGNATURE</small></div>
               <div className="idc-vfoot"><span>{matricule(e.id)} · {p.nom.toUpperCase()}</span><span style={{ color: p.color }}>◆ OBSIDIAN</span></div>

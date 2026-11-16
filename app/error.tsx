@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 
 // Page affichée si une page plante. Évite l'écran blanc.
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
@@ -16,7 +17,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
       </p>
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}>
         <button className="btn btn-gold" onClick={() => reset()}>Réessayer</button>
-        <a className="btn btn-outline" href="/">Retour à l&apos;accueil</a>
+        <Link className="btn btn-outline" href="/">Retour à l&apos;accueil</Link>
       </div>
     </div>
   );

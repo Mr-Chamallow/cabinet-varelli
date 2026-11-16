@@ -64,12 +64,12 @@ export default function DonsPage() {
   return (
     <div className="page-container">
       <Link className="back-link" href="/obsidian">Obsidian Logistics</Link>
-      <div className="page-header"><div><h1 className="page-title">🎁 Dons</h1><p className="page-subtitle">Remets de l'argent à l'entreprise · propre ou sale · ajouté à la caisse une fois validé</p><div className="gold-line" /></div></div>
+      <div className="page-header"><div><h1 className="page-title">🎁 Dons</h1><p className="page-subtitle">Remets de l&apos;argent à l&apos;entreprise · propre ou sale · ajouté à la caisse une fois validé</p><div className="gold-line" /></div></div>
 
       <div className="card" style={{ maxWidth: 480, marginBottom: "1.5rem" }}>
         <div className="section-title" style={{ marginBottom: "1rem" }}>Nouveau don</div>
         <div className="form-group"><label>Montant ($)</label><input type="number" min={0} value={montant || ""} onChange={e => setMontant(+e.target.value)} placeholder="1.000" /></div>
-        <div className="form-group"><label>Type d'argent</label>
+        <div className="form-group"><label>Type d&apos;argent</label>
           <div style={{ display: "flex", gap: "0.5rem" }}>
             {(["propre", "sale"] as const).map(t => <button key={t} type="button" className={`btn btn-sm ${argent === t ? "btn-gold" : "btn-outline"}`} onClick={() => setArgent(t)}>{t === "propre" ? "💵 Propre" : "🕶️ Sale"}</button>)}
           </div>
@@ -80,12 +80,12 @@ export default function DonsPage() {
           {preview && <img src={preview} alt="preuve" style={{ marginTop: 8, maxWidth: "100%", maxHeight: 180, borderRadius: 8, border: "1px solid var(--border)" }} />}
         </div>
         <button className="btn btn-gold" onClick={envoyer} disabled={saving}>{saving ? "..." : "Envoyer le don"}</button>
-        <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.75rem" }}>Une fois validé, le montant est ajouté à la caisse (propre ou sale). Un don n'est pas déduit de ta paie.</p>
+        <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.75rem" }}>Une fois validé, le montant est ajouté à la caisse (propre ou sale). Un don n&apos;est pas déduit de ta paie.</p>
       </div>
 
       <div className="section-title" style={{ marginBottom: "0.75rem" }}>Mes dons · {money(valides)} validés</div>
       {loading ? <LoadingBlock /> : dons.length === 0 ? (
-        <div className="empty-state"><div className="empty-icon">🎁</div><div className="empty-title">Aucun don pour l'instant</div></div>
+        <div className="empty-state"><div className="empty-icon">🎁</div><div className="empty-title">Aucun don pour l&apos;instant</div></div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           {dons.map(d => (

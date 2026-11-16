@@ -197,7 +197,7 @@ export default function EvenementsPage() {
               </div>
             )}
             <div>
-              <label>📋 Plan de l'événement (checklist)</label>
+              <label>📋 Plan de l&apos;événement (checklist)</label>
               {(form.checklist || []).map((c: Check, i: number) => (
                 <div key={i} style={{ display: "flex", gap: "0.35rem", marginBottom: "0.3rem" }}>
                   <input type="checkbox" checked={c.done} onChange={() => setForm((f: any) => ({ ...f, checklist: f.checklist.map((x: Check, j: number) => (j === i ? { ...x, done: !x.done } : x)) }))} style={{ width: 16 }} />

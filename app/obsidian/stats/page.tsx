@@ -87,14 +87,14 @@ export default function StatsHubPage() {
         </>}
 
         {tab === "actions" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
-          <Panel title="Rentabilité par type d'action"><DataTable head={["Action", "Nb", "Gains", "Net", "Net moyen"]} rows={k.byType.map(t => [t.nom, t.n, fmt(t.g), <b style={{ color: t.net >= 0 ? C.ok : C.ko }}>{fmt(t.net)}</b>, fmt(t.net / t.n)])} /></Panel>
+          <Panel title="Rentabilité par type d'action"><DataTable head={["Action", "Nb", "Gains", "Net", "Net moyen"]} rows={k.byType.map(t => [t.nom, t.n, fmt(t.g), <b key="c" style={{ color: t.net >= 0 ? C.ok : C.ko }}>{fmt(t.net)}</b>, fmt(t.net / t.n)])} /></Panel>
           <Panel title="Répartition par type (nombre)"><Donut parts={count(k.A, (a: any) => a.action).slice(0, 6).map(([nom, value], i) => ({ nom, value, color: PAL[i % PAL.length] }))} /></Panel>
           <Panel title="Quand agit-on ? (jour x heure)"><Heat rows={["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]} cols={["0-4h", "4-8h", "8-12h", "12-16h", "16-20h", "20-24h"]} grid={k.grid} /></Panel>
           <Panel title="Net par semaine"><LineChart area labels={labels} series={[{ nom: "Net", color: C.gold, values: k.perWeek.map(x => x.g - x.p) }]} /></Panel>
         </div>}
 
         {tab === "employes" && <div style={{ display: "grid", gap: "1.25rem" }}>
-          <Panel title="Performance détaillée par employé"><DataTable head={["Employé", "Actions", "Net", "Net / action", "Arrest.", "Amendes", "Pertes"]} rows={k.byEmp.map(e => [e.nom, e.n, <b style={{ color: e.net >= 0 ? C.ok : C.ko }}>{fmt(e.net)}</b>, e.n ? fmt(e.net / e.n) : "-", e.ar, fmt(e.amende), fmt(e.perte)])} /></Panel>
+          <Panel title="Performance détaillée par employé"><DataTable head={["Employé", "Actions", "Net", "Net / action", "Arrest.", "Amendes", "Pertes"]} rows={k.byEmp.map(e => [e.nom, e.n, <b key="c" style={{ color: e.net >= 0 ? C.ok : C.ko }}>{fmt(e.net)}</b>, e.n ? fmt(e.net / e.n) : "-", e.ar, fmt(e.amende), fmt(e.perte)])} /></Panel>
           <EmployeeRanking />
         </div>}
 
@@ -112,7 +112,7 @@ export default function StatsHubPage() {
         {tab === "stocks" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
           <Panel title="Valeur par catégorie"><Donut parts={k.catVal.map(([nom, value], i) => ({ nom, value, color: PAL[i % PAL.length] }))} center={fmtK(k.stockVal)} /></Panel>
           <Panel title="Mouvements (quantités / semaine)"><BarChart labels={labels} series={[{ nom: "Entrées", color: C.ok, values: k.mvW.map(x => x.e) }, { nom: "Sorties", color: C.ko, values: k.mvW.map(x => x.s) }]} /></Panel>
-          <Panel title="Articles sous le seuil d'alerte"><DataTable empty="Aucune alerte de stock 👍" head={["Article", "Qté", "Seuil"]} rows={k.low.map((s: any) => [`${s.emoji || ""} ${s.nom}`, <b style={{ color: C.ko }}>{s.quantite}</b>, s.seuil_alerte])} /></Panel>
+          <Panel title="Articles sous le seuil d'alerte"><DataTable empty="Aucune alerte de stock 👍" head={["Article", "Qté", "Seuil"]} rows={k.low.map((s: any) => [`${s.emoji || ""} ${s.nom}`, <b key="c" style={{ color: C.ko }}>{s.quantite}</b>, s.seuil_alerte])} /></Panel>
           <Panel title="Top valeur immobilisée"><HBars rows={[...k.ST].map((s: any) => ({ label: `${s.emoji || ""} ${s.nom}`, value: (Number(s.quantite) || 0) * (Number(s.prix_unitaire) || 0) })).sort((a, b) => b.value - a.value).slice(0, 7)} /></Panel>
         </div>}
 

@@ -248,7 +248,7 @@ export default function EmployesObsidianPage() {
               {dTab === "dossier" ? <EmployeeDossier e={cardEmp} /> : dTab === "psy" ? <ProfilPsy value={cardEmp.profil_psy} canEdit={true} onSave={savePsy} /> : (
                 <div className="card">
                   <div className="section-title" style={{ marginBottom: 8 }}>Histoire du personnage</div>
-                  <div className="form-group"><label>Texte de l'histoire</label><textarea rows={10} value={histTxt} onChange={e => setHistTxt(e.target.value)} placeholder="Écris ou colle le background du personnage..." /></div>
+                  <div className="form-group"><label>Texte de l&apos;histoire</label><textarea rows={10} value={histTxt} onChange={e => setHistTxt(e.target.value)} placeholder="Écris ou colle le background du personnage..." /></div>
                   <div className="form-group"><label>Lien Google Doc (optionnel)</label><input value={histUrl} onChange={e => setHistUrl(e.target.value)} placeholder="https://docs.google.com/document/d/..." /></div>
                   <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
                     <button className="btn btn-gold btn-sm" onClick={saveHistoire}>Enregistrer</button>

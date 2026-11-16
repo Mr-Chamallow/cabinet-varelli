@@ -174,7 +174,7 @@ export default function JuridiqueePage() {
         <div>
           <h1 className="page-title">⚖️ Base juridique</h1>
           <p className="page-subtitle">
-            Codes de l'État de San Andreas · FlashBackFA · {ARTICLES.length} articles au total
+            Codes de l&apos;État de San Andreas · FlashBackFA · {ARTICLES.length} articles au total
           </p>
           <div className="gold-line" />
         </div>

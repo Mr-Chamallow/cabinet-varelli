@@ -49,7 +49,7 @@ export function CalendrierGlobal() {
       {loading ? <LoadingBlock rows={6} /> : (
         <div className="cal-layout">
           <div className="card cal-box">
-            <div className="cal-nav"><button className="btn btn-outline btn-sm" onClick={() => go(-1)}>‹</button><b>{MOIS[m]} {y}</b><button className="btn btn-outline btn-sm" onClick={() => go(1)}>›</button><button className="btn btn-ghost btn-sm" onClick={() => { setY(now.getFullYear()); setM(now.getMonth()); setSel(today); }}>Aujourd'hui</button></div>
+            <div className="cal-nav"><button className="btn btn-outline btn-sm" onClick={() => go(-1)}>‹</button><b>{MOIS[m]} {y}</b><button className="btn btn-outline btn-sm" onClick={() => go(1)}>›</button><button className="btn btn-ghost btn-sm" onClick={() => { setY(now.getFullYear()); setM(now.getMonth()); setSel(today); }}>Aujourd&apos;hui</button></div>
             <div className="cal-grid">
               {JOURS.map(j => <div key={j} className="cal-h">{j}</div>)}
               {cells.map((d, i) => { if (!d) return <div key={i} className="cal-c empty" />; const k = iso(d); const l = byDay[k] || [];

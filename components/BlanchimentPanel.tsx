@@ -44,12 +44,12 @@ export function BlanchimentPanel({ onDone }: { onDone?: () => void }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: "1.5rem" }}>
       <div className="card">
-        <div className="section-title" style={{ marginBottom: "1rem" }}>🧼 Blanchir de l'argent</div>
+        <div className="section-title" style={{ marginBottom: "1rem" }}>🧼 Blanchir de l&apos;argent</div>
         <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
           {([["sale_propre", "Sale -> Propre"], ["propre_sale", "Propre -> Sale"]] as const).map(([k, l]) => <button key={k} type="button" onClick={() => setSens(k)} className={sens === k ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm"} style={{ flex: 1, justifyContent: "center" }}>{l}</button>)}
         </div>
         <div className="form-group"><label>Groupe qui blanchit pour nous (vide = nous-mêmes)</label><input list="bl-orgs" value={groupe} onChange={e => setGroupe(e.target.value)} placeholder="Ex: La Main de Minuit" /><datalist id="bl-orgs">{orgs.map(o => <option key={o} value={o} />)}</datalist></div>
-        <div className="form-group"><label>Montant d'argent {src} à donner ($) *</label><input type="number" min={0} value={montant || ""} onChange={e => setMontantSync(+e.target.value)} style={{ fontWeight: 700, fontSize: "1.1rem" }} /></div>
+        <div className="form-group"><label>Montant d&apos;argent {src} à donner ($) *</label><input type="number" min={0} value={montant || ""} onChange={e => setMontantSync(+e.target.value)} style={{ fontWeight: 700, fontSize: "1.1rem" }} /></div>
         <div className="form-group"><label>Montant {dst} reçu en échange ($) *</label><input type="number" min={0} value={recu || ""} onChange={e => setRecuSync(+e.target.value)} style={{ fontWeight: 700, fontSize: "1.1rem" }} /></div>
         <div className="form-group"><label>Taux de perte (%)</label><input type="number" min={0} max={100} value={taux} onChange={e => setTauxSync(+e.target.value)} /></div>
         <div className="form-group"><label>Employé</label><select value={membre} onChange={e => setMembre(e.target.value)}><option value="">- Aucun - </option>{emps.map(n => <option key={n}>{n}</option>)}</select></div>

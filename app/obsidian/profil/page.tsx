@@ -90,7 +90,7 @@ function Inner() {
             <Kpi label="Véhicules assignés" value={d.garage.length} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
-            <Panel title="Dernières actions"><DataTable empty="Aucune action." head={["Date", "Action", "Montant"]} rows={d.actions.slice(0, 8).map((a: any) => [new Date(a.created_at).toLocaleDateString("fr-FR"), a.action, <b style={{ color: Number(a.montant) >= 0 ? "var(--success)" : "var(--danger)" }}>{fmt(Number(a.montant))}</b>])} /></Panel>
+            <Panel title="Dernières actions"><DataTable empty="Aucune action." head={["Date", "Action", "Montant"]} rows={d.actions.slice(0, 8).map((a: any) => [new Date(a.created_at).toLocaleDateString("fr-FR"), a.action, <b key="c" style={{ color: Number(a.montant) >= 0 ? "var(--success)" : "var(--danger)" }}>{fmt(Number(a.montant))}</b>])} /></Panel>
             <Panel title="Arrestations"><DataTable empty="Casier vierge." head={["Date", "Amende", "Perdu"]} rows={d.arrests.slice(0, 8).map((a: any) => [new Date(a.created_at).toLocaleDateString("fr-FR"), fmt(Number(a.amende)), fmt(Number(a.argent_perdu))])} /></Panel>
             <Panel title="Contrats"><DataTable empty="Aucun contrat." head={["Contrat", "Statut", "Récompense"]} rows={d.contrats.map((c: any) => [c.titre, c.statut, fmt(Number(c.recompense))])} /></Panel>
             <Panel title="Rendez-vous"><DataTable empty="Aucun RDV." head={["RDV", "Date"]} rows={d.rdv.map((r: any) => [r.titre, `${r.date || ""} ${r.heure || ""}`])} /></Panel>

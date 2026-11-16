@@ -71,7 +71,7 @@ export function ActionsTab({ endpoint = "/api/admin/action-types" }: { endpoint?
       </div>
       <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginBottom: "1rem" }}>
         Règle le délai de réutilisation (par personne ou pour tout le groupe) de chaque action, ou crées-en de nouvelles. « 0 » = sans délai.
-        Le nom ne peut pas être modifié après création (il est lié à l'historique) : supprime et recrée si besoin.
+        Le nom ne peut pas être modifié après création (il est lié à l&apos;historique) : supprime et recrée si besoin.
       </p>
       {err && <div className="card" style={{ padding: "0.6rem 0.9rem", marginBottom: "0.75rem", color: "var(--danger)", fontSize: "0.8rem" }}>{err}</div>}
 

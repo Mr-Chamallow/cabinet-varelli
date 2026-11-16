@@ -181,7 +181,7 @@ export default function ComptaHubPage() {
         <div><h1 className="page-title">💰 Hub Comptabilité</h1><p className="page-subtitle">Lecture seule · alimenté automatiquement par les Actions illégales, Arrestations et Transactions</p><div className="gold-line" /></div>
         <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
           {PERIODS.map(p => <button key={p.k} className={`btn btn-sm ${weeks === p.k ? "btn-gold" : "btn-outline"}`} onClick={() => setWeeks(p.k)}>{p.label}</button>)}
-          <select value={argentF} onChange={e => setArgentF(e.target.value)} style={{ width: "auto" }} title="Filtre argent"><option value="">💰 Tout l'argent</option><option value="propre">💵 Propre</option><option value="sale">🕶️ Sale</option><option value="mixte">🔀 Mixte</option></select>
+          <select value={argentF} onChange={e => setArgentF(e.target.value)} style={{ width: "auto" }} title="Filtre argent"><option value="">💰 Tout l&apos;argent</option><option value="propre">💵 Propre</option><option value="sale">🕶️ Sale</option><option value="mixte">🔀 Mixte</option></select>
         </div>
       </div>
       <Tabs tabs={TABS} value={tab} onChange={k => setTab(k as Tab)} />
@@ -214,11 +214,11 @@ export default function ComptaHubPage() {
               <div className="form-group"><label>Libellé</label><input value={inv.motif} onChange={e => setInv({ ...inv, motif: e.target.value })} placeholder="Camion de livraison" /></div>
               <div className="form-group"><label>Montant ($)</label><input type="number" min={0} value={inv.montant || ""} onChange={e => setInv({ ...inv, montant: +e.target.value })} /></div>
               <div className="form-group"><label>Argent</label><select value={inv.argent} onChange={e => setInv({ ...inv, argent: e.target.value })}><option value="propre">Propre</option><option value="sale">Sale</option><option value="mixte">Mixte</option></select></div>
-              <button className="btn btn-gold btn-sm" onClick={addInvest} disabled={savingB}>Enregistrer l'investissement</button>
+              <button className="btn btn-gold btn-sm" onClick={addInvest} disabled={savingB}>Enregistrer l&apos;investissement</button>
               <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Visible en compta, mais jamais dans le calcul des paies.</p>
             </Panel>
             <Panel title="Investissements par type"><HBars color={COL.warn} rows={Object.entries(budgetCalc.parCat).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ label: k, value: v }))} /></Panel>
-            <Panel title="Détail des investissements"><DataTable empty="Aucun investissement." head={["Date", "Type", "Libellé", "Argent", "Montant"]} rows={budgetCalc.invests.slice(0, 50).map(e => [new Date(e.created_at).toLocaleDateString("fr-FR"), (e.categorie || "").replace(/^investissement\s*-?\s*/i, ""), e.motif || "-", e.type_argent || "sale", <b>{fmt(e.montant)}</b>])} /></Panel>
+            <Panel title="Détail des investissements"><DataTable empty="Aucun investissement." head={["Date", "Type", "Libellé", "Argent", "Montant"]} rows={budgetCalc.invests.slice(0, 50).map(e => [new Date(e.created_at).toLocaleDateString("fr-FR"), (e.categorie || "").replace(/^investissement\s*-?\s*/i, ""), e.motif || "-", e.type_argent || "sale", <b key="c">{fmt(e.montant)}</b>])} /></Panel>
           </div>
         </>}
 
@@ -243,21 +243,21 @@ export default function ComptaHubPage() {
         {tab === "flux" && <div style={{ display: "grid", gap: "1.25rem" }}>
           <Panel title="Résultat net hebdomadaire + tendance"><LineChart labels={labels} series={[{ nom: "Net", color: COL.info, values: ex.wN }, { nom: "Recettes", color: COL.rec, values: byWeek.map(x => x.r) }, { nom: "Dépenses", color: COL.dep, values: byWeek.map(x => x.d) }]} /></Panel>
           <Panel title="Solde de trésorerie"><LineChart area labels={labels} series={[{ nom: "Solde", color: COL.gold, values: solde }]} /></Panel>
-          <Panel title="Tableau hebdomadaire"><DataTable head={["Semaine", "Recettes", "Dépenses", "Net", "Solde"]} rows={[...byWeek].reverse().map((x, i) => [`Sem. du ${shortWeek(x.w)}`, <span style={{ color: COL.rec }}>{fmt(x.r)}</span>, <span style={{ color: COL.dep }}>{fmt(x.d)}</span>, <b style={{ color: x.r - x.d >= 0 ? COL.rec : COL.dep }}>{fmt(x.r - x.d)}</b>, fmt(solde[solde.length - 1 - i])])} /></Panel>
+          <Panel title="Tableau hebdomadaire"><DataTable head={["Semaine", "Recettes", "Dépenses", "Net", "Solde"]} rows={[...byWeek].reverse().map((x, i) => [`Sem. du ${shortWeek(x.w)}`, <span key="c" style={{ color: COL.rec }}>{fmt(x.r)}</span>, <span key="c" style={{ color: COL.dep }}>{fmt(x.d)}</span>, <b key="c" style={{ color: x.r - x.d >= 0 ? COL.rec : COL.dep }}>{fmt(x.r - x.d)}</b>, fmt(solde[solde.length - 1 - i])])} /></Panel>
         </div>}
 
         {tab === "categories" && <Panel title="Détail par catégorie" right={<small style={{ color: "var(--text-dim)" }}>{cats.length} catégories</small>}>
-          <DataTable head={["Catégorie", "Op.", "Recettes", "Dépenses", "Net", "Moyenne", "Max", "Part recettes"]} rows={cats.map(c => [c.k, c.n, fmt(c.r), fmt(c.d), <b style={{ color: c.net >= 0 ? COL.rec : COL.dep }}>{fmt(c.net)}</b>, fmt((c.r + c.d) / c.n), fmt(c.max), R ? pct((c.r / R) * 100) : "-"])} />
+          <DataTable head={["Catégorie", "Op.", "Recettes", "Dépenses", "Net", "Moyenne", "Max", "Part recettes"]} rows={cats.map(c => [c.k, c.n, fmt(c.r), fmt(c.d), <b key="c" style={{ color: c.net >= 0 ? COL.rec : COL.dep }}>{fmt(c.net)}</b>, fmt((c.r + c.d) / c.n), fmt(c.max), R ? pct((c.r / R) * 100) : "-"])} />
         </Panel>}
 
         {tab === "employes" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
           <Panel title="Classement net par employé"><HBars rows={[...membres].sort((a, b) => b.net - a.net).map(m => ({ label: m.k, value: m.net, sub: `${m.n} op.` }))} /></Panel>
-          <Panel title="Détail"><DataTable head={["Employé", "Op.", "Recettes", "Pertes", "Net", "Moy./op."]} rows={membres.map(m => [m.k, m.n, fmt(m.r), fmt(m.d), <b style={{ color: m.net >= 0 ? COL.rec : COL.dep }}>{fmt(m.net)}</b>, fmt((m.r + m.d) / m.n)])} /></Panel>
+          <Panel title="Détail"><DataTable head={["Employé", "Op.", "Recettes", "Pertes", "Net", "Moy./op."]} rows={membres.map(m => [m.k, m.n, fmt(m.r), fmt(m.d), <b key="c" style={{ color: m.net >= 0 ? COL.rec : COL.dep }}>{fmt(m.net)}</b>, fmt((m.r + m.d) / m.n)])} /></Panel>
         </div>}
 
         {tab === "sources" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
           <Panel title="Origine des écritures"><Donut parts={sources.map((s, i) => ({ nom: SRC[s.k] || s.k, value: s.r + s.d, color: ["var(--gold)", "var(--danger)", "var(--info)", "var(--text-dim)"][i % 4] }))} center={<>{cur.length}<br />écritures</>} />
-            <div style={{ marginTop: "0.9rem" }}><DataTable head={["Source", "Recettes", "Dépenses", "Net"]} rows={sources.map(s => [SRC[s.k] || s.k, fmt(s.r), fmt(s.d), <b style={{ color: s.net >= 0 ? COL.rec : COL.dep }}>{fmt(s.net)}</b>])} /></div></Panel>
+            <div key="c" style={{ marginTop: "0.9rem" }}><DataTable head={["Source", "Recettes", "Dépenses", "Net"]} rows={sources.map(s => [SRC[s.k] || s.k, fmt(s.r), fmt(s.d), <b key="c" style={{ color: s.net >= 0 ? COL.rec : COL.dep }}>{fmt(s.net)}</b>])} /></div></Panel>
           <Panel title="Trésorerie par type d'argent (réelle)">
             <div className="stat-grid" style={{ marginBottom: 10 }}><Kpi label="Argent sale en caisse" value={fmt(cash.sale)} color={COL.dep} /><Kpi label="Argent propre en caisse" value={fmt(cash.propre)} color={COL.rec} /><Kpi label="Mixte" value={fmt(cash.mixte)} /></div>
             <p style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>Blanchi au total : <b>{fmt(sum(transferts.map(t => t.montant)))}</b> · frais : <b>{fmt(sum(entries.filter(e => e.source === "blanchiment-frais").map(e => e.montant)))}</b> ({transferts.length} opération{transferts.length > 1 ? "s" : ""}). Le blanchiment est un transfert : seul le coût est une dépense.</p>
@@ -268,13 +268,13 @@ export default function ComptaHubPage() {
         </div>}
 
         {tab === "marges" && <Panel title="Marge par produit" right={<small style={{ color: "var(--text-dim)" }}>réf. = Tableau des prix (fournisseur préféré ou moins cher, vente = moyenne min-max) · coût = achats réels · vente = Transactions</small>}>
-          <DataTable empty="Aucun achat ni vente de produit." head={["Produit", "Achat réf.", "Vente réf.", "Marge réf.", "Acheté", "Coût moyen", "Vendu", "Prix vente moy.", "Marge unit.", "Marge totale", "Marge %", "En stock"]} rows={marges.map(m => [m.nom, m.ra ? fmt(m.ra) : "-", m.rv ? fmt(m.rv) : "-", m.ra && m.rv ? <b style={{ color: m.rm >= 0 ? COL.rec : COL.dep }}>{fmt(m.rm)} ({pct(m.rp)})</b> : "-", m.qIn, m.qIn ? fmt(m.pc) : "-", m.qOut, m.qOut ? fmt(m.pv) : "-", m.qOut && m.qIn ? <b style={{ color: m.mu >= 0 ? COL.rec : COL.dep }}>{fmt(m.mu)}</b> : "-", <b style={{ color: m.mt >= 0 ? COL.rec : COL.dep }}>{fmt(m.mt)}</b>, m.rev ? pct(m.pct) : "-", m.stock])} />
-          <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Marge totale = ventes - (quantité vendue x coût moyen d'achat). Saisis le « prix d'achat » lors d'une entrée de stock pour un coût fiable.</p>
+          <DataTable empty="Aucun achat ni vente de produit." head={["Produit", "Achat réf.", "Vente réf.", "Marge réf.", "Acheté", "Coût moyen", "Vendu", "Prix vente moy.", "Marge unit.", "Marge totale", "Marge %", "En stock"]} rows={marges.map(m => [m.nom, m.ra ? fmt(m.ra) : "-", m.rv ? fmt(m.rv) : "-", m.ra && m.rv ? <b key="c" style={{ color: m.rm >= 0 ? COL.rec : COL.dep }}>{fmt(m.rm)} ({pct(m.rp)})</b> : "-", m.qIn, m.qIn ? fmt(m.pc) : "-", m.qOut, m.qOut ? fmt(m.pv) : "-", m.qOut && m.qIn ? <b key="c" style={{ color: m.mu >= 0 ? COL.rec : COL.dep }}>{fmt(m.mu)}</b> : "-", <b key="c" style={{ color: m.mt >= 0 ? COL.rec : COL.dep }}>{fmt(m.mt)}</b>, m.rev ? pct(m.pct) : "-", m.stock])} />
+          <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Marge totale = ventes - (quantité vendue x coût moyen d&apos;achat). Saisis le « prix d&apos;achat » lors d&apos;une entrée de stock pour un coût fiable.</p>
         </Panel>}
 
         {tab === "semaines" && <Panel title="Clôtures hebdomadaires" right={<small style={{ color: "var(--text-dim)" }}>Clôture auto : chaque dimanche 23:59:59 (heure de Paris)</small>}>
           <DataTable head={["Semaine", "Statut", "Écritures", "Net clôturé", "Net actuel", "Régularisation", "Paies versées", ""]} rows={weeksTable.map(x => [`Sem. du ${x.w.split("-").reverse().slice(0, 2).join("/")}`, x.cl ? `🔒 clôturée ${new Date(x.cl.cloturee_at).toLocaleDateString("fr-FR")}` : "🟢 ouverte", x.nb, x.cl ? fmt(Number(x.cl.net)) : "-", fmt(x.net), x.cl ? <b style={{ color: Math.round(x.net - Number(x.cl.net)) === 0 ? "var(--text-dim)" : COL.warn }}>{fmt(x.net - Number(x.cl.net))}</b> : "-", fmt(x.paies), x.cl && isCEO ? <button className="btn btn-ghost btn-sm" onClick={() => rouvrir(x.w)}>Rouvrir</button> : ""])} />
-          <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Une semaine clôturée est figée : plus aucune écriture. Seules les paies versées après coup s'y ajoutent (régularisation), dans la semaine travaillée.</p>
+          <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: 8 }}>Une semaine clôturée est figée : plus aucune écriture. Seules les paies versées après coup s&apos;y ajoutent (régularisation), dans la semaine travaillée.</p>
         </Panel>}
 
         {tab === "journal" && <Panel title={`Journal des écritures (${journal.length})`}>
@@ -285,7 +285,7 @@ export default function ComptaHubPage() {
             <select value={fMembre} onChange={e => setFMembre(e.target.value)} style={{ width: "auto" }}><option value="">Tous employés</option>{allMembres.map(c => <option key={c}>{c}</option>)}</select>
             <select value={fSrc} onChange={e => setFSrc(e.target.value)} style={{ width: "auto" }}><option value="">Toutes sources</option>{Object.entries(SRC).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
           </div>
-          <DataTable head={["Date", "Catégorie / motif", "Employé", "Source", "Argent", "Montant"]} rows={journal.slice(0, limit).map(e => [new Date(e.created_at).toLocaleString("fr-FR"), <span><b>{e.categorie}</b><br /><small style={{ color: "var(--text-dim)" }}>{e.motif}</small></span>, e.membre || "-", SRC[e.source] || e.source, e.type_argent, <b style={{ color: e.type === "recette" ? COL.rec : COL.dep }}>{e.type === "recette" ? "+" : "-"}{fmt(e.montant)}</b>])} />
+          <DataTable head={["Date", "Catégorie / motif", "Employé", "Source", "Argent", "Montant"]} rows={journal.slice(0, limit).map(e => [new Date(e.created_at).toLocaleString("fr-FR"), <span key="c"><b>{e.categorie}</b><br /><small key="c" style={{ color: "var(--text-dim)" }}>{e.motif}</small></span>, e.membre || "-", SRC[e.source] || e.source, e.type_argent, <b key="c" style={{ color: e.type === "recette" ? COL.rec : COL.dep }}>{e.type === "recette" ? "+" : "-"}{fmt(e.montant)}</b>])} />
           {journal.length > limit && <button className="btn btn-outline btn-sm" style={{ marginTop: 10 }} onClick={() => setLimit(l => l + 200)}>Afficher plus</button>}
         </Panel>}
 
@@ -302,7 +302,7 @@ export default function ComptaHubPage() {
             <Panel title="Projection du net - 4 prochaines semaines"><LineChart labels={[...labels.slice(-6), "+1", "+2", "+3", "+4"]} series={[{ nom: "Net réel", color: COL.info, values: [...ex.wN.slice(-6)] }, { nom: "Projection linéaire", color: COL.gold, values: [...Array(Math.max(0, Math.min(6, ex.wN.length) - 1)).fill(null), ex.wN[ex.wN.length - 1] ?? 0, ...ex.proj] }]} /></Panel>
             <Panel title="Activité par jour et tranche horaire"><Heat rows={["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]} cols={["0-4h", "4-8h", "8-12h", "12-16h", "16-20h", "20-24h"]} grid={ex.grid} /></Panel>
             <Panel title="Records"><DataTable head={["Indicateur", "Valeur"]} rows={[["Meilleure semaine", ex.bestI >= 0 ? `${shortWeek(byWeek[ex.bestI].w)} · ${fmt(ex.wN[ex.bestI])}` : "-"], ["Pire semaine", ex.worstI >= 0 ? `${shortWeek(byWeek[ex.worstI].w)} · ${fmt(ex.wN[ex.worstI])}` : "-"], ["Plus grosse recette", fmt(Math.max(0, ...cur.filter(e => e.type === "recette").map(e => e.montant)))], ["Plus grosse perte", fmt(Math.max(0, ...cur.filter(e => e.type !== "recette").map(e => e.montant)))], ["Tendance du net", ex.growth >= 0 ? `▲ ${fmtK(ex.growth)}` : `▼ ${fmtK(ex.growth)}`]]} /></Panel>
-            <Panel title="Anomalies (> moyenne + 2σ)"><DataTable empty="Aucune opération atypique." head={["Date", "Opération", "Montant"]} rows={ex.anomalies.map(e => [new Date(e.created_at).toLocaleDateString("fr-FR"), `${e.categorie} - ${e.membre || e.created_by || ""}`, <b style={{ color: e.type === "recette" ? COL.rec : COL.dep }}>{fmt(e.montant)}</b>])} /></Panel>
+            <Panel title="Anomalies (> moyenne + 2σ)"><DataTable empty="Aucune opération atypique." head={["Date", "Opération", "Montant"]} rows={ex.anomalies.map(e => [new Date(e.created_at).toLocaleDateString("fr-FR"), `${e.categorie} - ${e.membre || e.created_by || ""}`, <b key="c" style={{ color: e.type === "recette" ? COL.rec : COL.dep }}>{fmt(e.montant)}</b>])} /></Panel>
           </div>
         </>}
       </>}

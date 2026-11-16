@@ -20,7 +20,7 @@ export default function BanniPage() {
           </p>
         )}
         <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", marginTop: "0.75rem" }}>
-          Si tu penses qu'il s'agit d'une erreur, contacte un administrateur.
+          Si tu penses qu&apos;il s&apos;agit d&apos;une erreur, contacte un administrateur.
         </p>
         <button className="btn btn-outline" style={{ marginTop: "1.25rem" }} onClick={() => signOut({ callbackUrl: "/login" })}>
           Se déconnecter
