@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -29,7 +30,7 @@ export default function ObsidianDashboard() {
       nbArmes:(stocks||[]).filter((s:any)=>s.categorie==="arme").reduce((a:number,x:any)=>a+x.quantite,0),
       nbDrogues:(stocks||[]).filter((s:any)=>s.categorie==="drogue").reduce((a:number,x:any)=>a+x.quantite,0)});
     const [{count:dons},{count:aVenir}] = await Promise.all([
-      supabase.from("obsidian_dons").select("id",{count:"exact",head:true}).eq("statut","en_attente"),
+      lire("obsidian_dons", { select: "id", count: true, head: true, eq: [["statut", "en_attente"]] }),
       supabase.from("obsidian_contrats").select("id",{count:"exact",head:true}).eq("statut","En attente"),
     ]);
     setTodo({ propre:(Number(bud?.capital)||0)+(Number(bud?.propre)||0), sale:Number(bud?.sale)||0, seuil:Number(bud?.seuil)||0, capital:Number(bud?.capital)||0, dons:dons||0, aVenir:aVenir||0 });

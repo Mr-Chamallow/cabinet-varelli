@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -52,10 +53,10 @@ export default function ComptaHubPage() {
     // Clôture automatique des semaines terminées (en plus du cron de la base) - silencieux.
     await fetch("/api/obsidian/cloture", { method: "POST" }).catch(() => {});
     const [data, ar, mv, tr, { data: st }, { data: sw }, { data: bgd }, { data: stg }] = await Promise.all([
-      fetchAll((a, b) => supabase!.from("obsidian_comptabilite").select("*").order("created_at", { ascending: false }).order("id").range(a, b)),
+      fetchAll((a, b) => lire("obsidian_comptabilite", { order: [["created_at", false], ["id", true]], range: [a, b] })),
       fetchAll((a, b) => supabase!.from("arrestations").select("id,membre,amende,argent_perdu,created_at").order("created_at").order("id").range(a, b)),
       fetchAll((a, b) => supabase!.from("obsidian_mouvements").select("stock_nom,type,quantite,total,motif,created_at").order("created_at").order("id").range(a, b)),
-      fetchAll((a, b) => supabase!.from("cahier_transactions").select("type,montant,quantite,produit_nom,categorie,created_at").order("created_at").order("id").range(a, b)),
+      fetchAll((a, b) => lire("cahier_transactions", { select: "type,montant,quantite,produit_nom,categorie,created_at", order: [["created_at", true], ["id", true]], range: [a, b] })),
       supabase.from("obsidian_stocks").select("nom,categorie,quantite,prix_unitaire").limit(2000),
       supabase.from("obsidian_semaines").select("*").order("semaine", { ascending: false }).limit(200),
       supabase.rpc("obsidian_budget"),

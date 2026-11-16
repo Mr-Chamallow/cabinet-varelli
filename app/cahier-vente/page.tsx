@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { drogueAutorisee, armeLourdeOuAuto, estKevlar } from "@/lib/regles";
 
@@ -125,7 +126,7 @@ export default function CahierVentePage() {
     setLoading(true);
     if (!supabase) { setLoading(false); return; }
     const [t, { data: p }, table] = await Promise.all([
-      fetchAll((a, b) => supabase!.from("cahier_transactions").select("*").order("created_at", { ascending: false }).order("id").range(a, b)),
+      fetchAll((a, b) => lire("cahier_transactions", { order: [["created_at", false], ["id", true]], range: [a, b] })),
       supabase.from("obsidian_stocks").select("id,nom,categorie,emoji,prix_unitaire,quantite,unite").order("categorie").order("nom"),
       loadPriceTable().catch(() => [] as Awaited<ReturnType<typeof loadPriceTable>>),
     ]);

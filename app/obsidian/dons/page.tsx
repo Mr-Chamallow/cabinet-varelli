@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -35,7 +36,7 @@ export default function DonsPage() {
   useRealtimeTable(["obsidian_dons"], load);
   async function load() {
     if (!supabase || !user?.nom) return;
-    const { data } = await supabase.from("obsidian_dons").select("*").eq("employe", user.nom).order("created_at", { ascending: false }).limit(200);
+    const { data } = await lire("obsidian_dons", { eq: [["employe", user.nom]], order: [["created_at", false]], limit: 200 });
     setDons(data || []); setLoading(false);
   }
 

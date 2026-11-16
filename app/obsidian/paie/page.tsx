@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { Stamp } from "@/components/Stamp";
 import { useEffect, useState, useMemo } from "react";
@@ -62,11 +63,11 @@ export default function PaieObsidianPage() {
     if (!supabase) return;
     setLoading(true);
     const [c, p, { data: s }, ar, { data: dn }, { data: bg }] = await Promise.all([
-      fetchAll((a, b) => supabase!.from("obsidian_comptabilite").select("*").eq("source", "action").order("created_at").order("id").range(a, b)),
-      fetchAll((a, b) => supabase!.from("obsidian_paiements").select("*").order("created_at", { ascending: false }).order("id").range(a, b)),
+      fetchAll((a, b) => lire("obsidian_comptabilite", { eq: [["source", "action"]], order: [["created_at", true], ["id", true]], range: [a, b] })),
+      fetchAll((a, b) => lire("obsidian_paiements", { order: [["created_at", false], ["id", true]], range: [a, b] })),
       supabase.from("obsidian_settings").select("*").eq("id", "default").maybeSingle(),
       fetchAll((a, b) => supabase!.from("arrestations").select("membre,amende,argent_perdu,type_argent,created_at").order("created_at").order("id").range(a, b)),
-      supabase.from("obsidian_dons").select("*").order("created_at", { ascending: false }).limit(500),
+      lire("obsidian_dons", { order: [["created_at", false]], limit: 500 }),
       supabase.rpc("obsidian_budget"),
     ]);
     setArrests(ar || []);

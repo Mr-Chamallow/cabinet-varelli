@@ -1,3 +1,4 @@
+import { lire } from "@/lib/lire";
 import { money } from "@/lib/money";
 import { supabase } from "@/lib/supabase";
 
@@ -64,8 +65,8 @@ export async function fetchRecentActivity(limitPerSource = 40): Promise<Activity
     supabase.from("obsidian_fiches").select("nom,organisation,created_by,created_at").order("created_at", { ascending: false }).limit(limitPerSource),
     supabase.from("obsidian_employes").select("nom,role,created_by,created_at").order("created_at", { ascending: false }).limit(limitPerSource),
     supabase.from("obsidian_garage").select("modele,plaque,statut,created_by,created_at").order("created_at", { ascending: false }).limit(limitPerSource),
-    supabase.from("obsidian_paiements").select("employe,montant,paid_by,created_at").order("created_at", { ascending: false }).limit(limitPerSource),
-    supabase.from("obsidian_comptabilite").select("type,categorie,montant,membre,created_by,created_at").order("created_at", { ascending: false }).limit(limitPerSource),
+    lire("obsidian_paiements", { select: "employe,montant,paid_by,created_at", order: [["created_at", false]], limit: limitPerSource }),
+    lire("obsidian_comptabilite", { select: "type,categorie,montant,membre,created_by,created_at", order: [["created_at", false]], limit: limitPerSource }),
   ]);
 
   const items: ActivityItem[] = [

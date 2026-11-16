@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import { money } from "@/lib/money";
 
 import { useEffect, useMemo, useState } from "react";
@@ -26,7 +27,7 @@ export function WeeklyReport() {
   async function load() {
     if (!supabase) return;
     const [c, a, r] = await Promise.all([
-      fetchAll((x, y) => supabase!.from("obsidian_comptabilite").select("type,montant,categorie,created_at").order("created_at").order("id").range(x, y)),
+      fetchAll((x, y) => lire("obsidian_comptabilite", { select: "type,montant,categorie,created_at", order: [["created_at", true], ["id", true]], range: [x, y] })),
       fetchAll((x, y) => supabase!.from("actions_illegales").select("membre,action,montant,created_at").order("created_at").order("id").range(x, y)),
       fetchAll((x, y) => supabase!.from("arrestations").select("membre,amende,argent_perdu,created_at").order("created_at").order("id").range(x, y)),
     ]);

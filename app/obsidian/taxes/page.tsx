@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -36,8 +37,8 @@ export default function TaxesPage() {
   async function load() {
     if (!supabase) { setLoading(false); return; }
     const [{ data: t }, { data: p }] = await Promise.all([
-      supabase.from("obsidian_taxes").select("*").order("created_at", { ascending: false }),
-      supabase.from("obsidian_taxes_paiements").select("*").order("created_at", { ascending: false }).limit(1000),
+      lire("obsidian_taxes", { order: [["created_at", false]] }),
+      lire("obsidian_taxes_paiements", { order: [["created_at", false]], limit: 1000 }),
     ]);
     setTaxes(t || []); setPays(p || []); setLoading(false);
   }

@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -27,7 +28,7 @@ export function BlanchimentPanel({ onDone }: { onDone?: () => void }) {
 
   async function load() {
     if (!supabase) return;
-    const { data } = await supabase.from("obsidian_comptabilite").select("*").eq("source", "blanchiment").eq("type", "dépense").order("created_at", { ascending: false }).limit(15);
+    const { data } = await lire("obsidian_comptabilite", { eq: [["source", "blanchiment"], ["type", "dépense"]], order: [["created_at", false]], limit: 15 });
     setHist(data || []);
   }
   useEffect(() => { load(); supabase?.from("carte_gangs").select("nom").order("nom").then(({ data }) => setOrgs((data || []).map((o: any) => o.nom))); supabase?.from("obsidian_employes").select("nom,actif").order("nom").then(({ data }) => setEmps((data || []).filter((e: any) => e.actif !== false).map((e: any) => e.nom))); }, []);
