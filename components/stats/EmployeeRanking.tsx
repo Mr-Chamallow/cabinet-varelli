@@ -16,10 +16,11 @@ export function EmployeeRanking() {
   const [arrests, setArrests] = useState<any[]>([]);
   const [period, setPeriod] = useState("week");
 
-  useEffect(() => { load(); }, []);
   useRealtimeTable(["actions_illegales", "arrestations"], load);
 
+  const [nowTs, setNowTs] = useState(0);
   async function load() {
+    setNowTs(Date.now());
     if (!supabase) return;
     const [a, r] = await Promise.all([
       fetchAll((x, y) => supabase!.from("actions_illegales").select("membre,montant,created_at").order("created_at").order("id").range(x, y)),
@@ -27,17 +28,18 @@ export function EmployeeRanking() {
     ]);
     setActions(a || []); setArrests(r || []);
   }
+  useEffect(() => { load(); }, []);
 
   const rows = useMemo(() => {
     const days = PERIODS.find(p => p.k === period)?.days || 0;
-    const since = days ? Date.now() - days * 86400_000 : 0;
+    const since = days ? nowTs - days * 86400_000 : 0;
     const ok = (d: string) => !since || new Date(d).getTime() >= since;
     const m: Record<string, { nom: string; nbActions: number; net: number; nbArrests: number; amendes: number; perdu: number }> = {};
     const get = (nom: string) => (m[nom] ??= { nom, nbActions: 0, net: 0, nbArrests: 0, amendes: 0, perdu: 0 });
     actions.filter(a => ok(a.created_at)).forEach(a => { const r = get(a.membre); r.nbActions++; r.net += Number(a.montant) || 0; });
     arrests.filter(a => ok(a.created_at)).forEach(a => { const r = get(a.membre); r.nbArrests++; r.amendes += Number(a.amende) || 0; r.perdu += Number(a.argent_perdu) || 0; });
     return Object.values(m).sort((a, b) => b.net - a.net);
-  }, [actions, arrests, period]);
+  }, [actions, arrests, period, nowTs]);
 
   const chip = (active: boolean): React.CSSProperties => ({
     padding: "0.25rem 0.75rem", borderRadius: 999, cursor: "pointer", fontSize: "0.72rem", fontFamily: "'Inter',sans-serif",

@@ -71,7 +71,6 @@ export default function BaseDeDonneesPage() {
   const [activites, setActivites] = useState<Activite[]>([]);
   const [quickImportQuery, setQuickImportQuery] = useState("");
 
-  useEffect(() => { load(); }, []);
 
   async function load() {
     if (!supabase) { setLoading(false); return; }
@@ -87,6 +86,7 @@ export default function BaseDeDonneesPage() {
     setPoints(pts || []);
     setLoading(false);
   }
+  useEffect(() => { load(); }, []);
 
   // --- Lien personne <-> point chaud (stocké côté carte_points.personne_ids,
   // réutilise le champ déjà existant sur la carte enquêteur) ---

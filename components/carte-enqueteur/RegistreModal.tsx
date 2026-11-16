@@ -136,7 +136,6 @@ export default function RegistreModal({ onClose, readOnly = false }: Props) {
       }}
     >
       <div
-        ref={tilt.ref}
         onMouseMove={tilt.onMouseMove}
         onMouseLeave={tilt.onMouseLeave}
         style={{

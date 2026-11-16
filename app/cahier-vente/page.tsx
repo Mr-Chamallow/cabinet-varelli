@@ -120,7 +120,6 @@ export default function CahierVentePage() {
   const [editProduitId, setEditProduitId] = useState<string | null>(null);
   const [editProduitForm, setEditProduitForm] = useState<Partial<Produit>>({});
 
-  useEffect(() => { load(); }, []);
 
   async function load() {
     setLoading(true);
@@ -136,6 +135,7 @@ export default function CahierVentePage() {
     setProduits((p || []).map((x: any, i: number) => ({ id: x.id, nom: x.nom, type: x.categorie || "", emoji: x.emoji || "📦", prix_propre: venteDe.get(norm(x.nom)) || Number(x.prix_unitaire) || 0, prix_sale: venteDe.get(norm(x.nom)) || Number(x.prix_unitaire) || 0, achat: Number(x.prix_unitaire) || 0, actif: true, ordre: i, quantite: Number(x.quantite) || 0, unite: x.unite || "" })));
     setLoading(false);
   }
+  useEffect(() => { load(); }, []);
 
 
   // Stats globales

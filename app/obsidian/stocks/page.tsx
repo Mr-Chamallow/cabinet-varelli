@@ -50,12 +50,12 @@ export default function StocksPage(){
     return t?all.filter(x=>x.categorie.toLowerCase()===t):all;
   },[pD,pA,pC,form.categorie]);
   const tags=useMemo(()=>[...new Set([...DEFAULT_TAGS,...stocks.map(s=>s.categorie).filter(Boolean)])].sort((a,b)=>a.localeCompare(b)),[stocks]);
-  useEffect(()=>{load();},[]);
   useEffect(()=>{ try{ if(new URLSearchParams(window.location.search).get("cat")==="armurerie") setFilterCat("__armurerie"); }catch{} },[]);
   useRealtimeTable(["obsidian_stocks","obsidian_mouvements"], load);
   async function load(){if(!supabase){setLoading(false);return;}
     const[{data:s},{data:m}]=await Promise.all([lire("obsidian_stocks", { order: [["categorie", true], ["nom", true]] }),lire("obsidian_mouvements", { order: [["created_at", false]], limit: 100 })]);
     setStocks(s||[]);setMouvements(m||[]);setLoading(false);}
+  useEffect(()=>{load();},[]);
   async function addStock(){
   if(!form.nom)return;setSaving(true);
   const res = await fetch("/api/obsidian/stocks", {

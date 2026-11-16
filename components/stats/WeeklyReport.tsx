@@ -23,7 +23,6 @@ export function WeeklyReport() {
   const [arrests, setArrests] = useState<any[]>([]);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => { load(); }, []);
   async function load() {
     if (!supabase) return;
     const [c, a, r] = await Promise.all([
@@ -33,6 +32,7 @@ export function WeeklyReport() {
     ]);
     setCompta(c || []); setActions(a || []); setArrests(r || []);
   }
+  useEffect(() => { load(); }, []);
 
   const { start, end } = weekRange(offset);
   const report = useMemo(() => {

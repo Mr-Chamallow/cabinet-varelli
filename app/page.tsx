@@ -31,7 +31,6 @@ export default function ObsidianDashboard() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(()=>{ if(user) load(); },[user]);
 
   async function load() {
     if(!supabase){setLoading(false);return;}
@@ -54,6 +53,7 @@ export default function ObsidianDashboard() {
     ].sort((a,b)=>(a.date||"").localeCompare(b.date||"")));
     setLoading(false);
   }
+  useEffect(()=>{ if(user) load(); },[user]);
 
   const s = stats;
   const solde = s.recettes - s.depenses;

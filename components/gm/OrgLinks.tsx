@@ -5,6 +5,10 @@ import { supabase } from "@/lib/supabase";
 import { scoreOf, scoreLabel } from "@/lib/gmApi";
 
 // Vue "tout sur le groupe" : réputation, pactes, audits, fiches et autres dossiers liés au même groupe.
+const Pill = ({ href, children }: { href: string; children: React.ReactNode }) => (
+  <a href={href} style={{ fontSize: "0.7rem", padding: "0.15rem 0.6rem", borderRadius: 999, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", textDecoration: "none" }}>{children}</a>
+);
+
 export function OrgLinks({ organisation, excludeDossierId }: { organisation?: string | null; excludeDossierId?: string }) {
   const [d, setD] = useState<any>(null);
   useEffect(() => {
@@ -24,9 +28,6 @@ export function OrgLinks({ organisation, excludeDossierId }: { organisation?: st
   }, [organisation, excludeDossierId]);
   if (!organisation) return null;
   const lab = d ? scoreLabel(d.score) : null;
-  const Pill = ({ href, children }: { href: string; children: React.ReactNode }) => (
-    <a href={href} style={{ fontSize: "0.7rem", padding: "0.15rem 0.6rem", borderRadius: 999, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", textDecoration: "none" }}>{children}</a>
-  );
   return (
     <div style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "0.6rem 0.75rem", background: "var(--surface)" }}>
       <div style={{ fontWeight: 700, marginBottom: "0.4rem" }}>🔗 Tout sur {organisation}</div>

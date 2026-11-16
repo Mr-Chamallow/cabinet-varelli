@@ -9,11 +9,10 @@ export function Breadcrumb() {
   const path = usePathname() || "/";
   const parts = path.split("/").filter(Boolean);
   if (!parts.length) return null;
-  let acc = "";
   return (
     <nav className="crumbs" aria-label="Fil d'Ariane">
       <Link href="/">Accueil</Link>
-      {parts.map((p, i) => { acc += "/" + p; const last = i === parts.length - 1; const label = LABELS[p] || decodeURIComponent(p);
+      {parts.map((p, i) => { const acc = "/" + parts.slice(0, i + 1).join("/"); const last = i === parts.length - 1; const label = LABELS[p] || decodeURIComponent(p);
         return <span key={acc}><b>›</b>{last || p === "obsidian" ? <span className={last ? "cur" : ""}>{label}</span> : <Link href={acc}>{label}</Link>}</span>; })}
     </nav>
   );

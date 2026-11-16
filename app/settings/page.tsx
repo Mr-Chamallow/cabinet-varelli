@@ -27,7 +27,6 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const { toast, showToast } = useToast();
 
-  useEffect(() => { load(); }, []);
 
   async function load() {
     if (!supabase) { setLoading(false); return; }
@@ -45,6 +44,7 @@ export default function SettingsPage() {
     setGoldInput(savedGold);
     setLoading(false);
   }
+  useEffect(() => { load(); }, []);
 
   async function save(key: string, val: string) {
     if (!supabase) return;

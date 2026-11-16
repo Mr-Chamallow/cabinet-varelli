@@ -24,7 +24,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isLogin = pathname === "/login";
 
   const { user } = useCurrentUser();
-  const openRef = useRef(false); openRef.current = open;
+  const openRef = useRef(false);
+  useEffect(() => { openRef.current = open; }, [open]);
   useEffect(() => { setOpen(false); }, [pathname]);
   useEffect(() => installGestures({ openMenu: () => setOpen(true), closeMenu: () => setOpen(false), isOpen: () => openRef.current }), []);
   const poleColor = roleStyle((user as any)?.role).color;

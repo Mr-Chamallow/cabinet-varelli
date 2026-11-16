@@ -1,7 +1,7 @@
 "use client";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Modal } from "@/components/ui/Modal";
 import { CardGallery } from "@/components/CardGallery";
@@ -51,7 +51,7 @@ export default function OrganigrammePage() {
     });
   }, []);
 
-  const Node = ({ k, color }: { k: string; color?: string }) => {
+  const renderNode = (k: string, color?: string) => {
     const n = NODES[k]; const who = Array.from(new Set([n.role, ...(EXTRA[k] || [])].flatMap(r => members[r] || [])));
     return (
       <div className="card" style={{ padding: "0.75rem 0.9rem", borderTop: `3px solid ${color || "var(--gold)"}` }}>
@@ -65,7 +65,7 @@ export default function OrganigrammePage() {
     );
   };
 
-  const Missions = ({ k, color }: { k: string; color?: string }) => {
+  const renderMissions = (k: string, color?: string) => {
     const m = MISSIONS[k]; if (!m) return null;
     return (
       <div style={{ border: `1px dashed ${color || "var(--border)"}`, borderRadius: "var(--radius)", padding: "0.5rem 0.8rem", marginBottom: "0.7rem" }}>
@@ -89,21 +89,21 @@ export default function OrganigrammePage() {
         {over && <div style={{ fontSize: "0.72rem", color: "var(--warning)", marginTop: "0.3rem" }}>⚠️ Au-dessus du maximum du règlement.</div>}
       </div>
       <div className="section-title" style={{ marginBottom: "0.6rem" }}>👑 Directoire exécutif (Niveau Écarlate)</div>
-      <Missions k="directoire" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}><Node k="dg" /><Node k="do" /></div>
+      {renderMissions("directoire")}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>{renderNode("dg")}{renderNode("do")}</div>
       <div className="org-link" aria-hidden="true"><i /></div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "1rem", marginBottom: "0" }}>
         {POLES.map(p => (
           <div key={p.titre}>
             <div className="section-title" style={{ marginBottom: "0.6rem", color: p.color }}>{p.titre}</div>
-            <Missions k={(p as any).m} color={p.color} />
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>{p.keys.map(k => <Node key={k} k={k} color={p.color} />)}</div>
+            {renderMissions((p as any).m, p.color)}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>{p.keys.map(k => <Fragment key={k}>{renderNode(k, p.color)}</Fragment>)}</div>
           </div>
         ))}
       </div>
       <div className="org-link" aria-hidden="true"><i /></div>
       <div className="section-title" style={{ marginBottom: "0.6rem" }}>🧑‍💼 Membres</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "0.75rem" }}><Node k="op" color="var(--info)" /><Node k="st" color="var(--text-dim)" /></div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "0.75rem" }}>{renderNode("op", "var(--info)")}{renderNode("st", "var(--text-dim)")}</div>
       {gallery && <Modal size="lg" title="🪪 Une carte par rôle et par grade" onClose={() => setGallery(false)}><div style={{ maxHeight: "70vh", overflowY: "auto" }}><CardGallery /></div></Modal>}
     </div>
   );

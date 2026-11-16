@@ -52,8 +52,18 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   const R = (id: string) => idMap.current.get(id) || id; const LR = (id: string) => lidMap.current.get(id) || id;
   const dragRef = useRef<{ ids: string[]; start: Record<string, { x: number; y: number }>; px: number; py: number; moved: boolean } | null>(null);
   const panRef = useRef<{ sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
-  const allRef = useRef<Item[]>([]); allRef.current = all;
-  const view = useRef({ z, pan }); view.current = { z, pan };
+  const allRef = useRef<Item[]>([]);
+  const view = useRef({ z, pan });
+  useEffect(() => { allRef.current = all; });
+  useEffect(() => { view.current = { z, pan }; }, [z, pan]);
+  // Taille réelle du plan (mesurée hors rendu, mise à jour au redimensionnement)
+  const [vpDim, setVpDim] = useState({ w: 900, h: 500 });
+  // Horloge pour le filtre de période (rafraîchie chaque minute, hors rendu)
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(id); }, []);
+  // Boutons annuler / rétablir : états dérivés de l'historique
+  const [canU, setCanU] = useState(false); const [canR, setCanR] = useState(false);
+  const syncHist = () => { setCanU(hist.current.past.length > 0); setCanR(hist.current.future.length > 0); };
 
   const items = useMemo(() => all.filter(i => i.board_id === boardId), [all, boardId]);
   const mlinks = useMemo(() => mlinksAll.filter(l => l.board_id === boardId), [mlinksAll, boardId]);
@@ -95,13 +105,15 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   const pcById = useMemo(() => new Map(pactes.map(d => [d.id, d])), [pactes]);
   const shown = items.filter(i => i.kind === "note" || (i.kind === "fiche" ? fById.has(i.ref!) : i.kind === "vehicule" ? vById.has(i.ref!) : i.kind === "dossier" ? dById.has(i.ref!) : pcById.has(i.ref!)));
   const byId = (id: string) => allRef.current.find(i => i.id === id);
+  // Version « état courant » pour le rendu (pas de ref lue pendant le rendu)
+  const itemNow = (id: string) => all.find(i => i.id === id);
   const onBoard = (kind: string, ref: string) => items.some(i => i.kind === kind && i.ref === ref);
   const typeOfGroup = (nom?: string | null) => groupes.find(g => norm(g.nom) === norm(nom))?.type || "pf";
 
   // ---------- historique (annuler / retablir) ----------
-  const push = (a: Act) => { hist.current.past.push(a); if (hist.current.past.length > 60) hist.current.past.shift(); hist.current.future = []; bump(n => n + 1); };
-  async function undo() { const a = hist.current.past.pop(); if (!a) return; await a.undo(); hist.current.future.push(a); bump(n => n + 1); }
-  async function redo() { const a = hist.current.future.pop(); if (!a) return; await a.redo(); hist.current.past.push(a); bump(n => n + 1); }
+  const push = (a: Act) => { hist.current.past.push(a); if (hist.current.past.length > 60) hist.current.past.shift(); hist.current.future = []; syncHist(); bump(n => n + 1); };
+  async function undo() { const a = hist.current.past.pop(); if (!a) return; await a.undo(); hist.current.future.push(a); syncHist(); bump(n => n + 1); }
+  async function redo() { const a = hist.current.future.pop(); if (!a) return; await a.redo(); hist.current.past.push(a); syncHist(); bump(n => n + 1); }
 
   // ---------- operations de base (avec persistance) ----------
   async function insertItems(rows: any[]): Promise<Item[]> {
@@ -164,7 +176,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   // ---------- placement ----------
   function freeSpot(w: number, h: number) {
     const hit = (x: number, y: number) => items.some(i => x < i.x + PW + 20 && x + w + 20 > i.x && y < i.y + PH + 20 && y + h + 20 > i.y);
-    for (let t = 0; t < 120; t++) { const x = 40 + Math.random() * Math.max(1, W - w - 80), y = 40 + Math.random() * Math.max(1, H - h - 80); if (!hit(x, y)) return { x, y }; }
+    for (let t = 0; t < 120; t++) { const x = 40 + ((t * 7919) % Math.max(1, W - w - 80)), y = 40 + ((t * 104729) % Math.max(1, H - h - 80)); if (!hit(x, y)) return { x, y }; }
     const maxY = items.reduce((m, i) => Math.max(m, i.y + PH), 0); return { x: 40, y: clamp(maxY + 60, 40, Math.max(40, H - h - 40)) };
   }
   const rowOf = (kind: Kind, ref: string, x: number, y: number) => ({ board_id: boardId, kind, ref, x: Math.round(clamp(x, 10, W - PW - 10)), y: Math.round(clamp(y, 10, H - PH - 10)), created_by: user || null });
@@ -231,7 +243,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
     const nodes = [pathB]; const keys = new Set<string>(); let c = pathB; while (c !== pathA) { const p = prev.get(c)!; keys.add(p.key); c = p.from; nodes.unshift(c); }
     return { nodes, keys };
   }, [pathA, pathB, links]);
-  const labelOf = (id: string) => { const it = byId(id); if (!it) return "?"; if (it.kind === "fiche") return fById.get(it.ref!)?.nom || "?"; if (it.kind === "vehicule") return vById.get(it.ref!)?.modele || "Véhicule"; if (it.kind === "dossier") return dById.get(it.ref!)?.titre || "Dossier"; if (it.kind === "pacte") return `Pacte ${pcById.get(it.ref!)?.organisation || ""}`; return "Pièce"; };
+  const labelOf = (id: string) => { const it = itemNow(id); if (!it) return "?"; if (it.kind === "fiche") return fById.get(it.ref!)?.nom || "?"; if (it.kind === "vehicule") return vById.get(it.ref!)?.modele || "Véhicule"; if (it.kind === "dossier") return dById.get(it.ref!)?.titre || "Dossier"; if (it.kind === "pacte") return `Pacte ${pcById.get(it.ref!)?.organisation || ""}`; return "Pièce"; };
 
   // ---------- filtres ----------
   const filtering = !!fGroupe || fFlag !== "tout" || fPeriode !== "tout";
@@ -240,7 +252,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
     if (fGroupe && norm(f.organisation) !== norm(fGroupe)) return false;
     if (fFlag === "recherche" && !(Number(f.prime) > 0 || f.statut === "Recherché")) return false;
     if (fFlag === "surveille" && !f.surveille) return false;
-    if (fPeriode !== "tout" && it.created_at && Date.now() - new Date(it.created_at).getTime() > Number(fPeriode) * 86400000) return false;
+    if (fPeriode !== "tout" && it.created_at && now - new Date(it.created_at).getTime() > Number(fPeriode) * 86400000) return false;
     return true;
   };
   const keepSet = useMemo(() => {
@@ -248,7 +260,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
     shown.filter(i => i.kind === "fiche" && keepFiche(i)).forEach(i => s.add(i.id));
     links.forEach(l => { if (s.has(l.a) && !shown.find(i => i.id === l.b && i.kind === "fiche")) s.add(l.b); if (s.has(l.b) && !shown.find(i => i.id === l.a && i.kind === "fiche")) s.add(l.a); });
     return s;
-  }, [filtering, shown, links, fGroupe, fFlag, fPeriode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filtering, shown, links, fGroupe, fFlag, fPeriode, now]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---------- zones de groupe ----------
   const zones = useMemo(() => {
@@ -268,6 +280,13 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
 
   // ---------- vue : zoom / deplacement ----------
   const vpSize = () => { const r = vp.current?.getBoundingClientRect(); return { w: r?.width || 900, h: r?.height || 500 }; };
+  useEffect(() => {
+    const el = vp.current; if (!el) return;
+    const mesurer = () => { const r = el.getBoundingClientRect(); setVpDim({ w: r.width || 900, h: r.height || 500 }); };
+    mesurer();
+    const ro = new ResizeObserver(mesurer); ro.observe(el);
+    return () => ro.disconnect();
+  }, [boardId]);
   function fitTo(list: Item[]) {
     const l = list.length ? list : shown; const { w, h } = vpSize();
     if (!l.length) { setZ(Math.max(w / W, h / H)); setPan({ x: 0, y: 0 }); return; }
@@ -299,11 +318,11 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
     if (!d.moved && Math.hypot(dx, dy) * view.current.z < 4) return; d.moved = true;
     setAll(l => l.map(i => (d.start[i.id] ? { ...i, x: clamp(d.start[i.id].x + dx, 0, W - PW), y: clamp(d.start[i.id].y + dy, 0, H - PH) } : i)));
   }
-  function bgUp() {
+  function bgUp(ev?: React.PointerEvent) {
     const p = panRef.current; panRef.current = null;
     if (p && !p.moved) { setSel(new Set()); setSelLink(null); if (linkMode) setLinkFrom(null); return; }
     const d = dragRef.current; dragRef.current = null;
-    if (d && !d.moved) { const c = clickRef.current; clickRef.current = null; if (c) { const now = Date.now(); const last = lastClick.current; lastClick.current = { id: c.it.id, t: now }; if (last && last.id === c.it.id && now - last.t < 350 && c.it.kind === "fiche" && c.it.ref && !linkMode && !pathMode) { onOpen(c.it.ref); return; } clickPin(c.it, c.shift); } return; }
+    if (d && !d.moved) { const c = clickRef.current; clickRef.current = null; if (c) { const now = ev?.timeStamp ?? 0; const last = lastClick.current; lastClick.current = { id: c.it.id, t: now }; if (last && last.id === c.it.id && now - last.t < 350 && c.it.kind === "fiche" && c.it.ref && !linkMode && !pathMode) { onOpen(c.it.ref); return; } clickPin(c.it, c.shift); } return; }
     clickRef.current = null; if (!d) return;
     const moves = d.ids.map(id => { const c = byId(id)!; return { id, from: d.start[id], to: { x: Math.round(c.x), y: Math.round(c.y) } }; });
     moves.forEach(m => dbw.update("obsidian_board", m.id, { x: m.to.x, y: m.to.y }));
@@ -397,19 +416,19 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   }
 
   // ---------- rendu ----------
-  const cpt = (id: string) => { const i = byId(id); return { x: (i?.x ?? 0) + PW / 2, y: (i?.y ?? 0) + 6 }; };
+  const cpt = (id: string) => { const i = itemNow(id); return { x: (i?.x ?? 0) + PW / 2, y: (i?.y ?? 0) + 6 }; };
   const selItems = shown.filter(i => sel.has(i.id)); const one = selItems.length === 1 ? selItems[0] : null; const oneF = one?.kind === "fiche" ? fById.get(one.ref!) : null;
   const selLinkObj = selLink ? mlinks.find(m => m.id === selLink) : null;
   const submitPick = () => { const f = fiches.find(x => norm(x.nom) === norm(pick)); if (!f) { setErr("Personne introuvable : choisis dans la liste."); return; } setErr(""); addPerson(f.id); setPick(""); };
   const submitGroup = () => { const g = groupes.find(x => norm(x.nom) === norm(pickG)); if (!g) { setErr("Groupe introuvable : choisis dans la liste."); return; } addGroup(g.nom); setPickG(""); };
-  const mm = 170 / W; const { w: vw, h: vh } = vpSize();
+  const mm = 170 / W; const { w: vw, h: vh } = vpDim;
   const orgs = useMemo(() => [...new Set(fiches.map(f => f.organisation).filter(Boolean) as string[])].sort(), [fiches]);
   const tb = (on: boolean) => (on ? "btn btn-gold btn-sm" : "btn btn-outline btn-sm");
 
   return (
     <div>
       <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap", alignItems: "center" }}>
-        <select value={boardId || ""} onChange={e => { setBoardId(e.target.value); setSel(new Set()); hist.current = { past: [], future: [] }; }} style={{ maxWidth: 200 }}>{boards.map(b => <option key={b.id} value={b.id}>📌 {b.nom}</option>)}</select>
+        <select value={boardId || ""} onChange={e => { setBoardId(e.target.value); setSel(new Set()); hist.current = { past: [], future: [] }; syncHist(); }} style={{ maxWidth: 200 }}>{boards.map(b => <option key={b.id} value={b.id}>📌 {b.nom}</option>)}</select>
         <button className="btn btn-outline btn-sm" onClick={newBoard} title="Nouveau tableau">➕ Tableau</button>
         <button className="btn btn-ghost btn-sm" onClick={renameBoard} title="Renommer">✏️</button>
         <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={deleteBoard} title="Supprimer le tableau">🗑️</button>
@@ -428,8 +447,8 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
         <button className="btn btn-outline btn-sm" onClick={() => zoomBy(1.2)}>＋</button><button className="btn btn-outline btn-sm" onClick={() => zoomBy(0.83)}>－</button>
         <button className="btn btn-outline btn-sm" onClick={() => fitTo(sel.size ? selItems : [])} title="Tout afficher">⤢ Ajuster</button>
         <span style={{ fontSize: "0.68rem", color: "var(--text-dim)" }}>{Math.round(z * 100)} %</span>
-        <button className="btn btn-outline btn-sm" onClick={undo} disabled={!hist.current.past.length} title="Ctrl+Z">↶</button>
-        <button className="btn btn-outline btn-sm" onClick={redo} disabled={!hist.current.future.length} title="Ctrl+Y">↷</button>
+        <button className="btn btn-outline btn-sm" onClick={undo} disabled={!canU} title="Ctrl+Z">↶</button>
+        <button className="btn btn-outline btn-sm" onClick={redo} disabled={!canR} title="Ctrl+Y">↷</button>
         <select value={fGroupe} onChange={e => setFGroupe(e.target.value)} style={{ maxWidth: 170 }}><option value="">Filtre : tous les groupes</option>{orgs.map(o => <option key={o}>{o}</option>)}</select>
         <select value={fFlag} onChange={e => setFFlag(e.target.value)} style={{ maxWidth: 140 }}><option value="tout">Tous statuts</option><option value="recherche">Recherchés</option><option value="surveille">Surveillés</option></select>
         <select value={fPeriode} onChange={e => setFPeriode(e.target.value)} style={{ maxWidth: 130 }}><option value="tout">Toute période</option><option value="7">Ajoutés 7 j</option><option value="30">Ajoutés 30 j</option></select>

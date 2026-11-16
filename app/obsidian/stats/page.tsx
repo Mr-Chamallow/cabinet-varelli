@@ -27,7 +27,6 @@ export default function StatsHubPage() {
   const [d, setD] = useState<any>(null);
   const [tab, setTab] = useState<Tab>("global");
   const [nW, setNW] = useState(8);
-  useEffect(() => { load(); }, []);
   useRealtimeTable(["actions_illegales", "arrestations", "obsidian_contrats", "obsidian_stocks"], load);
   async function load() {
     if (!supabase) return;
@@ -35,6 +34,7 @@ export default function StatsHubPage() {
     const [a, ar, co, st, mv, ga, rd, em, fi, tr] = await Promise.all([q("actions_illegales"), q("arrestations"), q("obsidian_contrats"), q("obsidian_stocks"), q("obsidian_mouvements"), q("obsidian_garage"), q("obsidian_rdv"), q("obsidian_employes"), q("obsidian_fiches"), q("cahier_transactions")]);
     setD({ actions: a.data || [], arrests: ar.data || [], contrats: co.data || [], stocks: st.data || [], mouvements: mv.data || [], garage: ga.data || [], rdv: rd.data || [], employes: em.data || [], fiches: fi.data || [], trans: tr.data || [] });
   }
+  useEffect(() => { load(); }, []);
   const wks = useMemo(() => lastWeeks(nW), [nW]);
   const labels = wks.map(shortWeek);
 

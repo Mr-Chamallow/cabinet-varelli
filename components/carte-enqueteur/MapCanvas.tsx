@@ -1469,7 +1469,7 @@ function DossierModal({
 
   return (
     <div style={S.modalOverlay}>
-      <div ref={tilt.ref} onMouseMove={tilt.onMouseMove} onMouseLeave={tilt.onMouseLeave} style={S.modal}>
+      <div onMouseMove={tilt.onMouseMove} onMouseLeave={tilt.onMouseLeave} style={S.modal}>
         <div style={{ marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 10 }}>
           <input
             value={point.title}

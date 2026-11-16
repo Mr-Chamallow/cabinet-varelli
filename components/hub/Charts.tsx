@@ -114,13 +114,15 @@ export function HBars({ rows, color = "var(--gold)", format = fmt, max }: { rows
 
 // Anneau de répartition.
 export function Donut({ parts, size = 140, center }: { parts: { nom: string; value: number; color: string }[]; size?: number; center?: ReactNode }) {
-  const total = parts.reduce((s, p) => s + p.value, 0) || 1; let acc = 0; const R = 46, C = 2 * Math.PI * R;
+  const total = parts.reduce((s, p) => s + p.value, 0) || 1; const R = 46, C = 2 * Math.PI * R;
+  const visibles = parts.filter(p => p.value > 0);
+  const decalages = visibles.reduce<number[]>((arr, p, i) => [...arr, i ? arr[i - 1] + (visibles[i - 1].value / total) * C : 0], []);
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
       <div style={{ position: "relative", width: size, height: size }}>
         <svg viewBox="0 0 120 120" width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
           <circle cx={60} cy={60} r={R} fill="none" stroke="var(--surface)" strokeWidth={16} />
-          {parts.filter(p => p.value > 0).map(p => { const len = (p.value / total) * C; const el = <circle key={p.nom} cx={60} cy={60} r={R} fill="none" stroke={p.color} strokeWidth={16} strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-acc}><title>{`${p.nom} : ${fmt(p.value)}`}</title></circle>; acc += len; return el; })}
+          {visibles.map((p, i) => { const len = (p.value / total) * C; const el = <circle key={p.nom} cx={60} cy={60} r={R} fill="none" stroke={p.color} strokeWidth={16} strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-decalages[i]}><title>{`${p.nom} : ${fmt(p.value)}`}</title></circle>; return el; })}
         </svg>
         {center && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: "0.7rem", fontWeight: 700 }}>{center}</div>}
       </div>

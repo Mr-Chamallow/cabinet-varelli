@@ -1,18 +1,15 @@
-import { useRef, useCallback } from "react";
+import { useCallback } from "react";
 
 /**
  * Fait légèrement incliner un élément (carte, modal) en 3D pour suivre la souris,
- * façon "carte à collectionner". Purement visuel, aucun état React (tout passe par
- * ref.style pour rester fluide à 60fps sans re-render).
+ * façon "carte à collectionner". Purement visuel : le style est écrit directement
+ * sur l'élément survolé (e.currentTarget), sans re-rendu et sans ref.
  *
- * Utilisation : <div ref={tiltRef} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}>
+ * Utilisation : <div onMouseMove={tilt.onMouseMove} onMouseLeave={tilt.onMouseLeave}>
  */
 export function use3DTilt<T extends HTMLElement>(maxDeg = 6) {
-  const ref = useRef<T | null>(null);
-
   const onMouseMove = useCallback((e: React.MouseEvent<T>) => {
-    const el = ref.current;
-    if (!el) return;
+    const el = e.currentTarget;
     const rect = el.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width;  // 0 -> 1
     const py = (e.clientY - rect.top) / rect.height;   // 0 -> 1
@@ -21,11 +18,9 @@ export function use3DTilt<T extends HTMLElement>(maxDeg = 6) {
     el.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
   }, [maxDeg]);
 
-  const onMouseLeave = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.transform = "rotateY(0deg) rotateX(0deg)";
+  const onMouseLeave = useCallback((e: React.MouseEvent<T>) => {
+    e.currentTarget.style.transform = "rotateY(0deg) rotateX(0deg)";
   }, []);
 
-  return { ref, onMouseMove, onMouseLeave };
+  return { onMouseMove, onMouseLeave };
 }

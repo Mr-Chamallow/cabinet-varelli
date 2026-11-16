@@ -20,9 +20,8 @@ export function WeekOverview({ showActions, showArrests }: { showActions: boolea
   const [actions, setActions] = useState<any[]>([]);
   const [last, setLast] = useState<any[]>([]);
   const [types, setTypes] = useState<ActionType[]>(DEFAULT_ACTION_TYPES);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => { load(); }, []);
   useRealtimeTable(["arrestations", "actions_illegales", "actions_illegales_types"], load);
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
 
@@ -38,6 +37,7 @@ export function WeekOverview({ showActions, showArrests }: { showActions: boolea
     setArrests(a || []); setActions(ac || []); setLast(lastRows || []);
     if (!tyErr && ty && ty.length) setTypes(ty.map(rowToType));
   }
+  useEffect(() => { load(); }, []);
 
   const amendes = arrests.reduce((s, a) => s + (Number(a.amende) || 0), 0);
   const netActions = actions.reduce((s, a) => s + (Number(a.montant) || 0), 0);

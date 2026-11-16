@@ -64,7 +64,6 @@ export default function PrixPage() {
   const [editZoneForm,setEditZoneForm]=useState<any>({});
   const [newZone,setNewZone]=useState({nom:"",bonus:"",drogue:"",revendique_par:""});
 
-  useEffect(()=>{load();},[]);
   async function load(){
     if(!supabase){setLoading(false);return;}
     const[{data:d},{data:a},{data:z}]=await Promise.all([
@@ -74,6 +73,7 @@ export default function PrixPage() {
     ]);
     setDrogues(d||[]);setArmes(a||[]);setZones(z||[]);setLoading(false);
   }
+  useEffect(()=>{load();},[]);
 
   // -- Drogues --
   async function addDrogue(){

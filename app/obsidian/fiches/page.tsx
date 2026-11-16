@@ -53,9 +53,9 @@ export default function FichesPage(){
   useEffect(()=>{ if(!supabase||!showForm||editId||look.trim().length<2){setLookRes(null);return;} setLooking(true); const t=setTimeout(async()=>{ const r=await lookupPeople(supabase!,look); setLookRes(r); setLooking(false); },350); return()=>clearTimeout(t); },[look,showForm,editId]);
   function applyCandidate(c:Candidate){ const v:any=candidateToForm(c); setForm(f=>{ const n:any={...f}; Object.keys(v).forEach(k=>{ const x=v[k]; if(x!==""&&x!==null&&x!==undefined&&!(Array.isArray(x)&&!x.length)&&!(k==="age"&&!x)&&!(k==="prime"&&!x)) n[k]=x; }); return n; }); if(v.tags?.length) setTagsInput(v.tags.join(", ")); setLook(""); setLookRes(null); showToast("Fiche pré-remplie - complète les tags et le métier"); }
   const groupes=useGroupes();
-  useEffect(()=>{load();},[]);
   useDeepLink("fiche",!loading&&fiches.length>0,(v)=>{const f=fiches.find(x=>x.id===v||x.nom.toLowerCase()===v.toLowerCase());if(f)setSelected(f);});
   async function load(){if(!supabase){setLoading(false);return;}const{data}=await lire("obsidian_fiches", { order: [["priorite", true], ["nom", true]] });setFiches(data||[]);setLoading(false);}
+  useEffect(()=>{load();},[]);
   const alive=fiches.filter(f=>!f.deleted_at);
   const trashed=fiches.filter(f=>f.deleted_at);
   function closeDossier(){setClosing(true);setTimeout(()=>{setSelected(null);setClosing(false);},380);}
