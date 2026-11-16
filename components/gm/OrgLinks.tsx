@@ -15,7 +15,7 @@ export function OrgLinks({ organisation, excludeDossierId }: { organisation?: st
         supabase!.from("gm_pactes").select("id,statut,date_fin").eq("organisation", organisation),
         supabase!.from("gm_audits").select("id,note,created_at").eq("organisation", organisation).order("created_at", { ascending: false }).limit(3),
         lire("obsidian_fiches", { select: "id,nom", eq: [["organisation", organisation]], limit: 8 }),
-        supabase!.from("tribunal_dossiers").select("id,titre,verdict").eq("organisation", organisation),
+        lire("tribunal_dossiers", { select: "id,titre,verdict", eq: [["organisation", organisation]] }),
         supabase!.from("gm_reputation_log").select("delta").eq("organisation", organisation),
       ]);
       if (!off) setD({ pactes: pa.data || [], audits: au.data || [], fiches: fi.data || [], dossiers: (tr.data || []).filter((x: any) => x.id !== excludeDossierId), score: scoreOf((rp.data || []).map((x: any) => x.delta)) });

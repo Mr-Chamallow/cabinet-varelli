@@ -17,10 +17,10 @@ export function useReferentiel(): Referentiel {
     const db = supabase;
     Promise.all([
       lire("bdd_vehicules", { select: "plaque,marque_modele,couleur", limit: 2000 }),
-      db.from("obsidian_garage").select("plaque,modele,couleur,position").limit(1000),
+      lire("obsidian_garage", { select: "plaque,modele,couleur,position", limit: 1000 }),
       db.from("carte_plaques").select("plaque").limit(2000),
       db.from("carte_points").select("title").limit(2000),
-      db.from("obsidian_rdv").select("lieu").limit(2000),
+      lire("obsidian_rdv", { select: "lieu", limit: 2000 }),
     ]).then(([b, g, cp, pt, rd]) => {
       const vehicules: RefVehicule[] = [
         ...(b.data || []).map((v: any) => ({ modele: v.marque_modele || "", plaque: v.plaque || "", couleur: v.couleur, source: "Base de données" })),

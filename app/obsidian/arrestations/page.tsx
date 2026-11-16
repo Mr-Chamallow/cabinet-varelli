@@ -47,9 +47,9 @@ export default function ArrestationsPage() {
   async function load() {
     if (!supabase) { setLoading(false); return; }
     const [{ data: a }, { data: e }, { data: s }] = await Promise.all([
-      supabase.from("arrestations").select("*").order("created_at", { ascending: false }).limit(500),
+      lire("arrestations", { order: [["created_at", false]], limit: 500 }),
       lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }),
-      supabase.from("obsidian_stocks").select("id,nom,emoji,categorie,quantite,unite").order("categorie").order("nom"),
+      lire("obsidian_stocks", { select: "id,nom,emoji,categorie,quantite,unite", order: [["categorie", true], ["nom", true]] }),
     ]);
     setList((a || []).map((r: any) => ({ ...r, amende: Number(r.amende) || 0, argent_perdu: Number(r.argent_perdu) || 0, items: r.items || [] })));
     setEmployes((e || []).filter((x: any) => x.actif !== false).map((x: any) => x.nom).filter(Boolean));

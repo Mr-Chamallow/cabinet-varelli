@@ -28,7 +28,7 @@ export default function ReglementPage() {
     Promise.all([
       supabase.from("obsidian_settings").select("*").eq("id", "default").maybeSingle(),
       lire("obsidian_employes", { select: "actif" }),
-      supabase.from("obsidian_stocks").select("nom,categorie,quantite"),
+      lire("obsidian_stocks", { select: "nom,categorie,quantite" }),
     ]).then(([{ data: s }, { data: e }, { data: st }]) => {
       if (s) {
         if (Array.isArray(s.drogues_produites)) setProd(s.drogues_produites);

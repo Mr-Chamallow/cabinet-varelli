@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { money } from "@/lib/money";
 
@@ -29,7 +30,7 @@ export function WeekOverview({ showActions, showArrests }: { showActions: boolea
     if (!supabase) return;
     const since = mondayISO();
     const [{ data: a }, { data: ac }, { data: ty, error: tyErr }, { data: lastRows }] = await Promise.all([
-      supabase.from("arrestations").select("amende,argent_perdu,created_at").gte("created_at", since),
+      lire("arrestations", { select: "amende,argent_perdu,created_at", gte: [["created_at", since]] }),
       supabase.from("actions_illegales").select("montant,created_at").gte("created_at", since),
       supabase.from("actions_illegales_types").select("*").order("ordre"),
       supabase.from("actions_illegales").select("membre,action,created_at").order("created_at", { ascending: false }).limit(500),

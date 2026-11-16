@@ -65,10 +65,10 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
       supabase.from("obsidian_boards").select("*").order("created_at"),
       supabase.from("obsidian_board").select("*").order("created_at"),
       supabase.from("obsidian_board_links").select("*"),
-      supabase.from("obsidian_garage").select("id,modele,plaque,assigne_a,photo_url"),
+      lire("obsidian_garage", { select: "id,modele,plaque,assigne_a,photo_url" }),
       lire("bdd_vehicules", { select: "id,plaque,marque_modele,photos,proprietaire_id" }),
       lire("bdd_personnes", { select: "id,nom,prenom" }),
-      supabase.from("tribunal_dossiers").select("id,titre,accuse,organisation,statut"),
+      lire("tribunal_dossiers", { select: "id,titre,accuse,organisation,statut" }),
       supabase.from("gm_pactes").select("id,organisation,statut"),
       supabase.from("carte_gangs").select("id,nom,type").order("nom"),
     ]);

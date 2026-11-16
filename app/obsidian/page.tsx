@@ -21,9 +21,9 @@ export default function ObsidianDashboard() {
     if(!supabase){setLoading(false);return;}
     const [{data:bud},{data:stocks},{data:rdv},{data:contrats}] = await Promise.all([
       supabase.rpc("obsidian_budget"),
-      supabase.from("obsidian_stocks").select("*"),
-      supabase.from("obsidian_rdv").select("id,titre,type,date,statut").order("date").limit(5),
-      supabase.from("obsidian_contrats").select("id,titre,statut,date_cible").eq("statut","En cours").limit(5),
+      lire("obsidian_stocks"),
+      lire("obsidian_rdv", { select: "id,titre,type,date,statut", order: [["date", true]], limit: 5 }),
+      lire("obsidian_contrats", { select: "id,titre,statut,date_cible", eq: [["statut", "En cours"]], limit: 5 }),
     ]);
     const r=Number(bud?.recettes)||0, d=Number(bud?.depenses)||0, sal=Number(bud?.sale)||0;
     setStats({recettes:r,depenses:d,argSale:sal,
@@ -31,7 +31,7 @@ export default function ObsidianDashboard() {
       nbDrogues:(stocks||[]).filter((s:any)=>s.categorie==="drogue").reduce((a:number,x:any)=>a+x.quantite,0)});
     const [{count:dons},{count:aVenir}] = await Promise.all([
       lire("obsidian_dons", { select: "id", count: true, head: true, eq: [["statut", "en_attente"]] }),
-      supabase.from("obsidian_contrats").select("id",{count:"exact",head:true}).eq("statut","En attente"),
+      lire("obsidian_contrats", { select: "id", count: true, head: true, eq: [["statut", "En attente"]] }),
     ]);
     setTodo({ propre:(Number(bud?.capital)||0)+(Number(bud?.propre)||0), sale:Number(bud?.sale)||0, seuil:Number(bud?.seuil)||0, capital:Number(bud?.capital)||0, dons:dons||0, aVenir:aVenir||0 });
     setAlerts((stocks||[]).filter((s:any)=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte));

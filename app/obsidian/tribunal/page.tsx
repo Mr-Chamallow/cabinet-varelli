@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -44,7 +45,7 @@ export default function TribunalPage() {
   useRealtimeTable("tribunal_dossiers", load);
   async function load() {
     if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase.from("tribunal_dossiers").select("*").order("created_at", { ascending: false });
+    const { data } = await lire("tribunal_dossiers", { order: [["created_at", false]] });
     setList(data || []); setLoading(false);
   }
 

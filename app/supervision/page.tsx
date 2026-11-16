@@ -82,10 +82,10 @@ export default function SupervisionPage() {
       { count: contratsEnCours },
     ] = await Promise.all([
       supabase.rpc("obsidian_budget"),
-      supabase.from("obsidian_stocks").select("quantite,prix_unitaire"),
+      lire("obsidian_stocks", { select: "quantite,prix_unitaire" }),
       lire("obsidian_employes", { select: "nom,actif" }),
-      supabase.from("obsidian_rdv").select("id", { count: "exact", head: true }).gte("date", today),
-      supabase.from("obsidian_contrats").select("*", { count: "exact", head: true }).eq("statut", "En cours"),
+      lire("obsidian_rdv", { select: "id", count: true, head: true, gte: [["date", today]] }),
+      lire("obsidian_contrats", { count: true, head: true, eq: [["statut", "En cours"]] }),
     ]);
 
     const caSale = Number(bud?.sale) || 0;
@@ -113,13 +113,7 @@ export default function SupervisionPage() {
   async function loadOperations() {
     if (!supabase) return;
     const today = new Date().toISOString().split("T")[0];
-    const { data } = await supabase
-      .from("obsidian_rdv")
-      .select("id,titre,type,date,heure,lieu,client,statut,created_by")
-      .gte("date", today)
-      .order("date")
-      .order("heure")
-      .limit(30);
+    const { data } = await lire("obsidian_rdv", { select: "id,titre,type,date,heure,lieu,client,statut,created_by", gte: [["date", today]], order: [["date", true], ["heure", true]], limit: 30 });
     setOperations(data || []);
   }
 

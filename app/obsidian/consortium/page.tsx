@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -23,7 +24,7 @@ export default function ConsortiumStatsPage() {
     Promise.all([
       supabase.from("carte_gangs").select("id,nom"), supabase.from("gm_reputation_log").select("organisation,delta"),
       supabase.from("gm_pactes").select("organisation,statut,violations"), supabase.from("gm_audits").select("organisation,note"),
-      supabase.from("tribunal_dossiers").select("statut,verdict"), supabase.from("gm_evenements").select("type,statut,montant"),
+      lire("tribunal_dossiers", { select: "statut,verdict" }), supabase.from("gm_evenements").select("type,statut,montant"),
     ]).then(([g, r, p, a, t, e]) => setD({ gangs: g.data || [], rep: r.data || [], pactes: p.data || [], audits: a.data || [], dossiers: t.data || [], events: e.data || [] }));
   }, []);
 

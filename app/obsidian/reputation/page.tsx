@@ -55,7 +55,7 @@ export default function ReputationPage() {
     const [{ data: pactes }, { data: audits }, { data: dossiers }, { data: evenements }, { data: fiches }] = await Promise.all([
       supabase.from("gm_pactes").select("*").eq("organisation", o.nom),
       supabase.from("gm_audits").select("*").eq("organisation", o.nom).order("created_at", { ascending: false }),
-      supabase.from("tribunal_dossiers").select("*").eq("organisation", o.nom).order("created_at", { ascending: false }),
+      lire("tribunal_dossiers", { eq: [["organisation", o.nom]], order: [["created_at", false]] }),
       supabase.from("gm_evenements").select("*").eq("partenaire", o.nom).order("created_at", { ascending: false }),
       lire("obsidian_fiches", { select: "nom,metier,priorite,statut", eq: [["organisation", o.nom]] }),
     ]);

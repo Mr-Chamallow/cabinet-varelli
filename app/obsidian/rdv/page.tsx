@@ -141,7 +141,7 @@ export default function PlanningOperationsPage() {
   async function fetchOperations() {
     if (!supabase || !user) return;
     setLoading(true);
-    const { data } = await supabase.from("obsidian_rdv").select("*").order("date").order("heure");
+    const { data } = await lire("obsidian_rdv", { order: [["date", true], ["heure", true]] });
     const visibles = (data || []).filter((a: Operation) => {
       if (!a.prive) return true;
       if (a.created_by === user.nom) return true;
@@ -163,7 +163,7 @@ export default function PlanningOperationsPage() {
 
   async function fetchContrats() {
     if (!supabase) return;
-    const { data } = await supabase.from("obsidian_contrats").select("titre").order("titre");
+    const { data } = await lire("obsidian_contrats", { select: "titre", order: [["titre", true]] });
     setContratsList(data || []);
   }
 

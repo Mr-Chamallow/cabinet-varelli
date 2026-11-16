@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -36,9 +37,9 @@ export default function ObsidianDashboard() {
     if(!supabase){setLoading(false);return;}
     const [{data:bud},{data:stocks},{data:rdv},{data:contrats}] = await Promise.all([
       supabase.rpc("obsidian_budget"),
-      supabase.from("obsidian_stocks").select("*"),
-      supabase.from("obsidian_rdv").select("id,titre,type,date,statut").order("date").limit(5),
-      supabase.from("obsidian_contrats").select("id,titre,statut,date_cible").eq("statut","En cours").limit(5),
+      lire("obsidian_stocks"),
+      lire("obsidian_rdv", { select: "id,titre,type,date,statut", order: [["date", true]], limit: 5 }),
+      lire("obsidian_contrats", { select: "id,titre,statut,date_cible", eq: [["statut", "En cours"]], limit: 5 }),
     ]);
     const r=Number(bud?.recettes)||0, d=Number(bud?.depenses)||0, sal=Number(bud?.sale)||0;
     setStats({

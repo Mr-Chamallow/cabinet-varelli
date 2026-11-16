@@ -127,7 +127,7 @@ export default function CahierVentePage() {
     if (!supabase) { setLoading(false); return; }
     const [t, { data: p }, table] = await Promise.all([
       fetchAll((a, b) => lire("cahier_transactions", { order: [["created_at", false], ["id", true]], range: [a, b] })),
-      supabase.from("obsidian_stocks").select("id,nom,categorie,emoji,prix_unitaire,quantite,unite").order("categorie").order("nom"),
+      lire("obsidian_stocks", { select: "id,nom,categorie,emoji,prix_unitaire,quantite,unite", order: [["categorie", true], ["nom", true]] }),
       loadPriceTable().catch(() => [] as Awaited<ReturnType<typeof loadPriceTable>>),
     ]);
     const venteDe = new Map<string, number>(table.map(r => [norm(r.nom), r.vente] as [string, number]));

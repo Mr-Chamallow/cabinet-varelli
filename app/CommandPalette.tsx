@@ -123,11 +123,11 @@ export default function CommandPalette() {
       sources.push("client");
     }
     if (supabase && hasPermission(user, "obsidian_contrats")) {
-      queries.push(supabase.from("obsidian_contrats").select("id,titre,type").ilike("titre", like).limit(5));
+      queries.push(lire("obsidian_contrats", { select: "id,titre,type", ilike: [["titre", like]], limit: 5 }));
       sources.push("dossier");
     }
     if (supabase && hasPermission(user, "obsidian_stocks")) {
-      queries.push(supabase.from("obsidian_stocks").select("id,nom,categorie").ilike("nom", like).limit(5));
+      queries.push(lire("obsidian_stocks", { select: "id,nom,categorie", ilike: [["nom", like]], limit: 5 }));
       sources.push("stock");
     }
     if (supabase && hasPermission(user, "obsidian_employes")) {

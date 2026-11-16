@@ -38,10 +38,10 @@ function Inner() {
       lire("obsidian_fiches", { is: [["deleted_at", null]], ilike: [["nom", q]], limit: 1 }).then(r => ({ data: r.data?.[0] ?? null, error: r.error })),
       lire("bdd_personnes", { or: `nom.ilike.${like},prenom.ilike.${like}`, limit: 5 }),
       supabase.from("actions_illegales").select("*").ilike("membre", q).order("created_at", { ascending: false }).limit(50),
-      supabase.from("arrestations").select("*").ilike("membre", q).order("created_at", { ascending: false }).limit(50),
-      supabase.from("obsidian_contrats").select("titre,statut,recompense,membres_affectes").contains("membres_affectes", [q]),
-      supabase.from("obsidian_rdv").select("titre,date,heure,client").or(`client.ilike.${q},partage_avec.cs.{${q}}`).limit(20),
-      supabase.from("obsidian_garage").select("modele,plaque,photo_url").ilike("assigne_a", q),
+      lire("arrestations", { ilike: [["membre", q]], order: [["created_at", false]], limit: 50 }),
+      lire("obsidian_contrats", { select: "titre,statut,recompense,membres_affectes", contains: [["membres_affectes", [q]]] }),
+      lire("obsidian_rdv", { select: "titre,date,heure,client", or: `client.ilike.${q},partage_avec.cs.{${q}}`, limit: 20 }),
+      lire("obsidian_garage", { select: "modele,plaque,photo_url", ilike: [["assigne_a", q]] }),
     ]);
     const parts = q.toLowerCase().split(/\s+/);
     const pers = (bdd.data || []).find((p: any) => parts.every(t => `${p.prenom || ""} ${p.nom || ""}`.toLowerCase().includes(t))) || null;

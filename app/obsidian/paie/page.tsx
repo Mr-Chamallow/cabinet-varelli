@@ -66,7 +66,7 @@ export default function PaieObsidianPage() {
       fetchAll((a, b) => lire("obsidian_comptabilite", { eq: [["source", "action"]], order: [["created_at", true], ["id", true]], range: [a, b] })),
       fetchAll((a, b) => lire("obsidian_paiements", { order: [["created_at", false], ["id", true]], range: [a, b] })),
       supabase.from("obsidian_settings").select("*").eq("id", "default").maybeSingle(),
-      fetchAll((a, b) => supabase!.from("arrestations").select("membre,amende,argent_perdu,type_argent,created_at").order("created_at").order("id").range(a, b)),
+      fetchAll((a, b) => lire("arrestations", { select: "membre,amende,argent_perdu,type_argent,created_at", order: [["created_at", true], ["id", true]], range: [a, b] })),
       lire("obsidian_dons", { order: [["created_at", false]], limit: 500 }),
       supabase.rpc("obsidian_budget"),
     ]);

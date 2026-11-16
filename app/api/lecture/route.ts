@@ -19,6 +19,12 @@ const LECTURE: Record<string, string[]> = {
   bdd_personnes: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements"],
   bdd_vehicules: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements"],
   bdd_activites: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements"],
+  arrestations: ["obsidian_arrestations", "obsidian_dashboard", "obsidian_comptabilite", "obsidian_paie", "obsidian_stats", "obsidian_employes", "supervision"],
+  tribunal_dossiers: ["gm_tribunal", "gm_reputation", "gm_pactes", "gm_audits", "gm_evenements", "gm_stats", "juridique"],
+  obsidian_contrats: ["obsidian_contrats", "obsidian_dashboard", "obsidian_employes", "juridique", "supervision"],
+  obsidian_rdv: ["obsidian_rdv", "obsidian_dashboard", "obsidian_employes", "juridique", "supervision"],
+  obsidian_garage: ["obsidian_garage", "obsidian_dashboard", "base_donnees", "carte-enqueteur", "juridique", "obsidian_employes"],
+  obsidian_stocks: ["obsidian_stocks", "obsidian_dashboard", "obsidian_armurerie", "cahier_vente", "obsidian_comptabilite", "obsidian_reglement", "obsidian_arrestations", "obsidian_stats", "supervision"],
   obsidian_fiches: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements"].concat(["gm_pactes", "gm_audits"]),
 };
 
@@ -48,6 +54,8 @@ export async function POST(req: Request) {
     for (const [col, val] of (b.eq || []) as Filtre[]) q = q.eq(col, val);
     for (const [col, val] of (b.ilike || []) as Filtre[]) q = q.ilike(col, val);
     for (const [col] of (b.is || []) as [string, null][]) q = q.is(col, null);
+    for (const [col, val] of (b.gte || []) as Filtre[]) q = q.gte(col, val);
+    for (const [col, val] of (b.contains || []) as Filtre[]) q = q.contains(col, val);
     if (b.or) q = q.or(String(b.or));
     for (const [col, ascending] of (b.order || []) as [string, boolean][]) q = q.order(col, { ascending: !!ascending });
     if (b.range) q = q.range(Number(b.range[0]), Number(b.range[1]));
