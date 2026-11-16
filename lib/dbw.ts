@@ -7,7 +7,7 @@ async function call(table: string, method: string, body: any): R {
     const out = await res.json().catch(() => ({}));
     if (!res.ok) return { data: null, error: { message: out?.error || `Erreur ${res.status}` } };
     return { data: out.data ?? null, error: null };
-  } catch (e: any) { return { data: null, error: { message: e?.message || "Erreur reseau" } }; }
+  } catch (e: unknown) { return { data: null, error: { message: e instanceof Error ? e.message : "Erreur reseau" } }; }
 }
 export const dbw = {
   insert: (table: string, row: any): R => call(table, "POST", { row }),

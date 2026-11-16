@@ -8,7 +8,7 @@ export async function apiRequest(url: string, options: RequestInit): Promise<{ o
       return { ok: false, status: res.status, data, error: data?.error || text?.slice(0, 300) || `Erreur HTTP ${res.status}` };
     }
     return { ok: true, status: res.status, data };
-  } catch (e: any) {
-    return { ok: false, status: 0, data: null, error: `Réseau/connexion : ${e?.message || e}` };
+  } catch (e: unknown) {
+    return { ok: false, status: 0, data: null, error: `Réseau/connexion : ${e instanceof Error ? e.message : String(e)}` };
   }
 }

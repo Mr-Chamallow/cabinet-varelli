@@ -62,7 +62,7 @@ export default function Recrutement() {
   const action = async (fn: () => Promise<any>, ok: string) => {
     setMsg("");
     try { await fn(); setMsg(ok); await charger(); }
-    catch (e: any) { setMsg(e.message); }
+    catch (e: unknown) { setMsg((e instanceof Error ? e.message : String(e))); }
   };
 
   const postuler = () => action(() => appel("/api/cabinet/recrutement/candidatures", "POST", form), "Candidature envoyée ✔");

@@ -26,8 +26,8 @@ export function DiagnosticTab() {
         setChecks(data.checks);
         setCheckedAt(data.checkedAt);
       }
-    } catch (e: any) {
-      setError(e?.message || "Erreur réseau");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erreur réseau");
     }
     setLoading(false);
   }

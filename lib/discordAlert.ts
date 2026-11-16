@@ -56,8 +56,8 @@ export async function sendDiscordAlert(kind: DiscordWebhookKind, content: string
     });
     if (!res.ok) return { ok: false, error: `Discord a répondu ${res.status}` };
     return { ok: true };
-  } catch (e: any) {
-    return { ok: false, error: e?.message || String(e) };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -90,8 +90,8 @@ export async function sendDiscordMessage(kind: DiscordWebhookKind, opts: Discord
     if (!res.ok) return { ok: false, error: `Discord a répondu ${res.status}` };
     const data = await res.json().catch(() => null);
     return { ok: true, messageId: data?.id };
-  } catch (e: any) {
-    return { ok: false, error: e?.message || String(e) };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -109,8 +109,8 @@ export async function editDiscordMessage(kind: DiscordWebhookKind, messageId: st
     });
     if (!res.ok) return { ok: false, error: `Discord a répondu ${res.status}` };
     return { ok: true };
-  } catch (e: any) {
-    return { ok: false, error: e?.message || String(e) };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -126,7 +126,7 @@ export async function sendSecurityAlert(title: string, description: string, colo
       body: JSON.stringify({ embeds: [{ title, description, color, timestamp: new Date().toISOString() }] }),
     });
     return res.ok ? { ok: true } : { ok: false, error: `Discord a répondu ${res.status}` };
-  } catch (e: any) {
-    return { ok: false, error: e?.message || String(e) };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
 }

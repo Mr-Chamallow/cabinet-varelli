@@ -7,8 +7,8 @@ export async function gmWrite(table: string, method: "POST" | "PATCH" | "DELETE"
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: data?.error || `Erreur ${res.status}` };
     return { ok: true, data };
-  } catch (e: any) {
-    return { ok: false, error: e?.message || "Erreur réseau" };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erreur réseau" };
   }
 }
 

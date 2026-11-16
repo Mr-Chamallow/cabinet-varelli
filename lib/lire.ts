@@ -29,8 +29,8 @@ export async function lire(table: string, opts: Lecture = {}): Promise<{ data: a
     const j = await r.json().catch(() => ({}));
     if (!r.ok || j.error) return { data: null, error: { message: j.error || "Erreur" }, count: null };
     return { data: j.data, error: null, count: j.count ?? null };
-  } catch (e: any) {
-    return { data: null, error: { message: String(e?.message || e) }, count: null };
+  } catch (e: unknown) {
+    return { data: null, error: { message: e instanceof Error ? e.message : String(e) }, count: null };
   }
 }
 

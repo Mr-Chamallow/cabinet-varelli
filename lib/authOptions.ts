@@ -218,8 +218,8 @@ export const authOptions: NextAuthOptions = {
         }
         // Connexion ouverte à tous : hors serveur Discord, le compte reçoit le rôle client (voir jwt)
         return true;
-      } catch (err: any) {
-        const reason = `exception: ${err?.message || String(err)}`.slice(0, 500);
+      } catch (err: unknown) {
+        const reason = `exception: ${err instanceof Error ? err.message : String(err)}`.slice(0, 500);
         await logFailedLogin(account?.providerAccountId || "inconnu", discordName, reason);
         return "/login?error=AccessDenied";
       }

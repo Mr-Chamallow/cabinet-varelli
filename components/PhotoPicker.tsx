@@ -29,7 +29,7 @@ export function fileToPhoto(file: Blob, mode: boolean | "card" = false): Promise
 export function PhotoPicker({ value, onChange, listen = true, evidence = false, card = false }: { value?: string | null; onChange: (url: string | null) => void | Promise<void>; listen?: boolean; evidence?: boolean; card?: boolean }) {
   const [busy, setBusy] = useState(false); const [err, setErr] = useState(""); const [link, setLink] = useState("");
   const file = useRef<HTMLInputElement>(null);
-  async function setBlob(b: Blob) { setBusy(true); setErr(""); try { await onChange(await fileToPhoto(b, card ? "card" : evidence)); } catch (x: any) { setErr(x.message || "Erreur"); } setBusy(false); }
+  async function setBlob(b: Blob) { setBusy(true); setErr(""); try { await onChange(await fileToPhoto(b, card ? "card" : evidence)); } catch (x: unknown) { setErr((x instanceof Error ? x.message : String(x)) || "Erreur"); } setBusy(false); }
   useEffect(() => {
     if (!listen) return;
     const h = (ev: ClipboardEvent) => {

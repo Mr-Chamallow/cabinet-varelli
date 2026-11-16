@@ -172,8 +172,8 @@ export default function AdminPage() {
       if ((!rolesData || rolesData.length === 0) && !oErr) {
         setFetchError("Aucun rôle trouvé. Vérifiez que la table `roles` existe et contient des données.");
       }
-    } catch (e: any) {
-      setFetchError(`Erreur lors de la récupération des données : ${e.message || e}`);
+    } catch (e: unknown) {
+      setFetchError(`Erreur lors de la récupération des données : ${(e instanceof Error ? e.message : String(e)) || e}`);
     } finally {
       setLoading(false);
     }
