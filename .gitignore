@@ -5,3 +5,6 @@ node_modules
 *.log
 *.zip
 tsconfig.tsbuildinfo
+
+# Tuiles de la carte : hébergées dans Supabase Storage (bucket carte-tiles)
+public/map/

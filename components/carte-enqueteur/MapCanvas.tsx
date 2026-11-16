@@ -70,7 +70,9 @@ const MAX_ZOOM = 5;
 
 // --- Extensions hors-San Andreas (placement approximatif, non calé sur les coords réelles du jeu) ---
 // Cayo Perico : image statique accrochée en bas à droite de la carte principale.
-const CAYO_IMAGE_URL = '/map/cayo-perico.jpg';
+// Tuiles hébergées dans le stockage Supabase (bucket public carte-tiles, voir scripts/upload-tiles.mjs)
+const TILES_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/carte-tiles/map`;
+const CAYO_IMAGE_URL = `${TILES_BASE}/cayo-perico.jpg`;
 const CAYO_SIZE = 90; // taille du carré ajouté (mêmes unités que TILE_SIZE)
 
 const colors = {
@@ -541,9 +543,9 @@ interface Props {
 }
 
 export default function MapCanvas({
-  satelliteTilesUrl = '/map/tiles/satellite/{z}/{x}/{y}.jpg',
-  gridTilesUrl = '/map/tiles/grid/{z}/{x}/{y}.png',
-  atlasTilesUrl = '/map/tiles/atlas/{z}/{x}/{y}.jpg',
+  satelliteTilesUrl = `${TILES_BASE}/tiles/satellite/{z}/{x}/{y}.jpg`,
+  gridTilesUrl = `${TILES_BASE}/tiles/grid/{z}/{x}/{y}.png`,
+  atlasTilesUrl = `${TILES_BASE}/tiles/atlas/{z}/{x}/{y}.jpg`,
   scale = DEFAULT_SCALE,
   origin = DEFAULT_ORIGIN,
   readOnly = false,
