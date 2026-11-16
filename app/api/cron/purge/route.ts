@@ -19,7 +19,7 @@ export async function GET(req: Request) {
       result[table] = error ? `erreur: ${error.message}` : "ok";
     }
     return NextResponse.json({ ok: true, avant: limit, result });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || String(e) }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
 }

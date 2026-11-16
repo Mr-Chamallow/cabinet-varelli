@@ -1,3 +1,4 @@
+import type { Db } from "@/lib/serverAuth";
 import { money } from "@/lib/money";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
@@ -38,7 +39,7 @@ function parse(b: any): Parsed | { error: string } {
   };
 }
 
-async function createArrest(db: any, p: Parsed): Promise<{ row?: any; error?: string }> {
+async function createArrest(db: Db, p: Parsed): Promise<{ row?: any; error?: string }> {
   const items: any[] = [];
   for (const w of p.wanted) {
     const { data: st } = await db.from("obsidian_stocks").select("*").eq("id", w.stock_id).single();
@@ -63,7 +64,7 @@ async function createArrest(db: any, p: Parsed): Promise<{ row?: any; error?: st
   return { row };
 }
 
-async function revertArrest(db: any, row: any, by: string) {
+async function revertArrest(db: Db, row: any, by: string) {
   for (const it of (row.items || [])) {
     if (!it.retire || it.retire <= 0) continue;
     const { data: st } = await db.from("obsidian_stocks").select("*").eq("id", it.stock_id).single();
@@ -88,8 +89,8 @@ export async function POST(req: Request) {
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
     await syncAlert(supabaseAdmin, "arrestations", r.row, "arrestations", `🚔 Arrestation - ${r.row.membre}`, r.row.notes || "Nouvelle arrestation enregistrée.", RED, arrestFields(r.row));
     return NextResponse.json(r.row);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -122,8 +123,8 @@ export async function PATCH(req: Request) {
     if (old.discord_message_id) { r.row.discord_message_id = old.discord_message_id; await supabaseAdmin.from("arrestations").update({ discord_message_id: old.discord_message_id }).eq("id", r.row.id); }
     await syncAlert(supabaseAdmin, "arrestations", r.row, "arrestations", `🚔 Arrestation - ${r.row.membre} (modifiée)`, r.row.notes || "Saisie corrigée (stock et prime recalculés).", ORANGE, arrestFields(r.row));
     return NextResponse.json(r.row);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -140,7 +141,7 @@ export async function DELETE(req: Request) {
     await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Arrestation annulée", row.membre, `amende ${money(row.amende)} · argent perdu ${money(row.argent_perdu)}`);
     await syncAlert(supabaseAdmin, "arrestations", row, "arrestations", `🗑️ Arrestation annulée - ${row.membre}`, "Stock remis, prime de paie retirée.", GREY, arrestFields(row));
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

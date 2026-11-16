@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     const result = await sendDiscordMessage(kind, { title, description, fields, color });
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
     return NextResponse.json({ ok: true, messageId: result.messageId });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

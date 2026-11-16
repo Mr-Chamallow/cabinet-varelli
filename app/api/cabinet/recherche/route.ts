@@ -19,7 +19,7 @@ export async function GET(req: Request) {
       db.from("cabinet_devis").select("id,numero,montant,statut,client_nom").or(`numero.ilike.%${q}%,client_nom.ilike.%${q}%`).limit(10),
     ]);
     return NextResponse.json({ clients: clients.data || [], dossiers: dossiers.data || [], factures: factures.data || [], devis: devis.data || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

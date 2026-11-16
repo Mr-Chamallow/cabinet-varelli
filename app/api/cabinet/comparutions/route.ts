@@ -1,3 +1,4 @@
+import type { Db } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche } from "@/lib/cabinetServer";
@@ -5,7 +6,7 @@ import { gradeParRole } from "@/lib/grades";
 import { estPatronUser, estStaffUser } from "@/lib/cabinetRoles";
 
 // Taux de l'avocat : grade enregistré, sinon grade déduit de son rôle (et enregistré pour la suite)
-async function tauxAvocat(db: any, discordId: string, nom: string, roles: (string | null | undefined)[]) {
+async function tauxAvocat(db: Db, discordId: string, nom: string, roles: (string | null | undefined)[]) {
   const { data: g } = await db.from("cabinet_avocat_grades").select("grade").eq("avocat_discord_id", discordId).maybeSingle();
   let grade = g?.grade as string | null | undefined;
   if (!grade) {
@@ -27,8 +28,8 @@ export async function GET() {
     const { data, error } = await r.supabaseAdmin.from("cabinet_comparutions").select("*").order("date_audience", { ascending: false }).order("heure", { ascending: false });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -83,8 +84,8 @@ export async function POST(req: Request) {
     }]).select("*").single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -115,8 +116,8 @@ export async function PATCH(req: Request) {
       await db.from("cabinet_rdv").update({ statut: maj.statut === "refusee" ? "annule" : "attribue" }).eq("id", data.rdv_id);
     }
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -134,7 +135,7 @@ export async function DELETE(req: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     if (ci?.rdv_id) await db.from("cabinet_rdv").delete().eq("id", ci.rdv_id);
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

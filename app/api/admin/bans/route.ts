@@ -17,8 +17,8 @@ export async function POST(req: Request) {
     await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Bannissement", nom || discord_id, motif || "");
     await postAlert("admin", "🔨 Membre banni du site", `**${nom || discord_id}** (\`${discord_id}\`)\nMotif : ${motif || " - "}\nPar : ${((user as any)?.nom_perso || (user as any)?.discord_name || "?")}`, RED);
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -35,7 +35,7 @@ export async function DELETE(req: Request) {
     await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Débannissement", discord_id);
     await postAlert("admin", "✅ Membre débanni", `\`${discord_id}\`\nPar : ${((user as any)?.nom_perso || (user as any)?.discord_name || "?")}`, GREEN);
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

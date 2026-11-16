@@ -38,8 +38,8 @@ export async function GET() {
       occupes = (occ || []) as any[];
     }
     return NextResponse.json({ rows: data || [], occupes, staff });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -85,8 +85,8 @@ export async function POST(req: Request) {
 
     await notifyDiscord(`**${avocatSoi ? "RDV ajouté" : "Nouvelle demande de RDV"}** : ${client_nom}\nDate : ${quand(b.date_rdv)}${data.prestation ? `\nPrestation : ${data.prestation}` : ""}${data.motif ? `\nMotif : ${data.motif}` : ""}`);
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -189,7 +189,7 @@ export async function PATCH(req: Request) {
     }
 
     return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

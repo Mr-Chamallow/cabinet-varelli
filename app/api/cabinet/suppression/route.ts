@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await journaliser(db, nomAffiche(r.user), "Suppression définitive", b.type, `${nombre} élément(s)`);
     return NextResponse.json({ ok: true, supprimes: nombre });    return NextResponse.json({ ok: true, supprimes: nombre });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

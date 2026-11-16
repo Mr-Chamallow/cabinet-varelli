@@ -45,7 +45,7 @@ export async function GET(req: Request) {
     });
     lignes.sort((a, b) => b.honorairesCI - a.honorairesCI || b.dossiers - a.dossiers);
     return NextResponse.json({ mois: filtre || "all", rows: lignes });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

@@ -1,3 +1,4 @@
+import type { Db } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { postAlert, logAudit, GREEN, GREY } from "@/lib/alerts";
@@ -12,7 +13,7 @@ async function guard() {
   return { db: r.supabaseAdmin, id: String(u.discord_id || ""), nom: String(u.nom_perso || u.discord_name || "") };
 }
 
-async function resolve(db: any, recId: string, nom: string, auteur: string) {
+async function resolve(db: Db, recId: string, nom: string, auteur: string) {
   const [{ data: rec }, { data: votes }, { count }] = await Promise.all([
     db.from("obsidian_recrutement").select("id,nom_rp,statut").eq("id", recId).maybeSingle(),
     db.from("obsidian_recrutement_votes").select("vote").eq("recrutement_id", recId),
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     const statut = await resolve(g.db, b.recrutement_id, g.nom, g.nom);
     return NextResponse.json({ ok: true, statut });
-  } catch (e: any) { return NextResponse.json({ error: e?.message || "Erreur" }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: e instanceof Error ? e.message : "Erreur" }, { status: 500 }); }
 }
 
 export async function DELETE(req: Request) {
@@ -52,5 +53,5 @@ export async function DELETE(req: Request) {
     const { error } = await g.db.from("obsidian_recrutement_votes").delete().eq("recrutement_id", id).eq("voter_id", g.id);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: e?.message || "Erreur" }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: e instanceof Error ? e.message : "Erreur" }, { status: 500 }); }
 }

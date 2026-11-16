@@ -16,8 +16,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     const { data, error } = await r.supabaseAdmin.from("cabinet_dossier_clients").select("*").eq("dossier_id", id).order("created_at", { ascending: true });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -42,8 +42,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await journaliser(db, nomAffiche(r.user), "Client ajouté au dossier", acces.dossier.titre, nom);
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -61,7 +61,7 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await journaliser(db, nomAffiche(r.user), "Client retiré du dossier", acces.dossier.titre, cid);
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

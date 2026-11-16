@@ -18,8 +18,8 @@ export async function POST(req: Request) {
     const { data, error: dbError } = await supabaseAdmin.from("obsidian_employes").insert([body]).select().single();
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -55,8 +55,8 @@ export async function PATCH(req: Request) {
       await postAlert("compta", `⬆️ Promotion - ${old.nom}`, `${old.role || "-"} -> **${patch.role}**\nPar **${who || "?"}**`, GREEN);
     }
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -74,7 +74,7 @@ export async function DELETE(req: Request) {
     if (emp?.discord_id) await supabaseAdmin.from("site_logins").update({ employe_exclu: true }).eq("discord_id", emp.discord_id);
     else if (emp?.nom) await supabaseAdmin.from("site_logins").update({ employe_exclu: true }).ilike("discord_name", emp.nom);
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

@@ -22,8 +22,8 @@ export async function GET() {
       employes: employes.count || 0,
       topic: topicPour("liste:votes"),
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     await journaliser(r.supabaseAdmin, nomAffiche(user), "Vote lancé", titre, null);
     await notifyDiscord(`**Nouveau vote interne** : ${titre}`);
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

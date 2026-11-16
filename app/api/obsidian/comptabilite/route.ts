@@ -20,8 +20,8 @@ export async function POST(req: Request) {
     ]);
     await bigMoveAlert(supabaseAdmin, signed, `${data.categorie} - ${data.motif || ""}`, data.created_by || "");
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -36,7 +36,7 @@ export async function DELETE(req: Request) {
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     if (gone) await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Opération compta supprimée", gone.motif || gone.categorie, `${gone.type} ${money(gone.montant)}`);
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

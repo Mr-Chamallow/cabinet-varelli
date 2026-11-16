@@ -22,5 +22,5 @@ export async function POST(req: Request) {
     for (const [t, c] of TABLES) await db.from(t).update({ [c]: n }).eq("groupe_id", id);
     await logAudit(db, ((user as any)?.nom_perso || (user as any)?.discord_name), "Groupe renommé", old.nom, `-> ${n}`);
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }

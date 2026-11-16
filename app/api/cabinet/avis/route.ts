@@ -12,8 +12,8 @@ export async function GET() {
       .eq("statut", "publie").order("created_at", { ascending: false }).limit(30);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await notifyDiscord(`**Nouvel avis client** (${note}/5) à valider dans l'admin : ${contenu.slice(0, 300)}`);
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

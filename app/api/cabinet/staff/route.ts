@@ -37,7 +37,7 @@ export async function GET() {
     }
     rows.sort((a: any, b: any) => a.nom.localeCompare(b.nom));
     return NextResponse.json({ rows });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

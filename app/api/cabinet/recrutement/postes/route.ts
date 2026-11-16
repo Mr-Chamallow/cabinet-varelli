@@ -14,8 +14,8 @@ export async function GET() {
     const { data, error } = await r.supabaseAdmin.from("cabinet_postes").select("*").order("ordre", { ascending: true });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -39,8 +39,8 @@ export async function POST(req: Request) {
     if (error) return NextResponse.json({ error: error.code === "23505" ? "Ce poste existe déjà" : error.message }, { status: 400 });
     await journaliser(r.supabaseAdmin, nomAffiche(r.user), "Poste créé", v.nom, v.role_acces || "sans accès particulier");
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -53,8 +53,8 @@ export async function PATCH(req: Request) {
     const { data, error } = await r.supabaseAdmin.from("cabinet_postes").update(v).eq("id", b.id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -66,7 +66,7 @@ export async function DELETE(req: Request) {
     const { error } = await r.supabaseAdmin.from("cabinet_postes").delete().eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

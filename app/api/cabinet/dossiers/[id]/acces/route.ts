@@ -29,8 +29,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     await journaliser(db, nomAffiche(r.user), "Membre ajouté", dossier?.titre || "", nom);
     await notifyDiscord(`**Attribution** : le dossier ${dossier?.titre || ""} est attribué à ${nom} (par ${nomAffiche(r.user)})`);
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -47,7 +47,7 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await journaliser(r.supabaseAdmin, nomAffiche(r.user), "Membre retiré", id, b.avocat_discord_id);
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

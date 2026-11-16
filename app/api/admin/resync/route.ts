@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const { error: dbError } = await supabaseAdmin.from("site_logins").update({ force_resync: true }).eq("discord_id", discord_id);
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

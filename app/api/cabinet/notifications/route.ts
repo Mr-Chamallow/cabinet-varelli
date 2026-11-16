@@ -74,8 +74,8 @@ export async function GET() {
       return [slug, { auteur: data.auteur_nom, texte, created_at: data.created_at }] as const;
     }));
     return NextResponse.json({ plaintes, votes: aVoter, messages: 0, canaux: Object.fromEntries(compteurs), mentions: Object.fromEntries(mentions), mentionsTotal: totalMentions, derniers: Object.fromEntries(derniers), messagerie, topics });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     if (!["plaintes", "messages-client"].includes(b.section) && !canalOk) return NextResponse.json({ error: "Section inconnue" }, { status: 400 });
     await r.supabaseAdmin.from("cabinet_vus").upsert([{ discord_id: user.discord_id, section: b.section, vu_at: new Date().toISOString() }], { onConflict: "discord_id,section" });
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

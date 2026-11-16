@@ -61,8 +61,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ table: string 
     const { data, error } = await a.db.from(table).select("*").order(a.c.order, { ascending: true });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -80,8 +80,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ table: string 
     const { data, error } = await a.db.from(table).insert([payload]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -101,8 +101,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ table: string
     }
     if (table !== "cabinet_pages") await journaliser(a.db, nomAffiche(a.user), "Modification", `${table} : ${data.nom || data.nom_rp || ""}`, null);
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -116,7 +116,7 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ table: strin
     const { error } = await a.db.from(table).delete().eq(key, body[key]);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

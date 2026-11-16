@@ -64,7 +64,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ table: 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     if (a.cfg.audit) await logAudit(a.db, a.who, `${a.cfg.label} cree`, describe(a.cfg, data?.[0]));
     return NextResponse.json({ data: Array.isArray(b.rows) ? data : data?.[0] });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ table: string }> }) {
@@ -82,7 +82,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ table:
       if (diff) await logAudit(a.db, a.who, `${a.cfg.label} modifie`, describe(a.cfg, data || before), diff);
     }
     return NextResponse.json({ data });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }
 
 // Upsert (reglages) : l'id est autorise ici
@@ -96,7 +96,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ table: s
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     if (a.cfg.audit) await logAudit(a.db, a.who, `${a.cfg.label} modifie`, describe(a.cfg, row), JSON.stringify(row).slice(0, 400));
     return NextResponse.json({ data });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ table: string }> }) {
@@ -119,5 +119,5 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ table
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     if (a.cfg.audit) await logAudit(a.db, a.who, `${a.cfg.label} supprime`, describe(a.cfg, before), JSON.stringify(before || {}).slice(0, 400));
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }

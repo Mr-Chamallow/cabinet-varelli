@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     await logAudit(supabaseAdmin, String((user as any)?.nom_perso || (user as any)?.discord_name || ""), "Paie versee", String((data as any)?.employe || ""), `${(data as any)?.montant ?? ""}$ · semaine ${(data as any)?.semaine ?? ""}`);
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

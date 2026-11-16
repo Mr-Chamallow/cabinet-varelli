@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const { error } = await g.db.from("actions_illegales_types").upsert(row);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }
 
 export async function DELETE(req: Request) {
@@ -40,5 +40,5 @@ export async function DELETE(req: Request) {
     const { error } = await g.db.from("actions_illegales_types").delete().eq("nom", nom);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }

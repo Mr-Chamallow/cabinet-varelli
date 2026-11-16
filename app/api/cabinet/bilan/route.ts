@@ -17,7 +17,7 @@ export async function GET() {
     return new NextResponse(new Uint8Array(bilanPdf(b, libelle)), {
       headers: { "Content-Type": "application/pdf", "Content-Disposition": `inline; filename="bilan-${maintenant.toISOString().slice(0, 10)}.pdf"` },
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

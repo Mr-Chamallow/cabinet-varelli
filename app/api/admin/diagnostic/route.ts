@@ -56,8 +56,8 @@ export async function GET() {
         ok: !error,
         detail: error ? error.message : "OK - lecture de la table 'roles' réussie",
       });
-    } catch (e: any) {
-      checks.push({ label: "Connexion Supabase (clé de service)", ok: false, detail: e?.message || String(e) });
+    } catch (e: unknown) {
+      checks.push({ label: "Connexion Supabase (clé de service)", ok: false, detail: e instanceof Error ? e.message : String(e) });
     }
   } else {
     checks.push({ label: "Connexion Supabase (clé de service)", ok: false, detail: "Variables manquantes, test impossible" });
@@ -74,8 +74,8 @@ export async function GET() {
         ok: !error,
         detail: error ? error.message : "OK - lecture de la table 'app_settings' réussie",
       });
-    } catch (e: any) {
-      checks.push({ label: "Connexion Supabase (clé publique)", ok: false, detail: e?.message || String(e) });
+    } catch (e: unknown) {
+      checks.push({ label: "Connexion Supabase (clé publique)", ok: false, detail: e instanceof Error ? e.message : String(e) });
     }
   } else {
     checks.push({ label: "Connexion Supabase (clé publique)", ok: false, detail: "Variables manquantes, test impossible" });
@@ -126,8 +126,8 @@ export async function GET() {
       add("Écritures compta stock orphelines", comptaStock.filter(c => !mvtIds.has(c.source_id)).map(c => `${c.montant} $`), "Aucune orpheline");
       add("Doublons compta (même source)", [...comptaIds.entries()].filter(([, n]) => n > 1).map(([id, n]) => `${id.slice(0, 8)} x${n}`), "Aucun doublon");
       add("Écritures compta invalides", compta.filter(c => !(Number(c.montant) > 0) || !c.semaine).map(c => `${c.type} ${c.montant}`), `${compta.length} écritures valides (montant > 0, semaine renseignée)`);
-    } catch (e: any) {
-      checks.push({ label: "Intégrité des données", ok: false, detail: e?.message || String(e) });
+    } catch (e: unknown) {
+      checks.push({ label: "Intégrité des données", ok: false, detail: e instanceof Error ? e.message : String(e) });
     }
   }
 

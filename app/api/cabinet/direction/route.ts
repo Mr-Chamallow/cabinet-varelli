@@ -49,7 +49,7 @@ export async function GET() {
       },
       topics: { votes: topicPour("liste:votes"), plaintes: topicPour("liste:plaintes") },
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

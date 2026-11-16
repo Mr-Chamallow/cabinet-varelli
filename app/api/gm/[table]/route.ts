@@ -1,6 +1,6 @@
 import { palierOf } from "@/lib/rolesRP";
 import { NextResponse } from "next/server";
-import { requirePermission } from "@/lib/serverAuth";
+import { requirePermission, type Db } from "@/lib/serverAuth";
 import { hasWriteAccess } from "@/lib/auth";
 import { postAlert, syncAlert, logAudit, GOLD, GREEN, RED, ORANGE, BLUE, GREY } from "@/lib/alerts";
 import { GROUPS } from "@/lib/discordRoles";
@@ -37,7 +37,7 @@ const GROUP_FIELD: Record<string, { field: string; strict: boolean }> = {
   gm_audits: { field: "organisation", strict: true }, gm_reputation_log: { field: "organisation", strict: true },
   gm_evenements: { field: "partenaire", strict: false },
 };
-async function linkGroupe(db: any, table: string, payload: any): Promise<string | null> {
+async function linkGroupe(db: Db, table: string, payload: Record<string, any>): Promise<string | null> {
   const g = GROUP_FIELD[table]; if (!g || !(g.field in payload)) return null;
   const name = String(payload[g.field] ?? "").trim();
   if (!name) { payload.groupe_id = null; return null; }
@@ -49,15 +49,15 @@ async function linkGroupe(db: any, table: string, payload: any): Promise<string 
 
 const pick = (b: any, cols: string[]) => Object.fromEntries(Object.entries(b || {}).filter(([k]) => cols.includes(k)).map(([k, v]) => [k, v === "" ? null : v]));
 
-async function ensureOrg(db: any, nom?: string | null) {
+async function ensureOrg(db: Db, nom?: string | null) {
   if (nom && nom.trim()) await db.from("gm_organisations").upsert({ nom: nom.trim() }, { onConflict: "nom", ignoreDuplicates: true });
 }
-async function rep(db: any, organisation: string, delta: number, motif: string, source: string, source_id: string, by: string) {
+async function rep(db: Db, organisation: string, delta: number, motif: string, source: string, source_id: string, by: string) {
   if (!organisation || !delta) return;
   await ensureOrg(db, organisation);
   await db.from("gm_reputation_log").insert([{ organisation, delta, motif, source, source_id, created_by: by }]);
 }
-const clearRep = (db: any, source: string, id: string) => db.from("gm_reputation_log").delete().eq("source", source).eq("source_id", id);
+const clearRep = (db: Db, source: string, id: string) => db.from("gm_reputation_log").delete().eq("source", source).eq("source_id", id);
 
 // Qui prévenir selon le type d'événement
 // Qui prévenir (seulement si l'alerte est urgente : échec / attaque / capture à faire)
@@ -69,7 +69,7 @@ function pingEvent(type: string, statut = "") {
   return [] as any;
 }
 
-async function afterCreate(db: any, table: string, row: any, who: string) {
+async function afterCreate(db: Db, table: string, row: Record<string, any>, who: string) {
   if (table === "gm_audits") {
     await rep(db, row.organisation, Math.round((Number(row.note) - 5) * 4), `Audit : ${row.note}/10`, "audit", row.id, who);
     await syncAlert(db, table, row, "gm", `🔎 Audit - ${row.organisation}`, `Note **${row.note}/10**${row.appreciation ? `\n${row.appreciation}` : ""}${row.sanction ? `\n⛔ Sanction : **${row.sanction}**` : ""}`, Number(row.note) >= 5 ? GREEN : RED, undefined, Number(row.note) < 5 ? [...GROUPS.JURIDIQUE, "COO"] : ["RJ", "AJ"]);
@@ -82,12 +82,12 @@ async function afterCreate(db: any, table: string, row: any, who: string) {
     await syncAlert(db, table, row, "gm", `⚖️ Dossier - ${row.titre}`, `Accusé : **${row.accuse || row.organisation || "?"}**\nStatut : ${row.statut}`, GOLD);
   } else if (table === "gm_evenements") {
     await ensureOrg(db, row.partenaire);
-    const ic: any = { convoi: "🚚", enchere: "🔨", alerte: "🚨", capture: "🎯" };
+    const ic: Record<string, string> = { convoi: "🚚", enchere: "🔨", alerte: "🚨", capture: "🎯" };
     await syncAlert(db, table, row, "gm", `${ic[row.type] || "📌"} ${row.titre}`, `Statut : **${row.statut}**${row.partenaire ? `\nPartenaire : ${row.partenaire}` : ""}`, evColor(row.statut), undefined, pingEvent(row.type, row.statut));
   }
 }
 
-async function afterUpdate(db: any, table: string, old: any, row: any, who: string) {
+async function afterUpdate(db: Db, table: string, old: Record<string, any>, row: Record<string, any>, who: string) {
   if (table === "gm_audits") {
     await clearRep(db, "audit", row.id);
     await rep(db, row.organisation, Math.round((Number(row.note) - 5) * 4), `Audit : ${row.note}/10`, "audit", row.id, who);
@@ -119,7 +119,7 @@ async function afterUpdate(db: any, table: string, old: any, row: any, who: stri
       if (row.statut === "livre") await rep(db, row.partenaire, 5, `Convoi livré : ${row.titre}`, "evenement", row.id, who);
       if (row.statut === "echec") await rep(db, row.partenaire, -5, `Convoi échoué : ${row.titre}`, "evenement", row.id, who);
     }
-    const ic: any = { convoi: "🚚", enchere: "🔨", alerte: "🚨", capture: "🎯" };
+    const ic: Record<string, string> = { convoi: "🚚", enchere: "🔨", alerte: "🚨", capture: "🎯" };
     await syncAlert(db, table, row, "gm", `${ic[row.type] || "📌"} ${row.titre}`, `Statut : **${row.statut}**${row.partenaire ? `\nPartenaire : ${row.partenaire}` : ""}\n_(avant : ${old.statut})_`, evColor(row.statut), undefined, pingEvent(row.type, row.statut));
   }
 }
@@ -129,7 +129,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ table: string 
     const { table } = await ctx.params;
     const a = await auth(table); if (a.err) return a.err;
     const body = await req.json();
-    const payload: any = { ...pick(body, a.cfg.cols), created_by: a.who };
+    const payload: Record<string, any> = { ...pick(body, a.cfg.cols), created_by: a.who };
     const le = await linkGroupe(a.db, table, payload); if (le) return NextResponse.json({ error: le }, { status: 400 });
     if (table === "gm_organisations" && !payload.nom) return NextResponse.json({ error: "Nom requis" }, { status: 400 });
     const { data, error } = await a.db.from(table).insert([payload]).select().single();
@@ -142,7 +142,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ table: string 
     }
     else await afterCreate(a.db, table, data, a.who);
     return NextResponse.json(data);
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ table: string }> }) {
@@ -154,13 +154,13 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ table: string
     if (!body[key]) return NextResponse.json({ error: `${key} requis` }, { status: 400 });
     const { data: old } = await a.db.from(table).select("*").eq(key, body[key]).single();
     if (!old) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
-    const patch: any = pick(body, a.cfg.cols); delete patch.nom;
+    const patch: Record<string, any> = pick(body, a.cfg.cols); delete patch.nom;
     const le = await linkGroupe(a.db, table, patch); if (le) return NextResponse.json({ error: le }, { status: 400 });
     const { data, error } = await a.db.from(table).update(patch).eq(key, body[key]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await afterUpdate(a.db, table, old, data, a.who);
     return NextResponse.json(data);
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }
 
 export async function DELETE(req: Request, ctx: { params: Promise<{ table: string }> }) {
@@ -177,5 +177,5 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ table: strin
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await logAudit(a.db, a.who, "Suppression", `${table}`, gone ? (gone.titre || gone.organisation || gone.nom || String(b[key])) : String(b[key]));
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }

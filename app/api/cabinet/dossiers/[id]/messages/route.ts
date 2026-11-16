@@ -16,8 +16,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     const { data, error } = await r.supabaseAdmin.from("cabinet_messages").select("*").eq("dossier_id", id).order("created_at", { ascending: true }).limit(500);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [], topic: topicPour(`dossier:${id}`) });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -58,8 +58,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       await notifyDiscord(`**Message client** : ${a.dossier.client_nom || "Client"}, dossier ${a.dossier.titre}\n${contenu ? contenu.slice(0, 300) : "image envoyée"}`);
     }
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -83,7 +83,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await diffuser(`dossier:${id}`, data);
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

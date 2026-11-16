@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
     await postAlert("compta", `🧼 Blanchiment ${groupe ? "(" + groupe + ") " : ""} -  ${usd(montant)}`, motif, GOLD);
     return NextResponse.json({ ok: true, propre, frais: montant - propre, source_id: sid });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       await sendDiscordAlert("stocks", `Par **${who}**\n${resume.slice(0, 25).join("\n")}${resume.length > 25 ? `\n... (+${resume.length - 25})` : ""}`, { title: `⚖️ Inventaire : ${resume.length} ajustement(s)`, color: 0xeab308 });
     }
     return NextResponse.json({ results, stocks: Object.values(stocks) });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

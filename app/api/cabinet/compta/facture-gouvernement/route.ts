@@ -14,8 +14,8 @@ export async function GET() {
     const { data, error } = await r.supabaseAdmin.from("cabinet_factures_gouvernement").select("id,numero,semaine,nb_comparutions,total,statut,payee_at,created_at,cree_par").order("semaine", { ascending: false }).order("created_at", { ascending: false });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -29,8 +29,8 @@ export async function POST(req: Request) {
     const facture = await genererFactureGouvernement(r.supabaseAdmin, lundi, nomAffiche(r.user));
     if (!facture) return NextResponse.json({ ok: false, message: "Aucune comparution prise en charge à facturer pour cette semaine." });
     return NextResponse.json({ ok: true, facture });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -44,8 +44,8 @@ export async function PATCH(req: Request) {
     const { data, error } = await r.supabaseAdmin.from("cabinet_factures_gouvernement").update({ statut: "payee", payee_at: new Date().toISOString() }).eq("id", id).select("*").single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 

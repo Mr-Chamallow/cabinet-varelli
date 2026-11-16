@@ -22,8 +22,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     const { data: historique } = await db.from("cabinet_factures_historique").select("*").eq("facture_id", id).order("created_at", { ascending: false });
     const { data: paiements } = await db.from("cabinet_paiements").select("*").eq("facture_id", id).order("created_at", { ascending: false });
     return NextResponse.json({ facture, historique: historique || [], paiements: paiements || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -108,7 +108,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     await historiser(db, id, "statut", `${actuelle.statut} vers ${b.statut}`, auteur);
     if (b.statut === "payee") await messageReglee();
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

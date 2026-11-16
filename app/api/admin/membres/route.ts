@@ -28,7 +28,7 @@ export async function PATCH(req: Request) {
     await logAudit(db, ((user as any)?.nom_perso || (user as any)?.discord_name), "Membre renommé", old.nom_perso || old.discord_name, `-> ${nouveau}`);
     await postAlert("membres", "✏️ Membre renommé", `**${old.nom_perso || old.discord_name}** -> **${nouveau}**\nPar : ${((user as any)?.nom_perso || (user as any)?.discord_name || "?")}`, ORANGE);
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }
 
 // « Virer » = bannir du site + retirer de la liste des membres (le Patron peut débannir ensuite).
@@ -46,7 +46,7 @@ export async function DELETE(req: Request) {
     await logAudit(db, ((user as any)?.nom_perso || (user as any)?.discord_name), "Membre viré", nom || discord_id);
     await postAlert("admin", "🚪 Membre viré", `**${nom || discord_id}** (\`${discord_id}\`)\nPar : ${((user as any)?.nom_perso || (user as any)?.discord_name || "?")}`, RED);
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }
 
 // Synchronise les employés depuis les membres du site.
@@ -55,5 +55,5 @@ export async function POST() {
     const { authorized, supabaseAdmin: db, error } = await requirePatron();
     if (!authorized) return NextResponse.json({ error: error || "Réservé au Patron" }, { status: 403 });
     return NextResponse.json({ ok: true, ...(await syncEmployes(db)) });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }

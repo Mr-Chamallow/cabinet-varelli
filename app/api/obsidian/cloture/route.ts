@@ -10,7 +10,7 @@ export async function POST() {
     const { data, error: e } = await supabaseAdmin.rpc("obsidian_cloturer_semaines", { p_par: "auto" });
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
     return NextResponse.json({ closed: data });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }
 
 export async function DELETE(req: Request) {
@@ -22,5 +22,5 @@ export async function DELETE(req: Request) {
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
     await logAudit(supabaseAdmin, String((user as any)?.nom_perso || (user as any)?.discord_name || ""), "Semaine rouverte", String(semaine));
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }

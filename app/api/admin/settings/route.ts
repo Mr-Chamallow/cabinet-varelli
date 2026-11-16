@@ -15,7 +15,7 @@ export async function PUT(req: Request) {
     const { error: e } = await db.from("app_settings").upsert({ cle, valeur: String(valeur ?? "") }, { onConflict: "cle" });
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
+  } catch (e: unknown) {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

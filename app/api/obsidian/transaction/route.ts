@@ -51,8 +51,8 @@ export async function POST(req: Request) {
     ]);
     await bigMoveAlert(supabaseAdmin, vente ? montant : -montant, `${vente ? "Vente" : "Achat"} ${b.categorie || ""} - ${motif}`, who);
     return NextResponse.json({ transaction: tx, stock });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -70,7 +70,7 @@ export async function DELETE(req: Request) {
     if (old) await logAudit(supabaseAdmin, who, "Transaction annulée", `${old.quantite} x ${old.produit_nom}`, `${old.type} ${money(old.montant)}`);
     if (old) await postAlert("compta", `↩️ Transaction annulée - ${money(old.montant)}`, `${old.type === "entrée" ? "Vente" : "Achat"} de ${old.quantite} x ${old.produit_nom}\nPar ${who} · stock et compta remis à jour`, RED);
     return NextResponse.json({ stock: (data as any)?.stock || null });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

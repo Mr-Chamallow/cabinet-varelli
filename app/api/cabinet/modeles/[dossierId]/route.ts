@@ -48,7 +48,7 @@ ${paragraphes}
 <div class="signatures"><div>Le Cabinet<br>${echap(vars.avocat)}</div><div>Le Client<br>${echap(vars.client)}</div></div>
 </body></html>`;
     return new NextResponse(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

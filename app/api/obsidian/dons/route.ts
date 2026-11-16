@@ -41,8 +41,8 @@ export async function POST(req: Request) {
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     await postAlert("compta", `🎁 Don à valider - ${money(montant)}`, `${employe} propose un don en argent ${type_argent}${motif ? `\n${motif}` : ""}`, GOLD);
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -60,7 +60,7 @@ export async function PATCH(req: Request) {
     await logAudit(supabaseAdmin, par, ok ? "Don valide" : "Don refuse", d.employe, `${d.montant}$ ${d.type_argent}`);
     await postAlert("compta", `${ok ? "✅ Don validé" : "❌ Don refusé"} - ${money(d.montant)}`, `${d.employe} · argent ${d.type_argent}\nPar ${par}`, ok ? GREEN : RED);
     return NextResponse.json(d);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

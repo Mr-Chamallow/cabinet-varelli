@@ -11,7 +11,7 @@ export async function GET() {
       .order("created_at", { ascending: false });
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     return NextResponse.json({ clients: data || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

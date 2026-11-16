@@ -72,7 +72,7 @@ export async function POST(req: Request) {
       const g = await last("gm_reputation_log");
       if (!g) none(); else { title = `🔔 Test gm - ${g.organisation}`; desc = `Réputation ${g.delta > 0 ? "+" : ""}${g.delta} · ${g.motif || ""}`; fields = [{ name: "Date", value: sd(g.created_at), inline: true }]; }
     }
-  } catch (e: any) { desc = `Données indisponibles (${e?.message || e}).`; }
+  } catch (e: unknown) { desc = `Données indisponibles (${e instanceof Error ? e.message : String(e)}).`; }
 
   const r = await sendDiscordMessage(kind, { title, description: desc, color: GOLD, fields: fields.length ? fields : undefined });
   if (!r.ok) return NextResponse.json({ error: r.error || "Envoi échoué" }, { status: 400 });

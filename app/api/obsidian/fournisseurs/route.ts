@@ -1,3 +1,4 @@
+import type { Db } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { logAudit } from "@/lib/alerts";
@@ -15,7 +16,7 @@ const clean = (b: any) => ({
 const normSql = (s: string) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
 
 // Le groupe est relie a la base (carte_gangs) quand il existe
-async function linkGroupe(db: any, row: any) {
+async function linkGroupe(db: Db, row: any) {
   if (row.groupe === undefined) return;
   const n = String(row.groupe || "").trim();
   if (!n) { row.groupe_id = null; return; }
@@ -25,7 +26,7 @@ async function linkGroupe(db: any, row: any) {
 const who = (u: any) => String(u?.nom_perso || u?.discord_name || "");
 
 // Un seul "préféré" par produit
-async function unsetOthers(db: any, categorie: string, produit: string, exceptId: string) {
+async function unsetOthers(db: Db, categorie: string, produit: string, exceptId: string) {
   const { data } = await db.from("obsidian_fournisseurs").select("id,produit").eq("categorie", categorie).eq("prefere", true).neq("id", exceptId);
   const ids = (data || []).filter((x: any) => normSql(x.produit) === normSql(produit)).map((x: any) => x.id);
   if (ids.length) await db.from("obsidian_fournisseurs").update({ prefere: false }).in("id", ids);
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
     if (row.prefere) await unsetOthers(supabaseAdmin, row.categorie, row.produit, data.id);
     await logAudit(supabaseAdmin, who(user), "Fournisseur ajoute", `${row.produit} : ${row.qui}`, `${row.prix_achat}$${row.groupe ? " · " + row.groupe : ""}`);
     return NextResponse.json({ fournisseur: data });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }
 
 export async function PATCH(req: Request) {
@@ -68,7 +69,7 @@ export async function PATCH(req: Request) {
     const diff = Object.keys(row).filter(k => before && JSON.stringify(before[k]) !== JSON.stringify(row[k])).map(k => `${k}: ${String(before[k] ?? "")} -> ${String(row[k] ?? "")}`).join(" ; ");
     if (diff) await logAudit(supabaseAdmin, who(user), "Fournisseur modifie", `${data.produit} : ${data.qui}`, diff.slice(0, 400));
     return NextResponse.json({ fournisseur: data });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }
 
 export async function DELETE(req: Request) {
@@ -82,5 +83,5 @@ export async function DELETE(req: Request) {
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
     if (before) await logAudit(supabaseAdmin, who(user), "Fournisseur supprime", `${before.produit} : ${before.qui}`, `${before.prix_achat}$`);
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }

@@ -1,10 +1,11 @@
+import type { Db } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche } from "@/lib/cabinetServer";
 import { journaliser } from "@/lib/journal";
 
 // Devis du client connecté (client principal ou client ajouté au dossier). Il peut signer ou refuser un devis envoyé.
-async function estClientDuDevis(db: any, devis: any, moi: string) {
+async function estClientDuDevis(db: Db, devis: any, moi: string) {
   if (devis.client_discord_id === moi) return true;
   const { data } = await db.from("cabinet_dossier_clients").select("dossier_id").eq("dossier_id", devis.dossier_id).eq("client_discord_id", moi).maybeSingle();
   return !!data;
@@ -24,8 +25,8 @@ export async function GET() {
       .neq("statut", "facture").or(filtre).order("created_at", { ascending: false }).limit(20);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
       return NextResponse.json(data);
     }
     return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

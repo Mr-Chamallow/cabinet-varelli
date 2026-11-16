@@ -41,7 +41,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ rdv: rdv.data || [], dossiers: dossiers || [], facturesRetard, devisEnAttente, date: aujourdhui });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

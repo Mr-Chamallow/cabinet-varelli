@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     await logAudit(g.db, g.who, "Taxe encaissée", taxe.groupe, usd(montant));
     await postAlert("compta", `💸 Taxe encaissée - ${usd(montant)}`, `**${taxe.groupe}**${taxe.raison ? ` · ${taxe.raison}` : ""}\nPar **${g.who || "?"}**`, GREEN);
     return NextResponse.json({ data: row });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }
 
 export async function DELETE(req: Request) {
@@ -55,5 +55,5 @@ export async function DELETE(req: Request) {
       await postAlert("compta", "🗑️ Paiement de taxe supprimé", `**${(old as any).obsidian_taxes?.groupe || "?"}** · ${usd(Number(old.montant) || 0)}`, GREY);
     }
     return NextResponse.json({ ok: true });
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }

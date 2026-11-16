@@ -39,8 +39,8 @@ export async function GET(req: Request) {
     const { data, error } = await q;
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -94,8 +94,8 @@ export async function POST(req: Request) {
     await journaliser(db, nomAffiche(user), "Nouveau dossier", titre, client_nom);
     await notifyDiscord(`**Nouveau dossier** : ${titre}${type ? ` (${type.nom})` : ""}${dossier.prestation ? `\nPrestation : ${dossier.prestation}` : ""}\nClient : ${client_nom}\nOuvert par : ${nomAffiche(user)}`);
     return NextResponse.json(dossier);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -121,8 +121,8 @@ export async function PATCH(req: Request) {
     await journaliser(r.supabaseAdmin, nomAffiche(user), "Dossier modifié", data.titre, b.statut ? `statut ${b.statut}` : "titre renommé");
     if (b.statut) await notifyDiscord(`**Dossier** ${data.titre} : statut ${b.statut} (par ${nomAffiche(user)})`);
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 

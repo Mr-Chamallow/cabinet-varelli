@@ -50,7 +50,7 @@ export async function GET(req: Request) {
       await db.from("actions_illegales").update({ delai_alerte: true }).in("id", rows.map((r: any) => r.id));
     }
     out.delais = n;
-  } catch (e: any) { out.delais = `erreur: ${e?.message || e}`; }
+  } catch (e: unknown) { out.delais = `erreur: ${e instanceof Error ? e.message : String(e)}`; }
 
   // 2) Stock bas
   try {
@@ -63,7 +63,7 @@ export async function GET(req: Request) {
     }
     if (recovered.length) await db.from("obsidian_stocks").update({ alerte_envoyee: false }).in("id", recovered.map((s: any) => s.id));
     out.stock_bas = nowLow.length;
-  } catch (e: any) { out.stock_bas = `erreur: ${e?.message || e}`; }
+  } catch (e: unknown) { out.stock_bas = `erreur: ${e instanceof Error ? e.message : String(e)}`; }
 
   // 3) Rappel d'opération dans l'heure
   try {
@@ -83,7 +83,7 @@ export async function GET(req: Request) {
       }
     }
     out.rappels = n;
-  } catch (e: any) { out.rappels = `erreur: ${e?.message || e}`; }
+  } catch (e: unknown) { out.rappels = `erreur: ${e instanceof Error ? e.message : String(e)}`; }
 
   // 4) Sanctions d'audit terminées
   try {
@@ -93,10 +93,10 @@ export async function GET(req: Request) {
       await db.from("gm_audits").update({ sanction_alerte: true }).eq("id", a.id);
     }
     out.sanctions = (aud || []).length;
-  } catch (e: any) { out.sanctions = `erreur: ${e?.message || e}`; }
+  } catch (e: unknown) { out.sanctions = `erreur: ${e instanceof Error ? e.message : String(e)}`; }
 
   // 5) Membres du site -> employés
-  try { out.employes = await syncEmployes(db); } catch (e: any) { out.employes = `erreur: ${e?.message || e}`; }
+  try { out.employes = await syncEmployes(db); } catch (e: unknown) { out.employes = `erreur: ${e instanceof Error ? e.message : String(e)}`; }
 
   // 6) Trésorerie propre sous le seuil (1 alerte, réarmée quand elle remonte)
   try {
@@ -114,7 +114,7 @@ export async function GET(req: Request) {
         out.treso = "rearme";
       }
     }
-  } catch (e: any) { out.treso = `erreur: ${e?.message || e}`; }
+  } catch (e: unknown) { out.treso = `erreur: ${e instanceof Error ? e.message : String(e)}`; }
 
   return NextResponse.json({ ok: true, ...out });
 }

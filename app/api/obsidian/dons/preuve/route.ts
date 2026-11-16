@@ -19,5 +19,5 @@ export async function GET(req: Request) {
     const { data: signed, error: e } = await supabaseAdmin.storage.from("dons-preuves").createSignedUrl(decodeURIComponent(path.split("?")[0]), 120);
     if (e || !signed?.signedUrl) return NextResponse.json({ error: e?.message || "Lien impossible" }, { status: 404 });
     return NextResponse.redirect(signed.signedUrl, 302);
-  } catch (e: any) { return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 }); }
+  } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }

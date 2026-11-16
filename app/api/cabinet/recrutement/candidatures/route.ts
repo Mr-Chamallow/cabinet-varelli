@@ -21,8 +21,8 @@ export async function GET() {
     const { data, error } = await q;
     if (error) return erreur(error.message);
     return NextResponse.json({ rows: data || [], direction: estDirection(user) });
-  } catch (e: any) {
-    return erreur(`Erreur serveur : ${e?.message || e}`, 500);
+  } catch (e: unknown) {
+    return erreur(`Erreur serveur : ${e instanceof Error ? e.message : String(e)}`, 500);
   }
 }
 
@@ -62,8 +62,8 @@ export async function POST(req: Request) {
     }]).select().single();
     if (error) return erreur(error.message);
     return NextResponse.json(data);
-  } catch (e: any) {
-    return erreur(`Erreur serveur : ${e?.message || e}`, 500);
+  } catch (e: unknown) {
+    return erreur(`Erreur serveur : ${e instanceof Error ? e.message : String(e)}`, 500);
   }
 }
 
@@ -113,7 +113,7 @@ export async function PATCH(req: Request) {
     }
     if (dir && b.statut) await journaliser(db, nomAffiche(user), "Recrutement : statut", cand.nom, `${cand.statut} → ${b.statut}`);
     return NextResponse.json(data);
-  } catch (e: any) {
-    return erreur(`Erreur serveur : ${e?.message || e}`, 500);
+  } catch (e: unknown) {
+    return erreur(`Erreur serveur : ${e instanceof Error ? e.message : String(e)}`, 500);
   }
 }

@@ -20,8 +20,8 @@ export async function POST(req: Request) {
     await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Rôle forcé", body.nom || body.discord_id, body.role);
     await postAlert("membres", "🎭 Rôle forcé", `**${body.nom || body.discord_id}** -> **${body.role}**\nPar : ${((user as any)?.nom_perso || (user as any)?.discord_name || "?")}`, GOLD);
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -37,7 +37,7 @@ export async function DELETE(req: Request) {
     await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Rôle forcé retiré", discord_id);
     await postAlert("membres", "🎭 Rôle forcé retiré", `\`${discord_id}\`\nPar : ${((user as any)?.nom_perso || (user as any)?.discord_name || "?")}`, GREY);
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

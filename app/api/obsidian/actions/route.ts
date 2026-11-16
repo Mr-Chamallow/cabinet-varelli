@@ -45,8 +45,8 @@ export async function POST(req: Request) {
     await postAlert("actions", `🕶️ ${action}`, `**${membre}** · ${montant >= 0 ? "gain" : "perte"} **${usd(Math.abs(montant))}**${b.notes ? `\n${b.notes}` : ""}`, montant >= 0 ? GREEN : RED);
     await bigMoveAlert(supabaseAdmin, montant, `${action} - ${membre}`, b.created_by || membre);
     return NextResponse.json(row);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -64,8 +64,8 @@ export async function DELETE(req: Request) {
     if (old) await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Action supprimée", `${old.action} - ${old.membre}`, money(old.montant));
     if (old) await postAlert("actions", `🗑️ Action supprimée - ${old.action}`, `**${old.membre}** · ${usd(Number(old.montant) || 0)}`, GREY);
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -99,7 +99,7 @@ export async function PATCH(req: Request) {
     }
     await postAlert("actions", `✏️ Action modifiée - ${action}`, `**${membre}** · ${montant >= 0 ? "gain" : "perte"} **${usd(Math.abs(montant))}**`, ORANGE);
     return NextResponse.json(row);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

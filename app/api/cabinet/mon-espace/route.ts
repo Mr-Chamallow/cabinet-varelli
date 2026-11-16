@@ -28,7 +28,7 @@ export async function GET() {
     ]);
 
     return NextResponse.json({ dossiers: dossiers || [], factures: factures || [], rdv: rdv || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

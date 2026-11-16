@@ -24,8 +24,8 @@ export async function GET() {
       retard: rows.filter((f: any) => f.statut === "en_attente" && f.date_echeance && f.date_echeance < aujourdHui).length,
     };
     return NextResponse.json({ rows, totaux });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
 
     await notifyDiscord(`**Nouvelle facture** ${numero} (${montant(total)}) sur le dossier : ${dossier.titre}`);
     return NextResponse.json(facture);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

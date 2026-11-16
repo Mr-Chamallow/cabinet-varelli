@@ -1,3 +1,4 @@
+import type { Db } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche } from "@/lib/cabinetServer";
@@ -5,7 +6,7 @@ import { journaliser } from "@/lib/journal";
 import { CABINET_STAFF_ROLES, diffuser, estDirection, estStaff } from "@/lib/cabinetAcces";
 
 // Majorité = plus de la moitié des employés du cabinet. Dès qu'elle est atteinte, le vote se clôt.
-async function verifierMajorite(db: any, id: string): Promise<"adopte" | "rejete" | null> {
+async function verifierMajorite(db: Db, id: string): Promise<"adopte" | "rejete" | null> {
   const { data: reps } = await db.from("cabinet_votes_reponses").select("choix").eq("vote_id", id);
   const { count } = await db.from("site_logins").select("discord_id", { count: "exact", head: true }).in("site_role", CABINET_STAFF_ROLES);
   const seuil = Math.floor((count || 0) / 2) + 1;
@@ -59,7 +60,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     }
 
     return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

@@ -36,4 +36,5 @@ export async function requirePatron() {
   return { authorized, user, supabaseAdmin, error: authorized ? null : "Non autorisé" };
 }
 
+export type Db = typeof supabaseAdmin;
 export { supabaseAdmin, NextResponse };

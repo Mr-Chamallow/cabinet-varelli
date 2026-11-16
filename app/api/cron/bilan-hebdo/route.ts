@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     const b = await calculerBilan(supabaseAdmin, depuis.toISOString(), maintenant.toISOString());
     await notifyDiscord(resumeBilan(b, `de la semaine au ${maintenant.toLocaleDateString("fr-FR")}`));
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || String(e) }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
 }

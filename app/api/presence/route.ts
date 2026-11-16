@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     // heartbeat par défaut
     try { await supabaseAdmin.from("site_logins").update({ last_seen: new Date().toISOString() }).eq("discord_id", user.discord_id); } catch {}
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

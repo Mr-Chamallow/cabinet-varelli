@@ -1,3 +1,4 @@
+import type { Db } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche } from "@/lib/cabinetServer";
@@ -21,7 +22,7 @@ function resoudre(slug: string): { canal: string; ok: boolean; salon?: string } 
   return { canal: "", ok: false };
 }
 
-async function acces(user: any, db: any, slug: string) {
+async function acces(user: any, db: Db, slug: string) {
   const c = resoudre(slug);
   if (!c.ok) return { err: NextResponse.json({ error: "Canal inconnu" }, { status: 404 }) } as any;
   if (!estStaff(user)) return { err: NextResponse.json({ error: "Réservé aux employés" }, { status: 403 }) } as any;
@@ -49,8 +50,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ canal: string 
     const { data, error } = await r.supabaseAdmin.from("cabinet_internes").select("*").eq("canal", a.canal).order("created_at", { ascending: true }).limit(500);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ rows: data || [], topic: topicPour(a.canal) });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -82,8 +83,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ canal: string 
 
     await diffuser(a.canal, data);
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
 
@@ -106,7 +107,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ canal: string
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     await diffuser(a.canal, data);
     return NextResponse.json(data);
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }

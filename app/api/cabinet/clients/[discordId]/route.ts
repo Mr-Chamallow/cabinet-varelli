@@ -18,7 +18,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ discordId: str
     ]);
     if (!client.data) return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
     return NextResponse.json({ client: client.data, dossiers: dossiers.data || [], factures: factures.data || [], rdv: rdv.data || [] });
-  } catch (e: any) {
-    return NextResponse.json({ error: `Erreur serveur : ${e?.message || e}` }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }
 }
