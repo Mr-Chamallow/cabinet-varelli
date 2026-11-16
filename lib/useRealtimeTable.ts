@@ -23,7 +23,10 @@ export function useRealtimeTable(tables: string | string[], onChange: () => void
       channel.on("postgres_changes" as any, { event: "*", schema: "public", table }, fire);
     });
     channel.subscribe();
-    return () => { if (timer) clearTimeout(timer); supabase!.removeChannel(channel); };
+    // Filet de securite : rafraichit toutes les 30 s quand l'onglet est visible (les tables
+    // ne sont plus diffusees en temps reel au navigateur depuis le verrouillage Supabase).
+    const poll = setInterval(() => { if (typeof document === "undefined" || document.visibilityState === "visible") cbRef.current(); }, 30000);
+    return () => { if (timer) clearTimeout(timer); clearInterval(poll); supabase!.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 }
