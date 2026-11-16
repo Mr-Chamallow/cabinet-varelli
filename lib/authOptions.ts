@@ -180,6 +180,8 @@ async function recordLogin(discordId: string, discordName: string, role: string,
 
 // Config NextAuth centralisée, exportée pour être réutilisable côté serveur
 // (route handler ET lib/serverAuth.ts pour les routes API protégées).
+const LOOKUP_TTL_MS = 60_000; // ban, pseudo, surcharge et permissions relus au plus toutes les 60 s
+
 export const authOptions: NextAuthOptions = {
   providers: [
     DiscordProvider({
@@ -265,12 +267,22 @@ export const authOptions: NextAuthOptions = {
             // Garde-fou : plus membre du serveur -> plus de rôle (donc plus d'accès).
             : (token.in_guild ? getHighestRole((token.discord_roles as string[]) || []) : ROLE_HORS_SERVEUR);
         token.discord_role = token.site_role;
-        const override = await getRoleOverride(token.discord_id as string);
-        if (override) token.site_role = override;
       }
-      if (token.site_role) {
-        const perms = await getRolePermissions(token.site_role as string);
-        token.permissions = perms;
+      // Lectures base (surcharge, permissions, bannissement, pseudo) : mises en cache
+      // dans le token pendant LOOKUP_TTL_MS, au lieu d'être refaites à chaque appel de session.
+      const lookupStale = !!account?.access_token || syncedNow || Date.now() - ((token.lookup_at as number) || 0) > LOOKUP_TTL_MS;
+      if (token.discord_id && lookupStale) {
+        token.role_override = (await getRoleOverride(token.discord_id as string)) || null;
+        token.nom_perso = await getNomPerso(token.discord_id as string);
+        const ban = await checkBan(token.discord_id as string);
+        token.banned = ban.banned;
+        token.ban_reason = ban.motif;
+        token.lookup_at = Date.now();
+      }
+      if (token.discord_id && token.role_override) token.site_role = token.role_override;
+      if (token.site_role && (lookupStale || token.perms_role !== token.site_role)) {
+        token.permissions = await getRolePermissions(token.site_role as string);
+        token.perms_role = token.site_role;
       }
       if (account?.access_token && token.discord_id) {
         await recordLogin(token.discord_id as string, (token.discord_name as string) || "Membre", (token.site_role as string) || "", (token.discord_role as string) || "");
@@ -278,12 +290,6 @@ export const authOptions: NextAuthOptions = {
       }
       if (syncedNow && token.discord_id) {
         await saveSyncState(token.discord_id as string, (token.site_role as string) || "", (token.discord_role as string) || "", token.in_guild !== false);
-      }
-      if (token.discord_id) {
-        const ban = await checkBan(token.discord_id as string);
-        token.banned = ban.banned;
-        token.ban_reason = ban.motif;
-        token.nom_perso = await getNomPerso(token.discord_id as string);
       }
       return token;
     },

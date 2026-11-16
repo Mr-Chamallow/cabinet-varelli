@@ -1,5 +1,8 @@
-const CACHE = "obsidian-shell-v1";
-const SHELL = ["/", "/logo.png", "/manifest.json"];
+// Cache minimal : seulement les fichiers statiques (images, styles, scripts).
+// Jamais les pages ni /api : ils contiennent des données privées.
+const CACHE = "obsidian-static-v2";
+const SHELL = ["/logo.png", "/manifest.json"];
+const STATIC = /\.(?:png|jpg|jpeg|svg|webp|ico|css|js|woff2?|json)$/i;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}));
@@ -7,21 +10,22 @@ self.addEventListener("install", (e) => {
 });
 
 self.addEventListener("activate", (e) => {
+  // Supprime l'ancien cache (qui contenait des réponses /api et des pages)
   e.waitUntil(
     caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
   );
   self.clients.claim();
 });
 
-// Network-first : toujours la version la plus fraîche si le réseau répond,
-// sinon on retombe sur le cache (utile en cas de coupure réseau).
 self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET") return;
+  const url = new URL(e.request.url);
+  if (e.request.method !== "GET" || url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/")) return; // jamais de cache pour l'API
+  if (!(url.pathname.startsWith("/_next/static/") || STATIC.test(url.pathname))) return; // pages : réseau seul
   e.respondWith(
     fetch(e.request)
       .then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        if (res.ok) caches.open(CACHE).then((c) => c.put(e.request, res.clone())).catch(() => {});
         return res;
       })
       .catch(() => caches.match(e.request))
