@@ -12,11 +12,6 @@ const ADMIN_ONLY_PATHS = ["/admin", "/settings", "/supervision"];
 // qui donnent l'accès admin par défaut (doit rester alignée avec DEFAULT_PERMISSIONS
 // dans lib/auth.ts). Un rôle personnalisé avec la permission "admin" dans la table
 // Supabase `roles` passe lui via token.permissions, sans avoir besoin d'être ici.
-const ADMIN_DEFAULT_ROLES = [
-  "Associé / Patron",
-  "CEO - Directeur général",
-  "COO - Directrice opérationnel",
-];
 
 export default withAuth(
   function middleware(req) {
@@ -31,8 +26,8 @@ export default withAuth(
 
     if (ADMIN_ONLY_PATHS.some(p => pathname.startsWith(p))) {
       const perms: string[] = token?.permissions || [];
-      const role = token?.site_role as string | undefined;
-      const isAdmin = perms.includes("admin") || (!!role && ADMIN_DEFAULT_ROLES.includes(role));
+      // Accès admin = permission "admin" dans la table roles (aucun nom de rôle en dur).
+      const isAdmin = perms.includes("admin");
       if (!isAdmin) {
         return NextResponse.redirect(new URL("/", req.url));
       }

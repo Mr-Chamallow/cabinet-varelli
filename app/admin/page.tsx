@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { DEFAULT_PERMISSIONS, loadRolesFromSupabase, canAccess } from "@/lib/auth";
+import { loadRolesFromSupabase, canAccess, estAdminUser } from "@/lib/auth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -108,7 +108,7 @@ export default function AdminPage() {
   const [banForm, setBanForm] = useState({ discord_id:"", nom:"", motif:"" });
   const [banningId, setBanningId] = useState<string | null>(null);
   const [showBansList, setShowBansList] = useState(false);
-  const isPatron = ["CEO - Directeur général","Associé / Patron"].includes(user?.role as string);
+  const isPatron = estAdminUser(user);
   const [renameForm, setRenameForm] = useState<{ discord_id: string; nom: string; actuel: string; employe: boolean } | null>(null);
 
   async function confirmRename() {
@@ -739,7 +739,7 @@ export default function AdminPage() {
               <div className="form-group"><label>Rôle à forcer *</label>
                 <select value={overrideForm.role} onChange={e=>setOverrideForm(f=>({...f,role:e.target.value}))}>
                   <option value="">Choisir un rôle...</option>
-                  {(roles.length > 0 ? roles.map(r => r.nom) : Object.keys(DEFAULT_PERMISSIONS)).map(r=><option key={r} value={r}>{r}</option>)}
+                  {roles.map(r => r.nom).map(r=><option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               {createError&&<div style={{ background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius)",padding:"0.75rem",fontSize:"0.84rem",color:"var(--danger)" }}>⚠️ {createError}</div>}</Modal>

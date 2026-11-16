@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { hasPermission } from "@/lib/auth";
+import { hasPermission, estAdminUser } from "@/lib/auth";
 import { authOptions } from "@/lib/authOptions";
 
 const supabaseAdmin = createClient(
@@ -31,7 +31,8 @@ export async function requireAnyPermission(permissions: string[]) {
 
 export async function requirePatron() {
   const { user } = await session();
-  const authorized = !!user && (user.site_role === "Associé / Patron" || user.site_role === "CEO - Directeur général");
+  // Patron = permission admin en écriture (table roles), plus aucun nom de rôle en dur.
+  const authorized = estAdminUser(user);
   return { authorized, user, supabaseAdmin, error: authorized ? null : "Non autorisé" };
 }
 

@@ -53,28 +53,6 @@ export const PERMISSION_LABELS: Record<string, string> = {
   cabinet_journal: "Cabinet Varelli : Journal d'activité",
 };
 
-export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  "Associé / Patron":               [...ALL_PERMISSIONS], // LA CLÉ QUI MANQUAIT
-  "CEO - Directeur général":        [...ALL_PERMISSIONS],
-  "COO - Directrice opérationnel":  ALL_PERMISSIONS.filter(p => p !== "delete_all"),
-  "Responsable juridique":          ["obsidian_dashboard","obsidian_rdv","obsidian_contrats","obsidian_stats","juridique","utile_samp","carte-enqueteur","obsidian_reglement:read","avocat","avocat_clients","cabinet_tarifs","cabinet_presentation","cabinet_organigramme","cabinet_rdv","cabinet_dossiers"],
-  "Agent juridique":                ["obsidian_dashboard","obsidian_rdv","juridique","utile_samp","carte-enqueteur","obsidian_reglement:read","avocat","cabinet_rdv","cabinet_dossiers","cabinet_tarifs:read","cabinet_presentation:read","cabinet_organigramme:read"],
-  "Responsable logistique":         ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_armurerie","obsidian_garage","obsidian_comptabilite","obsidian_rdv","obsidian_contrats","obsidian_stats","cahier_vente","obsidian_paie","obsidian_employes","carte-enqueteur","obsidian_actions","obsidian_arrestations","obsidian_reglement:read"],
-  "Agent logistique":               ["obsidian_dashboard","obsidian_prix","obsidian_stocks","obsidian_rdv","cahier_vente","carte-enqueteur","obsidian_actions","obsidian_arrestations","obsidian_reglement:read"],
-  "Responsable sécurité":           ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","carte-enqueteur","juridique","utile_samp","obsidian_arrestations","obsidian_stocks","obsidian_reglement:read"],
-  "Agent de sécurité":              ["obsidian_dashboard","obsidian_armurerie","obsidian_rdv","carte-enqueteur","obsidian_arrestations","obsidian_stocks","obsidian_reglement:read"],
-  "Opérateur":                      ["obsidian_dashboard","obsidian_rdv","carte-enqueteur","obsidian_actions","obsidian_arrestations","obsidian_reglement:read"],
-  "Opérateur stagiaire":            ["obsidian_dashboard","obsidian_reglement:read"],
-  // Rôle externe (site "Légal Service") - accès à la carte enquêteur uniquement, en lecture seule.
-  "Légal Service":                  ["carte-enqueteur"],
-};
-
-// Rôles dont l'accès à la carte enquêteur est strictement en lecture seule
-// (pas de création/édition/suppression de point, dossier, registre, catégories, groupes).
-// Conservé pour compat, mais désormais doublé par le système de niveaux ci-dessous
-// (une permission stockée en "perm:read" produit le même effet, rôle par rôle).
-export const READONLY_ROLES = ["Légal Service"];
-
 // --- Niveaux d'accès par permission (onglet) ---
 // Une entrée de permission peut s'écrire "perm" (= écriture, comportement
 // historique) ou "perm:read" (lecture seule). Rien ne casse pour les rôles
@@ -87,19 +65,10 @@ function parsePermEntry(entry: string): { key: string; level: PermLevel } {
   return { key: entry, level: "write" };
 }
 
-// Retraits par rôle : accès jamais accordés à ce rôle, même via la base de données ou la permission "admin"
-export const RETRAITS_PAR_ROLE: Record<string, (perm: string) => boolean> = {
-  // Associé Gérant : aucun accès à Obsidian Logistique (menu, pages, API)
-  "Associé Gérant": (p) => p.startsWith("obsidian_") || ["cahier_vente", "juridique", "carte-enqueteur"].includes(p),
-};
-
 export function getPermLevel(userOrRole: AppUser | string | null, permission: string): PermLevel {
   if (!userOrRole) return "none";
-  const role = typeof userOrRole === "string" ? userOrRole : userOrRole.role;
-  if (RETRAITS_PAR_ROLE[role]?.(permission)) return "none";
-  const supaPerms = typeof userOrRole === "string" ? [] : (userOrRole.permissions || []);
-  const defaultPerms = DEFAULT_PERMISSIONS[role] || [];
-  const all = [...new Set([...supaPerms, ...defaultPerms])];
+  // Seule source de vérité : les permissions stockées dans la table `roles` (et les overrides).
+  const all = typeof userOrRole === "string" ? [] : (userOrRole.permissions || []);
   if (all.includes("admin")) return "write";
   let level: PermLevel = "none";
   for (const entry of all) {
@@ -121,12 +90,16 @@ export function hasWriteAccess(userOrRole: AppUser | string | null, permission: 
 }
 
 export function isReadOnlyRole(userOrRole: AppUser | string | null): boolean {
-  const role = typeof userOrRole === "string" ? userOrRole : userOrRole?.role;
-  if (!!role && READONLY_ROLES.includes(role)) return true;
   return getPermLevel(userOrRole, "carte-enqueteur") === "read";
 }
 
 export const canAccess = hasPermission;
+
+// "Patron" = avoir la permission admin en écriture (définie dans la table roles). Aucun nom de rôle en dur.
+export function estAdminUser(u: any): boolean {
+  if (!u) return false;
+  return hasWriteAccess({ id: u.discord_id, nom: u.discord_name, role: u.site_role, permissions: u.permissions || [] } as any, "admin");
+}
 
 // Ordre de priorité des pages d'atterrissage après connexion, utilisé quand
 // l'utilisateur n'a pas accès au Dashboard (ex: rôle "Légal Service" limité à la

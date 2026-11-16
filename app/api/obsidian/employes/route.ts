@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { requirePermission, requirePatron } from "@/lib/serverAuth";
+import { estAdminUser } from "@/lib/auth";
 import { logAudit, postAlert, GREEN } from "@/lib/alerts";
 
-const PROMO_ROLES = ["CEO - Directeur général", "Associé / Patron", "COO - Directrice opérationnel", "COO - Directeur opérationnel"];
-const isPromoter = (u: any) => PROMO_ROLES.some(r => r === u?.site_role) || String(u?.site_role || "").startsWith("COO") || String(u?.site_role || "").startsWith("CEO") || (!!process.env.ADMIN_DISCORD_ID && u?.discord_id === process.env.ADMIN_DISCORD_ID);
+// Promouvoir = permission admin en écriture (table roles), aucun nom de rôle en dur.
+const isPromoter = (u: any) => estAdminUser(u);
 
 // [table, colonne du nom] - toutes pointent vers l'employé par employe_id (rempli automatiquement en base).
 const TABLES_NOM: [string, string][] = [["actions_illegales", "membre"], ["arrestations", "membre"], ["obsidian_comptabilite", "membre"], ["obsidian_mouvements", "membre"], ["obsidian_paiements", "employe"], ["cahier_transactions", "created_by"]];

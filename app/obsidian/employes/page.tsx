@@ -9,7 +9,7 @@ import { Toast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { UndoToast } from "@/components/ui/UndoToast";
 import { useUndoAction } from "@/lib/useUndoAction";
-import { hasPermission, DEFAULT_PERMISSIONS, getMemberColor } from "@/lib/auth";
+import { hasPermission, getMemberColor, estAdminUser, loadRolesFromSupabase } from "@/lib/auth";
 import { useRealtimeTable } from "@/lib/useRealtimeTable";
 import { EmployeeCard, EmployeeCardModalBody, sortByRole, roleKey, roleLabel } from "@/components/EmployeeCard";
 import { PhotoPicker } from "@/components/PhotoPicker";
@@ -26,9 +26,9 @@ const EMPTY = { nom: "", role: "", genre: "m", telephone: "", discord: "", email
 const GROUPS: { titre: string; keys: string[] }[] = [
   { titre: "👑 Directoire exécutif", keys: ["patron", "ceo", "coo"] }, { titre: "⚖️ Pôle Juridique", keys: ["rj", "aj", "avocat"] }, { titre: "📦 Pôle Logistique", keys: ["rl", "al"] }, { titre: "🛡️ Pôle Sécurité", keys: ["rs", "as"] }, { titre: "🧑‍💼 Membres", keys: ["op", "st"] }, { titre: "🤝 Partenaires externes", keys: ["legal"] },
 ];
-const ROLES_LOGISTIQUE = Object.keys(DEFAULT_PERMISSIONS).filter(r =>
-  DEFAULT_PERMISSIONS[r].some(p => p.startsWith("obsidian_") || p === "cahier_vente")
-);
+// Rôles proposés pour un employé logistique : déduits de la table roles (aucun nom en dur).
+const roleEstLogistique = (r: { permissions?: string[] }) =>
+  (r.permissions || []).some(p => p.startsWith("obsidian_") || p === "cahier_vente");
 
 export default function EmployesObsidianPage() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -36,6 +36,8 @@ export default function EmployesObsidianPage() {
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_employes"))) { window.location.href = "/"; } }, [user, userLoading]);
 
   const [employes, setEmployes] = useState<Employe[]>([]);
+  const [rolesLogistique, setRolesLogistique] = useState<string[]>([]);
+  useEffect(() => { loadRolesFromSupabase().then(rs => setRolesLogistique(rs.filter(roleEstLogistique).map((r: any) => r.nom))); }, []);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -86,7 +88,7 @@ export default function EmployesObsidianPage() {
     setEmployes(l => l.map(x => x.id === id ? { ...x, role: to } : x));
     setPromoRole("");
   }
-  const isPatron = ["CEO - Directeur général","Associé / Patron"].includes((user as any)?.role);
+  const isPatron = estAdminUser(user);
   useEffect(() => { load(); }, []);
   useRealtimeTable("obsidian_employes", load);
   // Importe automatiquement les membres du site (rôles internes) qui ne sont pas encore employés.
@@ -200,8 +202,8 @@ export default function EmployesObsidianPage() {
                 <label>Rôle</label>
                 <select value={form.role} disabled={!!editId && !canPromote} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
                   <option value="">- Choisir un rôle - </option>
-                  {form.role && !ROLES_LOGISTIQUE.includes(form.role) && <option value={form.role}>{form.role}</option>}
-                  {ROLES_LOGISTIQUE.map(r => <option key={r} value={r}>{r}</option>)}
+                  {form.role && !rolesLogistique.includes(form.role) && <option value={form.role}>{form.role}</option>}
+                  {rolesLogistique.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
                 {!!editId && !canPromote && <div style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: 4 }}>Seuls le CEO et le COO peuvent changer le rôle (promotion).</div>}
               </div>
@@ -233,7 +235,7 @@ export default function EmployesObsidianPage() {
                   <div style={{ fontSize: "0.72rem", fontWeight: 700, marginBottom: 6 }}>⬆️ Promotion (CEO / COO)</div>
                   <select value={promoRole} onChange={e => setPromoRole(e.target.value)}>
                     <option value="">- Nouveau rôle - </option>
-                    {ROLES_LOGISTIQUE.filter(r => r !== cardEmp.role).map(r => <option key={r} value={r}>{r}</option>)}
+                    {rolesLogistique.filter(r => r !== cardEmp.role).map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                   <button className="btn btn-gold btn-sm" style={{ width: "100%", marginTop: 6 }} disabled={!promoRole} onClick={promouvoir}>Promouvoir</button>
                 </div>
