@@ -43,7 +43,7 @@ const NAV_SECTIONS = [
     { href: "/",                      label: "Dashboard",          icon: "◈", permission: "obsidian_dashboard" },
     { href: "/obsidian/prix",         label: "Tableau des prix",   icon: "▤", permission: "obsidian_prix" },
     { href: "/obsidian/stocks",       label: "Stocks",             icon: "▥", permission: "obsidian_stocks" },
-    { href: "/obsidian/armurerie",    label: "Armurerie",          icon: "▦", permission: "obsidian_armurerie" },
+    { href: "/obsidian/stocks?cat=armurerie", label: "Armurerie",          icon: "▦", permission: "obsidian_armurerie" },
     { href: "/obsidian/garage",       label: "Garage",             icon: "▧", permission: "obsidian_garage" },
     { href: "/obsidian/comptabilite", label: "Comptabilité",       icon: "▨", permission: "obsidian_comptabilite" },
     { href: "/obsidian/rdv",          label: "Rendez-vous",        icon: "▩", permission: "obsidian_rdv" },
