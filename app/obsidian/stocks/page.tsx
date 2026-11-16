@@ -54,7 +54,7 @@ export default function StocksPage(){
   useRealtimeTable(["obsidian_stocks","obsidian_mouvements"], load);
   async function load(){if(!supabase){setLoading(false);return;}
     const[{data:s},{data:m}]=await Promise.all([lire("obsidian_stocks", { order: [["categorie", true], ["nom", true]] }),lire("obsidian_mouvements", { order: [["created_at", false]], limit: 100 })]);
-    setStocks(s||[]);setMouvements(m||[]);setLoading(false);}
+    setStocks((s||[]) as Stock[]);setMouvements((m||[]) as Mouvement[]);setLoading(false);}
   useEffect(()=>{load();},[]);
   async function addStock(){
   if(!form.nom)return;setSaving(true);

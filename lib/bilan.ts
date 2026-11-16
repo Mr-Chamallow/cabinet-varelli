@@ -1,9 +1,11 @@
+import type { Db } from "@/lib/serverAuth";
+import type { Row } from "@/lib/types";
 // Bilan d'une période : chiffres du cabinet (factures, dossiers, rendez-vous, votes, plaintes, retards)
 import { montant } from "@/lib/montant";
 
-const somme = (liste: any[], champ = "montant") => Math.round(liste.reduce((s, x) => s + Number(x[champ] || 0), 0));
+const somme = (liste: Row[], champ = "montant") => Math.round(liste.reduce((s, x) => s + Number(x[champ] || 0), 0));
 
-export async function calculerBilan(db: any, depuis: string, jusque: string) {
+export async function calculerBilan(db: Db, depuis: string, jusque: string) {
   const [fac, paye, dos, rdv, votes, plaintes, enAttente] = await Promise.all([
     db.from("cabinet_factures").select("montant,created_at").gte("created_at", depuis).lt("created_at", jusque),
     db.from("cabinet_factures").select("montant,payee_at").eq("statut", "payee").gte("payee_at", depuis).lt("payee_at", jusque),
@@ -17,10 +19,10 @@ export async function calculerBilan(db: any, depuis: string, jusque: string) {
   const aujourdHui = new Date().toISOString().slice(0, 10);
   return {
     factures: { emises: F.length, montantEmis: somme(F), encaissees: P.length, encaisse: somme(P), enAttente: A.length, montantEnAttente: somme(A) },
-    retards: { nombre: A.filter((f: any) => f.date_echeance && f.date_echeance < aujourdHui).length },
-    dossiers: { ouverts: D.filter((d: any) => d.statut === "ouvert").length, crees: D.length },
-    rdv: { total: R.length, confirmes: R.filter((r: any) => r.statut === "confirme" || r.statut === "termine").length, annules: R.filter((r: any) => r.statut === "annule").length },
-    votes: { lances: V.length, adoptes: V.filter((v: any) => v.resultat === "adopte").length, rejetes: V.filter((v: any) => v.resultat === "rejete").length },
+    retards: { nombre: A.filter((f: Row) => f.date_echeance && f.date_echeance < aujourdHui).length },
+    dossiers: { ouverts: D.filter((d: Row) => d.statut === "ouvert").length, crees: D.length },
+    rdv: { total: R.length, confirmes: R.filter((r: Row) => r.statut === "confirme" || r.statut === "termine").length, annules: R.filter((r: Row) => r.statut === "annule").length },
+    votes: { lances: V.length, adoptes: V.filter((v: Row) => v.resultat === "adopte").length, rejetes: V.filter((v: Row) => v.resultat === "rejete").length },
     plaintes: { nouvelles: plaintes.count || 0 },
   };
 }

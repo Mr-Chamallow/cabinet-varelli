@@ -1,3 +1,5 @@
+import type { Db } from "@/lib/serverAuth";
+import type { Row } from "@/lib/types";
 import { fenetreSemaine } from "@/lib/compta";
 
 // Ajoute n jours à une date "AAAA-MM-JJ"
@@ -8,7 +10,7 @@ export const addJours = (iso: string, n: number) => {
 };
 
 // Numéro : FG-AAAA-MM-JJ (lundi de la semaine), puis FG-AAAA-MM-JJ-2, -3… si plusieurs factures la même semaine
-async function numeroFactureGouv(db: any, lundi: string) {
+async function numeroFactureGouv(db: Db, lundi: string) {
   let numero = `FG-${lundi}`;
   let n = 1;
   while (true) {
@@ -21,7 +23,7 @@ async function numeroFactureGouv(db: any, lundi: string) {
 
 // Crée la facture de la semaine avec toutes les comparutions prises en charge pas encore facturées.
 // Retourne null s'il n'y a rien à facturer.
-export async function genererFactureGouvernement(db: any, lundi: string, auteur: string) {
+export async function genererFactureGouvernement(db: Db, lundi: string, auteur: string) {
   const { debutJour, finJour } = fenetreSemaine(lundi);
   const { data: ci, error } = await db.from("cabinet_comparutions")
     .select("id,date_audience,heure,tribunal,client_nom,chefs,avocat_nom,montant")
@@ -33,13 +35,13 @@ export async function genererFactureGouvernement(db: any, lundi: string, auteur:
 
   const total = ci.reduce((s: number, c: any) => s + (Number(c.montant) || 0), 0);
   const numero = await numeroFactureGouv(db, lundi);
-  const detail = ci.map((c: any) => ({
+  const detail = ci.map((c: Row) => ({
     id: c.id, date: c.date_audience, heure: c.heure, tribunal: c.tribunal, client: c.client_nom,
     chefs: c.chefs, avocat: c.avocat_nom, honoraire: Number(c.montant) || 0,
   }));
   const { data: facture, error: e2 } = await db.from("cabinet_factures_gouvernement")
     .insert([{ numero, semaine: lundi, nb_comparutions: ci.length, total, detail, cree_par: auteur }]).select("*").single();
   if (e2) throw new Error(e2.message);
-  await db.from("cabinet_comparutions").update({ facture_gouv_id: facture.id }).in("id", ci.map((c: any) => c.id));
+  await db.from("cabinet_comparutions").update({ facture_gouv_id: facture.id }).in("id", ci.map((c: Row) => c.id));
   return facture;
 }

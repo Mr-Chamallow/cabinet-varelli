@@ -102,7 +102,7 @@ export default function EmployesObsidianPage() {
     if (!supabase) return;
     setLoading(true);
     const { data } = await lire("obsidian_employes", { order: [["nom", true]] });
-    setEmployes(data || []);
+    setEmployes((data || []) as Employe[]);
     setLoading(false);
   }
 

@@ -1,5 +1,6 @@
 "use client";
 import { lire } from "@/lib/lire";
+import type { PacteP, AuditP, DossierP, EvenementP, FicheP } from "@/lib/pdfDocs";
 import Link from "next/link";
 import { gangTypeLabel } from "@/components/carte-enqueteur/types";
 import { useEffect, useMemo, useState } from "react";
@@ -59,7 +60,7 @@ export default function ReputationPage() {
       lire("gm_evenements", { eq: [["partenaire", o.nom]], order: [["created_at", false]] }),
       lire("obsidian_fiches", { select: "nom,metier,priorite,statut", eq: [["organisation", o.nom]] }),
     ]);
-    await pdfOrganisation({ ...o, categorie: gangTypeLabel(o.type) }, { pactes: pactes || [], audits: audits || [], dossiers: dossiers || [], evenements: evenements || [], history: o.history, fiches: fiches || [] });
+    await pdfOrganisation({ ...o, categorie: gangTypeLabel(o.type) }, { pactes: (pactes || []) as PacteP[], audits: (audits || []) as AuditP[], dossiers: (dossiers || []) as DossierP[], evenements: (evenements || []) as EvenementP[], history: o.history, fiches: (fiches || []) as FicheP[] });
   }
   async function openConv(o: any) {
     const { data } = await lire("obsidian_fiches", { select: "nom", eq: [["organisation", o.nom]] });

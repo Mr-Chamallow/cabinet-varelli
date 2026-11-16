@@ -274,7 +274,7 @@ export class Pdf {
     this.y += 1;
   }
 
-  table(head: string[], rows: any[][], widths?: number[]) {
+  table(head: string[], rows: unknown[][], widths?: number[]) {
     const d = this.doc; const w = this.W - 2 * this.M;
     const cw = widths || head.map(() => w / head.length);
     this.ensure(14);

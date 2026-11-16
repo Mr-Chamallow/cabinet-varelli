@@ -8,13 +8,13 @@ import { dbw } from "@/lib/dbw";
 export async function fetchPoints(): Promise<CartePoint[]> {
   const { data, error } = await lire('carte_points');
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as CartePoint[];
 }
 
 export async function fetchDossiers(): Promise<Dossier[]> {
   const { data, error } = await lire('carte_dossiers');
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as Dossier[];
 }
 
 export async function createPoint(point: Omit<CartePoint, 'id' | 'created_at'>): Promise<CartePoint> {
@@ -47,7 +47,7 @@ export async function upsertDossier(dossier: Dossier): Promise<Dossier> {
 export async function fetchCategories(): Promise<Category[]> {
   const { data, error } = await lire('carte_categories', { order: [['sort_order', true]] });
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as Category[];
 }
 
 export async function createCategory(category: Omit<Category, 'id'>): Promise<Category> {
@@ -69,7 +69,7 @@ export async function deleteCategory(id: string): Promise<void> {
 export async function fetchPersonnes(): Promise<Personne[]> {
   const { data, error } = await lire('carte_personnes', { order: [['nom', true]] });
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as Personne[];
 }
 
 export async function createPersonne(p: Omit<Personne, 'id' | 'created_at'>): Promise<Personne> {
@@ -91,7 +91,7 @@ export async function deletePersonne(id: string): Promise<void> {
 export async function fetchPlaques(): Promise<Plaque[]> {
   const { data, error } = await lire('carte_plaques', { order: [['plaque', true]] });
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as Plaque[];
 }
 
 export async function createPlaque(p: Omit<Plaque, 'id' | 'created_at'>): Promise<Plaque> {
@@ -124,7 +124,7 @@ export async function uploadImage(file: File): Promise<string> {
 export async function fetchGangs(): Promise<Gang[]> {
   const { data, error } = await lire('carte_gangs', { order: [['sort_order', true]] });
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as Gang[];
 }
 
 export async function createGang(g: Omit<Gang, 'id'>): Promise<Gang> {
@@ -146,5 +146,5 @@ export async function deleteGang(id: string): Promise<void> {
 export async function fetchPresets(): Promise<Preset[]> {
   const { data, error } = await lire('carte_presets', { order: [['sort_order', true]] });
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as Preset[];
 }

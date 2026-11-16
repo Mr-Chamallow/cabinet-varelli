@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 // Lecture d'une table protégée via le serveur (/api/lecture).
 // Même forme de réponse que Supabase : { data, error, count }.
 // Exemple : await lire("obsidian_taxes", { order: [["created_at", false]] })
@@ -19,7 +20,7 @@ export type Lecture = {
   head?: boolean;
 };
 
-export async function lire(table: string, opts: Lecture = {}): Promise<{ data: any[] | null; error: { message: string } | null; count: number | null }> {
+export async function lire(table: string, opts: Lecture = {}): Promise<{ data: Row[] | null; error: { message: string } | null; count: number | null }> {
   try {
     const r = await fetch("/api/lecture", {
       method: "POST",

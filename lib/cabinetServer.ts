@@ -1,19 +1,20 @@
+import type { UserLike } from "@/lib/types";
 import { hasPermission, hasWriteAccess } from "@/lib/auth";
 
 // Utilitaires serveur partagés par les routes /api/cabinet/*
-export function appUser(user: any) {
+export function appUser(user: UserLike) {
   return { id: user?.discord_id || "", nom: user?.discord_name || "", role: user?.site_role || "", permissions: user?.permissions || [] } as any;
 }
 
-export function nomAffiche(user: any): string {
+export function nomAffiche(user: UserLike): string {
   return user?.nom_perso || user?.discord_name || "?";
 }
 
-export function canRead(user: any, perms: string[]): boolean {
+export function canRead(user: UserLike, perms: string[]): boolean {
   return perms.some(p => hasPermission(appUser(user), p));
 }
 
-export function canWrite(user: any, perm: string): boolean {
+export function canWrite(user: UserLike, perm: string): boolean {
   return hasWriteAccess(appUser(user), perm);
 }
 

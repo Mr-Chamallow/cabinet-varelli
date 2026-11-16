@@ -1,3 +1,5 @@
+import type { Db } from "@/lib/serverAuth";
+import type { Row } from "@/lib/types";
 // Calculs, numérotation et historique des factures (côté serveur)
 export type Ligne = {
   description: string;
@@ -10,7 +12,7 @@ export type Ligne = {
 
 export function nettoyerLignes(brutes: any): Ligne[] {
   return (Array.isArray(brutes) ? brutes : [])
-    .map((l: any) => ({
+    .map((l: Row) => ({
       description: String(l?.description || "").trim().slice(0, 200),
       quantite: Math.round(Number(l?.quantite)) || 0,
       prix: Math.round(Number(l?.prix)) || 0,
@@ -31,17 +33,17 @@ export function calculer(lignes: Ligne[], tvaTaux: number) {
 }
 
 // Numéro unique PREFIXE-AAAA-0001, remis à zéro chaque année
-export async function numeroDoc(db: any, table: string, colonne: string, prefixeType: string): Promise<string> {
+export async function numeroDoc(db: Db, table: string, colonne: string, prefixeType: string): Promise<string> {
   const prefixe = `${prefixeType}-${new Date().getFullYear()}-`;
   const { data } = await db.from(table).select(colonne).like(colonne, `${prefixe}%`).order(colonne, { ascending: false }).limit(1);
   const dernier = data?.[0]?.[colonne] ? parseInt(String(data[0][colonne]).slice(prefixe.length), 10) : 0;
   return prefixe + String((isNaN(dernier) ? 0 : dernier) + 1).padStart(4, "0");
 }
 
-export const numeroFacture = (db: any) => numeroDoc(db, "cabinet_factures", "numero", "FAC");
-export const numeroAvoir = (db: any) => numeroDoc(db, "cabinet_avoirs", "numero", "AV");
-export const numeroDevis = (db: any) => numeroDoc(db, "cabinet_devis", "numero", "DE");
+export const numeroFacture = (db: Db) => numeroDoc(db, "cabinet_factures", "numero", "FAC");
+export const numeroAvoir = (db: Db) => numeroDoc(db, "cabinet_avoirs", "numero", "AV");
+export const numeroDevis = (db: Db) => numeroDoc(db, "cabinet_devis", "numero", "DE");
 
-export async function historiser(db: any, factureId: string, action: string, details: string, auteur: string) {
+export async function historiser(db: Db, factureId: string, action: string, details: string, auteur: string) {
   await db.from("cabinet_factures_historique").insert([{ facture_id: factureId, action, details, auteur_nom: auteur }]);
 }

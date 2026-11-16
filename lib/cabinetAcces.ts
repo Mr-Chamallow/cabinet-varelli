@@ -1,3 +1,5 @@
+import type { Db } from "@/lib/serverAuth";
+import type { UserLike } from "@/lib/types";
 import { createHmac } from "crypto";
 import { hasPermission } from "@/lib/auth";
 import { appUser } from "@/lib/cabinetServer";
@@ -9,20 +11,20 @@ export { CABINET_STAFF_ROLES };
 export const SALONS = ["general", "juridique"] as const;
 
 // Employé = rôle du cabinet (jamais le client)
-export const estStaff = (user: any) => estStaffUser(user);
-export const estSecretaire = (user: any) => estStaffUser(user) && estSecretaireUser(user);
-export const estDirection = (user: any) => hasPermission(appUser(user), "cabinet_attribution");
+export const estStaff = (user: UserLike) => estStaffUser(user);
+export const estSecretaire = (user: UserLike) => estStaffUser(user) && estSecretaireUser(user);
+export const estDirection = (user: UserLike) => hasPermission(appUser(user), "cabinet_attribution");
 // Permissions par onglet (configurables dans Administration → Rôles & Permissions)
-const perm = (user: any, p: string) => hasPermission(appUser(user), p);
-export const estCompta = (user: any) => perm(user, "cabinet_compta");          // grades et % (admin)
-export const estFacturation = (user: any) => perm(user, "cabinet_facturation"); // devis & factures
-export const estDepenses = (user: any) => perm(user, "cabinet_depenses");
-export const estCommissions = (user: any) => perm(user, "cabinet_commissions");
-export const estBilan = (user: any) => perm(user, "cabinet_bilan");
-export const estResumeCompta = (user: any) => estBilan(user) || estCommissions(user);
-export const estTableauBord = (user: any) => perm(user, "cabinet_direction");
-export const estJournal = (user: any) => perm(user, "cabinet_journal");
-export const estPatron = (user: any) => estPatronUser(user);
+const perm = (user: UserLike, p: string) => hasPermission(appUser(user), p);
+export const estCompta = (user: UserLike) => perm(user, "cabinet_compta");          // grades et % (admin)
+export const estFacturation = (user: UserLike) => perm(user, "cabinet_facturation"); // devis & factures
+export const estDepenses = (user: UserLike) => perm(user, "cabinet_depenses");
+export const estCommissions = (user: UserLike) => perm(user, "cabinet_commissions");
+export const estBilan = (user: UserLike) => perm(user, "cabinet_bilan");
+export const estResumeCompta = (user: UserLike) => estBilan(user) || estCommissions(user);
+export const estTableauBord = (user: UserLike) => perm(user, "cabinet_direction");
+export const estJournal = (user: UserLike) => perm(user, "cabinet_journal");
+export const estPatron = (user: UserLike) => estPatronUser(user);
 
 // Nom de canal de temps réel : impossible à deviner sans passer par l'API (signé avec un secret serveur)
 export function topicPour(canal: string) {
@@ -48,7 +50,7 @@ export async function diffuser(canal: string, payload: any) {
 
 // Accès à un dossier (visible uniquement par) : le client ou l'employé qui l'a ouvert, l'avocat assigné,
 // la direction et la secrétaire juridique. Seuls l'avocat assigné et la direction peuvent le gérer.
-export async function accesDossier(db: any, user: any, dossierId: string) {
+export async function accesDossier(db: Db, user: any, dossierId: string) {
   const { data: dossier } = await db.from("cabinet_dossiers").select("*").eq("id", dossierId).maybeSingle();
   if (!dossier) return { dossier: null, client: false, direction: false, secretaire: false, assigne: false, peutVoir: false, peutGerer: false };
   const { data: coClient } = await db.from("cabinet_dossier_clients").select("dossier_id").eq("dossier_id", dossierId).eq("client_discord_id", user.discord_id).maybeSingle();
@@ -68,7 +70,7 @@ export async function accesDossier(db: any, user: any, dossierId: string) {
 }
 
 // Nom d'un employé à partir de son ID Discord (annuaire des connexions du site)
-export async function nomStaff(db: any, discordId: string): Promise<string | null> {
+export async function nomStaff(db: Db, discordId: string): Promise<string | null> {
   const { data } = await db.from("site_logins").select("discord_name,nom_perso").eq("discord_id", discordId).maybeSingle();
   if (!data) return null;
   return data.nom_perso || data.discord_name || null;

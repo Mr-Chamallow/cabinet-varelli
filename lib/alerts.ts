@@ -1,3 +1,4 @@
+import type { Db } from "@/lib/serverAuth";
 import { money } from "@/lib/money";
 import { sendDiscordMessage, editDiscordMessage, DiscordWebhookKind, DiscordEmbedField } from "@/lib/discordAlert";
 import { mention, roleIds, RoleKey } from "@/lib/discordRoles";
@@ -25,7 +26,7 @@ export async function postAlert(kind: DiscordWebhookKind, title: string, descrip
 
 // Un seul message Discord par ligne (convoi, dossier, pacte, audit...) : créé une fois, puis MODIFIÉ à chaque changement.
 // Le message modifié ne notifie personne ; un ping n'est envoyé (séparément) que pour les changements urgents.
-export async function syncAlert(db: any, table: string, row: any, kind: DiscordWebhookKind, title: string, description: string, color = GOLD, fields?: DiscordEmbedField[], ping?: RoleKey[]) {
+export async function syncAlert(db: Db, table: string, row: any, kind: DiscordWebhookKind, title: string, description: string, color = GOLD, fields?: DiscordEmbedField[], ping?: RoleKey[]) {
   try {
     if (row?.discord_message_id) {
       const r = await editDiscordMessage(kind, row.discord_message_id, { title, description, color, fields });
@@ -38,7 +39,7 @@ export async function syncAlert(db: any, table: string, row: any, kind: DiscordW
 }
 
 // Seuil « gros mouvement » réglable dans Admin > Personnalisation (app_settings.alert_seuil_gros). 0 = désactivé.
-export async function bigThreshold(db: any): Promise<number> {
+export async function bigThreshold(db: Db): Promise<number> {
   try {
     const { data } = await db.from("app_settings").select("valeur").eq("cle", "alert_seuil_gros").maybeSingle();
     if (data && data.valeur !== null && data.valeur !== "") return Math.max(0, Number(data.valeur) || 0);
@@ -47,13 +48,13 @@ export async function bigThreshold(db: any): Promise<number> {
 }
 
 // Si |montant| >= seuil -> alerte « gros mouvement » dans le salon compta.
-export async function bigMoveAlert(db: any, montant: number, label: string, who: string) {
+export async function bigMoveAlert(db: Db, montant: number, label: string, who: string) {
   const seuil = await bigThreshold(db);
   if (!seuil || Math.abs(montant) < seuil) return;
   await postAlert("compta", `${montant >= 0 ? "💰 Gros gain" : "📉 Grosse perte"} - ${usd(Math.abs(montant))}`, `${label}\nPar **${who || "?"}**`, montant >= 0 ? GREEN : RED, undefined, ["RL", "CEO", "COO"]);
 }
 
 // Journal des actions sensibles (Admin > Journaux > Sensibles). Ne throw jamais.
-export async function logAudit(db: any, acteur: string, action: string, cible: string, detail?: string) {
+export async function logAudit(db: Db, acteur: string, action: string, cible: string, detail?: string) {
   try { await db.from("journal_audit").insert([{ acteur: acteur || "?", action, cible: cible || "", detail: detail || null }]); } catch {}
 }

@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import { money } from "@/lib/money";
 import { supabase } from "@/lib/supabase";
@@ -70,56 +71,56 @@ export async function fetchRecentActivity(limitPerSource = 40): Promise<Activity
   ]);
 
   const items: ActivityItem[] = [
-    ...(mouvements || []).map((r: any) => ({
+    ...(mouvements || []).map((r: Row) => ({
       type: "mouvement" as const,
       label: r.stock_nom || "Stock",
       detail: `${r.type === "sortie" ? "Sortie" : "Entrée"} · ${r.quantite} · ${r.motif || "-"}`,
       by: r.created_by || "-",
       at: r.created_at,
     })),
-    ...(operations || []).map((r: any) => ({
+    ...(operations || []).map((r: Row) => ({
       type: "operation" as const,
       label: r.titre || "Opération",
       detail: `${r.type || "-"}${r.lieu ? ` · ${r.lieu}` : ""}${r.client ? ` · ${r.client}` : ""}`,
       by: r.created_by || "-",
       at: r.created_at,
     })),
-    ...(contrats || []).map((r: any) => ({
+    ...(contrats || []).map((r: Row) => ({
       type: "contrat" as const,
       label: r.titre || "Contrat",
       detail: `${r.type || "-"} · ${r.statut || "-"}`,
       by: r.created_by || "-",
       at: r.created_at,
     })),
-    ...(fiches || []).map((r: any) => ({
+    ...(fiches || []).map((r: Row) => ({
       type: "fiche" as const,
       label: r.nom || "Fiche",
       detail: r.organisation ? `Organisation : ${r.organisation}` : "Nouvelle fiche",
       by: r.created_by || "-",
       at: r.created_at,
     })),
-    ...(employes || []).map((r: any) => ({
+    ...(employes || []).map((r: Row) => ({
       type: "employe" as const,
       label: r.nom || "Employé",
       detail: r.role ? `Rôle : ${r.role}` : "Nouvel employé",
       by: r.created_by || "-",
       at: r.created_at,
     })),
-    ...(garage || []).map((r: any) => ({
+    ...(garage || []).map((r: Row) => ({
       type: "garage" as const,
       label: r.modele || "Véhicule",
       detail: `${r.plaque || "-"} · ${r.statut || "-"}`,
       by: r.created_by || "-",
       at: r.created_at,
     })),
-    ...(paiements || []).map((r: any) => ({
+    ...(paiements || []).map((r: Row) => ({
       type: "paiement" as const,
       label: r.employe || "Employé",
       detail: `Payé ${fmt(r.montant)}`,
       by: r.paid_by || "-",
       at: r.created_at,
     })),
-    ...(compta || []).map((r: any) => ({
+    ...(compta || []).map((r: Row) => ({
       type: "comptabilite" as const,
       label: r.categorie || (r.type === "recette" ? "Recette" : "Dépense"),
       detail: `${r.type === "recette" ? "+" : "-"}${fmt(r.montant)}`,

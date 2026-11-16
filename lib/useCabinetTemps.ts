@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -19,7 +20,7 @@ export function useCabinetTemps(tables: string[], onChange: () => void) {
     }
     let timer: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase.channel(`cabinet-${key}-${Math.random().toString(36).slice(2)}`);
-    channel.on("postgres_changes" as any, { event: "*", schema: "public", table: "cabinet_signal" }, (p: any) => {
+    channel.on("postgres_changes" as any, { event: "*", schema: "public", table: "cabinet_signal" }, (p: Row) => {
       const table = p?.new?.table_name ?? p?.old?.table_name;
       if (!liste.includes(table)) return;
       if (timer) clearTimeout(timer);

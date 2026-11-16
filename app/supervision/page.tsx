@@ -114,7 +114,7 @@ export default function SupervisionPage() {
     if (!supabase) return;
     const today = new Date().toISOString().split("T")[0];
     const { data } = await lire("obsidian_rdv", { select: "id,titre,type,date,heure,lieu,client,statut,created_by", gte: [["date", today]], order: [["date", true], ["heure", true]], limit: 30 });
-    setOperations(data || []);
+    setOperations((data || []) as Operation[]);
   }
 
   async function loadActivity() {

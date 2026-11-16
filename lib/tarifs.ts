@@ -1,5 +1,6 @@
+import type { Row } from "@/lib/types";
 // Prestations groupées par catégorie, sans prix dans le nom, sans doublon
-export function tarifsGroupes(tarifs: any[]): [string, { id: string; nom: string }[]][] {
+export function tarifsGroupes(tarifs: Row[]): [string, { id: string; nom: string }[]][] {
   const groupes: Record<string, { id: string; nom: string }[]> = {};
   const vus = new Set<string>();
   for (const t of tarifs || []) {

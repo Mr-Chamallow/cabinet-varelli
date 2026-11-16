@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 // Calculs de comptabilité : commissions par employé, relevés, résumé hebdomadaire
 import { weekStartOf } from "@/lib/weekStart";
 
@@ -11,9 +12,9 @@ export function fenetreSemaine(lundi: string) {
   return { debut: debut.toISOString(), fin: fin.toISOString(), debutJour: debut.toISOString().slice(0, 10), finJour: fin.toISOString().slice(0, 10) };
 }
 
-export const ligneTotal = (l: any) => Math.round((Number(l?.quantite) || 0) * (Number(l?.prix) || 0));
+export const ligneTotal = (l: Row) => Math.round((Number(l?.quantite) || 0) * (Number(l?.prix) || 0));
 // Taux de chaque employé d'après son grade (cabinet_avocat_grades + cabinet_grades)
-export function tauxParId(grades: any[], avocatGrades: any[]): Record<string, number> {
+export function tauxParId(grades: Row[], avocatGrades: Row[]): Record<string, number> {
   const parGrade: Record<string, number> = {};
   for (const g of grades || []) parGrade[g.grade] = Number(g.taux_pct) || 0;
   const res: Record<string, number> = {};
@@ -21,11 +22,11 @@ export function tauxParId(grades: any[], avocatGrades: any[]): Record<string, nu
   return res;
 }
 
-const somme = (liste: any[], f: (x: any) => number) => liste.reduce((s, x) => s + f(x), 0);
+const somme = (liste: Row[], f: (x: Row) => number) => liste.reduce((s, x) => s + f(x), 0);
 
 // Prestations d'une liste de factures soldées, groupées par employé
-export function relevesDepuisFactures(factures: any[], taux: Record<string, number> = {}) {
-  const par: Record<string, { employe_discord_id: string; employe_nom: string; prestations: any[]; commission: number }> = {};
+export function relevesDepuisFactures(factures: Row[], taux: Record<string, number> = {}) {
+  const par: Record<string, { employe_discord_id: string; employe_nom: string; prestations: Row[]; commission: number }> = {};
   for (const f of factures) {
     for (const l of (Array.isArray(f.lignes) ? f.lignes : [])) {
       if (!l?.employe_discord_id) continue;
@@ -43,7 +44,7 @@ export function relevesDepuisFactures(factures: any[], taux: Record<string, numb
 
 // Comparutions immédiates : payées par le gouvernement, donc HORS encaissements clients et hors résultat net.
 // Leur montant est ajouté au salaire (solde) de l'avocat qui les a prises en charge.
-export function calculerResume(semaine: string, d: { paiements: any[]; facturesMois: any[]; facturesToutes: any[]; depenses: any[]; versements: any[]; avoirs: any[]; comparutions?: any[]; taux?: Record<string, number> }) {
+export function calculerResume(semaine: string, d: { paiements: Row[]; facturesMois: Row[]; facturesToutes: Row[]; depenses: Row[]; versements: Row[]; avoirs: Row[]; comparutions?: Row[]; taux?: Record<string, number> }) {
   const { debutJour, finJour } = fenetreSemaine(semaine);
   const taux = d.taux || {};
   const encaisseClients = somme(d.paiements, p => Number(p.montant) || 0);
@@ -55,8 +56,8 @@ export function calculerResume(semaine: string, d: { paiements: any[]; facturesM
   const relevesCumul = relevesDepuisFactures(d.facturesToutes, taux);
   const commissionsFactures = somme(Object.values(relevesMois), r => r.commission);
 
-  const ci = (d.comparutions || []).filter((c: any) => c.statut === "prise_en_charge");
-  const ciSemaineListe = ci.filter((c: any) => String(c.date_audience).slice(0, 10) >= debutJour && String(c.date_audience).slice(0, 10) < finJour);
+  const ci = (d.comparutions || []).filter((c: Row) => c.statut === "prise_en_charge");
+  const ciSemaineListe = ci.filter((c: Row) => String(c.date_audience).slice(0, 10) >= debutJour && String(c.date_audience).slice(0, 10) < finJour);
   // Le gouvernement paie 100 % à l'entreprise : c'est un encaissement
   const ciSemaine = somme(ciSemaineListe, c => Number(c.montant) || 0);
   const ciSemaineParts = somme(ciSemaineListe, c => Number(c.part_avocat) || 0);
@@ -64,18 +65,18 @@ export function calculerResume(semaine: string, d: { paiements: any[]; facturesM
   if (ciSemaine) parMode["Gouvernement (comparutions)"] = ciSemaine;
   const commissions = commissionsFactures + ciSemaineParts;
 
-  const dansSemaine = (v: any) => String(v.date_versement).slice(0, 10) >= debutJour && String(v.date_versement).slice(0, 10) < finJour;
+  const dansSemaine = (v: Row) => String(v.date_versement).slice(0, 10) >= debutJour && String(v.date_versement).slice(0, 10) < finJour;
 
-  const ids = new Set<string>([...Object.keys(relevesMois), ...Object.keys(relevesCumul), ...d.versements.map((v: any) => v.employe_discord_id), ...ci.map((c: any) => c.avocat_discord_id).filter(Boolean)]);
+  const ids = new Set<string>([...Object.keys(relevesMois), ...Object.keys(relevesCumul), ...d.versements.map((v: Row) => v.employe_discord_id), ...ci.map((c: Row) => c.avocat_discord_id).filter(Boolean)]);
   const releves = [...ids].map(id => {
     const m = relevesMois[id];
     const c = relevesCumul[id];
-    const versementsSemaine = somme(d.versements.filter((v: any) => v.employe_discord_id === id && dansSemaine(v)), v => Number(v.montant) || 0);
-    const versementsCumul = somme(d.versements.filter((v: any) => v.employe_discord_id === id), v => Number(v.montant) || 0);
+    const versementsSemaine = somme(d.versements.filter((v: Row) => v.employe_discord_id === id && dansSemaine(v)), v => Number(v.montant) || 0);
+    const versementsCumul = somme(d.versements.filter((v: Row) => v.employe_discord_id === id), v => Number(v.montant) || 0);
     // Part de l'avocat (pourcentage selon son grade)
-    const ciSemaineAv = somme(ciSemaineListe.filter((x: any) => x.avocat_discord_id === id), x => Number(x.part_avocat) || 0);
-    const ciCumulAv = somme(ci.filter((x: any) => x.avocat_discord_id === id), x => Number(x.part_avocat) || 0);
-    const nom = m?.employe_nom || c?.employe_nom || d.versements.find((v: any) => v.employe_discord_id === id)?.employe_nom || ci.find((x: any) => x.avocat_discord_id === id)?.avocat_nom || id;
+    const ciSemaineAv = somme(ciSemaineListe.filter((x: Row) => x.avocat_discord_id === id), x => Number(x.part_avocat) || 0);
+    const ciCumulAv = somme(ci.filter((x: Row) => x.avocat_discord_id === id), x => Number(x.part_avocat) || 0);
+    const nom = m?.employe_nom || c?.employe_nom || d.versements.find((v: Row) => v.employe_discord_id === id)?.employe_nom || ci.find((x: Row) => x.avocat_discord_id === id)?.avocat_nom || id;
     return {
       employe_discord_id: id,
       employe_nom: nom,

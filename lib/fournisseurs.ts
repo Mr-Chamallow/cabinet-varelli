@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -41,7 +42,7 @@ export function useFournisseurs() {
   const reload = useCallback(async () => {
     if (!supabase) return;
     const { data } = await lire("obsidian_fournisseurs", { eq: [["actif", true]], order: [["prix_achat", true]] });
-    setList((data || []).map((x: any) => ({ ...x, prix_achat: Number(x.prix_achat) || 0 })));
+    setList((data || []).map((x: Row) => ({ ...x, prix_achat: Number(x.prix_achat) || 0 })) as Fournisseur[]);
   }, []);
   useEffect(() => { reload(); }, [reload]);
   return { list, reload };
@@ -58,14 +59,14 @@ export async function loadPriceTable(): Promise<PriceRef[]> {
     lire("obsidian_armes_prix", { select: "nom,prix", order: [["ordre", true]] }),
     lire("obsidian_fournisseurs", { eq: [["actif", true]] }),
   ]);
-  const fl: Fournisseur[] = (f || []).map((x: any) => ({ ...x, prix_achat: Number(x.prix_achat) || 0 }));
+  const fl: Fournisseur[] = (f || []).map((x: Row) => ({ ...x, prix_achat: Number(x.prix_achat) || 0 })) as Fournisseur[];
   const mk = (categorie: PriceRef["categorie"], nom: string, emoji: string, vente: number): PriceRef => {
     const r = refAchat(fournisseursDe(fl, categorie, nom));
     return { nom: (nom || "").trim(), categorie, emoji, vente, achat: r ? r.prix_achat : 0, fournisseur: r };
   };
   return [
-    ...(d || []).map((x: any) => mk("drogue", x.nom, x.emoji || "💊", venteRef(x.prix_min, x.prix_max))),
-    ...(a || []).map((x: any) => mk("arme", x.nom, "🔫", Number(x.prix) || 0)),
+    ...(d || []).map((x: Row) => mk("drogue", x.nom, x.emoji || "💊", venteRef(x.prix_min, x.prix_max))),
+    ...(a || []).map((x: Row) => mk("arme", x.nom, "🔫", Number(x.prix) || 0)),
     ...ACCS.map(x => mk("accessoire", x.nom, "🔧", x.prix)),
   ];
 }

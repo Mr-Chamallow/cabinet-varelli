@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -23,13 +24,13 @@ export function useReferentiel(): Referentiel {
       lire("obsidian_rdv", { select: "lieu", limit: 2000 }),
     ]).then(([b, g, cp, pt, rd]) => {
       const vehicules: RefVehicule[] = [
-        ...(b.data || []).map((v: any) => ({ modele: v.marque_modele || "", plaque: v.plaque || "", couleur: v.couleur, source: "Base de données" })),
-        ...(g.data || []).map((v: any) => ({ modele: v.modele || "", plaque: v.plaque || "", couleur: v.couleur, source: "Garage" })),
-        ...(cp.data || []).map((v: any) => ({ modele: "", plaque: v.plaque || "", source: "Carte" })),
+        ...(b.data || []).map((v: Row) => ({ modele: v.marque_modele || "", plaque: v.plaque || "", couleur: v.couleur, source: "Base de données" })),
+        ...(g.data || []).map((v: Row) => ({ modele: v.modele || "", plaque: v.plaque || "", couleur: v.couleur, source: "Garage" })),
+        ...(cp.data || []).map((v: Row) => ({ modele: "", plaque: v.plaque || "", source: "Carte" })),
       ].filter(v => v.plaque || v.modele);
       setR({
         vehicules, modeles: uniq(vehicules.map(v => v.modele)), plaques: uniq(vehicules.map(v => v.plaque)),
-        lieux: uniq([...(g.data || []).map((x: any) => x.position), ...(pt.data || []).map((x: any) => x.title), ...(rd.data || []).map((x: any) => x.lieu)]),
+        lieux: uniq([...(g.data || []).map((x: Row) => x.position), ...(pt.data || []).map((x: Row) => x.title), ...(rd.data || []).map((x: Row) => x.lieu)]),
       });
     });
   }, []);

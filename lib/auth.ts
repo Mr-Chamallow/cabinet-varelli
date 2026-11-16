@@ -1,3 +1,4 @@
+import type { UserLike } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 
 export interface AppUser {
@@ -96,7 +97,7 @@ export function isReadOnlyRole(userOrRole: AppUser | string | null): boolean {
 export const canAccess = hasPermission;
 
 // "Patron" = avoir la permission admin en écriture (définie dans la table roles). Aucun nom de rôle en dur.
-export function estAdminUser(u: any): boolean {
+export function estAdminUser(u: UserLike): boolean {
   if (!u) return false;
   return hasWriteAccess({ id: u.discord_id, nom: u.discord_name, role: u.site_role, permissions: u.permissions || [] } as any, "admin");
 }

@@ -80,8 +80,8 @@ export default function BaseDeDonneesPage() {
       fetchGangs(),
       fetchPoints(),
     ]);
-    setPersonnes(p || []);
-    setVehicules(v || []);
+    setPersonnes((p || []) as Personne[]);
+    setVehicules((v || []) as Vehicule[]);
     setGangs(gs || []);
     setPoints(pts || []);
     setLoading(false);

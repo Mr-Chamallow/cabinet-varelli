@@ -1,10 +1,11 @@
+import type { Row } from "@/lib/types";
 import { lire, lireUn } from "@/lib/lire";
 import { money } from "@/lib/money";
 // Fiches (obsidian_fiches) <-> Base de données (bdd_personnes) : recherche, pré-remplissage et synchronisation.
 type Db = any;
 
 export const splitNom = (full: string) => { const t = (full || "").trim().split(/\s+/); return t.length < 2 ? { prenom: "", nom: t[0] || "" } : { prenom: t[0], nom: t.slice(1).join(" ") }; };
-export const fullNom = (p: any) => `${p.prenom || ""} ${p.nom || ""}`.trim();
+export const fullNom = (p: Row) => `${p.prenom || ""} ${p.nom || ""}`.trim();
 
 export function ficheToPersonne(f: any, groupes: { id: string; nom: string }[]) {
   const { prenom, nom } = splitNom(f.nom);
@@ -60,10 +61,10 @@ export async function syncBddToFiche(db: Db, personne: any) {
   await db.from("obsidian_fiches").update({ ...personneToFiche(personne), updated_at: new Date().toISOString() }).eq("id", personne.fiche_id);
 }
 
-export interface Candidate { key: string; source: string; label: string; detail: string; personne?: any; vehicules: any[]; plaque?: string }
+export interface Candidate { key: string; source: string; label: string; detail: string; personne?: any; vehicules: Row[]; plaque?: string }
 
 // Recherche par nom, prénom, téléphone ou plaque dans la Base de données, les véhicules, la carte enquêteur et les fiches existantes.
-export async function lookupPeople(db: Db, query: string): Promise<{ candidates: Candidate[]; fiches: any[] }> {
+export async function lookupPeople(db: Db, query: string): Promise<{ candidates: Candidate[]; fiches: Row[] }> {
   const q = query.trim().replace(/[%,()]/g, " ").trim();
   if (q.length < 2) return { candidates: [], fiches: [] };
   const tokens = q.split(/\s+/).filter(Boolean);
@@ -75,10 +76,10 @@ export async function lookupPeople(db: Db, query: string): Promise<{ candidates:
     lire("carte_personnes", { or: `nom.ilike.${like},prenom.ilike.${like}`, limit: 10 }),
     db.from("obsidian_fiches").select("id,nom,organisation,telephone,personne_id").ilike("nom", `%${q}%`).limit(5),
   ]);
-  const match = (p: any) => tokens.every(t => `${p.nom} ${p.prenom || ""} ${p.surnom || ""} ${p.telephone || ""}`.toLowerCase().includes(t.toLowerCase()));
+  const match = (p: Row) => tokens.every(t => `${p.nom} ${p.prenom || ""} ${p.surnom || ""} ${p.telephone || ""}`.toLowerCase().includes(t.toLowerCase()));
   const out: Candidate[] = [];
   const byId: Record<string, Candidate> = {};
-  const add = async (p: any, extraVeh: any[] = [], plaque?: string) => {
+  const add = async (p: any, extraVeh: Row[] = [], plaque?: string) => {
     if (byId[p.id]) { byId[p.id].vehicules.push(...extraVeh.filter(v => !byId[p.id].vehicules.some(x => x.id === v.id))); if (plaque) byId[p.id].plaque = plaque; return; }
     const { data: vs } = await db.from("bdd_vehicules").select("*").eq("proprietaire_id", p.id);
     const c: Candidate = { key: "p" + p.id, source: "Base de données", label: fullNom(p) + (p.surnom ? ` « ${p.surnom} »` : ""), detail: [p.telephone, p.organisation, p.priorite].filter(Boolean).join(" · "), personne: p, vehicules: vs || [], plaque };
@@ -100,7 +101,7 @@ export async function lookupPeople(db: Db, query: string): Promise<{ candidates:
   try {
     const { data: wf } = await db.from("obsidian_fiches").select("id,nom,personne_id,statut,prime,vehicules").is("deleted_at", null).or("prime.gt.0,statut.ilike.%recherch%");
     for (const c of out) {
-      const hit = (wf || []).find((w: any) => (c.personne?.id && w.personne_id === c.personne.id) || (c.personne && fullNom(c.personne).toLowerCase() === String(w.nom || "").toLowerCase()) || (c.plaque && String(w.vehicules || "").toLowerCase().includes(c.plaque.toLowerCase())));
+      const hit = (wf || []).find((w: Row) => (c.personne?.id && w.personne_id === c.personne.id) || (c.personne && fullNom(c.personne).toLowerCase() === String(w.nom || "").toLowerCase()) || (c.plaque && String(w.vehicules || "").toLowerCase().includes(c.plaque.toLowerCase())));
       if (hit) { c.label = "🚨 RECHERCHÉ - " + c.label; c.detail = [hit.statut, Number(hit.prime) > 0 ? `prime ${money(hit.prime)}` : ""].filter(Boolean).join(" · ") + (c.detail ? " · " + c.detail : ""); }
     }
   } catch { /* alerte best-effort */ }
@@ -110,6 +111,6 @@ export async function lookupPeople(db: Db, query: string): Promise<{ candidates:
 // Valeurs du formulaire de fiche à partir d'un résultat de recherche.
 export function candidateToForm(c: Candidate) {
   const p = c.personne || {}; const f = personneToFiche({ ...p, nom: p.nom || "", prenom: p.prenom || "" });
-  const veh = c.vehicules.map((v: any) => [v.plaque, v.marque_modele, v.couleur].filter(Boolean).join(" ")).join("\n");
+  const veh = c.vehicules.map((v: Row) => [v.plaque, v.marque_modele, v.couleur].filter(Boolean).join(" ")).join("\n");
   return { ...f, nom: fullNom(p) || "", vehicules: veh, personne_id: p.id || null, type: "personne" };
 }

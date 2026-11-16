@@ -1,8 +1,9 @@
+import type { Row } from "@/lib/types";
 import { NotifyEmbed } from "@/lib/notifyDiscord";
 import { metierInfo } from "@/lib/fichesMetiers";
 import { money } from "@/lib/money";
 
-const v = (x: any) => (x === null || x === undefined || x === "" ? "-" : String(x));
+const v = (x: unknown) => (x === null || x === undefined || x === "" ? "-" : String(x));
 const fmtUSD = (n: number) => money((n || 0));
 
 const PRIO_COLOR: Record<string, number> = {

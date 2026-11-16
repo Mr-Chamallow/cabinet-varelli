@@ -53,7 +53,7 @@ export default function ArrestationsPage() {
     ]);
     setList((a || []).map((r: any) => ({ ...r, amende: Number(r.amende) || 0, argent_perdu: Number(r.argent_perdu) || 0, items: r.items || [] })));
     setEmployes((e || []).filter((x: any) => x.actif !== false).map((x: any) => x.nom).filter(Boolean));
-    setStocks(s || []);
+    setStocks((s || []) as StockLite[]);
     setLoading(false);
   }
 
