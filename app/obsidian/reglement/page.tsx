@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire, lireUn } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -34,8 +35,8 @@ export default function ReglementPage() {
         if (Array.isArray(s.drogues_produites)) setProd(s.drogues_produites);
         if (Array.isArray(s.drogues_revendiquees)) setRevend(s.drogues_revendiquees);
       }
-      setEffectif((e || []).filter((x: any) => x.actif !== false).length);
-      setKevlar((st || []).filter(estKevlar).reduce((a: number, x: any) => a + (Number(x.quantite) || 0), 0));
+      setEffectif((e || []).filter((x: Row) => x.actif !== false).length);
+      setKevlar((st || []).filter(estKevlar).reduce((a: number, x: Row) => a + (Number(x.quantite) || 0), 0));
     });
   }, []);
 

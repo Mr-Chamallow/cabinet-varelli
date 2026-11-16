@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { money } from "@/lib/money";
@@ -16,9 +17,9 @@ function mondayISO() { const d = new Date(); d.setDate(d.getDate() - ((d.getDay(
 
 // Bloc du Dashboard : arrestations, amendes (hors solde), net des actions de la semaine et timers de délai.
 export function WeekOverview({ showActions, showArrests }: { showActions: boolean; showArrests: boolean }) {
-  const [arrests, setArrests] = useState<any[]>([]);
-  const [actions, setActions] = useState<any[]>([]);
-  const [last, setLast] = useState<any[]>([]);
+  const [arrests, setArrests] = useState<Row[]>([]);
+  const [actions, setActions] = useState<Row[]>([]);
+  const [last, setLast] = useState<Row[]>([]);
   const [types, setTypes] = useState<ActionType[]>(DEFAULT_ACTION_TYPES);
   const [now, setNow] = useState(() => Date.now());
 

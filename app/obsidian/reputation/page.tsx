@@ -1,4 +1,6 @@
 "use client";
+import type { OrgP } from "@/lib/pdfDocs";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import type { PacteP, AuditP, DossierP, EvenementP, FicheP } from "@/lib/pdfDocs";
 import Link from "next/link";
@@ -21,8 +23,8 @@ import { useGmAccess, Badge, fmtDT } from "@/components/gm/bits";
 export default function ReputationPage() {
   const { canWrite } = useGmAccess("gm_reputation");
   const { toast, showToast } = useToast();
-  const [orgs, setOrgs] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [orgs, setOrgs] = useState<Row[]>([]);
+  const [logs, setLogs] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<string | null>(null);
   const { user } = useCurrentUser();
@@ -39,7 +41,7 @@ export default function ReputationPage() {
     ]);
     setOrgs(o || []); setLogs(l || []); setLoading(false);
   }
-  const rows = useMemo(() => orgs.map(o => {
+  const rows = useMemo((): (Row & { history: Row[]; score: number })[] => orgs.map(o => {
     const h = logs.filter(l => l.organisation === o.nom);
     return { ...o, history: h, score: scoreOf(h.map(x => x.delta)) };
   }).sort((a, b) => b.score - a.score), [orgs, logs]);
@@ -51,7 +53,7 @@ export default function ReputationPage() {
     if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); return; }
     setAdj(null); showToast("Réputation ajustée"); load();
   }
-  async function dossierPdf(o: any) {
+  async function dossierPdf(o: Row) {
     if (!supabase) return;
     const [{ data: pactes }, { data: audits }, { data: dossiers }, { data: evenements }, { data: fiches }] = await Promise.all([
       lire("gm_pactes", { eq: [["organisation", o.nom]] }),
@@ -60,16 +62,16 @@ export default function ReputationPage() {
       lire("gm_evenements", { eq: [["partenaire", o.nom]], order: [["created_at", false]] }),
       lire("obsidian_fiches", { select: "nom,metier,priorite,statut", eq: [["organisation", o.nom]] }),
     ]);
-    await pdfOrganisation({ ...o, categorie: gangTypeLabel(o.type) }, { pactes: (pactes || []) as PacteP[], audits: (audits || []) as AuditP[], dossiers: (dossiers || []) as DossierP[], evenements: (evenements || []) as EvenementP[], history: o.history, fiches: (fiches || []) as FicheP[] });
+    await pdfOrganisation({ ...o, categorie: gangTypeLabel(o.type) } as OrgP, { pactes: (pactes || []) as PacteP[], audits: (audits || []) as AuditP[], dossiers: (dossiers || []) as DossierP[], evenements: (evenements || []) as EvenementP[], history: o.history, fiches: (fiches || []) as FicheP[] });
   }
-  async function openConv(o: any) {
+  async function openConv(o: Row) {
     const { data } = await lire("obsidian_fiches", { select: "nom", eq: [["organisation", o.nom]] });
     const d = new Date(Date.now() + 86400_000).toISOString().slice(0, 10);
-    setConv({ org: o.nom, destinataire: "", lieu: "Hangar du désert de Blaine County", date: d, heure: "22:00", objet: "Audit de conformité", consignes: "Présence personnelle et obligatoire. Aucune arme, aucun enregistrement. Venir seul ou avec un seul second.", noms: (data || []).map((f: any) => f.nom), score: o.score });
+    setConv({ org: o.nom, destinataire: "", lieu: "Hangar du désert de Blaine County", date: d, heure: "22:00", objet: "Audit de conformité", consignes: "Présence personnelle et obligatoire. Aucune arme, aucun enregistrement. Venir seul ou avec un seul second.", noms: (data || []).map((f: Row) => f.nom), score: o.score });
   }
   async function genConv() {
     if (!conv) return;
-    await pdfConvocation({ organisation: conv.org, destinataire: conv.destinataire, lieu: conv.lieu, date: conv.date, heure: conv.heure, objet: conv.objet, consignes: conv.consignes, score: conv.score, par: (user as any)?.nom || "" });
+    await pdfConvocation({ organisation: conv.org, destinataire: conv.destinataire, lieu: conv.lieu, date: conv.date, heure: conv.heure, objet: conv.objet, consignes: conv.consignes, score: conv.score, par: (user as Row)?.nom || "" });
     setConv(null);
   }
   async function delLog(id: string) {
@@ -122,7 +124,7 @@ export default function ReputationPage() {
                       <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => delOrg(o.nom)}>🧹 Remettre à zéro</button></>}
                     </div>
                     {o.history.length === 0 ? <div style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>Aucun mouvement (score de départ : 50)</div> :
-                      o.history.slice(0, 30).map((h: any) => (
+                      o.history.slice(0, 30).map((h: Row) => (
                         <div key={h.id} style={{ display: "flex", gap: "0.6rem", fontSize: "0.78rem", padding: "0.2rem 0", alignItems: "baseline" }}>
                           <b style={{ color: h.delta >= 0 ? "var(--success)" : "var(--danger)", minWidth: 36 }}>{h.delta > 0 ? "+" : ""}{h.delta}</b>
                           <span style={{ flex: 1 }}>{h.motif || " - "}</span>

@@ -1,3 +1,5 @@
+import type { UserLike } from "@/lib/types";
+import type { Row } from "@/lib/types";
 import type { Db } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
@@ -22,20 +24,20 @@ function resoudre(slug: string): { canal: string; ok: boolean; salon?: string } 
   return { canal: "", ok: false };
 }
 
-async function acces(user: any, db: Db, slug: string) {
+async function acces(user: UserLike, db: Db, slug: string) {
   const c = resoudre(slug);
-  if (!c.ok) return { err: NextResponse.json({ error: "Canal inconnu" }, { status: 404 }) } as any;
-  if (!estStaff(user)) return { err: NextResponse.json({ error: "Réservé aux employés" }, { status: 403 }) } as any;
+  if (!c.ok) return { err: NextResponse.json({ error: "Canal inconnu" }, { status: 404 }) } as Row;
+  if (!estStaff(user)) return { err: NextResponse.json({ error: "Réservé aux employés" }, { status: 403 }) } as Row;
   if (c.canal.startsWith("interne:")) {
     const dossierId = c.canal.slice(8);
     const a = await accesDossier(db, user, dossierId);
-    if (!a.peutGerer) return { err: NextResponse.json({ error: "Dossier non attribué à ton nom" }, { status: 403 }) } as any;
+    if (!a.peutGerer) return { err: NextResponse.json({ error: "Dossier non attribué à ton nom" }, { status: 403 }) } as Row;
   }
   if (c.canal.startsWith("plainte:")) {
     const { data } = await db.from("cabinet_plaintes").select("auteur_discord_id").eq("id", c.canal.slice(8)).maybeSingle();
-    if (!data) return { err: NextResponse.json({ error: "Plainte introuvable" }, { status: 404 }) } as any;
+    if (!data) return { err: NextResponse.json({ error: "Plainte introuvable" }, { status: 404 }) } as Row;
     if (data.auteur_discord_id !== user.discord_id && !estDirection(user)) {
-      return { err: NextResponse.json({ error: "Plainte non accessible" }, { status: 403 }) } as any;
+      return { err: NextResponse.json({ error: "Plainte non accessible" }, { status: 403 }) } as Row;
     }
   }
   return { canal: c.canal };
@@ -60,7 +62,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ canal: string 
     const { canal: slug } = await ctx.params;
     const r = await requireAnyPermission(["cabinet_dossiers", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const a = await acces(user, r.supabaseAdmin, slug); if (a.err) return a.err;
     const b = await req.json();
     const contenu = String(b.contenu || "").trim().slice(0, 4000);

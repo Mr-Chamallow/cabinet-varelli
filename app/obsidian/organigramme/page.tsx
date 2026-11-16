@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
@@ -38,15 +39,15 @@ export default function OrganigrammePage() {
   const effMax = DEFAUTS.effectifMax;
   useEffect(() => {
     if (!supabase) return;
-    lire("obsidian_employes", { select: "actif" }).then(({ data }) => setEffectif((data || []).filter((x: any) => x.actif !== false).length));
+    lire("obsidian_employes", { select: "actif" }).then(({ data }) => setEffectif((data || []).filter((x: Row) => x.actif !== false).length));
     Promise.all([
       fetch("/api/membres-liste").then(r => r.json()).then(j => ({ data: j.membres || [] })),
       lire("obsidian_employes", { select: "discord_id,nom" }),
     ]).then(([{ data }, { data: emps }]) => {
-      const byId: Record<string, string> = {}; (emps || []).forEach((e: any) => { if (e.discord_id) byId[e.discord_id] = e.nom; });
+      const byId: Record<string, string> = {}; (emps || []).forEach((e: Row) => { if (e.discord_id) byId[e.discord_id] = e.nom; });
       const m: Record<string, string[]> = {};
       // Toujours Prénom Nom (jamais le pseudo Discord si on connaît le personnage).
-      (data || []).forEach((r: any) => { if (r.site_role) (m[r.site_role] ??= []).push(r.nom_perso || byId[r.discord_id] || r.discord_name); });
+      (data || []).forEach((r: Row) => { if (r.site_role) (m[r.site_role] ??= []).push(r.nom_perso || byId[r.discord_id] || r.discord_name); });
       setMembers(m);
     });
   }, []);
@@ -96,7 +97,7 @@ export default function OrganigrammePage() {
         {POLES.map(p => (
           <div key={p.titre}>
             <div className="section-title" style={{ marginBottom: "0.6rem", color: p.color }}>{p.titre}</div>
-            {renderMissions((p as any).m, p.color)}
+            {renderMissions((p as Row).m, p.color)}
             <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>{p.keys.map(k => <Fragment key={k}>{renderNode(k, p.color)}</Fragment>)}</div>
           </div>
         ))}

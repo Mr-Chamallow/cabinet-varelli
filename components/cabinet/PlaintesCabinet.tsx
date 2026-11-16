@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTempsReel } from "@/lib/useTempsReel";
@@ -9,7 +10,7 @@ const heure = (s: string) => new Date(s).toLocaleString("fr-FR", { day: "2-digit
 
 // Plaintes internes : la direction voit tout, chaque employé voit seulement ses tickets. Mise à jour en temps réel.
 export default function PlaintesCabinet({ direction, moiId }: Props) {
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [topic, setTopic] = useState<string | null>(null);
   const [sujet, setSujet] = useState("");
   const [erreur, setErreur] = useState("");

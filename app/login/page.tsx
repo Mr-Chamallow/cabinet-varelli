@@ -1,5 +1,6 @@
 "use client";
 
+import type { Row } from "@/lib/types";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
@@ -36,7 +37,7 @@ function LoginContent() {
       const { data } = await supabase.from("app_settings").select("cle,valeur").in("cle", ["logo_url", "app_nom", "couleur_gold"]);
       if (!data) return;
       const m: Record<string, string> = {};
-      data.forEach((r: any) => { m[r.cle] = r.valeur; });
+      data.forEach((r: Row) => { m[r.cle] = r.valeur; });
       const next: Identity = { logoUrl: m["logo_url"] || DEFAULT_LOGO_URL, appNom: m["app_nom"] || DEFAULT_APP_NOM };
       setIdentity(next);
       cacheIdentity(next);

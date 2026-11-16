@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -37,7 +38,7 @@ export default function EmployesObsidianPage() {
 
   const [employes, setEmployes] = useState<Employe[]>([]);
   const [rolesLogistique, setRolesLogistique] = useState<string[]>([]);
-  useEffect(() => { loadRolesFromSupabase().then(rs => setRolesLogistique(rs.filter(roleEstLogistique).map((r: any) => r.nom))); }, []);
+  useEffect(() => { loadRolesFromSupabase().then(rs => setRolesLogistique(rs.filter(roleEstLogistique).map((r: Row) => r.nom))); }, []);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -56,7 +57,7 @@ export default function EmployesObsidianPage() {
     showToast(url ? "Photo enregistrée" : "Photo retirée");
   }
 
-  const canPromote = /^(CEO|COO|Associé)/.test((user as any)?.role || "");
+  const canPromote = /^(CEO|COO|Associé)/.test((user as Row)?.role || "");
   const [dTab, setDTab] = useState<"dossier" | "psy" | "histoire">("dossier");
   const [promoRole, setPromoRole] = useState("");
   const [promo, setPromo] = useState<{ nom: string; from: string; to: string; step: number } | null>(null);
@@ -267,7 +268,7 @@ export default function EmployesObsidianPage() {
         <div className="promo-overlay">
           <div className={`promo-stage ${promo.step ? "promo-new" : ""}`}>
             <div className="promo-title">⬆️ PROMOTION</div>
-            <EmployeeCard e={{ ...(employes.find(x => x.nom === promo.nom) as any), role: promo.step ? promo.to : promo.from }} flippable={false} />
+            <EmployeeCard e={{ ...employes.find(x => x.nom === promo.nom), role: promo.step ? promo.to : promo.from }} flippable={false} />
             <div className="promo-sub">{promo.nom} · {promo.from} {'->'} <b>{promo.to}</b></div>
           </div>
         </div>

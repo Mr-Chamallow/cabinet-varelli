@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -23,7 +24,7 @@ export default function DonsPage() {
   const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_dons"))) window.location.href = "/"; }, [user, userLoading]);
 
-  const [dons, setDons] = useState<any[]>([]);
+  const [dons, setDons] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [montant, setMontant] = useState(0);

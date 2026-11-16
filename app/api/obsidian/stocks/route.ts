@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { logAudit } from "@/lib/alerts";
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
       // Stock initial = entrée valorisée (le trigger compta en fait une dépense « Achat stock »).
       await supabaseAdmin.from("obsidian_mouvements").insert([{ stock_id: data.id, stock_nom: data.nom, type: "entrée", quantite: data.quantite, motif: "Stock initial", membre: data.created_by || "", prix_unitaire: data.prix_unitaire || 0, total: Number(data.quantite) * (Number(data.prix_unitaire) || 0), created_by: data.created_by || "" }]);
     }
-    await logAudit(supabaseAdmin, (user as any)?.nom_perso || (user as any)?.discord_name || data.created_by || "?", "Stock créé", data.nom, `${data.quantite} ${data.unite || ""} · tag ${data.categorie || "-"}`);
+    await logAudit(supabaseAdmin, (user as Row)?.nom_perso || (user as Row)?.discord_name || data.created_by || "?", "Stock créé", data.nom, `${data.quantite} ${data.unite || ""} · tag ${data.categorie || "-"}`);
     return NextResponse.json(data);
   } catch (e: unknown) {
     return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });

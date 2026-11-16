@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { estFacturation, estStaff } from "@/lib/cabinetAcces";
@@ -12,7 +13,7 @@ export async function GET() {
   try {
     const r = await requireAnyPermission(["avocat", "cabinet_dossiers", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     if (!estStaff(user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const db = r.supabaseAdmin;
     const aujourdhui = jourParis();
@@ -25,12 +26,12 @@ export async function GET() {
       db.from("cabinet_dossier_acces").select("dossier_id").eq("avocat_discord_id", user.discord_id),
     ]);
 
-    const ids = (acces.data || []).map((a: any) => a.dossier_id);
+    const ids = (acces.data || []).map((a: Row) => a.dossier_id);
     const { data: dossiers } = ids.length
       ? await db.from("cabinet_dossiers").select("id,titre,client_nom").in("id", ids).eq("statut", "ouvert").order("created_at", { ascending: false }).limit(8)
-      : { data: [] as any[] };
+      : { data: [] as Row[] };
 
-    let facturesRetard: any[] = [];
+    let facturesRetard: Row[] = [];
     let devisEnAttente = 0;
     if (estFacturation(user)) {
       const { data: retard } = await db.from("cabinet_factures").select("id,numero,client_nom,montant,date_echeance")

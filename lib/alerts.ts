@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import type { Db } from "@/lib/serverAuth";
 import { money } from "@/lib/money";
 import { sendDiscordMessage, editDiscordMessage, DiscordWebhookKind, DiscordEmbedField } from "@/lib/discordAlert";
@@ -26,7 +27,7 @@ export async function postAlert(kind: DiscordWebhookKind, title: string, descrip
 
 // Un seul message Discord par ligne (convoi, dossier, pacte, audit...) : créé une fois, puis MODIFIÉ à chaque changement.
 // Le message modifié ne notifie personne ; un ping n'est envoyé (séparément) que pour les changements urgents.
-export async function syncAlert(db: Db, table: string, row: any, kind: DiscordWebhookKind, title: string, description: string, color = GOLD, fields?: DiscordEmbedField[], ping?: RoleKey[]) {
+export async function syncAlert(db: Db, table: string, row: Row, kind: DiscordWebhookKind, title: string, description: string, color = GOLD, fields?: DiscordEmbedField[], ping?: RoleKey[]) {
   try {
     if (row?.discord_message_id) {
       const r = await editDiscordMessage(kind, row.discord_message_id, { title, description, color, fields });

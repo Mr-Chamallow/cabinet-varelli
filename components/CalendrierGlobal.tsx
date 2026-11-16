@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -28,8 +29,8 @@ export function CalendrierGlobal() {
     if (!supabase) { setLoading(false); return; }
     const [r, e] = await Promise.all([lire("obsidian_rdv", { select: "id,titre,client,date,heure" }), lire("gm_evenements", { select: "id,type,titre,statut,date_event,partenaire" })]);
     const out: Item[] = [];
-    (r.data || []).forEach((x: any) => x.date && out.push({ id: "r" + x.id, src: "rdv", titre: x.titre, date: String(x.date).slice(0, 10), heure: (x.heure || "").slice(0, 5), sub: x.client || "" }));
-    (e.data || []).forEach((x: any) => { if (!x.date_event) return; const d = new Date(x.date_event); out.push({ id: "e" + x.id, src: x.type, titre: x.titre, date: iso(d), heure: d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), sub: [x.partenaire, x.statut].filter(Boolean).join(" · ") }); });
+    (r.data || []).forEach((x: Row) => x.date && out.push({ id: "r" + x.id, src: "rdv", titre: x.titre, date: String(x.date).slice(0, 10), heure: (x.heure || "").slice(0, 5), sub: x.client || "" }));
+    (e.data || []).forEach((x: Row) => { if (!x.date_event) return; const d = new Date(x.date_event); out.push({ id: "e" + x.id, src: x.type, titre: x.titre, date: iso(d), heure: d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), sub: [x.partenaire, x.statut].filter(Boolean).join(" · ") }); });
     setItems(out); setLoading(false);
   }
   useEffect(() => { load(); }, []);

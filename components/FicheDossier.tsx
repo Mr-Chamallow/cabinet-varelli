@@ -1,4 +1,6 @@
 "use client";
+import type { ReactNode } from "react";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import { money } from "@/lib/money";
 import { useEffect, useState } from "react";
@@ -11,12 +13,12 @@ import { metierInfo } from "@/lib/fichesMetiers";
 const PCOL: Record<string, string> = { Basse: "#5b6b7a", Normale: "#2f6fb0", Haute: "#c7761a", Critique: "#b3121c", "Neutralisé": "#2e7d4f" };
 const ref = (id: string) => "OBS-F-" + (parseInt((id || "0").replace(/[^0-9a-f]/gi, "").slice(0, 6) || "0", 16) % 100000).toString().padStart(5, "0");
 
-export function FicheDossier({ f, showPrivate = true }: { f: any; showPrivate?: boolean }) {
-  const [journal, setJournal] = useState<any[]>([]);
+export function FicheDossier({ f, showPrivate = true }: { f: Row; showPrivate?: boolean }) {
+  const [journal, setJournal] = useState<Row[]>([]);
   useEffect(() => { if (!supabase || !f?.id || !showPrivate) return; lire("obsidian_journal", { eq: [["fiche_id", f.id]], order: [["created_at", false]], limit: 8 }).then(({ data }) => setJournal(data || [])); }, [f?.id, showPrivate]);
   const m = metierInfo(f.metier); const col = PCOL[f.priorite] || PCOL.Normale;
   const st = String(f.statut || ""); const bigStamp = /captur|arr[êe]t/i.test(st) ? { t: "Capturé", c: "green" as const } : /class|clos|neutralis/i.test(st) ? { t: "Classé", c: "blue" as const } : null;
-  const rows: [string, any][] = [["Âge", f.age ? `${f.age} ans` : ""], ["Origine", f.origine], ["Occupation", f.occupation], ["Téléphone", f.telephone], ["Groupe", f.organisation], ["Statut", f.statut], ["Type", f.type]];
+  const rows: [string, ReactNode][] = [["Âge", f.age ? `${f.age} ans` : ""], ["Origine", f.origine], ["Occupation", f.occupation], ["Téléphone", f.telephone], ["Groupe", f.organisation], ["Statut", f.statut], ["Type", f.type]];
   const blocks: [string, string][] = [["Adresses connues", f.adresses], ["Véhicules", f.vehicules], ["Comptes bancaires", f.comptes_bancaires], ["Relations", f.relations], ["Observations", f.notes_publiques]];
   return (
     <div className="fd">

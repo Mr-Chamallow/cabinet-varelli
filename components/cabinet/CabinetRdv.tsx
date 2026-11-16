@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import CalendrierRdv, { CreneauRdv } from "@/components/cabinet/CalendrierRdv";
 import { RDV_STATUT } from "@/lib/rdvStatuts";
@@ -22,9 +23,9 @@ const indicateur = (label: string, valeur: number, couleur: string) => (
 const DATE_FR = (iso: string) => new Date(iso).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 
 export default function CabinetRdv({ employe, direction, moiId, vueStaff }: Props) {
-  const [data, setData] = useState<{ rows: any[]; occupes: any[]; staff: boolean }>({ rows: [], occupes: [], staff: false });
-  const [tarifs, setTarifs] = useState<any[]>([]);
-  const [staffListe, setStaffListe] = useState<any[]>([]);
+  const [data, setData] = useState<{ rows: Row[]; occupes: Row[]; staff: boolean }>({ rows: [], occupes: [], staff: false });
+  const [tarifs, setTarifs] = useState<Row[]>([]);
+  const [staffListe, setStaffListe] = useState<Row[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
   const [form, setForm] = useState({ date_rdv: "", motif: "", prestation: "", discord_id: "", client_nom: "" });
@@ -48,7 +49,7 @@ export default function CabinetRdv({ employe, direction, moiId, vueStaff }: Prop
     if (direction || employe) fetch("/api/cabinet/staff").then(r => r.json()).then(d => setStaffListe(d.rows || []));
   }, []);
 
-  const appel = async (method: string, corps: any) => {
+  const appel = async (method: string, corps: Row) => {
     setErreur("");
     const r = await fetch("/api/cabinet/rdv", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
     const d = await r.json();
@@ -69,7 +70,7 @@ export default function CabinetRdv({ employe, direction, moiId, vueStaff }: Prop
     setOuvrirForm(true);
   };
 
-  const nomCreneau = (r: any) => `${r.client_nom || "Client"}${r.motif ? `, ${r.motif}` : ""}${r.avocat_nom ? ` (${r.avocat_nom})` : ""}`;
+  const nomCreneau = (r: Row) => `${r.client_nom || "Client"}${r.motif ? `, ${r.motif}` : ""}${r.avocat_nom ? ` (${r.avocat_nom})` : ""}`;
 
   // Vue client : seulement l'occupation des créneaux, sans aucun détail
   const creneaux: CreneauRdv[] = staffVue
@@ -148,7 +149,7 @@ export default function CabinetRdv({ employe, direction, moiId, vueStaff }: Prop
 
       {staffVue && data.rows.map(r => {
         const s = RDV_STATUT[r.statut] || { txt: r.statut, color: "var(--text-dim)" };
-        const candidats: any[] = r.cabinet_rdv_candidats || [];
+        const candidats: Row[] = r.cabinet_rdv_candidats || [];
         const estAvocat = r.avocat_discord_id === moiId;
         const dejaCandidat = candidats.some(c => c.avocat_discord_id === moiId);
         const monRdv = !staffVue && r.discord_id === moiId;

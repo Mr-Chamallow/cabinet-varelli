@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { PERMS_BUREAU } from "@/lib/cabinetRoles";
@@ -37,7 +38,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     const r = await requireAnyPermission(PERMS_BUREAU);
     if (!r.authorized || !estFacturation(r.user)) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     if (!estStaff(r.user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const auteur = nomAffiche(user);
     const db = r.supabaseAdmin;
     const b = await req.json();

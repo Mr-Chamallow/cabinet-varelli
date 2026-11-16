@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import OrganigrammeEquipe from "@/components/cabinet/OrganigrammeEquipe";
@@ -30,7 +31,7 @@ export default function AccueilCabinet() {
   useEffect(() => {
     fetch("/api/cabinet/cabinet_tarifs").then(r => r.json()).then(d => {
       const compte: Record<string, number> = {};
-      (d.rows || []).forEach((t: any) => { const c = t.categorie || "Autres"; compte[c] = (compte[c] || 0) + 1; });
+      (d.rows || []).forEach((t: Row) => { const c = t.categorie || "Autres"; compte[c] = (compte[c] || 0) + 1; });
       setDomaines(Object.entries(compte));
     });
   }, []);

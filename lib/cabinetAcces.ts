@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import type { Db } from "@/lib/serverAuth";
 import type { UserLike } from "@/lib/types";
 import { createHmac } from "crypto";
@@ -33,7 +34,7 @@ export function topicPour(canal: string) {
 }
 
 // Envoie un message en temps réel à tous les abonnés du canal (via l'API Broadcast de Supabase)
-export async function diffuser(canal: string, payload: any) {
+export async function diffuser(canal: string, payload: Row) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return;
@@ -50,7 +51,7 @@ export async function diffuser(canal: string, payload: any) {
 
 // Accès à un dossier (visible uniquement par) : le client ou l'employé qui l'a ouvert, l'avocat assigné,
 // la direction et la secrétaire juridique. Seuls l'avocat assigné et la direction peuvent le gérer.
-export async function accesDossier(db: Db, user: any, dossierId: string) {
+export async function accesDossier(db: Db, user: UserLike, dossierId: string) {
   const { data: dossier } = await db.from("cabinet_dossiers").select("*").eq("id", dossierId).maybeSingle();
   if (!dossier) return { dossier: null, client: false, direction: false, secretaire: false, assigne: false, peutVoir: false, peutGerer: false };
   const { data: coClient } = await db.from("cabinet_dossier_clients").select("dossier_id").eq("dossier_id", dossierId).eq("client_discord_id", user.discord_id).maybeSingle();

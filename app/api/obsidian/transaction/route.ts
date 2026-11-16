@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { sendDiscordAlert, ARMURERIE_CATEGORIES } from "@/lib/discordAlert";
@@ -12,7 +13,7 @@ export async function POST(req: Request) {
 
     const b = await req.json();
     const vente = b.type === "entrée" || b.type === "entree";
-    const who = String(b.created_by || (user as any)?.nom_perso || (user as any)?.discord_name || "");
+    const who = String(b.created_by || (user as Row)?.nom_perso || (user as Row)?.discord_name || "");
     const quantite = Math.floor(Number(b.quantite) || 0);
     const montant = Number(b.montant) || 0;
     const motif = String(b.motif || "").trim() || `${vente ? "Vente" : "Achat"} ${quantite} x ${b.produit_nom}`;
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
       p_type_argent: ["propre", "sale", "mixte"].includes(b.type_argent) ? b.type_argent : "propre",
       p_motif: motif,
       p_user: who,
-      p_user_id: String((user as any)?.discord_id || ""),
+      p_user_id: String((user as Row)?.discord_id || ""),
     });
     if (dbError) {
       if (/Stock insuffisant/i.test(dbError.message)) {
@@ -36,8 +37,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: dbError.message }, { status: 400 });
     }
 
-    const stock = (data as any)?.stock;
-    const tx = (data as any)?.transaction;
+    const stock = (data as Row)?.stock;
+    const tx = (data as Row)?.transaction;
     if (stock) {
       const seuil = Number(stock.seuil_alerte) || 0;
       const bas = seuil > 0 && Number(stock.quantite) <= seuil;
@@ -63,13 +64,13 @@ export async function DELETE(req: Request) {
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
     const { id } = await req.json();
     if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
-    const who = String((user as any)?.nom_perso || (user as any)?.discord_name || "");
+    const who = String((user as Row)?.nom_perso || (user as Row)?.discord_name || "");
     const { data: old } = await supabaseAdmin.from("cahier_transactions").select("type,montant,produit_nom,quantite").eq("id", id).maybeSingle();
     const { data, error: dbError } = await supabaseAdmin.rpc("obsidian_transaction_annuler", { p_id: id, p_user: who });
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     if (old) await logAudit(supabaseAdmin, who, "Transaction annulée", `${old.quantite} x ${old.produit_nom}`, `${old.type} ${money(old.montant)}`);
     if (old) await postAlert("compta", `↩️ Transaction annulée - ${money(old.montant)}`, `${old.type === "entrée" ? "Vente" : "Achat"} de ${old.quantite} x ${old.produit_nom}\nPar ${who} · stock et compta remis à jour`, RED);
-    return NextResponse.json({ stock: (data as any)?.stock || null });
+    return NextResponse.json({ stock: (data as Row)?.stock || null });
   } catch (e: unknown) {
     return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });
   }

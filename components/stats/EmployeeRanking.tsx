@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import { money } from "@/lib/money";
 
@@ -12,8 +13,8 @@ const PERIODS = [{ k: "week", label: "Semaine", days: 7 }, { k: "all", label: "T
 
 // Classement par employé : net des actions illégales, arrestations, amendes.
 export function EmployeeRanking() {
-  const [actions, setActions] = useState<any[]>([]);
-  const [arrests, setArrests] = useState<any[]>([]);
+  const [actions, setActions] = useState<Row[]>([]);
+  const [arrests, setArrests] = useState<Row[]>([]);
   const [period, setPeriod] = useState("week");
 
   useRealtimeTable(["actions_illegales", "arrestations"], load);

@@ -10,7 +10,7 @@ export type Ligne = {
   commission_pct?: number;              // % de commission pour cet employé sur cette ligne
 };
 
-export function nettoyerLignes(brutes: any): Ligne[] {
+export function nettoyerLignes(brutes: Row): Ligne[] {
   return (Array.isArray(brutes) ? brutes : [])
     .map((l: Row) => ({
       description: String(l?.description || "").trim().slice(0, 200),

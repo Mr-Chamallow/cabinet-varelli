@@ -1,5 +1,6 @@
 "use client";
 
+import type { Row } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
@@ -28,7 +29,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => { openRef.current = open; }, [open]);
   useEffect(() => { setOpen(false); }, [pathname]);
   useEffect(() => installGestures({ openMenu: () => setOpen(true), closeMenu: () => setOpen(false), isOpen: () => openRef.current }), []);
-  const poleColor = roleStyle((user as any)?.role).color;
+  const poleColor = roleStyle((user as Row)?.role).color;
 
   if (isLogin) {
     // Pas de sidebar sur /login : pleine largeur, sans le décalage habituel.
@@ -41,7 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar open={open} onNavigate={() => setOpen(false)} />
       <div className={`sidebar-overlay${open ? " open" : ""}`} onClick={() => setOpen(false)} />
 
-      <main className="main-content" style={{ display: "flex", flexDirection: "column", ["--pole" as any]: poleColor }}>
+      <main className="main-content" style={{ display: "flex", flexDirection: "column", ["--pole" as string]: poleColor }}>
         <div className="mobile-topbar">
           <button className="mobile-topbar-btn" onClick={() => setOpen(o => !o)} aria-label="Menu">☰</button>
           <span className="mobile-topbar-title">Cabinet Varelli & Associés</span>

@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import type { UserLike } from "@/lib/types";
 import { hasPermission, hasWriteAccess, estAdminUser } from "@/lib/auth";
 
@@ -12,7 +13,7 @@ const roleDe = (user: UserLike): string => user?.site_role || user?.role || "";
 const PERMS_STAFF_CABINET = ["avocat", "cabinet_dossiers", "cabinet_rdv", "cabinet_compta", "cabinet_tarifs", "cabinet_presentation", "cabinet_organigramme", "cabinet_facturation", "cabinet_attribution", "cabinet_direction"];
 export function estStaffUser(user: UserLike): boolean {
   if (!user) return false;
-  return PERMS_STAFF_CABINET.some(p => hasWriteAccess({ id: user.discord_id, nom: user.discord_name, role: roleDe(user), permissions: user.permissions || [] } as any, p));
+  return PERMS_STAFF_CABINET.some(p => hasWriteAccess({ id: user.discord_id, nom: user.discord_name, role: roleDe(user), permissions: user.permissions || [] } as UserLike, p));
 }
 
 export function estSecretaireUser(user: UserLike): boolean {
@@ -27,6 +28,6 @@ export const roleDeUser = (user: UserLike): string => roleDe(user);
 // Patron = permission admin (table roles)
 export const estPatronUser = (user: UserLike): boolean => estAdminUser(user);
 // Bureau = accès compta en écriture (table roles)
-export const estBureauUser = (user: UserLike): boolean => hasWriteAccess({ id: user?.discord_id, nom: user?.discord_name, role: roleDe(user), permissions: user?.permissions || [] } as any, "cabinet_compta");
+export const estBureauUser = (user: UserLike): boolean => hasWriteAccess({ id: user?.discord_id, nom: user?.discord_name, role: roleDe(user), permissions: user?.permissions || [] } as UserLike, "cabinet_compta");
 // Permissions techniques larges : la vraie règle est le rôle (estBureauUser), contrôlé juste après
 export const PERMS_BUREAU = ["avocat", "cabinet_compta", "cabinet_dossiers", "cabinet_rdv", "cabinet_attribution", "cabinet_facturation", "cabinet_depenses", "cabinet_commissions", "cabinet_bilan", "cabinet_direction", "cabinet_journal"];

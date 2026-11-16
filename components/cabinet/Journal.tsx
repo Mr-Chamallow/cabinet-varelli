@@ -1,9 +1,10 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 // Journal d'activité du cabinet (direction)
 export default function Journal() {
-  const [rows, setRows] = useState<any[] | null>(null);
+  const [rows, setRows] = useState<Row[] | null>(null);
   const [erreur, setErreur] = useState("");
   useEffect(() => {
     fetch("/api/cabinet/journal").then(r => r.json()).then(d => d.error ? setErreur(d.error) : setRows(d.rows));

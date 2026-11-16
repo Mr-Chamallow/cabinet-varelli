@@ -28,7 +28,7 @@ export async function calculerBilan(db: Db, depuis: string, jusque: string) {
 }
 
 // Résumé texte pour Discord (sans emoji, sans tiret cadratin)
-export function resumeBilan(b: any, libelle: string) {
+export function resumeBilan(b: Row, libelle: string) {
   return [
     `**Bilan ${libelle}**`,
     `Factures émises : ${b.factures.emises} (${montant(b.factures.montantEmis)})`,

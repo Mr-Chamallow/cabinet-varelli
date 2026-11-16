@@ -1,8 +1,9 @@
 "use client";
 
+import type { Row } from "@/lib/types";
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { AppUser, hasPermission } from "@/lib/auth";
+import { hasPermission, type AppUser } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { getPreviewRole, PREVIEW_ROLE_EVENT } from "@/lib/previewRole";
 
@@ -25,7 +26,7 @@ export function useCurrentUser(): {
     return () => window.removeEventListener(PREVIEW_ROLE_EVENT, handler);
   }, []);
 
-  const s = session?.user as any;
+  const s = session?.user as Row;
 
   const discordId = s?.discord_id;
   const discordName = s?.nom_perso || s?.discord_name;
@@ -63,7 +64,7 @@ export function useCurrentUser(): {
   useEffect(() => {
     if (!previewRole || !supabase) { setPreviewPerms(null); return; }
     let cancelled = false;
-    supabase.from("roles").select("permissions").eq("nom", previewRole).maybeSingle().then(({ data }: any) => {
+    supabase.from("roles").select("permissions").eq("nom", previewRole).maybeSingle().then(({ data }: Row) => {
       if (!cancelled) setPreviewPerms(data?.permissions ?? []);
     });
     return () => { cancelled = true; };

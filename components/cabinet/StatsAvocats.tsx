@@ -1,11 +1,12 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
 
 // Statistiques par avocat : filtre mois ou tout
 export default function StatsAvocats() {
   const [mois, setMois] = useState("all");
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [erreur, setErreur] = useState("");
 
   useEffect(() => {

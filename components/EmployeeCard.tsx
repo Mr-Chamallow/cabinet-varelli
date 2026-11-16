@@ -86,7 +86,7 @@ export function EmployeeCard({ e, flippable = true, onZoom, onOpen, strike = fal
   return (
     <div className={`idc-wrap${strike ? " idc-strike" : ""}`}>
       <div className="idc-scaler" ref={wrap} style={{ height: h, cursor: onOpen ? "pointer" : undefined }} onMouseMove={move} onMouseLeave={leave} onClick={onOpen ? (ev) => { if (!(ev.target as HTMLElement).closest("button")) onOpen(); } : undefined} onTouchStart={ev => { sx.current = ev.touches[0].clientX; }} onTouchEnd={ev => { if (sx.current !== null && flippable && Math.abs(ev.changedTouches[0].clientX - sx.current) > 60) setBack(b => !b); sx.current = null; }}>
-        <div className="idc-tilt" ref={tilt} style={{ transform: `scale(${scale})`, ["--c" as any]: p.color, ["--c2" as any]: p.color2 }}>
+        <div className="idc-tilt" ref={tilt} style={{ transform: `scale(${scale})`, ["--c" as string]: p.color, ["--c2" as string]: p.color2 }}>
           <div className={`idc-flip${back ? " back" : ""}`}>
             {/* RECTO */}
             <div className={`idc idc-f-${p.finish}`}>

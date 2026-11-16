@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -10,7 +11,7 @@ export default function ListeDossiers() {
   const pathname = usePathname();
   const { user } = useCurrentUser();
   const staff = estStaffUser(user);
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [recherche, setRecherche] = useState("");
 
   const charger = () => fetch("/api/cabinet/dossiers").then(r => r.json()).then(d => setRows(d.rows || [])).catch(() => {});
@@ -32,7 +33,7 @@ export default function ListeDossiers() {
   const actifs = filtres.filter(d => d.statut !== "archive");
   const archives = filtres.filter(d => d.statut === "archive");
 
-  const groupe = (titre: string, liste: any[]) => (
+  const groupe = (titre: string, liste: Row[]) => (
     <div style={{ marginBottom: "1.2rem" }}>
       <div style={{ fontFamily: "'Cinzel', serif", color: "var(--gold)", fontSize: "0.8rem", marginBottom: "0.4rem", textTransform: "uppercase" }}>{titre}</div>
       {liste.length === 0 && <div style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>{recherche ? "Aucun résultat" : "Aucun"}</div>}

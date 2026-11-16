@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -11,8 +12,8 @@ export function usePersonnes() {
     if (!supabase) return; let off = false;
     Promise.all([lire("bdd_personnes", { select: "id,nom,prenom" }), lire("obsidian_fiches", { select: "id,nom,type" })]).then(([p, f]) => {
       if (off) return; const seen = new Set<string>(); const out: { nom: string; source: string; href: string }[] = [];
-      (p.data || []).forEach((x: any) => { const n = `${x.prenom || ""} ${x.nom || ""}`.trim(); if (n && !seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); out.push({ nom: n, source: "Base de données", href: `/base-de-donnees?personne=${x.id}` }); } });
-      (f.data || []).forEach((x: any) => { const n = (x.nom || "").trim(); if (n && !seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); out.push({ nom: n, source: "Fiches", href: `/obsidian/fiches?fiche=${x.id}` }); } });
+      (p.data || []).forEach((x: Row) => { const n = `${x.prenom || ""} ${x.nom || ""}`.trim(); if (n && !seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); out.push({ nom: n, source: "Base de données", href: `/base-de-donnees?personne=${x.id}` }); } });
+      (f.data || []).forEach((x: Row) => { const n = (x.nom || "").trim(); if (n && !seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); out.push({ nom: n, source: "Fiches", href: `/obsidian/fiches?fiche=${x.id}` }); } });
       out.sort((a, b) => a.nom.localeCompare(b.nom)); setList(out);
     });
     return () => { off = true; };

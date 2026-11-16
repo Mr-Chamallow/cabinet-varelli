@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 // Présentation du cabinet, mise en page éditoriale.
@@ -26,7 +27,7 @@ export default function CabinetPresentation({ canWrite }: { canWrite: boolean })
 
   useEffect(() => {
     fetch("/api/cabinet/cabinet_pages").then(r => r.json()).then(d => {
-      const p = (d.rows || []).find((x: any) => x.cle === "presentation");
+      const p = (d.rows || []).find((x: Row) => x.cle === "presentation");
       setTexte(p?.contenu || "");
     });
   }, []);

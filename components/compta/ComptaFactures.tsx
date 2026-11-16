@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
@@ -12,11 +13,11 @@ import { dansJours } from "@/lib/dates";
 export default function ComptaFactures() {
   const { user } = useCurrentUser();
   const direction = !!user && hasPermission(user, "cabinet_attribution");
-  const [factures, setFactures] = useState<any[]>([]);
-  const [totaux, setTotaux] = useState<any>({ encaisse: 0, attente: 0, retard: 0 });
-  const [dossiers, setDossiers] = useState<any[]>([]);
-  const [tarifs, setTarifs] = useState<any[]>([]);
-  const [staff, setStaff] = useState<any[]>([]);
+  const [factures, setFactures] = useState<Row[]>([]);
+  const [totaux, setTotaux] = useState<Row>({ encaisse: 0, attente: 0, retard: 0 });
+  const [dossiers, setDossiers] = useState<Row[]>([]);
+  const [tarifs, setTarifs] = useState<Row[]>([]);
+  const [staff, setStaff] = useState<Row[]>([]);
   const [erreur, setErreur] = useState("");
   const [filtre, setFiltre] = useState("tous");
   const [dossierId, setDossierId] = useState("");
@@ -27,7 +28,7 @@ export default function ComptaFactures() {
   const [envoi, setEnvoi] = useState(false);
   const [encaissement, setEncaissement] = useState<{ id: string; montant: string; mode: string } | null>(null);
   const [avoir, setAvoir] = useState<{ id: string; motif: string } | null>(null);
-  const [historique, setHistorique] = useState<Record<string, any>>({});
+  const [historique, setHistorique] = useState<Row>({});
   const [du, setDu] = useState(() => new Date(Date.now() - 6 * 86400_000).toISOString().slice(0, 10));
   const [au, setAu] = useState(() => new Date().toISOString().slice(0, 10));
 
@@ -41,13 +42,13 @@ export default function ComptaFactures() {
     const pre = new URLSearchParams(window.location.search).get("dossier");
     if (pre) setDossierId(pre);
     charger();
-    fetch("/api/cabinet/dossiers").then(r => r.json()).then(d => setDossiers((d.rows || []).filter((x: any) => x.statut !== "archive")));
+    fetch("/api/cabinet/dossiers").then(r => r.json()).then(d => setDossiers((d.rows || []).filter((x: Row) => x.statut !== "archive")));
     fetch("/api/cabinet/cabinet_tarifs").then(r => r.json()).then(d => setTarifs(d.rows || []));
     fetch("/api/cabinet/staff").then(r => r.json()).then(d => setStaff(d.rows || []));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const action = async (id: string, corps: any) => {
+  const action = async (id: string, corps: Row) => {
     setErreur("");
     const r = await fetch(`/api/cabinet/factures/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
     const d = await r.json();
@@ -101,7 +102,7 @@ export default function ComptaFactures() {
         <div className="form-group"><label>Dossier</label>
           <select value={dossierId} onChange={e => setDossierId(e.target.value)}>
             <option value="">Choisir un dossier</option>
-            {dossiers.map((d: any) => <option key={d.id} value={d.id}>{d.titre} ({d.client_nom || "client"})</option>)}
+            {dossiers.map((d: Row) => <option key={d.id} value={d.id}>{d.titre} ({d.client_nom || "client"})</option>)}
           </select>
         </div>
         <LignesEditor lignes={lignes} setLignes={setLignes} staff={staff} tarifs={tarifs} />
@@ -128,7 +129,7 @@ export default function ComptaFactures() {
         const st = STATUTS[f.statut] || { label: f.statut, color: "#999" };
         const paye = Math.round(Number(f.montant_paye) || 0);
         const reste = Math.round(Number(f.montant) || 0) - paye;
-        const dossierLie = dossiers.find((d: any) => d.id === f.dossier_id);
+        const dossierLie = dossiers.find((d: Row) => d.id === f.dossier_id);
         const h = historique[f.id];
         return (
           <div key={f.id} className="cab-card" style={{ borderLeft: `3px solid ${st.color}` }}>
@@ -177,9 +178,9 @@ export default function ComptaFactures() {
               <div style={{ marginTop: "0.7rem", fontSize: "0.8rem" }}>
                 <div className="cab-muted" style={{ marginBottom: "0.3rem" }}>Paiements</div>
                 {(h.paiements || []).length === 0 && <div className="cab-muted">Aucun paiement.</div>}
-                {(h.paiements || []).map((p: any) => <div key={p.id}>{dateFr(p.created_at)} · {montant(Number(p.montant))} · {p.mode} · {p.auteur_nom || ""}</div>)}
+                {(h.paiements || []).map((p: Row) => <div key={p.id}>{dateFr(p.created_at)} · {montant(Number(p.montant))} · {p.mode} · {p.auteur_nom || ""}</div>)}
                 <div className="cab-muted" style={{ margin: "0.5rem 0 0.3rem" }}>Historique</div>
-                {(h.historique || []).map((x: any) => <div key={x.id}>{dateFr(x.created_at)} · {x.action} · {x.details || ""} · {x.auteur_nom || ""}</div>)}
+                {(h.historique || []).map((x: Row) => <div key={x.id}>{dateFr(x.created_at)} · {x.action} · {x.details || ""} · {x.auteur_nom || ""}</div>)}
               </div>
             )}
           </div>

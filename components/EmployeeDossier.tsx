@@ -1,4 +1,6 @@
 "use client";
+import type { ReactNode } from "react";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import { money } from "@/lib/money";
 import { roleRP } from "@/lib/rolesRP";
@@ -11,10 +13,10 @@ import { roleStyle, roleLabel, genderize, matricule, type CardEmploye } from "@/
 // Dossier du personnel : chemise kraft, polaroïd, tampon, texte à la machine (même style que les fiches).
 export function EmployeeDossier({ e }: { e: CardEmploye }) {
   const p = roleStyle(e.role);
-  const [arr, setArr] = useState<any[]>([]);
+  const [arr, setArr] = useState<Row[]>([]);
   useEffect(() => { if (!supabase) return; lire("arrestations", { select: "id,created_at,amende,argent_perdu,notes,membre", eq: [["membre", e.nom]], order: [["created_at", false]], limit: 12 }).then(({ data }) => setArr(data || [])); }, [e.nom]);
   const since = e.created_at ? new Date(e.created_at).toLocaleDateString("fr-FR") : " - ";
-  const rows: [string, any][] = [["Poste", roleLabel(e.role, e.genre)], ["Surnom", roleRP(e.role) ? `« ${roleRP(e.role)!.surnom} »${roleRP(e.role)!.sigle ? " (" + roleRP(e.role)!.sigle + ")" : ""}` : ""], ["Mission", roleRP(e.role)?.fonction], ["Service", p.nom], ["Fonction", genderize(p.titre, e.genre)], ["Habilitation", `${p.hab} / 5 - niveau ${p.niveau}`], ["Matricule", matricule(e.id)], ["Entrée", since], ["Téléphone", e.telephone], ["Email", e.email], ["RIB", e.rib]];
+  const rows: [string, ReactNode][] = [["Poste", roleLabel(e.role, e.genre)], ["Surnom", roleRP(e.role) ? `« ${roleRP(e.role)!.surnom} »${roleRP(e.role)!.sigle ? " (" + roleRP(e.role)!.sigle + ")" : ""}` : ""], ["Mission", roleRP(e.role)?.fonction], ["Service", p.nom], ["Fonction", genderize(p.titre, e.genre)], ["Habilitation", `${p.hab} / 5 - niveau ${p.niveau}`], ["Matricule", matricule(e.id)], ["Entrée", since], ["Téléphone", e.telephone], ["Email", e.email], ["RIB", e.rib]];
   return (
     <div className="fd">
       <div className="fd-tab">PERSONNEL N° {matricule(e.id)}</div>

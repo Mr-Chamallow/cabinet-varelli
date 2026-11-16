@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
@@ -115,7 +116,7 @@ export default function CommandPalette() {
     const like = `%${q}%`;
     const ql = q.toLowerCase();
 
-    const queries: any[] = [];
+    const queries: Row[] = [];
     const sources: string[] = [];
 
     if (supabase && hasPermission(user, "obsidian_fiches")) {
@@ -140,10 +141,10 @@ export default function CommandPalette() {
     responses.forEach((res, i) => {
       const type = sources[i];
       const data = res.data || [];
-      if (type === "client") r.push(...data.map((f: any) => ({ type: "client" as const, id: f.id, title: f.nom, subtitle: f.organisation || "Fiche", href: "/obsidian/fiches", icon: "🗂️" })));
-      if (type === "dossier") r.push(...data.map((c: any) => ({ type: "dossier" as const, id: c.id, title: c.titre, subtitle: c.type, href: "/obsidian/contrats", icon: "📜" })));
-      if (type === "stock") r.push(...data.map((s: any) => ({ type: "stock" as const, id: s.id, title: s.nom, subtitle: s.categorie || "Stock", href: "/obsidian/stocks", icon: "📦" })));
-      if (type === "employe") r.push(...data.map((e: any) => ({ type: "employe" as const, id: e.id, title: e.nom, subtitle: e.poste || "Employé", href: "/obsidian/employes", icon: "🧑‍💼" })));
+      if (type === "client") r.push(...data.map((f: Row) => ({ type: "client" as const, id: f.id, title: f.nom, subtitle: f.organisation || "Fiche", href: "/obsidian/fiches", icon: "🗂️" })));
+      if (type === "dossier") r.push(...data.map((c: Row) => ({ type: "dossier" as const, id: c.id, title: c.titre, subtitle: c.type, href: "/obsidian/contrats", icon: "📜" })));
+      if (type === "stock") r.push(...data.map((s: Row) => ({ type: "stock" as const, id: s.id, title: s.nom, subtitle: s.categorie || "Stock", href: "/obsidian/stocks", icon: "📦" })));
+      if (type === "employe") r.push(...data.map((e: Row) => ({ type: "employe" as const, id: e.id, title: e.nom, subtitle: e.poste || "Employé", href: "/obsidian/employes", icon: "🧑‍💼" })));
     });
 
     // Code pénal : recherche locale (pas de table, article statique) - seulement si accès

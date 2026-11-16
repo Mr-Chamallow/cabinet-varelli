@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { money } from "@/lib/money";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
@@ -34,7 +35,7 @@ export async function DELETE(req: Request) {
     const { data: gone } = await supabaseAdmin.from("obsidian_comptabilite").select("type,montant,motif,categorie").eq("id", id).maybeSingle();
     const { error: dbError } = await supabaseAdmin.from("obsidian_comptabilite").delete().eq("id", id);
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
-    if (gone) await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Opération compta supprimée", gone.motif || gone.categorie, `${gone.type} ${money(gone.montant)}`);
+    if (gone) await logAudit(supabaseAdmin, ((user as Row)?.nom_perso || (user as Row)?.discord_name), "Opération compta supprimée", gone.motif || gone.categorie, `${gone.type} ${money(gone.montant)}`);
     return NextResponse.json({ ok: true });
   } catch (e: unknown) {
     return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });

@@ -1,3 +1,6 @@
+import type { UserLike } from "@/lib/types";
+import { appUser } from "@/lib/cabinetServer";
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { hasWriteAccess } from "@/lib/auth";
@@ -7,10 +10,10 @@ import { postAlert, logAudit, usd, GREEN, GREY } from "@/lib/alerts";
 // Enregistre un paiement de taxe ET la recette correspondante en compta (source = taxe).
 async function guard() {
   const r = await requirePermission("obsidian_taxes");
-  if (!r.authorized) return { err: NextResponse.json({ error: r.error || "Non autorisé" }, { status: 403 }) } as any;
-  const u: any = r.user;
-  if (!hasWriteAccess({ id: u.discord_id, nom: u.discord_name, role: u.site_role, permissions: u.permissions } as any, "obsidian_taxes"))
-    return { err: NextResponse.json({ error: "Écriture non autorisée" }, { status: 403 }) } as any;
+  if (!r.authorized) return { err: NextResponse.json({ error: r.error || "Non autorisé" }, { status: 403 }) } as Row;
+  const u = r.user as UserLike;
+  if (!hasWriteAccess(appUser(u), "obsidian_taxes"))
+    return { err: NextResponse.json({ error: "Écriture non autorisée" }, { status: 403 }) } as Row;
   return { db: r.supabaseAdmin, who: String(u.nom_perso || u.discord_name || "") };
 }
 
@@ -51,8 +54,8 @@ export async function DELETE(req: Request) {
     const { error } = await g.db.from("obsidian_taxes_paiements").delete().eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     if (old) {
-      await logAudit(g.db, g.who, "Paiement de taxe supprimé", (old as any).obsidian_taxes?.groupe || "", usd(Number(old.montant) || 0));
-      await postAlert("compta", "🗑️ Paiement de taxe supprimé", `**${(old as any).obsidian_taxes?.groupe || "?"}** · ${usd(Number(old.montant) || 0)}`, GREY);
+      await logAudit(g.db, g.who, "Paiement de taxe supprimé", (old as Row).obsidian_taxes?.groupe || "", usd(Number(old.montant) || 0));
+      await postAlert("compta", "🗑️ Paiement de taxe supprimé", `**${(old as Row).obsidian_taxes?.groupe || "?"}** · ${usd(Number(old.montant) || 0)}`, GREY);
     }
     return NextResponse.json({ ok: true });
   } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }

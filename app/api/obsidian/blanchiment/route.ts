@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { weekStartOf } from "@/lib/weekStart";
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
     if (propre > montant) return NextResponse.json({ error: "Le montant reçu ne peut pas dépasser le montant donné" }, { status: 400 });
     taux = Math.round((1 - propre / montant) * 1000) / 10;
     const membre = String(b.membre || "").trim();
-    const by = (user as any)?.nom_perso || (user as any)?.discord_name || b.created_by || "";
+    const by = (user as Row)?.nom_perso || (user as Row)?.discord_name || b.created_by || "";
     const sid = crypto.randomUUID();
     const base = { membre, semaine: weekStartOf(), created_by: by, source: "blanchiment", source_id: sid };
     const motif = `Blanchiment ${groupe ? "via " + groupe + " " : ""}${usd(montant)} ${src}s à ${taux} % -> ${usd(propre)} ${dst}s (frais ${usd(montant - propre)})${b.notes ? " - " + b.notes : ""}`;

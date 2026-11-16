@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -25,7 +26,7 @@ export default function GaragePage(){
   const { user, loading: userLoading } = useCurrentUser();
   const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_garage"))) { window.location.href = "/"; } }, [user, userLoading]);
-  const [veh,setVeh]=useState<any[]>([]);
+  const [veh,setVeh]=useState<Row[]>([]);
   const [loading,setLoading]=useState(true);
   const [showForm,setShowForm]=useState(false);
   const [editId,setEditId]=useState<string|null>(null);
@@ -35,11 +36,11 @@ export default function GaragePage(){
   const autorises=vehAutorises();
   const ref=useReferentiel();
   const [emps,setEmps]=useState<string[]>([]);
-  useEffect(()=>{lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }).then(({data})=>setEmps((data||[]).filter((e:any)=>e.actif!==false).map((e:any)=>e.nom)));},[]);
+  useEffect(()=>{lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }).then(({data})=>setEmps((data||[]).filter((e: Row)=>e.actif!==false).map((e: Row)=>e.nom)));},[]);
   const [filterStatut,setFilterStatut]=useState("");
   async function load(){if(!supabase){setLoading(false);return;}const{data}=await lire("obsidian_garage", { order: [["statut", true], ["modele", true]] });setVeh(data||[]);setLoading(false);}
   useEffect(()=>{load();},[]);
-  async function save(){if(!supabase||!form.modele||!form.plaque)return;setSaving(true);const {usage,...base}=form as any;const prevUsage=(veh.find(x=>x.id===editId) as any)?.usage||"Standard";const payload:any=(usage||"Standard")!==(editId?prevUsage:"Standard")?{...base,usage}:base;if(editId){const{data,error}=await dbw.update("obsidian_garage", editId, payload);if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>v.map(x=>x.id===editId?data:x));showToast("Mis à jour");}else{const{data,error}=await dbw.insert("obsidian_garage", {...payload,created_by:user?.nom||""});if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>[...v,data]);showToast("Ajouté");}setShowForm(false);setEditId(null);setForm({...EMPTY});setSaving(false);}
+  async function save(){if(!supabase||!form.modele||!form.plaque)return;setSaving(true);const {usage,...base}=form as Row;const prevUsage=(veh.find(x=>x.id===editId) as Row)?.usage||"Standard";const payload: Row=(usage||"Standard")!==(editId?prevUsage:"Standard")?{...base,usage}:base;if(editId){const{data,error}=await dbw.update("obsidian_garage", editId, payload);if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>v.map(x=>x.id===editId?data:x));showToast("Mis à jour");}else{const{data,error}=await dbw.insert("obsidian_garage", {...payload,created_by:user?.nom||""});if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setVeh(v=>[...v,data]);showToast("Ajouté");}setShowForm(false);setEditId(null);setForm({...EMPTY});setSaving(false);}
   async function changeStatut(id:string,statut:string){if(!supabase)return;await dbw.update("obsidian_garage", id, {statut});setVeh(v=>v.map(x=>x.id===id?{...x,statut}:x));}
   async function del(id:string){if(!supabase)return;await dbw.remove("obsidian_garage", id);setVeh(v=>v.filter(x=>x.id!==id));showToast("Supprimé");}
   const [qS,setQS]=useState("");

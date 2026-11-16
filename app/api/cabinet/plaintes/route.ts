@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche } from "@/lib/cabinetServer";
@@ -9,7 +10,7 @@ export async function GET() {
   try {
     const r = await requireAnyPermission(["cabinet_dossiers", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     if (!estStaff(user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const direction = estDirection(user);
     let q = r.supabaseAdmin.from("cabinet_plaintes").select("*").order("created_at", { ascending: false }).limit(200);
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
   try {
     const r = await requireAnyPermission(["cabinet_dossiers", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     if (!estStaff(user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const b = await req.json();
     const sujet = String(b.sujet || "").trim().slice(0, 150);

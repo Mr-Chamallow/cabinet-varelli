@@ -1,5 +1,6 @@
 'use client';
 
+import type { Row } from "@/lib/types";
 import { useEffect, useRef, useState, CSSProperties, ClipboardEvent as ReactClipboardEvent } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -636,12 +637,12 @@ export default function MapCanvas({
     ];
     L.imageOverlay(CAYO_IMAGE_URL, cayoBounds, { opacity: 1 }).addTo(map);
 
-    const layerGroup = (L as any).markerClusterGroup({
+    const layerGroup = (L as Row).markerClusterGroup({
       maxClusterRadius: 45,
       disableClusteringAtZoom: MAX_ZOOM,
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
-      iconCreateFunction: (cluster: any) => {
+      iconCreateFunction: (cluster: Row) => {
         const count = cluster.getChildCount();
         const size = count >= 10 ? 42 : 36;
         return L.divIcon({
@@ -761,10 +762,10 @@ export default function MapCanvas({
     const defaultChecklist = typeLabel ? defaultChecklistForCategory(typeLabel) : [];
 
     const localId = `local-${Date.now()}`;
-    const localPoint: CartePoint = { id: localId, x, y, category: defaultCategory, title, icon_url: iconUrl ?? null, drogue_liee: drogueLiee ?? null } as any;
+    const localPoint: CartePoint = { id: localId, x, y, category: defaultCategory, title, icon_url: iconUrl ?? null, drogue_liee: drogueLiee ?? null } as CartePoint;
     setPoints((p) => [...p, localPoint]);
     try {
-      const saved = await createPoint({ x, y, category: defaultCategory, title, icon_url: iconUrl ?? null, drogue_liee: drogueLiee ?? null } as any);
+      const saved = await createPoint({ x, y, category: defaultCategory, title, icon_url: iconUrl ?? null, drogue_liee: drogueLiee ?? null } as Omit<CartePoint, "id" | "created_at">);
       setPoints((p) => p.map((pt) => (pt.id === localId ? saved : pt)));
       setEditing({
         point: saved,

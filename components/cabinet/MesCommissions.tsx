@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
 import { semaineCourante } from "@/lib/compta";
@@ -9,7 +10,7 @@ const dateFr = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "nu
 // Espace employé : ses commissions de la semaine, son solde et ses versements. Lecture seule.
 export default function MesCommissions() {
   const [semaine, setSemaine] = useState(() => semaineCourante());
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<Row | null>(null);
   const [erreur, setErreur] = useState("");
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export default function MesCommissions() {
             <div className="cab-card"><div className="cab-muted">Comparutions immédiates : votre part (semaine)</div><div className="cab-title" style={{ fontSize: "1.3rem" }}>{montant(data.comparutions_semaine_total)}</div></div>
             <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>Prestations de la semaine</div>
             {data.prestations_semaine.length === 0 && <div className="cab-muted">Aucune prestation soldée cette semaine.</div>}
-            {data.prestations_semaine.map((p: any, i: number) => (
+            {data.prestations_semaine.map((p: Row, i: number) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", flexWrap: "wrap", padding: "0.4rem 0", borderBottom: "1px solid var(--border, #333)", fontSize: "0.88rem" }}>
                 <span>{p.description} <span className="cab-muted">· {p.facture} · {p.client}</span></span>
                 <span>{montant(p.total)} → <b>{montant(p.commission)}</b> ({p.pct}%)</span>
@@ -49,7 +50,7 @@ export default function MesCommissions() {
           <div className="cab-card">
             <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>Mes versements</div>
             {data.versements.length === 0 && <div className="cab-muted">Aucun versement pour le moment.</div>}
-            {data.versements.map((v: any, i: number) => (
+            {data.versements.map((v: Row, i: number) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "0.3rem 0", fontSize: "0.88rem" }}>
                 <span>{dateFr(v.date_versement)} · {v.moyen || "-"}</span>
                 <b>{montant(Number(v.montant))}</b>

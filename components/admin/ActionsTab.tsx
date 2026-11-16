@@ -1,5 +1,6 @@
 "use client";
 
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { apiRequest } from "@/lib/apiRequest";
@@ -50,7 +51,7 @@ export function ActionsTab({ endpoint = "/api/admin/action-types" }: { endpoint?
     if (!nom) return;
     if (types.some(t => t.nom.toLowerCase() === nom.toLowerCase())) { setErr("Cette action existe déjà."); return; }
     const m = UNITS.find(u => u.k === draft.unit)?.m || 60;
-    const t: ActionType = { nom, icon: draft.icon || "🕶️", delaiMin: Math.max(0, Math.round(Number(draft.val) * m)), ordre: types.length + 1, actif: true, portee: draft.portee as any };
+    const t: ActionType = { nom, icon: draft.icon || "🕶️", delaiMin: Math.max(0, Math.round(Number(draft.val) * m)), ordre: types.length + 1, actif: true, portee: draft.portee as "personne" | "groupe" };
     if (await save(t)) { setDraft({ nom: "", icon: "🕶️", val: 0, unit: "h", portee: "personne" }); load(); }
   }
 
@@ -93,7 +94,7 @@ export function ActionsTab({ endpoint = "/api/admin/action-types" }: { endpoint?
                   {UNITS.map(u => <option key={u.k} value={u.k}>{u.label}</option>)}
                 </select>
                 <select value={t.portee || "personne"} style={{ width: 130 }} title="Le délai s'applique par personne ou pour tout le groupe"
-                  onChange={e => { const nt = { ...t, portee: e.target.value as any }; patch(t.nom, { portee: nt.portee }); save(nt); }}>
+                  onChange={e => { const nt = { ...t, portee: e.target.value as "personne" | "groupe" }; patch(t.nom, { portee: nt.portee }); save(nt); }}>
                   <option value="personne">Par personne</option>
                   <option value="groupe">Tout le groupe</option>
                 </select>

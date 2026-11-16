@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -19,14 +20,14 @@ function Inner() {
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_fiches"))) window.location.href = "/"; }, [user, userLoading]);
   const [names, setNames] = useState<string[]>([]);
   const [nom, setNom] = useState("");
-  const [d, setD] = useState<any>(null);
+  const [d, setD] = useState<Row | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
     const p = new URLSearchParams(window.location.search).get("nom"); if (p) setNom(p);
     Promise.all([lire("obsidian_employes", { select: "nom" }), lire("obsidian_fiches", { select: "nom", is: [["deleted_at", null]] }), lire("bdd_personnes", { select: "nom,prenom" })]).then(([e, f, b]) =>
-      setNames([...new Set([...(e.data || []).map((x: any) => x.nom), ...(f.data || []).map((x: any) => x.nom), ...(b.data || []).map((x: any) => `${x.prenom || ""} ${x.nom || ""}`.trim())])].filter(Boolean).sort((a, b) => a.localeCompare(b))));
+      setNames([...new Set([...(e.data || []).map((x: Row) => x.nom), ...(f.data || []).map((x: Row) => x.nom), ...(b.data || []).map((x: Row) => `${x.prenom || ""} ${x.nom || ""}`.trim())])].filter(Boolean).sort((a, b) => a.localeCompare(b))));
   }, []);
 
   async function load(n: string) {
@@ -44,14 +45,14 @@ function Inner() {
       lire("obsidian_garage", { select: "modele,plaque,photo_url", ilike: [["assigne_a", q]] }),
     ]);
     const parts = q.toLowerCase().split(/\s+/);
-    const pers = (bdd.data || []).find((p: any) => parts.every(t => `${p.prenom || ""} ${p.nom || ""}`.toLowerCase().includes(t))) || null;
+    const pers = (bdd.data || []).find((p: Row) => parts.every(t => `${p.prenom || ""} ${p.nom || ""}`.toLowerCase().includes(t))) || null;
     setD({ q, emp: emp.data, fiche: fic.data, pers, actions: act.data || [], arrests: arr.data || [], contrats: ctr.data || [], rdv: rdv.data || [], garage: gar.data || [] });
     setBusy(false);
   }
   useEffect(() => { if (nom) load(nom); /* eslint-disable-next-line */ }, [nom]);
 
   const photo = d?.emp?.photo_url || d?.fiche?.photo_url || d?.pers?.photo_police || null;
-  const net = useMemo(() => (d ? d.actions.reduce((s: number, a: any) => s + (Number(a.montant) || 0), 0) : 0), [d]);
+  const net = useMemo(() => (d ? d.actions.reduce((s: number, a: Row) => s + (Number(a.montant) || 0), 0) : 0), [d]);
 
   async function syncPhoto() {
     if (!supabase || !photo || !d) return;
@@ -79,7 +80,7 @@ function Inner() {
               <div style={{ fontSize: "1.3rem", fontWeight: 800 }}>{d.q}</div>
               <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{d.emp ? `Employé · ${roleLabel(d.emp.role, d.emp.genre)}` : d.fiche ? `Fiche · ${d.fiche.organisation || " - "}` : "Base de données"}</div>
               <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap", fontSize: "0.7rem" }}>
-                {[["Employé", d.emp], ["Fiche", d.fiche], ["Base de données", d.pers]].map(([l, v]: any) => <span key={l} style={{ padding: "2px 8px", borderRadius: 999, border: "1px solid var(--border)", background: v ? "var(--gold-muted)" : "var(--surface)", color: v ? "var(--gold)" : "var(--text-dim)" }}>{v ? "OK" : "✗"} {l}</span>)}
+                {[["Employé", d.emp], ["Fiche", d.fiche], ["Base de données", d.pers]].map(([l, v]) => <span key={l} style={{ padding: "2px 8px", borderRadius: 999, border: "1px solid var(--border)", background: v ? "var(--gold-muted)" : "var(--surface)", color: v ? "var(--gold)" : "var(--text-dim)" }}>{v ? "OK" : "✗"} {l}</span>)}
               </div>
             </div>
             {photo && <button className="btn btn-outline btn-sm" onClick={syncPhoto}>📷 Photo partagée : appliquer partout</button>}
@@ -90,11 +91,11 @@ function Inner() {
             <Kpi label="Véhicules assignés" value={d.garage.length} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "1.25rem" }}>
-            <Panel title="Dernières actions"><DataTable empty="Aucune action." head={["Date", "Action", "Montant"]} rows={d.actions.slice(0, 8).map((a: any) => [new Date(a.created_at).toLocaleDateString("fr-FR"), a.action, <b key="c" style={{ color: Number(a.montant) >= 0 ? "var(--success)" : "var(--danger)" }}>{fmt(Number(a.montant))}</b>])} /></Panel>
-            <Panel title="Arrestations"><DataTable empty="Casier vierge." head={["Date", "Amende", "Perdu"]} rows={d.arrests.slice(0, 8).map((a: any) => [new Date(a.created_at).toLocaleDateString("fr-FR"), fmt(Number(a.amende)), fmt(Number(a.argent_perdu))])} /></Panel>
-            <Panel title="Contrats"><DataTable empty="Aucun contrat." head={["Contrat", "Statut", "Récompense"]} rows={d.contrats.map((c: any) => [c.titre, c.statut, fmt(Number(c.recompense))])} /></Panel>
-            <Panel title="Rendez-vous"><DataTable empty="Aucun RDV." head={["RDV", "Date"]} rows={d.rdv.map((r: any) => [r.titre, `${r.date || ""} ${r.heure || ""}`])} /></Panel>
-            <Panel title="Véhicules"><DataTable empty="Aucun véhicule." head={["Modèle", "Plaque"]} rows={d.garage.map((g: any) => [g.modele, g.plaque])} /></Panel>
+            <Panel title="Dernières actions"><DataTable empty="Aucune action." head={["Date", "Action", "Montant"]} rows={d.actions.slice(0, 8).map((a: Row) => [new Date(a.created_at).toLocaleDateString("fr-FR"), a.action, <b key="c" style={{ color: Number(a.montant) >= 0 ? "var(--success)" : "var(--danger)" }}>{fmt(Number(a.montant))}</b>])} /></Panel>
+            <Panel title="Arrestations"><DataTable empty="Casier vierge." head={["Date", "Amende", "Perdu"]} rows={d.arrests.slice(0, 8).map((a: Row) => [new Date(a.created_at).toLocaleDateString("fr-FR"), fmt(Number(a.amende)), fmt(Number(a.argent_perdu))])} /></Panel>
+            <Panel title="Contrats"><DataTable empty="Aucun contrat." head={["Contrat", "Statut", "Récompense"]} rows={d.contrats.map((c: Row) => [c.titre, c.statut, fmt(Number(c.recompense))])} /></Panel>
+            <Panel title="Rendez-vous"><DataTable empty="Aucun RDV." head={["RDV", "Date"]} rows={d.rdv.map((r: Row) => [r.titre, `${r.date || ""} ${r.heure || ""}`])} /></Panel>
+            <Panel title="Véhicules"><DataTable empty="Aucun véhicule." head={["Modèle", "Plaque"]} rows={d.garage.map((g: Row) => [g.modele, g.plaque])} /></Panel>
             {d.fiche && <Panel title="Fiche"><Link className="btn btn-outline btn-sm" href="/obsidian/fiches">Ouvrir dans Fiches {'->'}</Link></Panel>}
           </div>
         </>}

@@ -1,3 +1,6 @@
+import type { UserLike } from "@/lib/types";
+import { appUser } from "@/lib/cabinetServer";
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { hasPermission } from "@/lib/auth";
@@ -11,8 +14,8 @@ export async function GET(req: Request) {
     if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
     const { data: d } = await supabaseAdmin.from("obsidian_dons").select("preuve_url,created_by_id").eq("id", id).maybeSingle();
     if (!d?.preuve_url) return NextResponse.json({ error: "Pas de preuve" }, { status: 404 });
-    const u: any = user;
-    const isPaie = hasPermission({ id: u.discord_id, nom: u.discord_name, role: u.site_role, permissions: u.permissions } as any, "obsidian_paie");
+    const u = user as UserLike;
+    const isPaie = hasPermission(appUser(u), "obsidian_paie");
     if (!isPaie && String(d.created_by_id || "") !== String(u.discord_id || "")) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     // anciens dons : URL publique complete -> on garde le chemin apres le nom du bucket
     const path = String(d.preuve_url).includes("/dons-preuves/") ? String(d.preuve_url).split("/dons-preuves/").pop()! : String(d.preuve_url);

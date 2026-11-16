@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 // Notifie le webhook Discord du module concerné, en gardant un seul message par
 // fiche/contrat/rdv : on le CRÉE une fois (l'ID renvoyé doit être sauvegardé sur la ligne,
 // colonne discord_message_id), puis on l'ÉDITE à chaque modification au lieu d'en reposter un.
@@ -6,7 +7,7 @@ export type NotifyKind = "stocks" | "armurerie" | "rdv" | "contrats" | "fiches";
 export interface NotifyField { name: string; value: string; inline?: boolean }
 export interface NotifyEmbed { title: string; description?: string; fields?: NotifyField[]; color?: number }
 
-async function call(body: any): Promise<{ ok: boolean; messageId?: string }> {
+async function call(body: Row): Promise<{ ok: boolean; messageId?: string }> {
   try {
     const res = await fetch("/api/discord-notify", {
       method: "POST",

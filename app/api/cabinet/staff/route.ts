@@ -1,3 +1,5 @@
+import type { UserLike } from "@/lib/types";
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { CABINET_STAFF_ROLES } from "@/lib/cabinetAcces";
@@ -13,13 +15,13 @@ export async function GET() {
       .select("discord_id,discord_name,nom_perso,site_role")
       .in("site_role", CABINET_STAFF_ROLES);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    const rows: any[] = (data || []).map((u: any) => ({
+    const rows: Row[] = (data || []).map((u: Row) => ({
       discord_id: u.discord_id,
       nom: u.nom_perso || u.discord_name || "?",
       role: u.site_role,
     }));
     // L'utilisateur connecté apparaît toujours, même si son rôle n'est pas encore à jour dans l'annuaire
-    const moi: any = r.user;
+    const moi = r.user as UserLike;
     if (moi?.discord_id && !rows.some(x => x.discord_id === moi.discord_id)) {
       rows.push({ discord_id: moi.discord_id, nom: moi.nom_perso || moi.discord_name || "?", role: moi.site_role || "" });
     }
@@ -28,14 +30,14 @@ export async function GET() {
       r.supabaseAdmin.from("cabinet_grades").select("grade,taux_pct"),
       r.supabaseAdmin.from("cabinet_avocat_grades").select("avocat_discord_id,grade"),
     ]);
-    const tauxParGrade: Record<string, number> = Object.fromEntries((grades || []).map((g: any) => [g.grade, Number(g.taux_pct) || 0]));
-    const gradeChoisi: Record<string, string> = Object.fromEntries((ovr || []).map((g: any) => [g.avocat_discord_id, g.grade]));
+    const tauxParGrade: Record<string, number> = Object.fromEntries((grades || []).map((g: Row) => [g.grade, Number(g.taux_pct) || 0]));
+    const gradeChoisi: Record<string, string> = Object.fromEntries((ovr || []).map((g: Row) => [g.avocat_discord_id, g.grade]));
     for (const x of rows) {
       const grade = gradeChoisi[x.discord_id] || gradeParRole(x.role) || null;
       x.grade = grade;
       x.taux = grade ? (tauxParGrade[grade] ?? 0) : 0;
     }
-    rows.sort((a: any, b: any) => a.nom.localeCompare(b.nom));
+    rows.sort((a: Row, b: Row) => a.nom.localeCompare(b.nom));
     return NextResponse.json({ rows });
   } catch (e: unknown) {
     return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 });

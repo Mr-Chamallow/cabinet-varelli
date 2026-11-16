@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { canRead, canWrite, nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
@@ -23,7 +24,7 @@ export async function GET() {
   try {
     const r = await requireAnyPermission(["avocat", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const db = r.supabaseAdmin;
     const staff = canRead(user, ["cabinet_rdv"]);
 
@@ -35,7 +36,7 @@ export async function GET() {
     let occupes: { date_rdv: string; statut: string }[] = [];
     if (!staff) {
       const { data: occ } = await db.from("cabinet_rdv").select("date_rdv,statut").in("statut", STATUT_OCCUPE);
-      occupes = (occ || []) as any[];
+      occupes = (occ || []) as { date_rdv: string; statut: string }[];
     }
     return NextResponse.json({ rows: data || [], occupes, staff });
   } catch (e: unknown) {
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
   try {
     const r = await requireAnyPermission(["avocat", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const db = r.supabaseAdmin;
     const b = await req.json();
     if (!b.date_rdv) return NextResponse.json({ error: "Choisis un créneau" }, { status: 400 });
@@ -97,7 +98,7 @@ export async function PATCH(req: Request) {
   try {
     const r = await requireAnyPermission(["avocat", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const db = r.supabaseAdmin;
     const b = await req.json();
     if (!b.id || !b.action) return NextResponse.json({ error: "id et action requis" }, { status: 400 });
@@ -109,7 +110,7 @@ export async function PATCH(req: Request) {
     const direction = estDirection(user);
     const assigne = rdv.avocat_discord_id === user.discord_id;
     const employe = canWrite(user, "cabinet_rdv");
-    const maj = async (patch: any) => {
+    const maj = async (patch: Row) => {
       const { data, error } = await db.from("cabinet_rdv").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", b.id).select().single();
       if (error) throw new Error(error.message);
       return data;

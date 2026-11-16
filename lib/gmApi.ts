@@ -1,7 +1,8 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { palierOf } from "@/lib/rolesRP";
 // Écriture des tables du Consortium via l'API serveur (contrôle des permissions + effets de bord).
-export async function gmWrite(table: string, method: "POST" | "PATCH" | "DELETE", body: any): Promise<{ ok: boolean; data?: any; error?: string }> {
+export async function gmWrite(table: string, method: "POST" | "PATCH" | "DELETE", body: Row): Promise<{ ok: boolean; data?: Row; error?: string }> {
   try {
     const res = await fetch(`/api/gm/${table}`, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));

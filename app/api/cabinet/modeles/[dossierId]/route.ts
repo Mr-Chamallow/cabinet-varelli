@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { accesDossier, estStaff } from "@/lib/cabinetAcces";
@@ -12,7 +13,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ dossierId: stri
     const { dossierId } = await ctx.params;
     const r = await requireAnyPermission(["cabinet_dossiers", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     if (!estStaff(user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const db = r.supabaseAdmin;
     const a = await accesDossier(db, user, dossierId);
@@ -25,7 +26,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ dossierId: stri
     const vars = {
       client: dossier?.client_nom || "[Nom du client]",
       dossier: dossier?.titre || "[Dossier]",
-      type: (dossier as any)?.cabinet_dossier_types?.nom || "[Domaine]",
+      type: (dossier as Row)?.cabinet_dossier_types?.nom || "[Domaine]",
       avocat: acces?.avocat_nom || nomAffiche(user),
       cabinet: "Varelli & Associés",
       date: new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),

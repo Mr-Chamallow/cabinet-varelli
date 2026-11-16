@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 export interface ActionType { nom: string; icon: string; delaiMin: number; ordre: number; actif: boolean; portee?: "personne" | "groupe"; }
 
 // Valeurs de secours si la table n'existe pas encore (migration non exécutée).
@@ -15,7 +16,7 @@ export const DEFAULT_ACTION_TYPES: ActionType[] = [
   { nom: "Pêche du chat", icon: "🎣", delaiMin: 1440, ordre: 9, actif: true },
 ];
 
-export function rowToType(r: any): ActionType {
+export function rowToType(r: Row): ActionType {
   return { nom: r.nom, icon: r.icon || "🕶️", delaiMin: Number(r.delai_minutes) || 0, ordre: Number(r.ordre) || 0, actif: r.actif !== false, portee: r.portee === "groupe" ? "groupe" : "personne" };
 }
 

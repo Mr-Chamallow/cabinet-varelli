@@ -1,23 +1,24 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { tarifsGroupes } from "@/lib/tarifs";
 import { useEffect, useState } from "react";
 
 interface Props {
   staff: boolean;
-  onCree: (dossier: any) => void;
+  onCree: (dossier: Row) => void;
 }
 
 // Formulaire d'ouverture d'un dossier (client pour lui-même, employé pour un client)
 export default function FormulaireDossier({ staff, onCree }: Props) {
-  const [types, setTypes] = useState<any[]>([]);
-  const [tarifs, setTarifs] = useState<any[]>([]);
+  const [types, setTypes] = useState<Row[]>([]);
+  const [tarifs, setTarifs] = useState<Row[]>([]);
   const [erreur, setErreur] = useState("");
   const [titre, setTitre] = useState("");
   const [typeId, setTypeId] = useState("");
   const [prestation, setPrestation] = useState("");
   const [recherche, setRecherche] = useState("");
-  const [resultats, setResultats] = useState<any[]>([]);
-  const [client, setClient] = useState<any | null>(null);
+  const [resultats, setResultats] = useState<Row[]>([]);
+  const [client, setClient] = useState<Row | null>(null);
 
   useEffect(() => {
     fetch("/api/cabinet/cabinet_dossier_types").then(r => r.json()).then(d => setTypes(d.rows || []));
@@ -35,7 +36,7 @@ export default function FormulaireDossier({ staff, onCree }: Props) {
 
   const creer = async () => {
     setErreur("");
-    const body: any = { titre, type_id: typeId || null, prestation };
+    const body: Row = { titre, type_id: typeId || null, prestation };
     if (staff) {
       if (!client) return setErreur("Choisis un client (recherche ou ID Discord)");
       body.client_discord_id = client.discord_id;

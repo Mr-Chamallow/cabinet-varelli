@@ -33,7 +33,7 @@ export async function genererFactureGouvernement(db: Db, lundi: string, auteur: 
   if (error) throw new Error(error.message);
   if (!ci?.length) return null;
 
-  const total = ci.reduce((s: number, c: any) => s + (Number(c.montant) || 0), 0);
+  const total = ci.reduce((s: number, c: Row) => s + (Number(c.montant) || 0), 0);
   const numero = await numeroFactureGouv(db, lundi);
   const detail = ci.map((c: Row) => ({
     id: c.id, date: c.date_audience, heure: c.heure, tribunal: c.tribunal, client: c.client_nom,

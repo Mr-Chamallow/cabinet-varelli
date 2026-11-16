@@ -1,4 +1,6 @@
 "use client";
+import type { AppUser } from "@/lib/auth";
+import type { Row } from "@/lib/types";
 import { ReactNode, useEffect } from "react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
@@ -13,7 +15,7 @@ interface Props {
   perms: string[]; // accès si l'utilisateur possède AU MOINS une de ces permissions
   roles?: string[]; // si fourni : accès réservé à ces rôles (remplace perms)
   staff?: boolean; // si vrai : réservé au personnel du cabinet (les clients sont exclus)
-  children: (user: any) => ReactNode;
+  children: (user: AppUser) => ReactNode;
 }
 
 export default function CabinetShell({ title, icon, desc, perms, roles, staff, children }: Props) {

@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire, lireUn } from "@/lib/lire";
 import Link from "next/link";
 import { drogueAutorisee, drogueFamille, PRODUIT_DEFAUT, REVENDIQUE_DEFAUT } from "@/lib/regles";
@@ -20,7 +21,7 @@ function drogueKey(nom:string){
   if(m) return {base:m[1].trim().toLowerCase(),purity:parseInt(m[2],10)};
   return {base:(nom||"").trim().toLowerCase(),purity:0};
 }
-function sortDrogues(list:any[]){
+function sortDrogues(list:Row[]){
   return [...list].sort((a,b)=>{
     const ka=drogueKey(a.nom),kb=drogueKey(b.nom);
     if(ka.base!==kb.base) return ka.base.localeCompare(kb.base,"fr");
@@ -47,21 +48,21 @@ export default function PrixPage() {
   const [prodL,setProdL]=useState<string[]>(PRODUIT_DEFAUT);
   const [revL,setRevL]=useState<string[]>(REVENDIQUE_DEFAUT);
   useEffect(()=>{if(!supabase)return;lireUn("obsidian_settings", { select: "drogues_produites,drogues_revendiquees", eq: [["id","default"]] }).then(({data})=>{if(Array.isArray(data?.drogues_produites))setProdL(data!.drogues_produites);if(Array.isArray(data?.drogues_revendiquees))setRevL(data!.drogues_revendiquees);});},[]);
-  const [drogues,setDrogues]=useState<any[]>([]);
-  const [armes,setArmes]=useState<any[]>([]);
-  const [zones,setZones]=useState<any[]>([]);
+  const [drogues,setDrogues]=useState<Row[]>([]);
+  const [armes,setArmes]=useState<Row[]>([]);
+  const [zones,setZones]=useState<Row[]>([]);
   const [loading,setLoading]=useState(true);
 
   const [editDrogueId,setEditDrogueId]=useState<string|null>(null);
-  const [editDrogueForm,setEditDrogueForm]=useState<any>({});
+  const [editDrogueForm,setEditDrogueForm]=useState<Row>({});
   const [newDrogue,setNewDrogue]=useState({nom:"",emoji:"💊",prix_min:0,prix_max:0,semaines_revend:0});
 
   const [editArmeId,setEditArmeId]=useState<string|null>(null);
-  const [editArmeForm,setEditArmeForm]=useState<any>({});
+  const [editArmeForm,setEditArmeForm]=useState<Row>({});
   const [newArme,setNewArme]=useState({nom:"",prix:0});
 
   const [editZoneId,setEditZoneId]=useState<string|null>(null);
-  const [editZoneForm,setEditZoneForm]=useState<any>({});
+  const [editZoneForm,setEditZoneForm]=useState<Row>({});
   const [newZone,setNewZone]=useState({nom:"",bonus:"",drogue:"",revendique_par:""});
 
   async function load(){
@@ -80,7 +81,7 @@ export default function PrixPage() {
     if(!supabase||!newDrogue.nom)return;
     const{data,error}=await dbw.insert("obsidian_drogues",{...newDrogue,ordre:drogues.length+1});
     if(error){alert("❌ "+error.message);return;}
-    setDrogues(d=>[...d,data as any]);setNewDrogue({nom:"",emoji:"💊",prix_min:0,prix_max:0,semaines_revend:0});showToast("Drogue ajoutée");
+    setDrogues(d=>[...d,data as Row]);setNewDrogue({nom:"",emoji:"💊",prix_min:0,prix_max:0,semaines_revend:0});showToast("Drogue ajoutée");
   }
   async function saveDrogue(id:string){
     if(!supabase)return;
@@ -100,7 +101,7 @@ export default function PrixPage() {
     if(!supabase||!newArme.nom)return;
     const{data,error}=await dbw.insert("obsidian_armes_prix",{...newArme,ordre:armes.length+1});
     if(error){alert("❌ "+error.message);return;}
-    setArmes(a=>[...a,data as any]);setNewArme({nom:"",prix:0});showToast("Arme ajoutée");
+    setArmes(a=>[...a,data as Row]);setNewArme({nom:"",prix:0});showToast("Arme ajoutée");
   }
   async function saveArme(id:string){
     if(!supabase)return;
@@ -120,7 +121,7 @@ export default function PrixPage() {
     if(!supabase||!newZone.nom)return;
     const{data,error}=await dbw.insert("obsidian_zones",{...newZone,ordre:zones.length+1});
     if(error){alert("❌ "+error.message);return;}
-    setZones(z=>[...z,data as any]);setNewZone({nom:"",bonus:"",drogue:"",revendique_par:""});showToast("Zone ajoutée");
+    setZones(z=>[...z,data as Row]);setNewZone({nom:"",bonus:"",drogue:"",revendique_par:""});showToast("Zone ajoutée");
   }
   async function saveZone(id:string){
     if(!supabase)return;
@@ -144,7 +145,7 @@ export default function PrixPage() {
 
       <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem",flexWrap:"wrap"}}>
         {[["drogues","💊 Drogues"],["armes","🔫 Armes"],["accessoires","🔧 Accessoires"],["zones","🗺️ Zones"]].map(([k,l])=>
-          <button key={k} onClick={()=>setTab(k as any)} style={{padding:"0.5rem 1rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.82rem",fontWeight:tab===k?700:400,background:tab===k?"var(--gold-muted)":"var(--surface)",border:`1px solid ${tab===k?"rgba(139,92,246,0.4)":"var(--border)"}`,color:tab===k?"var(--gold)":"var(--text-muted)"}}>{l}</button>
+          <button key={k} onClick={()=>setTab(k as typeof tab)} style={{padding:"0.5rem 1rem",borderRadius:"var(--radius)",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.82rem",fontWeight:tab===k?700:400,background:tab===k?"var(--gold-muted)":"var(--surface)",border:`1px solid ${tab===k?"rgba(139,92,246,0.4)":"var(--border)"}`,color:tab===k?"var(--gold)":"var(--text-muted)"}}>{l}</button>
         )}
       </div>
 
@@ -161,14 +162,14 @@ export default function PrixPage() {
                   {isEdit ? (
                     <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
                       <div style={{display:"flex",gap:"0.4rem"}}>
-                        <input value={editDrogueForm.emoji} onChange={e=>setEditDrogueForm((f:any)=>({...f,emoji:e.target.value}))} style={{width:50}}/>
-                        <input value={editDrogueForm.nom} onChange={e=>setEditDrogueForm((f:any)=>({...f,nom:e.target.value}))} style={{flex:1}}/>
+                        <input value={editDrogueForm.emoji} onChange={e=>setEditDrogueForm((f: Row)=>({...f,emoji:e.target.value}))} style={{width:50}}/>
+                        <input value={editDrogueForm.nom} onChange={e=>setEditDrogueForm((f: Row)=>({...f,nom:e.target.value}))} style={{flex:1}}/>
                       </div>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.4rem"}}>
-                        <input type="number" placeholder="Prix min" value={editDrogueForm.prix_min} onChange={e=>setEditDrogueForm((f:any)=>({...f,prix_min:+e.target.value}))}/>
-                        <input type="number" placeholder="Prix max" value={editDrogueForm.prix_max} onChange={e=>setEditDrogueForm((f:any)=>({...f,prix_max:+e.target.value}))}/>
+                        <input type="number" placeholder="Prix min" value={editDrogueForm.prix_min} onChange={e=>setEditDrogueForm((f: Row)=>({...f,prix_min:+e.target.value}))}/>
+                        <input type="number" placeholder="Prix max" value={editDrogueForm.prix_max} onChange={e=>setEditDrogueForm((f: Row)=>({...f,prix_max:+e.target.value}))}/>
                       </div>
-                      <input type="number" placeholder="Semaines revend." value={editDrogueForm.semaines_revend} onChange={e=>setEditDrogueForm((f:any)=>({...f,semaines_revend:+e.target.value}))}/>
+                      <input type="number" placeholder="Semaines revend." value={editDrogueForm.semaines_revend} onChange={e=>setEditDrogueForm((f: Row)=>({...f,semaines_revend:+e.target.value}))}/>
                       <div style={{display:"flex",gap:"0.4rem"}}>
                         <button className="btn btn-gold btn-sm" onClick={()=>saveDrogue(d.id)} style={{flex:1}}>OK</button>
                         <button className="btn btn-ghost btn-sm" onClick={()=>setEditDrogueId(null)}>✕</button>
@@ -223,8 +224,8 @@ export default function PrixPage() {
                   <div style={{display:"flex",alignItems:"center",gap:"0.75rem"}}>
                   {isEdit ? (
                     <>
-                      <input value={editArmeForm.nom} onChange={e=>setEditArmeForm((f:any)=>({...f,nom:e.target.value}))} style={{flex:1}}/>
-                      <input type="number" value={editArmeForm.prix} onChange={e=>setEditArmeForm((f:any)=>({...f,prix:+e.target.value}))} style={{width:140}}/>
+                      <input value={editArmeForm.nom} onChange={e=>setEditArmeForm((f: Row)=>({...f,nom:e.target.value}))} style={{flex:1}}/>
+                      <input type="number" value={editArmeForm.prix} onChange={e=>setEditArmeForm((f: Row)=>({...f,prix:+e.target.value}))} style={{width:140}}/>
                       <button className="btn btn-gold btn-sm" onClick={()=>saveArme(a.id)}>OK</button>
                       <button className="btn btn-ghost btn-sm" onClick={()=>setEditArmeId(null)}>✕</button>
                     </>
@@ -270,10 +271,10 @@ export default function PrixPage() {
                 <div key={z.id} className="card">
                   {isEdit ? (
                     <div style={{display:"flex",flexDirection:"column",gap:"0.4rem"}}>
-                      <input placeholder="Nom" value={editZoneForm.nom} onChange={e=>setEditZoneForm((f:any)=>({...f,nom:e.target.value}))}/>
-                      <input placeholder="Bonus" value={editZoneForm.bonus} onChange={e=>setEditZoneForm((f:any)=>({...f,bonus:e.target.value}))}/>
-                      <input placeholder="Drogue" value={editZoneForm.drogue} onChange={e=>setEditZoneForm((f:any)=>({...f,drogue:e.target.value}))}/>
-                      <GroupeInput groupes={groupes} placeholder="Revendiquée par" value={editZoneForm.revendique_par||""} onChange={v=>setEditZoneForm((f:any)=>({...f,revendique_par:v}))}/>
+                      <input placeholder="Nom" value={editZoneForm.nom} onChange={e=>setEditZoneForm((f: Row)=>({...f,nom:e.target.value}))}/>
+                      <input placeholder="Bonus" value={editZoneForm.bonus} onChange={e=>setEditZoneForm((f: Row)=>({...f,bonus:e.target.value}))}/>
+                      <input placeholder="Drogue" value={editZoneForm.drogue} onChange={e=>setEditZoneForm((f: Row)=>({...f,drogue:e.target.value}))}/>
+                      <GroupeInput groupes={groupes} placeholder="Revendiquée par" value={editZoneForm.revendique_par||""} onChange={v=>setEditZoneForm((f: Row)=>({...f,revendique_par:v}))}/>
                       <div style={{display:"flex",gap:"0.4rem"}}>
                         <button className="btn btn-gold btn-sm" onClick={()=>saveZone(z.id)} style={{flex:1}}>OK</button>
                         <button className="btn btn-ghost btn-sm" onClick={()=>setEditZoneId(null)}>✕</button>

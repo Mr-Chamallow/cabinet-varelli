@@ -1,6 +1,7 @@
 "use client";
-export const norm = (s: any) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-export const matchQ = (q: string, ...vals: any[]) => { const n = norm(q).trim(); return !n || n.split(/\s+/).every(w => vals.some(v => norm(v).includes(w))); };
+import type { Row } from "@/lib/types";
+export const norm = (s: unknown) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+export const matchQ = (q: string, ...vals: unknown[]) => { const n = norm(q).trim(); return !n || n.split(/\s+/).every(w => vals.some(v => norm(String(v ?? "")).includes(w))); };
 export default function SearchBox({ value, onChange, placeholder = "Rechercher...", style }: { value: string; onChange: (v: string) => void; placeholder?: string; style?: React.CSSProperties }) {
   return (
     <div style={{ position: "relative", maxWidth: 360, flex: "1 1 220px", ...style }}>

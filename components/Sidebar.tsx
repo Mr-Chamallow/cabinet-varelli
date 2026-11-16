@@ -1,5 +1,6 @@
 "use client";
 
+import type { Row } from "@/lib/types";
 import { Fragment, useEffect, useState } from "react";
 
 import Link from "next/link";
@@ -65,7 +66,7 @@ const NAV_SECTIONS = [
 export function Sidebar({ open = false, onNavigate }: SidebarProps) {
   const pathname = usePathname();
   const { user, loading } = useCurrentUser();
-  const [notifs, setNotifs] = useState<any>(null);
+  const [notifs, setNotifs] = useState<Row | null>(null);
   const staffUser = estStaffUser(user);
   const chargerNotifs = () => {
     if (!user) return;
@@ -105,7 +106,7 @@ export function Sidebar({ open = false, onNavigate }: SidebarProps) {
       <nav className="sidebar-nav">
         {NAV_SECTIONS.map(section => {
           // Un lien est visible si l'utilisateur a AU MOINS une de ses permissions (perms) ou sa permission (permission)
-          const visibleItems = section.items.filter((i: any) => (!i.staffOnly || estStaffUser(user)) && (i.ouvert || (i.perms ? i.perms.some((p: string) => hasPermission(user, p)) : hasPermission(user, i.permission))));
+          const visibleItems = section.items.filter((i: Row) => (!i.staffOnly || estStaffUser(user)) && (i.ouvert || (i.perms ? i.perms.some((p: string) => hasPermission(user, p)) : hasPermission(user, i.permission))));
           if (visibleItems.length === 0) return null;
           return (
             <div key={section.label}>

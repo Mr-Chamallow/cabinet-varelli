@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { useTempsReel } from "@/lib/useTempsReel";
 
@@ -19,7 +20,7 @@ const RESULTATS: Record<string, { label: string; color: string }> = {
 // Votes internes : un titre, un motif libre, un vote par employé (modifiable tant que le vote est ouvert).
 // Le vote se clôt dès que la majorité des employés est atteinte. Mise à jour en temps réel.
 export default function VotesCabinet({ direction }: Props) {
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [moiId, setMoiId] = useState("");
   const [employes, setEmployes] = useState(0);
   const [topic, setTopic] = useState<string | null>(null);
@@ -51,7 +52,7 @@ export default function VotesCabinet({ direction }: Props) {
     charger();
   }
 
-  async function action(id: string, corps: any) {
+  async function action(id: string, corps: Row) {
     const r = await fetch(`/api/cabinet/votes/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
     const d = await r.json();
     if (!r.ok) return setErreur(d.error || "Erreur");
@@ -87,7 +88,7 @@ export default function VotesCabinet({ direction }: Props) {
       {rows.length === 0 && <div className="empty-state"><div className="empty-title">Aucun vote</div></div>}
 
       {rows.map(v => {
-        const reponses: any[] = v.cabinet_votes_reponses || [];
+        const reponses: Row[] = v.cabinet_votes_reponses || [];
         const monChoix = reponses.find(x => x.voter_discord_id === moiId)?.choix;
         const ouvert = v.statut === "ouvert";
         const peutGerer = v.auteur_discord_id === moiId || direction;

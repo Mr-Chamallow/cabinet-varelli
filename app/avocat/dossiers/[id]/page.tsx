@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useParams } from "next/navigation";
 import DossierChat from "@/components/cabinet/DossierChat";
 import ModelesDocuments from "@/components/cabinet/ModelesDocuments";
@@ -15,7 +16,7 @@ export default function Page() {
     {estStaffUser(user) && <ModelesDocuments dossierId={id} />}
     <DossierChat
       id={id}
-      moiId={(user as any).discord_id}
+      moiId={(user as Row).discord_id}
       staff={estStaffUser(user)}
       direction={hasPermission(user, "cabinet_attribution")}
       compta={hasPermission(user, "cabinet_facturation")}

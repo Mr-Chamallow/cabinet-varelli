@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import type { Db } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
@@ -46,10 +47,10 @@ export async function POST(req: Request) {
     const statut = STATUTS.includes(b.statut) ? b.statut : "en_attente";
     const heure = String(b.heure || "09:00");
     const avocatNom = nomAffiche(r.user);
-    const avocatId = (r.user as any).discord_id;
+    const avocatId = (r.user as Row).discord_id;
 
     // Pourcentage selon le grade de l'avocat (figé au moment de la saisie)
-    const taux = await tauxAvocat(db, avocatId, avocatNom, [(r.user as any).role, (r.user as any).site_role]);
+    const taux = await tauxAvocat(db, avocatId, avocatNom, [(r.user as Row).role, (r.user as Row).site_role]);
     const montantCI = Math.max(0, Math.round(Number(b.montant) || 0));
     const partAvocat = Math.round((montantCI * taux) / 100);
 
@@ -100,12 +101,12 @@ export async function PATCH(req: Request) {
     if (!id) return NextResponse.json({ error: "Identifiant manquant" }, { status: 400 });
     const b = await req.json();
     const champs = ["date_audience", "heure", "tribunal", "client_nom", "chefs", "juge_proc", "matricules_officiers", "statut", "montant", "notes"];
-    const maj: Record<string, any> = {};
+    const maj: Row = {};
     for (const c of champs) if (c in b) maj[c] = c === "montant" ? Math.max(0, Math.round(Number(b[c]) || 0)) : (b[c] === "" ? null : b[c]);
     // La part est recalculée à chaque modification avec le grade ACTUEL de l'avocat (corrige les parts à 0 %)
     const { data: actuel } = await db.from("cabinet_comparutions").select("avocat_discord_id, avocat_nom, montant").eq("id", id).single();
-    const estMoi = actuel?.avocat_discord_id === (r.user as any).discord_id;
-    const taux = await tauxAvocat(db, actuel?.avocat_discord_id || "", actuel?.avocat_nom || "", estMoi ? [(r.user as any).role, (r.user as any).site_role] : []);
+    const estMoi = actuel?.avocat_discord_id === (r.user as Row).discord_id;
+    const taux = await tauxAvocat(db, actuel?.avocat_discord_id || "", actuel?.avocat_nom || "", estMoi ? [(r.user as Row).role, (r.user as Row).site_role] : []);
     const montantFinal = "montant" in maj ? maj.montant : Number(actuel?.montant) || 0;
     maj.taux_pct = taux;
     maj.part_avocat = Math.round((montantFinal * taux) / 100);

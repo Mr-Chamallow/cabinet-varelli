@@ -1,5 +1,6 @@
 "use client";
 
+import type { Row } from "@/lib/types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { loadRolesFromSupabase, canAccess, estAdminUser } from "@/lib/auth";
@@ -124,7 +125,7 @@ export default function AdminPage() {
   }
   async function syncEmployesNow() {
     const r = await apiRequest("/api/admin/membres", { method: "POST" });
-    setResyncMsg(r.ok ? `👥 Employés synchronisés : ${(r as any).data?.crees ?? 0} créé(s), ${(r as any).data?.lies ?? 0} relié(s).` : `❌ ${r.error}`);
+    setResyncMsg(r.ok ? `👥 Employés synchronisés : ${(r as Row).data?.crees ?? 0} créé(s), ${(r as Row).data?.lies ?? 0} relié(s).` : `❌ ${r.error}`);
     setTimeout(() => setResyncMsg(""), 6000);
   }
 
@@ -238,7 +239,7 @@ export default function AdminPage() {
       return;
     }
     const m: Record<string,string> = {};
-    (data || []).forEach((r: any) => { m[r.cle] = r.valeur; });
+    (data || []).forEach((r: Row) => { m[r.cle] = r.valeur; });
     setSiteSettings(m);
     const g = m["couleur_gold"] && isValidHex(m["couleur_gold"]) ? m["couleur_gold"] : DEFAULT_GOLD;
     setSiteGold(g);
@@ -401,7 +402,7 @@ export default function AdminPage() {
       {/* Tabs */}
       <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1.5rem", flexWrap:"wrap" }}>
         {([["membres","👥 Membres"],["roles","🎭 Rôles & Permissions"],["actions","🕶️ Actions"],["journaux","📋 Journaux"],["cabinet","🏛️ Cabinet Varelli"],["site","⚙️ Site"],["diagnostic","🩺 Diagnostic"]] as [string,string][]).map(([k,l]) => (
-          <button key={k} onClick={() => setActiveTab(k as any)} style={{
+          <button key={k} onClick={() => setActiveTab(k as typeof activeTab)} style={{
             padding:"0.55rem 1.25rem", borderRadius:"var(--radius)", cursor:"pointer",
             fontFamily:"'Inter',sans-serif", fontSize:"0.85rem", fontWeight:activeTab===k?700:400,
             background:activeTab===k?"var(--gold-muted)":"var(--surface)",

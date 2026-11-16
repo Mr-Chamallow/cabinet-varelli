@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { PERMS_BUREAU } from "@/lib/cabinetRoles";
@@ -27,25 +28,25 @@ export async function GET() {
 
     const lignesDossiers = dossiers.data || [];
     const lignesFactures = factures.data || [];
-    const rdvJour = (rdv.data || []).filter((x: any) => jourParis(x.date_rdv) === aujourdHui && x.statut !== "annule");
-    const votesOuverts = (votes.data || []).map((v: any) => {
+    const rdvJour = (rdv.data || []).filter((x: Row) => jourParis(x.date_rdv) === aujourdHui && x.statut !== "annule");
+    const votesOuverts = (votes.data || []).map((v: Row) => {
       const reps = v.cabinet_votes_reponses || [];
-      return { id: v.id, titre: v.titre, pour: reps.filter((x: any) => x.choix === "pour").length, contre: reps.filter((x: any) => x.choix === "contre").length };
+      return { id: v.id, titre: v.titre, pour: reps.filter((x: Row) => x.choix === "pour").length, contre: reps.filter((x: Row) => x.choix === "contre").length };
     });
 
     return NextResponse.json({
       dossiers: {
-        ouvert: lignesDossiers.filter((d: any) => d.statut === "ouvert").length,
-        ferme: lignesDossiers.filter((d: any) => d.statut === "ferme").length,
-        archive: lignesDossiers.filter((d: any) => d.statut === "archive").length,
+        ouvert: lignesDossiers.filter((d: Row) => d.statut === "ouvert").length,
+        ferme: lignesDossiers.filter((d: Row) => d.statut === "ferme").length,
+        archive: lignesDossiers.filter((d: Row) => d.statut === "archive").length,
       },
       rdvJour,
       votesOuverts,
       plaintesOuvertes: plaintes.count || 0,
       factures: {
-        encaisse: lignesFactures.filter((f: any) => f.statut === "payee").reduce((s: number, f: any) => s + Number(f.montant || 0), 0),
-        attente: lignesFactures.filter((f: any) => f.statut === "en_attente").reduce((s: number, f: any) => s + Number(f.montant || 0), 0),
-        retard: lignesFactures.filter((f: any) => f.statut === "en_attente" && f.date_echeance && f.date_echeance < aujourdHui).length,
+        encaisse: lignesFactures.filter((f: Row) => f.statut === "payee").reduce((s: number, f: Row) => s + Number(f.montant || 0), 0),
+        attente: lignesFactures.filter((f: Row) => f.statut === "en_attente").reduce((s: number, f: Row) => s + Number(f.montant || 0), 0),
+        retard: lignesFactures.filter((f: Row) => f.statut === "en_attente" && f.date_echeance && f.date_echeance < aujourdHui).length,
       },
       topics: { votes: topicPour("liste:votes"), plaintes: topicPour("liste:plaintes") },
     });

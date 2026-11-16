@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 // Initiales d'un membre (ex : "Marco Varelli" -> "MV")
@@ -35,7 +36,7 @@ export default function OrganigrammeEquipe({
   limite,
   sansTitre = false,
 }: Props) {
-  const [rows, setRows] = useState<any[] | null>(null);
+  const [rows, setRows] = useState<Row[] | null>(null);
 
   useEffect(() => {
     fetch("/api/cabinet/cabinet_membres").then(r => r.json()).then(d => setRows(d.rows || []));

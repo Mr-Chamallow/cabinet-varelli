@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { prixDepuisTexte } from "@/lib/montant";
 import { tarifsGroupes } from "@/lib/tarifs";
 
@@ -15,9 +16,9 @@ export interface LigneForm { description: string; quantite: string; prix: string
 export const LIGNE_VIDE: LigneForm = { description: "", quantite: "1", prix: "", employe: "", pct: "0" };
 
 // Payload envoyé au serveur à partir des lignes saisies
-export function versPayload(lignes: LigneForm[], staff: any[]) {
+export function versPayload(lignes: LigneForm[], staff: Row[]) {
   return lignes.map(l => {
-    const e = staff.find((s: any) => s.discord_id === l.employe);
+    const e = staff.find((s: Row) => s.discord_id === l.employe);
     return {
       description: l.description, quantite: Number(l.quantite), prix: Number(l.prix),
       employe_discord_id: l.employe || null, employe_nom: e?.nom || null, commission_pct: Number(l.pct) || 0,
@@ -31,10 +32,10 @@ export function totalLignes(lignes: LigneForm[], tva: string) {
 }
 
 // Tableau de saisie : prestation (remplit désignation, prix, commission), employé, commission
-export function LignesEditor({ lignes, setLignes, staff, tarifs }: { lignes: LigneForm[]; setLignes: (f: (ls: LigneForm[]) => LigneForm[]) => void; staff: any[]; tarifs: any[] }) {
+export function LignesEditor({ lignes, setLignes, staff, tarifs }: { lignes: LigneForm[]; setLignes: (f: (ls: LigneForm[]) => LigneForm[]) => void; staff: Row[]; tarifs: Row[] }) {
   const maj = (i: number, c: keyof LigneForm, v: string) => setLignes(ls => ls.map((l, k) => (k === i ? { ...l, [c]: v } : l)));
   const prestation = (i: number, id: string) => {
-    const t = tarifs.find((x: any) => x.id === id);
+    const t = tarifs.find((x: Row) => x.id === id);
     if (!t) return;
     const prix = t.prix_montant != null ? Number(t.prix_montant) : prixDepuisTexte(t.prix);
     setLignes(ls => ls.map((l, k) => (k === i ? { ...l, description: t.nom, prix: prix !== null ? String(prix) : "" } : l)));
@@ -55,11 +56,11 @@ export function LignesEditor({ lignes, setLignes, staff, tarifs }: { lignes: Lig
           <input style={champ} placeholder="Prix $" inputMode="numeric" value={l.prix} onChange={e => maj(i, "prix", e.target.value)} />
           <select style={champ} value={l.employe} onChange={e => {
             // Le % se remplit tout seul selon le grade de l'employé (barème)
-            const emp = staff.find((s: any) => s.discord_id === e.target.value);
+            const emp = staff.find((s: Row) => s.discord_id === e.target.value);
             setLignes(ls => ls.map((x, k) => (k === i ? { ...x, employe: e.target.value, pct: emp?.taux != null ? String(emp.taux) : x.pct } : x)));
           }}>
             <option value="">Réalisé par…</option>
-            {staff.map((s: any) => <option key={s.discord_id} value={s.discord_id}>{s.nom}{s.taux ? ` (${s.taux} %)` : ""}</option>)}
+            {staff.map((s: Row) => <option key={s.discord_id} value={s.discord_id}>{s.nom}{s.taux ? ` (${s.taux} %)` : ""}</option>)}
           </select>
           <input style={champ} placeholder="Comm. %" inputMode="decimal" value={l.pct} onChange={e => maj(i, "pct", e.target.value)} title="Commission de l'employé sur cette ligne (%)" />
           <button className="btn btn-outline btn-sm" onClick={() => retirer(i)} title="Retirer la ligne">✕</button>

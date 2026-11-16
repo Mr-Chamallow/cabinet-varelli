@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 
@@ -6,14 +7,14 @@ export async function GET() {
   try {
     const r = await requireAnyPermission(["avocat"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const db = r.supabaseAdmin;
     const moi = user.discord_id;
 
     const { data: masques } = await db.from("cabinet_dossier_masques").select("dossier_id").eq("discord_id", moi);
-    const caches = (masques || []).map((m: any) => m.dossier_id);
+    const caches = (masques || []).map((m: Row) => m.dossier_id);
     const { data: coRows } = await db.from("cabinet_dossier_clients").select("dossier_id").eq("client_discord_id", moi);
-    const coIds = (coRows || []).map((x: any) => x.dossier_id);
+    const coIds = (coRows || []).map((x: Row) => x.dossier_id);
     let dq = db.from("cabinet_dossiers").select("id,titre,statut,prestation,created_at")
       .or(coIds.length ? `client_discord_id.eq.${moi},id.in.(${coIds.join(",")})` : `client_discord_id.eq.${moi}`).neq("statut", "archive").order("created_at", { ascending: false }).limit(30);
     if (caches.length) dq = dq.not("id", "in", `(${caches.join(",")})`);

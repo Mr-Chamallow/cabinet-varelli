@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { estPatron } from "@/lib/cabinetAcces";
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
     if (b.confirmation !== "SUPPRIMER") return NextResponse.json({ error: "Confirmation requise : tape SUPPRIMER" }, { status: 400 });
     const db = r.supabaseAdmin;
 
-    let error: any = null;
+    let error: Row = null;
     let nombre = 0;
     if (b.type === "dossier" && b.id) {
       error = await supprimerDossiers(db, [b.id]); nombre = 1;
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
       error = await supprimerFacture(db, b.id); nombre = 1;
     } else if (b.type === "tous_dossiers") {
       const { data } = await db.from("cabinet_dossiers").select("id");
-      const ids = (data || []).map((d: any) => d.id);
+      const ids = (data || []).map((d: Row) => d.id);
       error = await supprimerDossiers(db, ids); nombre = ids.length;
     } else if (b.type === "toutes_factures") {
       await db.from("cabinet_messages").delete().like("fichier_url", "/api/cabinet/factures/%");

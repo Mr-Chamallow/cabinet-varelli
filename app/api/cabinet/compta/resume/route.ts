@@ -1,10 +1,11 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { PERMS_BUREAU } from "@/lib/cabinetRoles";
 import { estResumeCompta } from "@/lib/cabinetAcces";
 import { calculerResume, fenetreSemaine, semaineCourante, tauxParId } from "@/lib/compta";
 
-const cellule = (v: any) => {
+const cellule = (v: unknown) => {
   const s = v === null || v === undefined ? "" : String(v);
   return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
@@ -28,7 +29,7 @@ export async function GET(req: Request) {
       db.from("cabinet_avoirs").select("*").gte("created_at", debut).lt("created_at", fin).order("created_at", { ascending: false }),
       db.from("cabinet_comparutions").select("date_audience,heure,tribunal,client_nom,chefs,juge_proc,matricules_officiers,avocat_discord_id,avocat_nom,statut,montant,taux_pct,part_avocat").eq("statut", "prise_en_charge"),
     ]);
-    const err = [paiements, facturesMois, facturesToutes, depenses, versements, avoirs, comparutions].find((x: any) => x.error);
+    const err = [paiements, facturesMois, facturesToutes, depenses, versements, avoirs, comparutions].find((x: Row) => x.error);
     if (err?.error) return NextResponse.json({ error: err.error.message }, { status: 400 });
 
     const [gradesRes, avocatGradesRes] = await Promise.all([db.from("cabinet_grades").select("grade,taux_pct"), db.from("cabinet_avocat_grades").select("avocat_discord_id,grade")]);
@@ -48,14 +49,14 @@ export async function GET(req: Request) {
     // Détail des comparutions immédiates, à transmettre au gouvernement pour paiement
     if (params.get("format") === "ci-csv") {
       const entete = ["Date", "Heure", "Tribunal", "Client", "Chef(s) d'accusation", "Juge / proc", "Matricule(s) officiers", "Avocat", "Honoraire ($)", "Taux (%)", "Part avocat ($)"];
-      const lignes = resume.ciSemaineListe.map((c: any) => [c.date_audience, c.heure, c.tribunal, c.client_nom, c.chefs, c.juge_proc, c.matricules_officiers, c.avocat_nom, c.montant, c.taux_pct, c.part_avocat]);
+      const lignes = resume.ciSemaineListe.map((c: Row) => [c.date_audience, c.heure, c.tribunal, c.client_nom, c.chefs, c.juge_proc, c.matricules_officiers, c.avocat_nom, c.montant, c.taux_pct, c.part_avocat]);
       const csv = "\uFEFF" + [entete, ...lignes].map(l => l.map(cellule).join(";")).join("\r\n");
       return new NextResponse(csv, { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="comparutions-immediates-${semaine}.csv"` } });
     }
 
     if (params.get("format") === "csv") {
       const entete = ["Employé", "Facture", "Client", "Prestation", "Total ($)", "Commission (%)", "Commission ($)"];
-      const lignes: any[][] = [];
+      const lignes: Row[][] = [];
       for (const rel of resume.releves) for (const p of rel.prestations) {
         lignes.push([rel.employe_nom, p.facture, p.client, p.description, p.total, p.pct, p.commission]);
       }

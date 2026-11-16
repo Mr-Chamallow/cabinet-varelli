@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { CABINET_STAFF_ROLES } from "@/lib/cabinetAcces";
@@ -22,25 +23,25 @@ export async function GET(req: Request) {
       db.from("cabinet_comparutions").select("avocat_discord_id,statut,montant,date_audience"),
     ]);
 
-    const dossierPar = new Map((dossiers || []).map((d: any) => [d.id, d]));
+    const dossierPar = new Map((dossiers || []).map((d: Row) => [d.id, d]));
     const dansMois = (s: string | null | undefined) => !filtre || (s && s >= debutMois! && s < finMois!);
 
-    const lignes = (staff || []).map((s: any) => {
+    const lignes = (staff || []).map((s: Row) => {
       const id = s.discord_id;
-      const mesDossiers = (acces || []).filter((a: any) => a.avocat_discord_id === id)
-        .map((a: any) => dossierPar.get(a.dossier_id)).filter((d: any) => d && dansMois(String(d.created_at).slice(0, 10)));
-      const mesRdv = (rdv || []).filter((x: any) => x.avocat_discord_id === id && dansMois(String(x.date_rdv).slice(0, 10)));
-      const mesComp = (comp || []).filter((c: any) => c.avocat_discord_id === id && c.statut === "prise_en_charge" && dansMois(c.date_audience));
+      const mesDossiers = (acces || []).filter((a: Row) => a.avocat_discord_id === id)
+        .map((a: Row) => dossierPar.get(a.dossier_id)).filter((d: Row) => d && dansMois(String(d.created_at).slice(0, 10)));
+      const mesRdv = (rdv || []).filter((x: Row) => x.avocat_discord_id === id && dansMois(String(x.date_rdv).slice(0, 10)));
+      const mesComp = (comp || []).filter((c: Row) => c.avocat_discord_id === id && c.statut === "prise_en_charge" && dansMois(c.date_audience));
       return {
         discord_id: id,
         nom: s.nom_perso || s.discord_name || "?",
         role: s.site_role,
         dossiers: mesDossiers.length,
-        dossiersOuverts: mesDossiers.filter((d: any) => d.statut === "ouvert").length,
-        rdvTermines: mesRdv.filter((x: any) => x.statut === "termine").length,
+        dossiersOuverts: mesDossiers.filter((d: Row) => d.statut === "ouvert").length,
+        rdvTermines: mesRdv.filter((x: Row) => x.statut === "termine").length,
         rdvTotal: mesRdv.length,
         comparutions: mesComp.length,
-        honorairesCI: mesComp.reduce((t: number, c: any) => t + (Number(c.montant) || 0), 0),
+        honorairesCI: mesComp.reduce((t: number, c: Row) => t + (Number(c.montant) || 0), 0),
       };
     });
     lignes.sort((a, b) => b.honorairesCI - a.honorairesCI || b.dossiers - a.dossiers);

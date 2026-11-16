@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { DiscordWebhookKind, sendDiscordMessage } from "@/lib/discordAlert";
@@ -13,10 +14,10 @@ export async function POST(req: Request) {
   const { kind } = await req.json();
   if (!kinds.includes(kind)) return NextResponse.json({ error: "kind invalide" }, { status: 400 });
 
-  const last = async (table: string, order = "created_at", filter?: (q: any) => any) => {
-    let q = db.from(table).select("*"); if (filter) q = filter(q);
+  const last = async (table: string, order = "created_at", filter?: (q: Row) => unknown) => {
+    let q = db.from(table).select("*"); if (filter) q = filter(q) as typeof q;
     const { data } = await q.order(order, { ascending: false }).limit(1);
-    return data?.[0] as any;
+    return data?.[0] as Row;
   };
   const week = new Date(Date.now() - 7 * 86400_000).toISOString();
   let title = `🔔 Test ${kind}`, desc = "", fields: { name: string; value: string; inline?: boolean }[] = [];
@@ -27,8 +28,8 @@ export async function POST(req: Request) {
       const arm = ["arme", "munition", "accessoire", "explosif", "kev", "gilet"];
       const { data: mv } = await db.from("obsidian_mouvements").select("*").order("created_at", { ascending: false }).limit(60);
       const { data: st } = await db.from("obsidian_stocks").select("id,categorie");
-      const cat = new Map((st || []).map((x: any) => [x.id, x.categorie]));
-      const m = (mv || []).find((x: any) => arm.includes(cat.get(x.stock_id) as string) === (kind === "armurerie"));
+      const cat = new Map((st || []).map((x: Row) => [x.id, x.categorie]));
+      const m = (mv || []).find((x: Row) => arm.includes(cat.get(x.stock_id) as string) === (kind === "armurerie"));
       if (!m) none(); else {
         title = `🔔 Test ${kind} - dernier mouvement réel`;
         desc = `${m.type === "sortie" ? "📤 Sortie" : "📥 Entrée"} de **${m.quantite} x ${m.stock_nom || "?"}**${m.prix_unitaire ? ` à ${usd(m.prix_unitaire)}` : ""}`;
@@ -51,11 +52,11 @@ export async function POST(req: Request) {
       if (!a) none(); else { title = `🔔 Test ${kind} - ${a.action}`; desc = `**${a.membre}** · ${Number(a.montant) >= 0 ? "gain" : "perte"} **${usd(Math.abs(Number(a.montant) || 0))}**`; fields = [{ name: "Date", value: sd(a.created_at), inline: true }]; }
     } else if (kind === "compta") {
       const { data } = await db.from("obsidian_comptabilite").select("type,montant,type_argent").gte("created_at", week);
-      const rows = data || []; const rec = rows.filter((r: any) => r.type === "recette").reduce((s: number, r: any) => s + (r.montant || 0), 0), dep = rows.filter((r: any) => r.type !== "recette").reduce((s: number, r: any) => s + (r.montant || 0), 0);
+      const rows = data || []; const rec = rows.filter((r: Row) => r.type === "recette").reduce((s: number, r: Row) => s + (r.montant || 0), 0), dep = rows.filter((r: Row) => r.type !== "recette").reduce((s: number, r: Row) => s + (r.montant || 0), 0);
       title = "🔔 Test compta - 7 derniers jours"; desc = `${rows.length} écritures`; fields = [{ name: "Recettes", value: usd(rec), inline: true }, { name: "Dépenses", value: usd(dep), inline: true }, { name: "Net", value: usd(rec - dep), inline: true }];
     } else if (kind === "membres") {
       const { data, count } = await db.from("site_logins").select("discord_name,nom_perso,site_role", { count: "exact" }).limit(5);
-      title = "🔔 Test membres"; desc = `${count ?? (data || []).length} membres inscrits`; fields = (data || []).map((m: any) => ({ name: m.nom_perso || m.discord_name || "?", value: String(m.site_role || "aucun rôle"), inline: true }));
+      title = "🔔 Test membres"; desc = `${count ?? (data || []).length} membres inscrits`; fields = (data || []).map((m: Row) => ({ name: m.nom_perso || m.discord_name || "?", value: String(m.site_role || "aucun rôle"), inline: true }));
     } else if (kind === "admin") {
       const j = await last("journal_audit");
       if (!j) none(); else { title = "🔔 Test admin - dernière action journalisée"; desc = `**${j.acteur}** · ${j.action} · ${j.cible || ""}`; fields = [{ name: "Date", value: sd(j.created_at), inline: true }]; }
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
         db.from("actions_illegales").select("montant").gte("created_at", week),
         db.from("arrestations").select("amende").gte("created_at", week),
       ]);
-      const net = (c.data || []).reduce((s: number, r: any) => s + (r.type === "recette" ? 1 : -1) * (r.montant || 0), 0);
+      const net = (c.data || []).reduce((s: number, r: Row) => s + (r.type === "recette" ? 1 : -1) * (r.montant || 0), 0);
       title = "🔔 Test rapport - 7 derniers jours"; desc = "Aperçu avec les chiffres réels de la semaine.";
       fields = [{ name: "Net compta", value: usd(net), inline: true }, { name: "Actions", value: String((a.data || []).length), inline: true }, { name: "Arrestations", value: String((ar.data || []).length), inline: true }];
     } else if (kind === "gm") {

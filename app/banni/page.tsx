@@ -1,10 +1,11 @@
 "use client";
 
+import type { Row } from "@/lib/types";
 import { useSession, signOut } from "next-auth/react";
 
 export default function BanniPage() {
   const { data: session } = useSession();
-  const reason = (session?.user as any)?.ban_reason as string | undefined;
+  const reason = (session?.user as Row)?.ban_reason as string | undefined;
 
   return (
     <div className="page-container" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "70vh" }}>

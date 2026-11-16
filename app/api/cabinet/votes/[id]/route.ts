@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import type { Db } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
@@ -10,8 +11,8 @@ async function verifierMajorite(db: Db, id: string): Promise<"adopte" | "rejete"
   const { data: reps } = await db.from("cabinet_votes_reponses").select("choix").eq("vote_id", id);
   const { count } = await db.from("site_logins").select("discord_id", { count: "exact", head: true }).in("site_role", CABINET_STAFF_ROLES);
   const seuil = Math.floor((count || 0) / 2) + 1;
-  const pour = (reps || []).filter((x: any) => x.choix === "pour").length;
-  const contre = (reps || []).filter((x: any) => x.choix === "contre").length;
+  const pour = (reps || []).filter((x: Row) => x.choix === "pour").length;
+  const contre = (reps || []).filter((x: Row) => x.choix === "contre").length;
   if (pour >= seuil) return "adopte";
   if (contre >= seuil) return "rejete";
   return null;
@@ -24,7 +25,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     const { id } = await ctx.params;
     const r = await requireAnyPermission(["cabinet_dossiers", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     if (!estStaff(user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const db = r.supabaseAdmin;
     const { data: v } = await db.from("cabinet_votes").select("*").eq("id", id).maybeSingle();

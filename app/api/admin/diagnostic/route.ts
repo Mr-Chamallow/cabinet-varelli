@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
@@ -11,7 +12,7 @@ interface Check {
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  const perms: string[] = (session?.user as any)?.permissions || [];
+  const perms: string[] = (session?.user as Row)?.permissions || [];
   if (!session?.user || !perms.includes("admin")) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   }
@@ -85,7 +86,7 @@ export async function GET() {
   checks.push({
     label: "Session Discord",
     ok: !!session.user,
-    detail: `Connecté en tant que ${(session.user as any)?.discord_name || "?"} (rôle: ${(session.user as any)?.site_role || "?"})`,
+    detail: `Connecté en tant que ${(session.user as Row)?.discord_name || "?"} (rôle: ${(session.user as Row)?.site_role || "?"})`,
   });
 
   // --- Intégrité des données (stocks / compta) ---
@@ -93,7 +94,7 @@ export async function GET() {
     try {
       const db = createClient(url, serviceKey);
       const all = async (table: string, cols: string) => {
-        const rows: any[] = [];
+        const rows: Row[] = [];
         for (let from = 0; ; from += 1000) {
           const { data, error } = await db.from(table).select(cols).range(from, from + 999);
           if (error) throw new Error(`${table} : ${error.message}`);

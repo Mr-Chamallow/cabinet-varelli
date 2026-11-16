@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { estDirection } from "@/lib/cabinetAcces";
@@ -85,7 +86,7 @@ export async function PATCH(req: Request) {
     if (!dir && !(soi && b.statut === "retiree")) return erreur("Réservé à la direction", 403);
     if (b.statut && !STATUTS.includes(b.statut)) return erreur("Statut inconnu");
 
-    const maj: any = {};
+    const maj: Row = {};
     if (b.statut) maj.statut = b.statut;
     if (dir && "notes" in b) maj.notes = String(b.notes || "").slice(0, 2000) || null;
     if (dir && "entretien_at" in b) maj.entretien_at = b.entretien_at || null;

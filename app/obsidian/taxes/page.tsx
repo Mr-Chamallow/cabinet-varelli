@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -15,21 +16,21 @@ import { TAXE_REVENTE_MAX_PCT, TAXE_RECOLTE_MAX_SEMAINE, addDays } from "@/lib/r
 
 const TYPES: Record<string, string> = { vente: "Point de vente", recolte: "Point de récolte", autre: "Autre" };
 const today = () => new Date().toISOString().slice(0, 10);
-const EMPTY = { groupe: "", groupe_id: null as string | null, raison: "", type: "vente", taux_pct: "" as any, montant: "" as any, periodicite_jours: 7, date_debut: today(), duree_jours: 30, type_argent: "propre", statut: "actif", notes: "" };
+const EMPTY = { groupe: "", groupe_id: null as string | null, raison: "", type: "vente", taux_pct: "" as string, montant: "" as string, periodicite_jours: 7, date_debut: today(), duree_jours: 30, type_argent: "propre", statut: "actif", notes: "" };
 
 export default function TaxesPage() {
   const { canWrite, user } = useGmAccess("obsidian_taxes");
   const { toast, showToast } = useToast();
   const groupes = useGroupes();
-  const [taxes, setTaxes] = useState<any[]>([]);
-  const [pays, setPays] = useState<any[]>([]);
+  const [taxes, setTaxes] = useState<Row[]>([]);
+  const [pays, setPays] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [show, setShow] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<any>({ ...EMPTY });
+  const [form, setForm] = useState<Row>({ ...EMPTY });
   const [saving, setSaving] = useState(false);
-  const [payFor, setPayFor] = useState<any>(null);
-  const [pay, setPay] = useState({ montant: "" as any, type_argent: "propre", note: "" });
+  const [payFor, setPayFor] = useState<Row | null>(null);
+  const [pay, setPay] = useState({ montant: "" as string, type_argent: "propre", note: "" });
   const [filtre, setFiltre] = useState("actif");
 
   useEffect(() => { load(); }, []);
@@ -44,7 +45,7 @@ export default function TaxesPage() {
   }
 
   const payeDe = (id: string) => pays.filter(p => p.taxe_id === id).reduce((s, p) => s + Number(p.montant || 0), 0);
-  const info = (t: any) => {
+  const info = (t: Row) => {
     const fin = addDays(t.date_debut, Number(t.duree_jours) || 0);
     const jours = Math.ceil((fin.getTime() - Date.now()) / 86400_000);
     const periodes = Math.max(1, Math.ceil((Number(t.duree_jours) || 1) / (Number(t.periodicite_jours) || 7)));
@@ -57,7 +58,7 @@ export default function TaxesPage() {
   const semaine = pays.filter(p => Date.now() - new Date(p.created_at).getTime() <= 7 * 86400_000).reduce((s, p) => s + Number(p.montant || 0), 0);
   const enAttente = useMemo(() => taxes.filter(t => t.statut === "actif").reduce((s, t) => s + info(t).reste, 0), [taxes, pays]);
 
-  function alertes(f: any): string[] {
+  function alertes(f: Row): string[] {
     const a: string[] = [];
     if (f.type === "vente" && Number(f.taux_pct) > TAXE_REVENTE_MAX_PCT) a.push(`Le règlement plafonne la taxe drogue à ${TAXE_REVENTE_MAX_PCT}% du prix de revente.`);
     if (f.type === "recolte") {
@@ -68,18 +69,18 @@ export default function TaxesPage() {
   }
 
   function openNew() { setEditId(null); setForm({ ...EMPTY, date_debut: today() }); setShow(true); }
-  function openEdit(t: any) { setEditId(t.id); setForm({ ...EMPTY, ...t, taux_pct: t.taux_pct ?? "", notes: t.notes || "" }); setShow(true); }
+  function openEdit(t: Row) { setEditId(t.id); setForm({ ...EMPTY, ...t, taux_pct: t.taux_pct ?? "", notes: t.notes || "" }); setShow(true); }
   async function save() {
     if (!form.groupe.trim()) return;
     setSaving(true);
     const g = groupes.find(x => x.nom === form.groupe);
-    const row = { groupe: form.groupe.trim(), groupe_id: g?.id || null, raison: form.raison.trim(), type: form.type, taux_pct: form.taux_pct === "" ? null : Number(form.taux_pct), montant: Number(form.montant) || 0, periodicite_jours: Math.max(1, Number(form.periodicite_jours) || 7), date_debut: form.date_debut || today(), duree_jours: Math.max(1, Number(form.duree_jours) || 30), type_argent: form.type_argent, statut: form.statut, notes: form.notes.trim() || null, created_by: (user as any)?.nom || null };
+    const row = { groupe: form.groupe.trim(), groupe_id: g?.id || null, raison: form.raison.trim(), type: form.type, taux_pct: form.taux_pct === "" ? null : Number(form.taux_pct), montant: Number(form.montant) || 0, periodicite_jours: Math.max(1, Number(form.periodicite_jours) || 7), date_debut: form.date_debut || today(), duree_jours: Math.max(1, Number(form.duree_jours) || 30), type_argent: form.type_argent, statut: form.statut, notes: form.notes.trim() || null, created_by: (user as Row)?.nom || null };
     const r = editId ? await dbw.update("obsidian_taxes", editId, row) : await dbw.insert("obsidian_taxes", row);
     setSaving(false);
     if (r.error) { showToast(`Erreur : ${r.error.message}`, "danger"); return; }
     setShow(false); showToast(editId ? "Taxe modifiée" : "Taxe créée"); load();
   }
-  async function del(t: any) {
+  async function del(t: Row) {
     if (!window.confirm(`Supprimer la taxe « ${t.groupe} » et ses paiements (retirés aussi de la compta) ?`)) return;
     for (const p of pays.filter(x => x.taxe_id === t.id)) await fetch("/api/obsidian/taxes/paiement", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id }) });
     const r = await dbw.remove("obsidian_taxes", t.id);

@@ -1,3 +1,5 @@
+import type { UserLike } from "@/lib/types";
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
@@ -55,12 +57,12 @@ const LECTURE: Record<string, string[]> = {
 
 export const dynamic = "force-dynamic";
 
-type Filtre = [string, any];
+type Filtre = [string, unknown];
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    const user: any = session?.user;
+    const user = session?.user as UserLike | undefined;
     if (!user) return NextResponse.json({ error: "Non connecté" }, { status: 401 });
 
     const b = await req.json();
@@ -69,19 +71,19 @@ export async function POST(req: Request) {
     if (!perms) return NextResponse.json({ error: "Table inconnue" }, { status: 404 });
 
     const u = { id: user.discord_id, nom: user.discord_name, role: user.site_role, permissions: user.permissions || [] };
-    if (!perms.some(p => hasPermission(u as any, p))) {
+    if (!perms.some(p => hasPermission(u as UserLike, p))) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
     const options = b.count ? { count: "exact" as const, head: !!b.head } : undefined;
-    let q: any = supabaseAdmin.from(table).select(String(b.select || "*"), options);
+    let q: Row = supabaseAdmin.from(table).select(String(b.select || "*"), options);
 
     for (const [col, val] of (b.eq || []) as Filtre[]) q = q.eq(col, val);
     for (const [col, val] of (b.ilike || []) as Filtre[]) q = q.ilike(col, val);
     for (const [col] of (b.is || []) as [string, null][]) q = q.is(col, null);
     for (const [col, val] of (b.gte || []) as Filtre[]) q = q.gte(col, val);
     for (const [col, val] of (b.gt || []) as Filtre[]) q = q.gt(col, val);
-    for (const [col, vals] of (b.in || []) as [string, any[]][]) q = q.in(col, vals);
+    for (const [col, vals] of (b.in || []) as [string, Row[]][]) q = q.in(col, vals);
     for (const [col, val] of (b.contains || []) as Filtre[]) q = q.contains(col, val);
     if (b.or) q = q.or(String(b.or));
     for (const [col, ascending] of (b.order || []) as [string, boolean][]) q = q.order(col, { ascending: !!ascending });

@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -10,7 +11,7 @@ interface Props {
 
 // Membres du dossier. La direction et les avocats assignés peuvent ajouter ou retirer un employé.
 export default function AttributionDossier({ id, direction, acces, onChange }: Props) {
-  const [staff, setStaff] = useState<any[]>([]);
+  const [staff, setStaff] = useState<Row[]>([]);
   const [choix, setChoix] = useState("");
   const [erreur, setErreur] = useState("");
 

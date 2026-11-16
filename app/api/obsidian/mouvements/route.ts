@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { estDirection } from "@/lib/direction";
@@ -11,7 +12,7 @@ export async function POST(req: Request) {
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
 
     const { stock_id, type, quantite, motif, membre, created_by, prix_unitaire: prixBody, type_argent } = await req.json();
-    if (/^\s*ajustement/i.test(String(motif || "")) && !estDirection((user as any)?.site_role)) return NextResponse.json({ error: "Ajustement réservé au CEO et au COO" }, { status: 403 });
+    if (/^\s*ajustement/i.test(String(motif || "")) && !estDirection((user as Row)?.site_role)) return NextResponse.json({ error: "Ajustement réservé au CEO et au COO" }, { status: 403 });
     const qte = Number(quantite);
     if (!stock_id || !Number.isFinite(qte) || qte <= 0) {
       return NextResponse.json({ error: "stock_id et quantite (> 0) sont requis" }, { status: 400 });
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: msg }, { status: msg.includes("introuvable") ? 404 : 400 });
     }
 
-    const stock = (data as any)?.stock;
+    const stock = (data as Row)?.stock;
     if (!stock) return NextResponse.json({ error: "Réponse inattendue du serveur" }, { status: 500 });
 
     // Alerte Discord à chaque mouvement, sur le webhook du bon module (armurerie vs stocks).

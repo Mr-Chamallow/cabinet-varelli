@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -27,8 +28,8 @@ export default function ObsidianDashboard() {
   }, [user, userLoading]);
 
   const [stats, setStats] = useState({recettes:0,depenses:0,argSale:0,nbArmes:0,nbDrogues:0});
-  const [events, setEvents] = useState<any[]>([]);
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [events, setEvents] = useState<Row[]>([]);
+  const [alerts, setAlerts] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
 
@@ -43,13 +44,13 @@ export default function ObsidianDashboard() {
     const r=Number(bud?.recettes)||0, d=Number(bud?.depenses)||0, sal=Number(bud?.sale)||0;
     setStats({
       recettes:r,depenses:d,argSale:sal,
-      nbArmes:(stocks||[]).filter((s:any)=>s.categorie==="arme").reduce((a:number,x:any)=>a+x.quantite,0),
-      nbDrogues:(stocks||[]).filter((s:any)=>s.categorie==="drogue").reduce((a:number,x:any)=>a+x.quantite,0),
+      nbArmes:(stocks||[]).filter((s: Row)=>s.categorie==="arme").reduce((a:number,x: Row)=>a+x.quantite,0),
+      nbDrogues:(stocks||[]).filter((s: Row)=>s.categorie==="drogue").reduce((a:number,x: Row)=>a+x.quantite,0),
     });
-    setAlerts((stocks||[]).filter((s:any)=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte));
+    setAlerts((stocks||[]).filter((s: Row)=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte));
     setEvents([
-      ...(rdv||[]).map((r:any)=>({...r,_type:"Opération"})),
-      ...(contrats||[]).map((c:any)=>({...c,titre:c.titre,date:c.date_cible,_type:"Contrat"})),
+      ...(rdv||[]).map((r: Row)=>({...r,_type:"Opération"} as Row)),
+      ...(contrats||[]).map((c: Row)=>({...c,titre:c.titre,date:c.date_cible,_type:"Contrat"} as Row)),
     ].sort((a,b)=>(a.date||"").localeCompare(b.date||"")));
     setLoading(false);
   }
@@ -100,7 +101,7 @@ export default function ObsidianDashboard() {
             <div className="pulse-danger" style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "var(--radius-lg)", padding: "0.875rem 1.125rem", marginBottom: "1.25rem" }}>
               <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--danger)", marginBottom: "0.4rem" }}>⚠️ Stock bas</div>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                {alerts.map((a:any) => (
+                {alerts.map((a: Row) => (
                   <Link key={a.id} href="/obsidian/stocks" style={{ textDecoration: "none" }}>
                     <span style={{ fontSize: "0.75rem", padding: "0.2rem 0.65rem", borderRadius: 999, background: "rgba(239,68,68,0.12)", color: "var(--danger)", border: "1px solid rgba(239,68,68,0.25)", fontWeight: 600 }}>
                       {a.emoji} {a.nom} : {a.quantite}/{a.seuil_alerte}
@@ -160,7 +161,7 @@ export default function ObsidianDashboard() {
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  {events.slice(0, 6).map((e:any) => (
+                  {events.slice(0, 6).map((e: Row) => (
                     <a key={e.id} href={e._type === "Opération" ? "/obsidian/rdv" : "/obsidian/contrats"} style={{ textDecoration: "none" }} className="stagger-item">
                       <div style={{
                         display: "flex", alignItems: "center", gap: "0.75rem",

@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import CabinetShell from "@/components/cabinet/CabinetShell";
@@ -46,9 +47,9 @@ function Ligne({ href, icone, nom, desc, badge = 0, mention = 0 }: { href: strin
 }
 
 function Liste() {
-  const [staff, setStaff] = useState<any[]>([]);
-  const [notifs, setNotifs] = useState<any>({ plaintes: 0, votes: 0 });
-  const [topics, setTopics] = useState<any>({});
+  const [staff, setStaff] = useState<Row[]>([]);
+  const [notifs, setNotifs] = useState<Row>({ plaintes: 0, votes: 0 });
+  const [topics, setTopics] = useState<Row>({});
   useEffect(() => { fetch("/api/cabinet/staff").then(r => r.json()).then(d => setStaff(d.rows || [])); }, []);
   const charger = () => fetch("/api/cabinet/notifications").then(r => r.json()).then(d => { if (!d.error) { setNotifs(d); setTopics(d.topics || {}); } });
   useEffect(() => { charger(); }, []);

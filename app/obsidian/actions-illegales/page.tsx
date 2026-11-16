@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -73,8 +74,8 @@ export default function ActionsIllegalesPage() {
       supabase.from("actions_illegales_types").select("*").order("ordre").order("nom"),
     ]);
     if (!tyErr && ty && ty.length > 0) setTypes(ty.map(rowToType));
-    setEntries((data || []).map((e: any) => ({ ...e, montant: Number(e.montant) || 0 })));
-    setEmployes((emp || []).map((e: any) => e.nom).filter(Boolean));
+    setEntries(((data || []).map((e: Row) => ({ ...e, montant: Number(e.montant) || 0 }))) as Entry[]);
+    setEmployes((emp || []).map((e: Row) => e.nom).filter(Boolean));
     setLoading(false);
   }
 
@@ -125,7 +126,7 @@ export default function ActionsIllegalesPage() {
 
   function openForm() {
     setEditId(null);
-    setForm({ action: activeTypes[0]?.nom || DEFAULT_ACTION_TYPES[0].nom, membre: (user as any)?.nom || "", resultat: "gain", argent: "sale", montant: "", date: localInputNow(), notes: "" });
+    setForm({ action: activeTypes[0]?.nom || DEFAULT_ACTION_TYPES[0].nom, membre: (user as Row)?.nom || "", resultat: "gain", argent: "sale", montant: "", date: localInputNow(), notes: "" });
     setShowForm(true);
   }
 
@@ -139,7 +140,7 @@ export default function ActionsIllegalesPage() {
       montant: form.resultat === "perte" ? -abs : abs,
       type_argent: form.argent,
       notes: form.notes.trim() || null,
-      created_by: (user as any)?.nom || null,
+      created_by: (user as Row)?.nom || null,
       created_at: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
     };
     const res = await fetch("/api/obsidian/actions", { method: editId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editId ? { ...payload, id: editId } : payload) });
@@ -278,10 +279,10 @@ export default function ActionsIllegalesPage() {
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}><div style={{ fontWeight: 800, color: col, fontSize: "0.95rem" }}>{e.montant > 0 ? "+" : ""}{fmt(e.montant)}</div><div style={{ fontSize: "0.62rem", color: "var(--text-dim)" }}>{e.type_argent === "propre" ? "💵 propre" : "🕶️ sale"}</div></div>
-                {(canDeleteAll || (canWrite && e.created_by === (user as any)?.nom)) && (
+                {(canDeleteAll || (canWrite && e.created_by === (user as Row)?.nom)) && (
                   <button className="btn btn-ghost btn-sm" onClick={() => openEdit(e)} title="Modifier">✏️</button>
                 )}
-                {(canDeleteAll || (canWrite && e.created_by === (user as any)?.nom)) && (
+                {(canDeleteAll || (canWrite && e.created_by === (user as Row)?.nom)) && (
                   <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => del(e.id)}>🗑️</button>
                 )}
               </div>

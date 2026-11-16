@@ -1,3 +1,6 @@
+import type { UserLike } from "@/lib/types";
+import { appUser } from "@/lib/cabinetServer";
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { hasWriteAccess } from "@/lib/auth";
@@ -5,10 +8,10 @@ import { hasWriteAccess } from "@/lib/auth";
 // Types d'actions illegales gerables depuis la page Actions illegales (droit d'ecriture requis).
 async function guard() {
   const r = await requirePermission("obsidian_actions");
-  if (!r.authorized) return { err: NextResponse.json({ error: r.error || "Non autorisé" }, { status: 403 }) } as any;
-  const u: any = r.user;
-  if (!hasWriteAccess({ id: u.discord_id, nom: u.discord_name, role: u.site_role, permissions: u.permissions } as any, "obsidian_actions"))
-    return { err: NextResponse.json({ error: "Écriture non autorisée" }, { status: 403 }) } as any;
+  if (!r.authorized) return { err: NextResponse.json({ error: r.error || "Non autorisé" }, { status: 403 }) } as Row;
+  const u = r.user as UserLike;
+  if (!hasWriteAccess(appUser(u), "obsidian_actions"))
+    return { err: NextResponse.json({ error: "Écriture non autorisée" }, { status: 403 }) } as Row;
   return { db: r.supabaseAdmin };
 }
 
@@ -18,7 +21,7 @@ export async function POST(req: Request) {
     const b = await req.json();
     const nom = String(b.nom || "").trim();
     if (!nom) return NextResponse.json({ error: "Nom requis" }, { status: 400 });
-    const row: any = {
+    const row: Row = {
       nom,
       icon: String(b.icon || "🕶️").slice(0, 8),
       delai_minutes: Math.max(0, Math.round(Number(b.delai_minutes) || 0)),

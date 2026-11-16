@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
 import { champ, dateFr } from "@/components/compta/commun";
@@ -11,9 +12,9 @@ const MOYENS = ["Virement", "Espèces", "Autre"];
 // Salaires à la prestation : relevé par employé, commissions dues, versements
 export default function ComptaCommissions() {
   const [semaine, setSemaine] = useState(() => semaineCourante());
-  const [resume, setResume] = useState<any>(null);
-  const [versements, setVersements] = useState<any[]>([]);
-  const [staff, setStaff] = useState<any[]>([]);
+  const [resume, setResume] = useState<Row | null>(null);
+  const [versements, setVersements] = useState<Row[]>([]);
+  const [staff, setStaff] = useState<Row[]>([]);
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [erreur, setErreur] = useState("");
   const [form, setForm] = useState({ employe_discord_id: "", montant: "", moyen: "Virement", date_versement: dateISO() });
@@ -53,7 +54,7 @@ export default function ComptaCommissions() {
 
       {resume && resume.releves.length === 0 && <div className="cab-muted">Aucune commission ni versement pour cette semaine.</div>}
 
-      {resume?.releves.map((rel: any) => (
+      {resume?.releves.map((rel: Row) => (
         <div key={rel.employe_discord_id} className="cab-card">
           <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
             <div style={{ fontWeight: 700 }}>{rel.employe_nom}</div>
@@ -72,7 +73,7 @@ export default function ComptaCommissions() {
             <table style={{ width: "100%", marginTop: "0.8rem", fontSize: "0.82rem", borderCollapse: "collapse" }}>
               <thead><tr className="cab-muted" style={{ textAlign: "left" }}><th>Facture</th><th>Client</th><th>Prestation</th><th>Total</th><th>%</th><th>Commission</th></tr></thead>
               <tbody>
-                {rel.prestations.map((p: any, i: number) => (
+                {rel.prestations.map((p: Row, i: number) => (
                   <tr key={i}><td>{p.facture}</td><td>{p.client}</td><td>{p.description}</td><td>{montant(p.total)}</td><td>{p.pct}</td><td>{montant(p.commission)}</td></tr>
                 ))}
               </tbody>
@@ -87,7 +88,7 @@ export default function ComptaCommissions() {
           <div className="form-group" style={{ marginBottom: 0 }}><label>Employé</label>
             <select value={form.employe_discord_id} onChange={e => setForm({ ...form, employe_discord_id: e.target.value })}>
               <option value="">Choisir</option>
-              {staff.map((s: any) => <option key={s.discord_id} value={s.discord_id}>{s.nom}</option>)}
+              {staff.map((s: Row) => <option key={s.discord_id} value={s.discord_id}>{s.nom}</option>)}
             </select>
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}><label>Montant ($)</label><input inputMode="numeric" value={form.montant} onChange={e => setForm({ ...form, montant: e.target.value })} /></div>

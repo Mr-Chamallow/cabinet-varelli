@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/serverAuth";
 import { notifyDiscord } from "@/lib/cabinetServer";
@@ -17,7 +18,7 @@ export async function GET(req: Request) {
       .order("date_rdv", { ascending: true });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     if (data && data.length) {
-      const lignes = data.map((r: any) => `${new Date(r.date_rdv).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} : ${r.client_nom || "Client"}${r.avocat_nom ? `, avec ${r.avocat_nom}` : ""}${r.motif ? ` (${r.motif})` : ""}`);
+      const lignes = data.map((r: Row) => `${new Date(r.date_rdv).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} : ${r.client_nom || "Client"}${r.avocat_nom ? `, avec ${r.avocat_nom}` : ""}${r.motif ? ` (${r.motif})` : ""}`);
       await notifyDiscord(`**Rendez-vous de demain** (${data.length})\n${lignes.join("\n")}`);
     }
     return NextResponse.json({ ok: true, rappels: (data || []).length });

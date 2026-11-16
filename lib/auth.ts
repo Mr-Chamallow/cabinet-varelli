@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import type { UserLike } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 
@@ -66,7 +67,10 @@ function parsePermEntry(entry: string): { key: string; level: PermLevel } {
   return { key: entry, level: "write" };
 }
 
-export function getPermLevel(userOrRole: AppUser | string | null, permission: string): PermLevel {
+// Sujet de permission : AppUser (forme interne) ou UserLike (session brute). Seul .permissions compte.
+export type PermSubject = AppUser | UserLike | string | null | undefined;
+
+export function getPermLevel(userOrRole: PermSubject, permission: string): PermLevel {
   if (!userOrRole) return "none";
   // Seule source de vérité : les permissions stockées dans la table `roles` (et les overrides).
   const all = typeof userOrRole === "string" ? [] : (userOrRole.permissions || []);
@@ -81,16 +85,16 @@ export function getPermLevel(userOrRole: AppUser | string | null, permission: st
   return level;
 }
 
-export function hasPermission(userOrRole: AppUser | string | null, permission: string): boolean {
+export function hasPermission(userOrRole: PermSubject, permission: string): boolean {
   return getPermLevel(userOrRole, permission) !== "none";
 }
 
 // Accès en écriture (création/édition/suppression) sur un onglet donné.
-export function hasWriteAccess(userOrRole: AppUser | string | null, permission: string): boolean {
+export function hasWriteAccess(userOrRole: PermSubject, permission: string): boolean {
   return getPermLevel(userOrRole, permission) === "write";
 }
 
-export function isReadOnlyRole(userOrRole: AppUser | string | null): boolean {
+export function isReadOnlyRole(userOrRole: PermSubject): boolean {
   return getPermLevel(userOrRole, "carte-enqueteur") === "read";
 }
 
@@ -99,7 +103,7 @@ export const canAccess = hasPermission;
 // "Patron" = avoir la permission admin en écriture (définie dans la table roles). Aucun nom de rôle en dur.
 export function estAdminUser(u: UserLike): boolean {
   if (!u) return false;
-  return hasWriteAccess({ id: u.discord_id, nom: u.discord_name, role: u.site_role, permissions: u.permissions || [] } as any, "admin");
+  return hasWriteAccess({ permissions: u.permissions || [] }, "admin");
 }
 
 // Ordre de priorité des pages d'atterrissage après connexion, utilisé quand
@@ -168,7 +172,7 @@ export function getMemberColor(roleOrName?: string, customColor?: string): strin
   }
 }
 
-export async function loadRolesFromSupabase(): Promise<any[]> {
+export async function loadRolesFromSupabase(): Promise<Row[]> {
   try {
     if (!supabase) return [];
     const { data, error } = await supabase.from("roles").select("*");

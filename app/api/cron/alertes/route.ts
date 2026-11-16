@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/serverAuth";
 import { postAlert, usd, GREEN, ORANGE, BLUE } from "@/lib/alerts";
@@ -21,7 +22,7 @@ export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   const db = supabaseAdmin;
-  const out: Record<string, any> = {};
+  const out: Row = {};
   const now = Date.now();
 
   // 1) Délais terminés
@@ -32,22 +33,22 @@ export async function GET(req: Request) {
       const limit = new Date(now - t.delai_minutes * 60_000).toISOString();
       const { data: rows } = await db.from("actions_illegales").select("id,membre,created_at").eq("action", t.nom).eq("delai_alerte", false).lte("created_at", limit);
       if (!rows || rows.length === 0) continue;
-      const byMembre = new Map<string, any[]>();
+      const byMembre = new Map<string, Row[]>();
       const parGroupe = t.portee === "groupe";
-      rows.forEach((r: any) => byMembre.set(parGroupe ? "Le groupe" : r.membre, [...(byMembre.get(parGroupe ? "Le groupe" : r.membre) || []), r]));
+      rows.forEach((r: Row) => byMembre.set(parGroupe ? "Le groupe" : r.membre, [...(byMembre.get(parGroupe ? "Le groupe" : r.membre) || []), r]));
       for (const [membre, list] of byMembre) {
         // seulement si c'est bien la DERNIÈRE fois que la personne a fait cette action
         let q = db.from("actions_illegales").select("id").eq("action", t.nom).gt("created_at", limit);
         if (!parGroupe) q = q.eq("membre", membre);
         const { data: newer } = await q.limit(1);
         if (!newer || newer.length === 0) {
-          const { data: emp } = parGroupe ? { data: null as any } : await db.from("obsidian_employes").select("discord_id").ilike("nom", membre).maybeSingle();
+          const emp = parGroupe ? null : (await db.from("obsidian_employes").select("discord_id").ilike("nom", membre).maybeSingle()).data as { discord_id?: string | null } | null;
           const uid: string | undefined = emp?.discord_id || undefined;
           await postAlert("delais", `⏳ ${t.icon || "🕶️"} ${t.nom} de nouveau disponible`, `**${parGroupe ? "Le groupe" : membre}** peut refaire « ${t.nom} » (délai : ${fmtDelai(t.delai_minutes)}).`, GREEN, undefined, undefined, uid ? [uid] : undefined);
           n++;
         }
       }
-      await db.from("actions_illegales").update({ delai_alerte: true }).in("id", rows.map((r: any) => r.id));
+      await db.from("actions_illegales").update({ delai_alerte: true }).in("id", rows.map((r: Row) => r.id));
     }
     out.delais = n;
   } catch (e: unknown) { out.delais = `erreur: ${e instanceof Error ? e.message : String(e)}`; }
@@ -55,13 +56,13 @@ export async function GET(req: Request) {
   // 2) Stock bas
   try {
     const { data: stocks } = await db.from("obsidian_stocks").select("id,nom,emoji,quantite,seuil_alerte,unite,alerte_envoyee").gt("seuil_alerte", 0);
-    const nowLow = (stocks || []).filter((s: any) => s.quantite <= s.seuil_alerte && !s.alerte_envoyee);
-    const recovered = (stocks || []).filter((s: any) => s.quantite > s.seuil_alerte && s.alerte_envoyee);
+    const nowLow = (stocks || []).filter((s: Row) => s.quantite <= s.seuil_alerte && !s.alerte_envoyee);
+    const recovered = (stocks || []).filter((s: Row) => s.quantite > s.seuil_alerte && s.alerte_envoyee);
     if (nowLow.length) {
-      await postAlert("stocks", "📦 Stock bas", nowLow.map((s: any) => `${s.emoji || "📦"} **${s.nom}** : ${s.quantite} ${s.unite || ""} (seuil ${s.seuil_alerte})`).join("\n"), ORANGE, undefined, ["RL"]);
-      await db.from("obsidian_stocks").update({ alerte_envoyee: true }).in("id", nowLow.map((s: any) => s.id));
+      await postAlert("stocks", "📦 Stock bas", nowLow.map((s: Row) => `${s.emoji || "📦"} **${s.nom}** : ${s.quantite} ${s.unite || ""} (seuil ${s.seuil_alerte})`).join("\n"), ORANGE, undefined, ["RL"]);
+      await db.from("obsidian_stocks").update({ alerte_envoyee: true }).in("id", nowLow.map((s: Row) => s.id));
     }
-    if (recovered.length) await db.from("obsidian_stocks").update({ alerte_envoyee: false }).in("id", recovered.map((s: any) => s.id));
+    if (recovered.length) await db.from("obsidian_stocks").update({ alerte_envoyee: false }).in("id", recovered.map((s: Row) => s.id));
     out.stock_bas = nowLow.length;
   } catch (e: unknown) { out.stock_bas = `erreur: ${e instanceof Error ? e.message : String(e)}`; }
 

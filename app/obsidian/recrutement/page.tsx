@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -14,20 +15,20 @@ import { DEFAUTS } from "@/lib/regles";
 import { problemes, formatDiscord, STATUTS_RECRUTEMENT as STATUTS } from "@/lib/recrutement";
 
 const POSTES = ["Agent juridique", "Agent logistique", "Agent de sécurité", "Opérateur", "Opérateur stagiaire", "Responsable juridique", "Responsable logistique", "Responsable sécurité", "COO", "CEO"];
-const EMPTY = { nom_rp: "", age_ok: false, discord: "", discord_id: "", unique_id: "", poste: "Opérateur", wipe_fait: false, heures_jeu: "" as any, ancien_groupe: "", date_depart_ancien: "", sanctions_verifiees: false, sanctions_notes: "", statut: "candidat", gdoc_url: "", histoire: "" };
+const EMPTY = { nom_rp: "", age_ok: false, discord: "", discord_id: "", unique_id: "", poste: "Opérateur", wipe_fait: false, heures_jeu: "" as string, ancien_groupe: "", date_depart_ancien: "", sanctions_verifiees: false, sanctions_notes: "", statut: "candidat", gdoc_url: "", histoire: "" };
 
 export default function RecrutementPage() {
   const { canWrite, user } = useGmAccess("obsidian_recrutement");
   const { toast, showToast } = useToast();
-  const [list, setList] = useState<any[]>([]);
+  const [list, setList] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [show, setShow] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<any>({ ...EMPTY });
+  const [form, setForm] = useState<Row>({ ...EMPTY });
   const [saving, setSaving] = useState(false);
   const [filtre, setFiltre] = useState("tout");
   const [effectif, setEffectif] = useState<number | null>(null);
-  const [votes, setVotes] = useState<any[]>([]);
+  const [votes, setVotes] = useState<Row[]>([]);
   const effMax = DEFAUTS.effectifMax;
 
   useEffect(() => { load(); }, []);
@@ -47,29 +48,29 @@ export default function RecrutementPage() {
   const visibles = list.filter(l => filtre === "tout" || l.statut === filtre);
 
   function openNew() { setEditId(null); setForm({ ...EMPTY }); setShow(true); }
-  function openEdit(r: any) { setEditId(r.id); setForm({ ...EMPTY, ...r, heures_jeu: r.heures_jeu ?? "", date_depart_ancien: r.date_depart_ancien || "", discord: r.discord || "", discord_id: r.discord_id || "", unique_id: r.unique_id || "", ancien_groupe: r.ancien_groupe || "", sanctions_notes: r.sanctions_notes || "", gdoc_url: r.gdoc_url || "", histoire: r.histoire || "" }); setShow(true); }
+  function openEdit(r: Row) { setEditId(r.id); setForm({ ...EMPTY, ...r, heures_jeu: r.heures_jeu ?? "", date_depart_ancien: r.date_depart_ancien || "", discord: r.discord || "", discord_id: r.discord_id || "", unique_id: r.unique_id || "", ancien_groupe: r.ancien_groupe || "", sanctions_notes: r.sanctions_notes || "", gdoc_url: r.gdoc_url || "", histoire: r.histoire || "" }); setShow(true); }
   async function save() {
     if (!form.nom_rp.trim()) return;
     setSaving(true);
-    const row = { nom_rp: form.nom_rp.trim(), age_ok: !!form.age_ok, discord: form.discord.trim() || null, discord_id: form.discord_id.trim() || null, unique_id: form.unique_id.trim() || null, poste: form.poste, wipe_fait: !!form.wipe_fait, heures_jeu: Number(form.heures_jeu) || 0, ancien_groupe: form.ancien_groupe.trim() || null, date_depart_ancien: form.date_depart_ancien || null, sanctions_verifiees: !!form.sanctions_verifiees, sanctions_notes: form.sanctions_notes.trim() || null, statut: form.statut, gdoc_url: form.gdoc_url.trim() || null, histoire: form.histoire.trim() || null, created_by: (user as any)?.nom || null };
+    const row = { nom_rp: form.nom_rp.trim(), age_ok: !!form.age_ok, discord: form.discord.trim() || null, discord_id: form.discord_id.trim() || null, unique_id: form.unique_id.trim() || null, poste: form.poste, wipe_fait: !!form.wipe_fait, heures_jeu: Number(form.heures_jeu) || 0, ancien_groupe: form.ancien_groupe.trim() || null, date_depart_ancien: form.date_depart_ancien || null, sanctions_verifiees: !!form.sanctions_verifiees, sanctions_notes: form.sanctions_notes.trim() || null, statut: form.statut, gdoc_url: form.gdoc_url.trim() || null, histoire: form.histoire.trim() || null, created_by: (user as Row)?.nom || null };
     const r = editId ? await dbw.update("obsidian_recrutement", editId, row) : await dbw.insert("obsidian_recrutement", row);
     setSaving(false);
     if (r.error) { showToast(`Erreur : ${r.error.message}`, "danger"); return; }
     setShow(false); showToast(editId ? "Fiche modifiée" : "Fiche créée"); load();
   }
-  async function del(r: any) {
+  async function del(r: Row) {
     if (!window.confirm(`Supprimer la fiche de ${r.nom_rp} ?`)) return;
     const x = await dbw.remove("obsidian_recrutement", r.id);
     if (x.error) showToast(`Erreur : ${x.error.message}`, "danger"); else { showToast("Supprimée"); load(); }
   }
-  async function setStatut(r: any, statut: string) {
+  async function setStatut(r: Row, statut: string) {
     setList(l => l.map(x => (x.id === r.id ? { ...x, statut } : x)));
     const x = await dbw.update("obsidian_recrutement", r.id, { statut });
     if (x.error) { showToast(`Erreur : ${x.error.message}`, "danger"); load(); }
   }
-  const myId = String((user as any)?.id || "");
+  const myId = String((user as Row)?.id || "");
   const nbMembres = effectif ?? 0;
-  async function voter(r: any, vote: string | null) {
+  async function voter(r: Row, vote: string | null) {
     const res = vote
       ? await fetch("/api/obsidian/recrutement/vote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recrutement_id: r.id, vote }) })
       : await fetch(`/api/obsidian/recrutement/vote?recrutement_id=${r.id}`, { method: "DELETE" });
@@ -78,7 +79,7 @@ export default function RecrutementPage() {
     showToast(j.statut === "valide" ? "Vote pris en compte : candidat validé !" : j.statut === "refuse" ? "Vote pris en compte : candidat refusé" : vote ? "Vote enregistré" : "Vote retiré");
     load();
   }
-  async function copier(r: any) {
+  async function copier(r: Row) {
     try { await navigator.clipboard.writeText(formatDiscord(r)); showToast("Copié, colle-le dans Discord"); }
     catch { window.prompt("Copie ce texte :", formatDiscord(r)); }
   }

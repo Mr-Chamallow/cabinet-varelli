@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { diffuser, estDirection, estStaff } from "@/lib/cabinetAcces";
@@ -8,7 +9,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     const { id } = await ctx.params;
     const r = await requireAnyPermission(["cabinet_dossiers", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     if (!estStaff(user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const { data: p } = await r.supabaseAdmin.from("cabinet_plaintes").select("auteur_discord_id").eq("id", id).maybeSingle();
     if (!p) return NextResponse.json({ error: "Plainte introuvable" }, { status: 404 });

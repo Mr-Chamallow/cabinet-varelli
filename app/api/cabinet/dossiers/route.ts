@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { canWrite, nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
@@ -11,7 +12,7 @@ export async function GET(req: Request) {
   try {
     const r = await requireAnyPermission(["avocat", "cabinet_dossiers", "cabinet_compta"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const db = r.supabaseAdmin;
     const id = new URL(req.url).searchParams.get("id");
 
@@ -22,18 +23,18 @@ export async function GET(req: Request) {
 
     if (!estStaff(user)) {
       const { data: co } = await db.from("cabinet_dossier_clients").select("dossier_id").eq("client_discord_id", user.discord_id);
-      const coIds = (co || []).map((x: any) => x.dossier_id);
+      const coIds = (co || []).map((x: Row) => x.dossier_id);
       q = coIds.length ? q.or(`client_discord_id.eq.${user.discord_id},id.in.(${coIds.join(",")})`) : q.eq("client_discord_id", user.discord_id);
     } else if (!estDirection(user) && !estSecretaire(user)) {
       const { data: acces } = await db.from("cabinet_dossier_acces").select("dossier_id").eq("avocat_discord_id", user.discord_id);
-      const ids = (acces || []).map((a: any) => a.dossier_id);
+      const ids = (acces || []).map((a: Row) => a.dossier_id);
       if (ids.length === 0) return NextResponse.json({ rows: [] });
       q = q.in("id", ids);
     }
 
     // Dossiers archivés que l'utilisateur a retirés de sa liste
     const { data: masques, error: errMasques } = await db.from("cabinet_dossier_masques").select("dossier_id").eq("discord_id", user.discord_id);
-    const caches = errMasques ? [] : (masques || []).map((m: any) => m.dossier_id);
+    const caches = errMasques ? [] : (masques || []).map((m: Row) => m.dossier_id);
     if (caches.length) q = q.not("id", "in", `(${caches.join(",")})`);
 
     const { data, error } = await q;
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
   try {
     const r = await requireAnyPermission(["avocat", "cabinet_dossiers"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const db = r.supabaseAdmin;
     const b = await req.json();
     const titre = (b.titre || "").trim();
@@ -104,13 +105,13 @@ export async function PATCH(req: Request) {
   try {
     const r = await requireAnyPermission(["cabinet_dossiers"]);
     if (!r.authorized || !canWrite(r.user, "cabinet_dossiers")) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const b = await req.json();
     if (!b.id) return NextResponse.json({ error: "id requis" }, { status: 400 });
     const acces = await accesDossier(r.supabaseAdmin, user, b.id);
     if (!acces.peutGerer) return NextResponse.json({ error: "Dossier non attribué à ton nom" }, { status: 403 });
 
-    const patch: any = { updated_at: new Date().toISOString() };
+    const patch: Row = { updated_at: new Date().toISOString() };
     if (b.statut) {
       if (!STATUTS.includes(b.statut)) return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
       patch.statut = b.statut;

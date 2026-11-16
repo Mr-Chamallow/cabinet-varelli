@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire, lireUn } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -26,20 +27,20 @@ const MONEY_COL: Record<string, string> = { sale: "var(--danger)", propre: "var(
 export default function ComptaHubPage() {
   const { user, loading: userLoading } = useCurrentUser();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_comptabilite"))) window.location.href = "/"; }, [user, userLoading]);
-  const [allEntries, setAllEntries] = useState<any[]>([]);
+  const [allEntries, setAllEntries] = useState<Row[]>([]);
   const [argentF, setArgentF] = useState("");
-  const [bg, setBg] = useState<any>(null);
+  const [bg, setBg] = useState<Row | null>(null);
   const [capital, setCapital] = useState(0);
   const [seuil, setSeuil] = useState(0);
   const [inv, setInv] = useState({ cat: "Véhicule", motif: "", montant: 0, argent: "propre" });
   const [savingB, setSavingB] = useState(false);
-  const [arrests, setArrests] = useState<any[]>([]);
-  const [raw, setRaw] = useState<any[]>([]);
-  const [mvts, setMvts] = useState<any[]>([]);
+  const [arrests, setArrests] = useState<Row[]>([]);
+  const [raw, setRaw] = useState<Row[]>([]);
+  const [mvts, setMvts] = useState<Row[]>([]);
   const priceTable = usePriceTable();
-  const [trans, setTrans] = useState<any[]>([]);
-  const [stocks, setStocks] = useState<any[]>([]);
-  const [semaines, setSemaines] = useState<any[]>([]);
+  const [trans, setTrans] = useState<Row[]>([]);
+  const [stocks, setStocks] = useState<Row[]>([]);
+  const [semaines, setSemaines] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("budget");
   const [weeks, setWeeks] = useState(4);
@@ -63,19 +64,19 @@ export default function ComptaHubPage() {
       lireUn("obsidian_settings", { select: "capital_depart,seuil_tresorerie", eq: [["id", "default"]] }),
     ]);
     setBg(bgd || null); setCapital(Number(stg?.capital_depart) || 0); setSeuil(Number(stg?.seuil_tresorerie) || 0);
-    const rows = (data || []).map((e: any) => ({ ...e, montant: Number(e.montant) || 0, source: e.source || "manuel" }));
+    const rows: Row[] = (data || []).map((e: Row) => ({ ...e, montant: Number(e.montant) || 0, source: e.source || "manuel" }));
     setRaw(rows);
     // Blanchiment = TRANSFERT sale -> propre : seule la perte (frais) est une vraie dépense.
-    const by: Record<string, any[]> = {}; rows.filter(e => e.source === "blanchiment").forEach(e => (by[e.source_id || e.id] ??= []).push(e));
+    const by: Record<string, Row[]> = {}; rows.filter(e => e.source === "blanchiment").forEach(e => (by[e.source_id || e.id] ??= []).push(e));
     const frais = Object.values(by).map(g => { const out = g.find(x => x.type !== "recette"), inn = g.find(x => x.type === "recette"); const f = (out?.montant || 0) - (inn?.montant || 0); return { ...(out || g[0]), id: "bl-" + (out || g[0]).id, type: "dépense", categorie: "Frais de blanchiment", montant: Math.max(0, f), type_argent: "sale", source: "blanchiment-frais" }; });
-    setAllEntries([...rows.filter(e => e.source !== "blanchiment"), ...frais].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")));
+    setAllEntries([...rows.filter(e => e.source !== "blanchiment"), ...frais].sort((a: Row, b: Row) => String(b.created_at || "").localeCompare(String(a.created_at || ""))));
     setArrests(ar || []); setMvts(mv || []); setTrans(tr || []); setStocks(st || []); setSemaines(sw || []); setLoading(false);
   }
 
   const entries = useMemo(() => (argentF ? allEntries.filter(e => (e.type_argent || "sale") === argentF) : allEntries), [allEntries, argentF]);
 
   // --- Budget de lancement (indépendant du filtre d'argent) ---
-  const isInvest = (e: any) => e.type !== "recette" && /^investissement/i.test(e.categorie || "");
+  const isInvest = (e: Row) => e.type !== "recette" && /^investissement/i.test(e.categorie || "");
   const stockVal = useMemo(() => {
     const parCat: Record<string, number> = {}; let total = 0, n = 0;
     stocks.forEach(s => { const v = (Number(s.quantite) || 0) * (Number(s.prix_unitaire) || 0); if (v > 0) { total += v; n++; parCat[s.categorie || "autre"] = (parCat[s.categorie || "autre"] || 0) + v; } });
@@ -117,8 +118,8 @@ export default function ComptaHubPage() {
   const tPrev = useMemo(() => (weeks ? t0 - weeks * 7 * 864e5 : 0), [t0, weeks]);
   const cur = useMemo(() => entries.filter(e => new Date(e.created_at).getTime() >= t0), [entries, t0]);
   const prev = useMemo(() => (weeks ? entries.filter(e => { const t = new Date(e.created_at).getTime(); return t >= tPrev && t < t0; }) : []), [entries, tPrev, t0, weeks]);
-  const rec = (l: any[]) => sum(l.filter(e => e.type === "recette").map(e => e.montant));
-  const dep = (l: any[]) => sum(l.filter(e => e.type !== "recette").map(e => e.montant));
+  const rec = (l: Row[]) => sum(l.filter(e => e.type === "recette").map(e => e.montant));
+  const dep = (l: Row[]) => sum(l.filter(e => e.type !== "recette").map(e => e.montant));
   const R = rec(cur), D = dep(cur), N = R - D;
   const curArr = arrests.filter(a => new Date(a.created_at).getTime() >= t0);
   const amendes = sum(curArr.map(a => Number(a.amende) || 0));
@@ -129,7 +130,7 @@ export default function ComptaHubPage() {
   const solde = useMemo(() => { const base = sum(entries.filter(e => weekKey(e.created_at) < wks[0]).map(e => (e.type === "recette" ? 1 : -1) * e.montant)); let a = base; return byWeek.map(x => (a += x.r - x.d)); }, [byWeek, entries, wks]);
   const soldeTotal = sum(entries.map(e => (e.type === "recette" ? 1 : -1) * e.montant));
 
-  const group = (l: any[], key: (e: any) => string) => { const m: Record<string, { r: number; d: number; n: number; max: number }> = {}; l.forEach(e => { const k = key(e) || "-"; const x = (m[k] ??= { r: 0, d: 0, n: 0, max: 0 }); if (e.type === "recette") x.r += e.montant; else x.d += e.montant; x.n++; x.max = Math.max(x.max, e.montant); }); return Object.entries(m).map(([k, v]) => ({ k, ...v, net: v.r - v.d })).sort((a, b) => b.r + b.d - (a.r + a.d)); };
+  const group = (l: Row[], key: (e: Row) => string) => { const m: Record<string, { r: number; d: number; n: number; max: number }> = {}; l.forEach(e => { const k = key(e) || "-"; const x = (m[k] ??= { r: 0, d: 0, n: 0, max: 0 }); if (e.type === "recette") x.r += e.montant; else x.d += e.montant; x.n++; x.max = Math.max(x.max, e.montant); }); return Object.entries(m).map(([k, v]) => ({ k, ...v, net: v.r - v.d })).sort((a, b) => b.r + b.d - (a.r + a.d)); };
   const cats = useMemo(() => group(cur, e => e.categorie), [cur]);
   const membres = useMemo(() => group(cur.filter(e => e.membre), e => e.membre), [cur]);
   const sources = useMemo(() => group(cur, e => e.source), [cur]);
@@ -168,7 +169,7 @@ export default function ComptaHubPage() {
     const all = [...new Set([...raw.map(e => e.semaine), ...semaines.map(s => s.semaine)])].filter(Boolean).sort().reverse();
     return all.map(w => { const l = raw.filter(e => e.semaine === w); const net = sum(l.map(e => (e.type === "recette" ? 1 : -1) * e.montant)); const cl = semaines.find(s => s.semaine === w); return { w, cl, net, paies: sum(l.filter(e => e.source === "paie").map(e => e.montant)), nb: l.length }; });
   }, [raw, semaines]);
-  const isCEO = /^(CEO|Associé)/.test((user as any)?.role || "");
+  const isCEO = /^(CEO|Associé)/.test((user as Row)?.role || "");
   async function rouvrir(w: string) { if (!window.confirm(`Rouvrir la semaine du ${w} ? Elle redevient modifiable.`)) return; const r = await fetch("/api/obsidian/cloture", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ semaine: w }) }); if (!r.ok) alert("❌ " + (await r.json()).error); else load(); }
   const allCats = useMemo(() => [...new Set(entries.map(e => e.categorie))].filter(Boolean).sort(), [entries]);
   const allMembres = useMemo(() => [...new Set(entries.map(e => e.membre))].filter(Boolean).sort(), [entries]);

@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
 
 // Redimensionne / recadre (4:5) une image en JPEG léger (~25 Ko) pour la stocker directement.
@@ -46,7 +47,7 @@ export function PhotoPicker({ value, onChange, listen = true, evidence = false, 
       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", alignItems: "center" }}>
         {value && <img src={value} alt="" referrerPolicy="no-referrer" style={{ width: card ? 70 : 44, height: card ? 44 : 55, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />}
         <button type="button" className="btn btn-outline btn-sm" disabled={busy} onClick={() => file.current?.click()}>📁 Fichier</button>
-        <button type="button" className="btn btn-outline btn-sm" disabled={busy} onClick={async () => { try { const items = await (navigator as any).clipboard.read(); for (const it of items) { const t = it.types.find((x: string) => x.startsWith("image/")); if (t) { await setBlob(await it.getType(t)); return; } } setErr("Aucune image dans le presse-papier"); } catch { setErr("Fais Ctrl+V directement sur la page"); } }}>📋 Coller</button>
+        <button type="button" className="btn btn-outline btn-sm" disabled={busy} onClick={async () => { try { const items = await (navigator as Row).clipboard.read(); for (const it of items) { const t = it.types.find((x: string) => x.startsWith("image/")); if (t) { await setBlob(await it.getType(t)); return; } } setErr("Aucune image dans le presse-papier"); } catch { setErr("Fais Ctrl+V directement sur la page"); } }}>📋 Coller</button>
         {value && <button type="button" className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => onChange(null)}>✕ Retirer</button>}
         <input ref={file} type="file" accept="image/*" hidden onChange={ev => { const f = ev.target.files?.[0]; if (f) setBlob(f); ev.target.value = ""; }} />
       </div>

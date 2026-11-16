@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import FilMessages from "@/components/cabinet/FilMessages";
@@ -23,13 +24,13 @@ type Onglet = "messages" | "membres" | "factures" | "notes";
 
 // Un dossier : une en-tête sobre, puis un seul panneau à la fois (onglets)
 export default function DossierChat({ id, moiId, staff, direction, compta }: Props) {
-  const [dossier, setDossier] = useState<any>(null);
+  const [dossier, setDossier] = useState<Row | null>(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
   const [renommer, setRenommer] = useState(false);
   const [nouveauTitre, setNouveauTitre] = useState("");
   const [onglet, setOnglet] = useState<Onglet>("messages");
-  const [factures, setFactures] = useState<any[]>([]);
+  const [factures, setFactures] = useState<Row[]>([]);
   const router = useRouter();
 
   const charger = () => fetch(`/api/cabinet/dossiers?id=${id}`).then(r => r.json()).then(d => {
@@ -41,10 +42,10 @@ export default function DossierChat({ id, moiId, staff, direction, compta }: Pro
   // Factures du dossier (employés seulement)
   useEffect(() => {
     if (!compta || onglet !== "factures") return;
-    fetch("/api/cabinet/factures").then(r => r.json()).then(d => setFactures((d.rows || []).filter((f: any) => f.dossier_id === id)));
+    fetch("/api/cabinet/factures").then(r => r.json()).then(d => setFactures((d.rows || []).filter((f: Row) => f.dossier_id === id)));
   }, [onglet, id, staff]);
 
-  const envoyer = async (corps: any) => {
+  const envoyer = async (corps: Row) => {
     setErreur("");
     const r = await fetch("/api/cabinet/dossiers", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...corps }) });
     const d = await r.json();
@@ -74,7 +75,7 @@ export default function DossierChat({ id, moiId, staff, direction, compta }: Pro
   if (!dossier) return <div className="empty-state"><div className="empty-title">Dossier introuvable ou non accessible</div></div>;
 
   const ouvert = dossier.statut === "ouvert";
-  const gerer = direction || (dossier.cabinet_dossier_acces || []).some((a: any) => a.avocat_discord_id === moiId);
+  const gerer = direction || (dossier.cabinet_dossier_acces || []).some((a: Row) => a.avocat_discord_id === moiId);
   const peutGerer = staff && gerer;
   const statut = STATUT[dossier.statut] || { label: dossier.statut, couleur: "#9ca3af" };
 

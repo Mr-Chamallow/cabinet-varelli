@@ -1,11 +1,12 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
 import { Stat, champ, dateFr } from "@/components/compta/commun";
 
 // Factures hebdomadaires au gouvernement : générer, voir/imprimer, marquer payée
 export default function FacturesGouvernement({ semaine }: { semaine: string }) {
-  const [factures, setFactures] = useState<any[]>([]);
+  const [factures, setFactures] = useState<Row[]>([]);
   const [message, setMessage] = useState("");
 
   const charger = () =>

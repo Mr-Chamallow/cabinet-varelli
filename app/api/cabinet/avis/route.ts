@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
   try {
     const r = await requireAnyPermission(["avocat"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const b = await req.json();
     const note = Math.round(Number(b.note));
     const contenu = String(b.contenu || "").trim().slice(0, 800);

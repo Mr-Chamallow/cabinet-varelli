@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { hasPermission } from "@/lib/auth";
@@ -18,7 +19,7 @@ const bouton: React.CSSProperties = { padding: "0.5rem 0.9rem", borderRadius: 8,
 const carte: React.CSSProperties = { border: "1px solid var(--border)", borderRadius: 12, padding: "1rem", marginBottom: "0.8rem" };
 const label: React.CSSProperties = { fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-dim)", fontWeight: 600, margin: "1.6rem 0 0.8rem" };
 
-async function appel(url: string, methode: string, corps?: any) {
+async function appel(url: string, methode: string, corps?: Row) {
   const r = await fetch(url, {
     method: methode,
     headers: corps ? { "Content-Type": "application/json" } : undefined,
@@ -32,10 +33,10 @@ async function appel(url: string, methode: string, corps?: any) {
 export default function Recrutement() {
   const { user, loading } = useCurrentUser();
   const direction = !!user && hasPermission(user, "cabinet_attribution");
-  const [postes, setPostes] = useState<any[]>([]);
-  const [candidatures, setCandidatures] = useState<any[]>([]);
-  const [membres, setMembres] = useState<any[]>([]);
-  const [promotions, setPromotions] = useState<any[]>([]);
+  const [postes, setPostes] = useState<Row[]>([]);
+  const [candidatures, setCandidatures] = useState<Row[]>([]);
+  const [membres, setMembres] = useState<Row[]>([]);
+  const [promotions, setPromotions] = useState<Row[]>([]);
   const [msg, setMsg] = useState("");
   const [filtre, setFiltre] = useState("tous");
   const [form, setForm] = useState({ poste_id: "", nom: "", telephone: "", email: "", experience: "", motivation: "", disponibilite: "" });
@@ -59,7 +60,7 @@ export default function Recrutement() {
 
   if (loading || !user) return <EcranChargement />;
 
-  const action = async (fn: () => Promise<any>, ok: string) => {
+  const action = async (fn: () => Promise<unknown>, ok: string) => {
     setMsg("");
     try { await fn(); setMsg(ok); await charger(); }
     catch (e: unknown) { setMsg((e instanceof Error ? e.message : String(e))); }
@@ -68,7 +69,7 @@ export default function Recrutement() {
   const postuler = () => action(() => appel("/api/cabinet/recrutement/candidatures", "POST", form), "Candidature envoyée ✔");
   const creerPoste = () => action(() => appel("/api/cabinet/recrutement/postes", "POST", nouveauPoste), "Poste créé ✔");
   const supprimerPoste = (id: string) => action(() => appel(`/api/cabinet/recrutement/postes?id=${id}`, "DELETE"), "Poste supprimé ✔");
-  const majCandidature = (id: string, corps: any, ok: string) => action(() => appel("/api/cabinet/recrutement/candidatures", "PATCH", { id, ...corps }), ok);
+  const majCandidature = (id: string, corps: Row, ok: string) => action(() => appel("/api/cabinet/recrutement/candidatures", "PATCH", { id, ...corps }), ok);
   const promouvoir = () => action(() => appel("/api/cabinet/recrutement/promotions", "POST", promo), "Promotion enregistrée ✔");
 
   const mesCandidatures = candidatures.filter(c => c.discord_id === user.discord_id);

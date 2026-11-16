@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { ClipboardEvent, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -95,19 +96,19 @@ const jour = (s: string) => {
 // Fil de messages en temps réel, style conversation : bulles à droite (les miennes) et à gauche (les autres)
 export default function FilMessages({ url, lecture = false, titreVide = "Aucun message." }: Props) {
   const { user } = useCurrentUser();
-  const moiId = (user as any)?.discord_id || "";
-  const moiNom = (user as any)?.nom || (user as any)?.nom_perso || "";
-  const [messages, setMessages] = useState<any[]>([]);
+  const moiId = (user as Row)?.discord_id || "";
+  const moiNom = (user as Row)?.nom || (user as Row)?.nom_perso || "";
+  const [messages, setMessages] = useState<Row[]>([]);
   const [topic, setTopic] = useState<string | null>(null);
   const [texte, setTexte] = useState("");
   const [erreur, setErreur] = useState("");
   const [envoi, setEnvoi] = useState(false);
-  const [reponseA, setReponseA] = useState<any>(null);
+  const [reponseA, setReponseA] = useState<Row | null>(null);
   const [actif, setActif] = useState<string | null>(null);
   const peutEpingler = estStaffUser(user);
   const [frappe, setFrappe] = useState<Record<string, { nom: string; at: number }>>({});
   const fin = useRef<HTMLDivElement>(null);
-  const canalRef = useRef<any>(null);
+  const canalRef = useRef<Row | null>(null);
   const dernierFrappe = useRef(0);
 
   // Chargement initial + nom du canal temps réel
@@ -124,12 +125,12 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
   useEffect(() => {
     if (!topic || !supabase) return;
     const canal = supabase.channel(topic)
-      .on("broadcast", { event: "message" }, (msg: any) => {
+      .on("broadcast", { event: "message" }, (msg: Row) => {
         const row = msg.payload;
         if (!row) return;
         setMessages(prev => (prev.some(m => m.id === row.id) ? prev.map(m => (m.id === row.id ? row : m)) : [...prev, row]));
       })
-      .on("broadcast", { event: "typing" }, (msg: any) => {
+      .on("broadcast", { event: "typing" }, (msg: Row) => {
         const p = msg.payload;
         if (!p?.id || p.id === moiId) return;
         setFrappe(prev => ({ ...prev, [p.id]: { nom: p.nom, at: Date.now() } }));
@@ -181,7 +182,7 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
   };
 
   // Épingle (ou désépingle) un message : un seul message épinglé par fil
-  const epingler = async (m: any) => {
+  const epingler = async (m: Row) => {
     setActif(null);
     const r = await fetch(url, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: m.id, epingle: !m.epingle }) });
     const d = await r.json();
@@ -189,7 +190,7 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
     setMessages(prev => prev.map(x => (x.id === d.id ? d : (!m.epingle ? { ...x, epingle: false } : x))));
   };
 
-  const extrait = (m: any) => (m?.contenu ? m.contenu.slice(0, 90) : m?.fichier_nom ? `📄 ${m.fichier_nom}` : m?.image_url ? "🖼️ Image" : "");
+  const extrait = (m: Row) => (m?.contenu ? m.contenu.slice(0, 90) : m?.fichier_nom ? `📄 ${m.fichier_nom}` : m?.image_url ? "🖼️ Image" : "");
 
   const envoyerFichier = async (fichier: File, type: "image" | "document") => {
     const f = new FormData();
@@ -230,8 +231,8 @@ export default function FilMessages({ url, lecture = false, titreVide = "Aucun m
           const moi = !!moiId && m.auteur_discord_id === moiId;
           const prec = messages[i - 1];
           const suiv = messages[i + 1];
-          const meme = (x: any) => x && x.auteur_discord_id === m.auteur_discord_id;
-          const memeJourQue = (x: any) => x && jour(x.created_at) === jour(m.created_at);
+          const meme = (x: Row) => x && x.auteur_discord_id === m.auteur_discord_id;
+          const memeJourQue = (x: Row) => x && jour(x.created_at) === jour(m.created_at);
           const nouveauJour = i === 0 || libelles[i] !== libelles[i - 1];
           // Groupe : même auteur que le message précédent (pas de nom ni d'avatar répété) ; avatar seulement sur le dernier du groupe
           const debutGroupe = !(meme(prec) && memeJourQue(prec));

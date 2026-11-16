@@ -1,4 +1,6 @@
 "use client";
+import type { EvenementP } from "@/lib/pdfDocs";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -44,11 +46,11 @@ export default function EvenementsPage() {
   const { canWrite } = useGmAccess("gm_evenements");
   const { toast, showToast } = useToast();
   const [tab, setTab] = useState("convoi");
-  const [list, setList] = useState<any[]>([]);
+  const [list, setList] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [show, setShow] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<any>(empty("convoi"));
+  const [form, setForm] = useState<Row>(empty("convoi"));
   const [saving, setSaving] = useState(false);
   const groupes = useGroupes();
   const T = TYPES[tab];
@@ -58,10 +60,10 @@ export default function EvenementsPage() {
   async function load() {
     if (!supabase) { setLoading(false); return; }
     const { data } = await lire("gm_evenements", { order: [["created_at", false]] });
-    setList((data || []).map((e: any) => ({ ...e, montant: Number(e.montant) || 0 }))); setLoading(false);
+    setList((data || []).map((e: Row) => ({ ...e, montant: Number(e.montant) || 0 }))); setLoading(false);
   }
   function openNew() { setEditId(null); setForm(empty(tab)); setShow(true); }
-  function openEdit(e: any) { setEditId(e.id); setForm({ ...empty(e.type), ...e, partenaire: e.partenaire || "", notes: e.notes || "", date_event: toLocalInput(e.date_event), lots: e.lots || [], checklist: e.checklist || [] }); setShow(true); }
+  function openEdit(e: Row) { setEditId(e.id); setForm({ ...empty(e.type), ...e, partenaire: e.partenaire || "", notes: e.notes || "", date_event: toLocalInput(e.date_event), lots: e.lots || [], checklist: e.checklist || [] }); setShow(true); }
   async function save() {
     if (!form.titre.trim()) return;
     setSaving(true);
@@ -86,18 +88,18 @@ export default function EvenementsPage() {
     if (n === cl.length) return cl.map((c, i) => ({ ...c, done: i < cl.length - 1 }));
     return cl;
   }
-  async function setStatut(e: any, statut: string) {
+  async function setStatut(e: Row, statut: string) {
     const checklist = checklistFor(e.type, e.checklist || [], statut);
     setList(l => l.map(x => (x.id === e.id ? { ...x, statut, checklist } : x)));
     const r = await gmWrite("gm_evenements", "PATCH", { id: e.id, statut, checklist });
     if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else load();
   }
-  async function del(e: any) {
+  async function del(e: Row) {
     if (!window.confirm(`Supprimer « ${e.titre} » ?`)) return;
     const r = await gmWrite("gm_evenements", "DELETE", { id: e.id });
     if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else { showToast("Supprimé"); load(); }
   }
-  async function toggleCheck(e: any, i: number) {
+  async function toggleCheck(e: Row, i: number) {
     if (!canWrite) return;
     const checklist = (e.checklist || []).map((c: Check, j: number) => (j === i ? { ...c, done: !c.done } : c));
     setList(l => l.map(x => (x.id === e.id ? { ...x, checklist } : x)));
@@ -107,7 +109,7 @@ export default function EvenementsPage() {
     const r = await gmWrite("gm_evenements", "PATCH", { id: e.id, checklist, statut });
     if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); load(); }
   }
-  const setLot = (i: number, p: Partial<Lot>) => setForm((f: any) => ({ ...f, lots: f.lots.map((l: Lot, j: number) => (j === i ? { ...l, ...p } : l)) }));
+  const setLot = (i: number, p: Partial<Lot>) => setForm((f: Row) => ({ ...f, lots: f.lots.map((l: Lot, j: number) => (j === i ? { ...l, ...p } : l)) }));
   const visible = list.filter(e => e.type === tab);
   // Compteur auto : evenements du mois (hors annules) - le reglement impose 2 par mois.
   const m0 = debutMois().getTime();
@@ -142,7 +144,7 @@ export default function EvenementsPage() {
                   </div>
                   <Badge color={st.color}>{st.label}</Badge>
                   {canWrite && <select value={e.statut} onChange={ev => setStatut(e, ev.target.value)} style={{ maxWidth: 130 }}>{T.statuts.map(s => <option key={s.k} value={s.k}>{s.label}</option>)}</select>}
-                  <button className="btn btn-ghost btn-sm" title="PDF" onClick={() => pdfEvenement(e)}>📄</button>
+                  <button className="btn btn-ghost btn-sm" title="PDF" onClick={() => pdfEvenement(e as EvenementP)}>📄</button>
                   {canWrite && <><button className="btn btn-ghost btn-sm" onClick={() => openEdit(e)}>✏️</button><button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => del(e)}>🗑️</button></>}
                 </div>
                 {(e.lots || []).length > 0 && (
@@ -190,24 +192,24 @@ export default function EvenementsPage() {
                     <input type="number" placeholder="Mise départ" value={l.mise_depart || ""} onChange={e => setLot(i, { mise_depart: Number(e.target.value) })} style={{ flex: 1, minWidth: 90 }} />
                     <input type="number" placeholder="Adjugé" value={l.mise_finale || ""} onChange={e => setLot(i, { mise_finale: Number(e.target.value) })} style={{ flex: 1, minWidth: 90 }} />
                     <input placeholder="Gagnant" value={l.gagnant} onChange={e => setLot(i, { gagnant: e.target.value })} style={{ flex: 1, minWidth: 100 }} />
-                    <button type="button" className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => setForm((f: any) => ({ ...f, lots: f.lots.filter((_: any, j: number) => j !== i) }))}>✕</button>
+                    <button type="button" className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => setForm((f: Row) => ({ ...f, lots: f.lots.filter((_: Row, j: number) => j !== i) }))}>✕</button>
                   </div>
                 ))}
-                <button type="button" className="btn btn-outline btn-sm" onClick={() => setForm((f: any) => ({ ...f, lots: [...f.lots, { nom: "", mise_depart: 0, mise_finale: 0, gagnant: "" }] }))}>+ Lot</button>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => setForm((f: Row) => ({ ...f, lots: [...f.lots, { nom: "", mise_depart: 0, mise_finale: 0, gagnant: "" }] }))}>+ Lot</button>
               </div>
             )}
             <div>
               <label>📋 Plan de l&apos;événement (checklist)</label>
               {(form.checklist || []).map((c: Check, i: number) => (
                 <div key={i} style={{ display: "flex", gap: "0.35rem", marginBottom: "0.3rem" }}>
-                  <input type="checkbox" checked={c.done} onChange={() => setForm((f: any) => ({ ...f, checklist: f.checklist.map((x: Check, j: number) => (j === i ? { ...x, done: !x.done } : x)) }))} style={{ width: 16 }} />
-                  <input value={c.t} onChange={ev => setForm((f: any) => ({ ...f, checklist: f.checklist.map((x: Check, j: number) => (j === i ? { ...x, t: ev.target.value } : x)) }))} style={{ flex: 1 }} />
-                  <button type="button" className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => setForm((f: any) => ({ ...f, checklist: f.checklist.filter((_: any, j: number) => j !== i) }))}>✕</button>
+                  <input type="checkbox" checked={c.done} onChange={() => setForm((f: Row) => ({ ...f, checklist: f.checklist.map((x: Check, j: number) => (j === i ? { ...x, done: !x.done } : x)) }))} style={{ width: 16 }} />
+                  <input value={c.t} onChange={ev => setForm((f: Row) => ({ ...f, checklist: f.checklist.map((x: Check, j: number) => (j === i ? { ...x, t: ev.target.value } : x)) }))} style={{ flex: 1 }} />
+                  <button type="button" className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => setForm((f: Row) => ({ ...f, checklist: f.checklist.filter((_: Row, j: number) => j !== i) }))}>✕</button>
                 </div>
               ))}
               <div style={{ display: "flex", gap: "0.35rem" }}>
-                <button type="button" className="btn btn-outline btn-sm" onClick={() => setForm((f: any) => ({ ...f, checklist: [...(f.checklist || []), { t: "", done: false }] }))}>+ Étape</button>
-                <button type="button" className="btn btn-outline btn-sm" onClick={() => setForm((f: any) => ({ ...f, checklist: [...(f.checklist || []), ...MODELES[f.type].map(t => ({ t, done: false }))] }))}>✨ Modèle {TYPES[form.type].label.toLowerCase()}</button>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => setForm((f: Row) => ({ ...f, checklist: [...(f.checklist || []), { t: "", done: false }] }))}>+ Étape</button>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => setForm((f: Row) => ({ ...f, checklist: [...(f.checklist || []), ...MODELES[f.type].map(t => ({ t, done: false }))] }))}>✨ Modèle {TYPES[form.type].label.toLowerCase()}</button>
               </div>
             </div>
             <div><label>Notes</label><textarea rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>

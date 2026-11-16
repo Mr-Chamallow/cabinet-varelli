@@ -20,7 +20,7 @@ export function useRealtimeTable(tables: string | string[], onChange: () => void
     const fire = () => { if (timer) clearTimeout(timer); timer = setTimeout(() => cbRef.current(), 350); };
     const channel = supabase.channel(`realtime-${key}-${Math.random().toString(36).slice(2)}`);
     list.forEach((table) => {
-      channel.on("postgres_changes" as any, { event: "*", schema: "public", table }, fire);
+      channel.on("postgres_changes", { event: "*", schema: "public", table }, fire);
     });
     channel.subscribe();
     // Filet de securite : rafraichit toutes les 30 s quand l'onglet est visible (les tables

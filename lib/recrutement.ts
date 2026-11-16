@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { DELAI_INTERORGA_JOURS, HEURES_MIN, HEURES_ARME_LOURDE, HEURES_ARME_AUTO, addDays } from "@/lib/regles";
 
 export const STATUTS_RECRUTEMENT: Record<string, { label: string; color: string }> = {
@@ -7,7 +8,7 @@ export const STATUTS_RECRUTEMENT: Record<string, { label: string; color: string 
   refuse: { label: "Refusé", color: "var(--danger)" },
 };
 // Controle des conditions du reglement (gang / orga). Retourne la liste des points a regler.
-export function problemes(f: any): string[] {
+export function problemes(f: Row): string[] {
   const p: string[] = [];
   if (!f.age_ok) p.push("Âge 18 ans non confirmé");
   if (!f.wipe_fait) p.push("Wipe obligatoire avant de rejoindre un groupe officiel");
@@ -21,7 +22,7 @@ export function problemes(f: any): string[] {
   return p;
 }
 const yn = (b: boolean) => (b ? "✅" : "❌");
-export function formatDiscord(f: any): string {
+export function formatDiscord(f: Row): string {
   const pr = problemes(f);
   return [
     `📝 **Fiche de recrutement : ${f.nom_rp}**`,

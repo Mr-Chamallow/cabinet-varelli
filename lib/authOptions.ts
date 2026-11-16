@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import type { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import { DISCORD_SERVER_ID, getHighestRole } from "@/lib/discord-config";
@@ -210,7 +211,7 @@ export const authOptions: NextAuthOptions = {
       // juste "Connexion refusée. Réessaie." SANS rien logguer dans
       // site_login_failures - impossible de savoir pourquoi. Maintenant la vraie
       // erreur est toujours enregistrée, visible dans Admin > Journaux > 🚫 Refusées.
-      const discordName = (profile as any)?.username || "Inconnu";
+      const discordName = (profile as Row)?.username || "Inconnu";
       try {
         if (!account?.access_token) {
           await logFailedLogin("inconnu", discordName, "no_access_token");
@@ -232,7 +233,7 @@ export const authOptions: NextAuthOptions = {
         const inGuild = false;
         const roles: string[] = [];
         token.discord_id = account.providerAccountId;
-        token.discord_name = (profile as any)?.username || "Membre";
+        token.discord_name = (profile as Row)?.username || "Membre";
         token.discord_access = account.access_token;
         token.discord_refresh = account.refresh_token;
         token.discord_expires = account.expires_at ? account.expires_at * 1000 : 0;
@@ -295,13 +296,13 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).site_role = token.site_role;
-        (session.user as any).discord_name = token.discord_name;
-        (session.user as any).nom_perso = token.nom_perso || "";
-        (session.user as any).discord_id = token.discord_id;
-        (session.user as any).permissions = token.permissions || null;
-        (session.user as any).banned = !!token.banned;
-        (session.user as any).ban_reason = token.ban_reason || "";
+        (session.user as Row).site_role = token.site_role;
+        (session.user as Row).discord_name = token.discord_name;
+        (session.user as Row).nom_perso = token.nom_perso || "";
+        (session.user as Row).discord_id = token.discord_id;
+        (session.user as Row).permissions = token.permissions || null;
+        (session.user as Row).banned = !!token.banned;
+        (session.user as Row).ban_reason = token.ban_reason || "";
       }
       return session;
     },

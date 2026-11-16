@@ -1,11 +1,12 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
 
 const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
 const WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-let loading: Promise<any> | null = null;
-function loadPdfJs(): Promise<any> {
-  const w = window as any;
+let loading: Promise<Row> | null = null;
+function loadPdfJs(): Promise<Row> {
+  const w = window as Row;
   if (w.pdfjsLib) return Promise.resolve(w.pdfjsLib);
   if (!loading) loading = new Promise((res, rej) => {
     const s = document.createElement("script"); s.src = PDFJS; s.async = true;

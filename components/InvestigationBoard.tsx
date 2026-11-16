@@ -1,4 +1,6 @@
 "use client";
+import type { EnqueteItem } from "@/lib/pdfDocs";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -33,8 +35,8 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   const [all, setAll] = useState<Item[]>([]);
   const [mlinksAll, setMlinksAll] = useState<MLink[]>([]);
   const [vehicles, setVehicles] = useState<V[]>([]);
-  const [dossiers, setDossiers] = useState<any[]>([]);
-  const [pactes, setPactes] = useState<any[]>([]);
+  const [dossiers, setDossiers] = useState<Row[]>([]);
+  const [pactes, setPactes] = useState<Row[]>([]);
   const [groupes, setGroupes] = useState<{ id: string; nom: string; type: string }[]>([]);
   const [pick, setPick] = useState(""); const [pickG, setPickG] = useState("");
   const [err, setErr] = useState("");
@@ -85,17 +87,17 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
     if (bd.error) { setErr("Tables du tableau absentes : lance migration-lot44.sql dans Supabase."); return; }
     let list = (bd.data || []) as { id: string; nom: string }[];
     let its = (b.data || []) as Item[];
-    if (!list.length) { const r = await dbw.insert("obsidian_boards", { nom: "Tableau principal", created_by: user || null }); if (r.data) list = [r.data]; }
+    if (!list.length) { const r = await dbw.insert("obsidian_boards", { nom: "Tableau principal", created_by: user || null }); if (r.data) list = [r.data as { id: string; nom: string }]; }
     const first = list[0]?.id || null;
     const legacy = its.filter(i => !i.board_id);
     if (legacy.length && first) { its = its.map(i => (i.board_id ? i : { ...i, board_id: first })); Promise.all(legacy.map(i => dbw.update("obsidian_board", i.id, { board_id: first }))); }
     setBoards(list); setBoardId(cur => (cur && list.some(x => x.id === cur) ? cur : first)); setAll(its); setMlinksAll((ml.data || []) as MLink[]);
-    const pById = new Map((bp.data || []).map((p: any) => [p.id, p]));
-    const dbVeh: V[] = (bv.data || []).map((x: any) => {
-      const o: any = pById.get(x.proprietaire_id); const a = o ? [o.prenom, o.nom].filter(Boolean).join(" ") : ""; const b2 = o ? [o.nom, o.prenom].filter(Boolean).join(" ") : "";
+    const pById = new Map((bp.data || []).map((p: Row) => [p.id, p]));
+    const dbVeh: V[] = (bv.data || []).map((x: Row) => {
+      const o: Row = pById.get(x.proprietaire_id); const a = o ? [o.prenom, o.nom].filter(Boolean).join(" ") : ""; const b2 = o ? [o.nom, o.prenom].filter(Boolean).join(" ") : "";
       return { id: x.id, modele: x.marque_modele || "Véhicule", plaque: x.plaque, assigne_a: a || null, owners: o ? [norm(a), norm(b2)] : [], photo_url: Array.isArray(x.photos) ? x.photos[0] || null : null, bdd: true };
     });
-    setVehicles([...((v.data || []) as V[]), ...dbVeh]); setDossiers(td.data || []); setPactes(gp.data || []); setGroupes((gg.data || []) as any);
+    setVehicles([...((v.data || []) as V[]), ...dbVeh]); setDossiers(td.data || []); setPactes(gp.data || []); setGroupes((gg.data || []) as { id: string; nom: string; type: string }[]);
   }, [user]);
   useEffect(() => { load(); }, [load]);
 
@@ -116,7 +118,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   async function redo() { const a = hist.current.future.pop(); if (!a) return; await a.redo(); hist.current.past.push(a); syncHist(); bump(n => n + 1); }
 
   // ---------- operations de base (avec persistance) ----------
-  async function insertItems(rows: any[]): Promise<Item[]> {
+  async function insertItems(rows: Row[]): Promise<Item[]> {
     const { data, error } = await dbw.insertMany("obsidian_board", rows);
     if (error) { setErr(error.message); return []; }
     const got = (data || []) as Item[]; setAll(l => [...l, ...got]); return got;
@@ -126,7 +128,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
     setSel(s => { const n = new Set(s); ids.forEach(i => n.delete(i)); return n; });
     await Promise.all(ids.map(id => dbw.remove("obsidian_board", id)));
   }
-  async function insertLink(row: any): Promise<MLink | null> {
+  async function insertLink(row: Row): Promise<MLink | null> {
     const { data, error } = await dbw.insert("obsidian_board_links", row);
     if (error || !data) { setErr(error?.message || "Erreur"); return null; }
     setMlinksAll(l => [...l, data as MLink]); return data as MLink;
@@ -135,7 +137,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   const setPos = (id: string, x: number, y: number) => { setAll(l => l.map(i => (i.id === id ? { ...i, x, y } : i))); dbw.update("obsidian_board", id, { x: Math.round(x), y: Math.round(y) }); };
 
   // action "ajout d'elements" annulable
-  async function addAct(rows: any[]) {
+  async function addAct(rows: Row[]) {
     const created = await insertItems(rows); if (!created.length) return;
     const olds = created.map(c => c.id);
     push({
@@ -210,7 +212,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
     const cols = Math.min(6, Math.ceil(Math.sqrt(list.length))), rowsN = Math.ceil(list.length / cols); const gx = PW + 40, gy = PH + 50;
     const c = freeSpot(cols * gx, rowsN * gy);
     const cars: V[] = []; list.forEach(f => relatedOf(f).cars.forEach(v => { if (!onBoard("vehicule", v.id) && !cars.some(x => x.id === v.id)) cars.push(v); }));
-    const rows: any[] = list.map((f, i) => rowOf("fiche", f.id, c.x + (i % cols) * gx, c.y + Math.floor(i / cols) * gy));
+    const rows: Row[] = list.map((f, i) => rowOf("fiche", f.id, c.x + (i % cols) * gx, c.y + Math.floor(i / cols) * gy));
     cars.forEach((v, i) => rows.push(rowOf("vehicule", v.id, c.x + ((list.length + i) % cols) * gx, c.y + Math.floor((list.length + i) / cols) * gy)));
     await addAct(rows); setErr("");
   }
@@ -359,7 +361,7 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   }
 
   // ---------- tableaux ----------
-  async function newBoard() { const nom = window.prompt("Nom du nouveau tableau (ex : Affaire du convoi)"); if (!nom?.trim()) return; const r = await dbw.insert("obsidian_boards", { nom: nom.trim(), created_by: user || null }); if (r.data) { setBoards(l => [...l, r.data]); setBoardId(r.data.id); } else if (r.error) setErr(r.error.message); }
+  async function newBoard() { const nom = window.prompt("Nom du nouveau tableau (ex : Affaire du convoi)"); if (!nom?.trim()) return; const r = await dbw.insert("obsidian_boards", { nom: nom.trim(), created_by: user || null }); if (r.data) { setBoards(l => [...l, r.data as { id: string; nom: string }]); setBoardId(r.data.id); } else if (r.error) setErr(r.error.message); }
   async function renameBoard() { const cur = boards.find(b => b.id === boardId); const nom = window.prompt("Nouveau nom du tableau", cur?.nom || ""); if (!nom?.trim() || !boardId) return; await dbw.update("obsidian_boards", boardId, { nom: nom.trim() }); setBoards(l => l.map(b => (b.id === boardId ? { ...b, nom: nom.trim() } : b))); }
   async function deleteBoard() {
     if (boards.length < 2) { setErr("Il faut garder au moins un tableau."); return; }
@@ -384,10 +386,10 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   async function openTimeline() {
     if (!supabase) return; const fl = (sel.size ? shown.filter(i => sel.has(i.id)) : shown).filter(i => i.kind === "fiche").map(i => fById.get(i.ref!)!).filter(Boolean);
     const ids = fl.map(f => f.id), orgs = [...new Set(fl.map(f => f.organisation).filter(Boolean) as string[])], noms = fl.map(f => f.nom);
-    const [j, ev] = await Promise.all([ids.length ? lire("obsidian_journal", { select: "fiche_nom,action,created_at,par", in: [["fiche_id", ids]], order: [["created_at", false]], limit: 40 }) : Promise.resolve({ data: [] as any[] }), orgs.length ? lire("gm_evenements", { select: "titre,type,statut,partenaire,date_event", in: [["partenaire", orgs]], limit: 30 }) : Promise.resolve({ data: [] as any[] })]);
+    const [j, ev] = await Promise.all([ids.length ? lire("obsidian_journal", { select: "fiche_nom,action,created_at,par", in: [["fiche_id", ids]], order: [["created_at", false]], limit: 40 }) : Promise.resolve({ data: [] as Row[] }), orgs.length ? lire("gm_evenements", { select: "titre,type,statut,partenaire,date_event", in: [["partenaire", orgs]], limit: 30 }) : Promise.resolve({ data: [] as Row[] })]);
     const out: { at: string; txt: string; icon: string }[] = [];
-    (j.data || []).forEach((x: any) => out.push({ at: x.created_at, icon: "🗂️", txt: `${x.fiche_nom} : ${x.action}${x.par ? ` (${x.par})` : ""}` }));
-    (ev.data || []).forEach((x: any) => x.date_event && out.push({ at: x.date_event, icon: "🚚", txt: `${x.titre} (${x.partenaire}) · ${x.statut}` }));
+    (j.data || []).forEach((x: Row) => out.push({ at: x.created_at, icon: "🗂️", txt: `${x.fiche_nom} : ${x.action}${x.par ? ` (${x.par})` : ""}` }));
+    (ev.data || []).forEach((x: Row) => x.date_event && out.push({ at: x.date_event, icon: "🚚", txt: `${x.titre} (${x.partenaire}) · ${x.statut}` }));
     dossiers.filter(d => noms.some(n => dossiersOf({ id: "", nom: n } as F).some(x => x.id === d.id))).forEach(d => out.push({ at: d.date_audience || d.created_at || new Date().toISOString(), icon: "⚖️", txt: `Tribunal : ${d.titre} (${d.statut})` }));
     setTimeline(out.filter(x => x.at).sort((a, b) => +new Date(b.at) - +new Date(a.at)).slice(0, 50));
   }
@@ -395,8 +397,8 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
   // ---------- exports ----------
   async function exportPdf() {
     const list = shown.map(i => { const f = i.kind === "fiche" ? fById.get(i.ref!) : null, v = i.kind === "vehicule" ? vById.get(i.ref!) : null;
-      return { id: i.id, kind: (i.kind === "fiche" || i.kind === "vehicule" ? i.kind : "note") as any, x: i.x, y: i.y, label: labelOf(i.id), sub: f ? (f.organisation || "") : v ? [v.plaque, v.assigne_a ? "-> " + v.assigne_a : ""].filter(Boolean).join(" ") : i.kind === "dossier" ? "Dossier tribunal" : i.kind === "pacte" ? "Pacte" : "", img: i.kind === "note" ? i.img : (f?.photo_url || v?.photo_url), prime: Number(f?.prime) || 0 }; });
-    await pdfEnquete(list as any, links.map(l => ({ a: l.a, b: l.b, car: l.car })), user);
+      return { id: i.id, kind: (i.kind === "fiche" || i.kind === "vehicule" ? i.kind : "note") as EnqueteItem["kind"], x: i.x, y: i.y, label: labelOf(i.id), sub: f ? (f.organisation || "") : v ? [v.plaque, v.assigne_a ? "-> " + v.assigne_a : ""].filter(Boolean).join(" ") : i.kind === "dossier" ? "Dossier tribunal" : i.kind === "pacte" ? "Pacte" : "", img: i.kind === "note" ? i.img : (f?.photo_url || v?.photo_url), prime: Number(f?.prime) || 0 }; });
+    await pdfEnquete(list as EnqueteItem[], links.map(l => ({ a: l.a, b: l.b, car: l.car })), user);
   }
   async function exportPng() {
     const s = 0.7; const cv = document.createElement("canvas"); cv.width = W * s; cv.height = H * s; const g = cv.getContext("2d")!; g.scale(s, s);

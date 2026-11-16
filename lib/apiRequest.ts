@@ -1,8 +1,9 @@
-export async function apiRequest(url: string, options: RequestInit): Promise<{ ok: boolean; status: number; data: any; error?: string }> {
+import type { Row } from "@/lib/types";
+export async function apiRequest(url: string, options: RequestInit): Promise<{ ok: boolean; status: number; data: Row; error?: string }> {
   try {
     const res = await fetch(url, options);
     const text = await res.text();
-    let data: any = null;
+    let data: Row = null;
     try { data = text ? JSON.parse(text) : null; } catch { /* réponse non-JSON */ }
     if (!res.ok) {
       return { ok: false, status: res.status, data, error: data?.error || text?.slice(0, 300) || `Erreur HTTP ${res.status}` };

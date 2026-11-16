@@ -1,4 +1,6 @@
 "use client";
+import type { DossierP } from "@/lib/pdfDocs";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -30,11 +32,11 @@ const EMPTY = { titre: "", accuse: "", organisation: "", statut: "instruction", 
 export default function TribunalPage() {
   const { user, canWrite } = useGmAccess("gm_tribunal");
   const { toast, showToast } = useToast();
-  const [list, setList] = useState<any[]>([]);
+  const [list, setList] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [open, setOpen] = useState<string | null>(null);
-  const [form, setForm] = useState<any>(EMPTY);
+  const [form, setForm] = useState<Row>(EMPTY);
   const [editId, setEditId] = useState<string | null>(null);
   const [show, setShow] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -50,7 +52,7 @@ export default function TribunalPage() {
   }
 
   function openNew() { setEditId(null); setForm({ ...EMPTY, procureur: "" }); setShow(true); }
-  function openEdit(d: any) {
+  function openEdit(d: Row) {
     setEditId(d.id);
     setForm({ ...EMPTY, ...d, accuse: d.accuse || "", organisation: d.organisation || "", juge: d.juge || "", procureur: d.procureur || "", avocat: d.avocat || "", acte_accusation: d.acte_accusation || "", defense: d.defense || "", sentence: d.sentence || "", date_audience: toLocalInput(d.date_audience), preuves: d.preuves || [] });
     setShow(true);
@@ -58,22 +60,22 @@ export default function TribunalPage() {
   async function save() {
     if (!form.titre.trim()) return;
     setSaving(true);
-    const body: any = { ...form, date_audience: fromLocalInput(form.date_audience) };
+    const body: Row = { ...form, date_audience: fromLocalInput(form.date_audience) };
     const r = await gmWrite("tribunal_dossiers", editId ? "PATCH" : "POST", editId ? { ...body, id: editId } : body);
     setSaving(false);
     if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); return; }
     setShow(false); showToast(editId ? "Dossier modifié" : "Dossier ouvert"); load();
   }
-  async function quick(d: any, patch: any) {
+  async function quick(d: Row, patch: Row) {
     const r = await gmWrite("tribunal_dossiers", "PATCH", { id: d.id, ...patch });
     if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else load();
   }
-  async function addProof(d: any) {
+  async function addProof(d: Row) {
     if (!newProof.texte.trim()) return;
-    await quick(d, { preuves: [...(d.preuves || []), { texte: newProof.texte.trim(), url: newProof.url.trim() || undefined, par: (user as any)?.nom || "", date: new Date().toISOString() }] });
+    await quick(d, { preuves: [...(d.preuves || []), { texte: newProof.texte.trim(), url: newProof.url.trim() || undefined, par: (user as Row)?.nom || "", date: new Date().toISOString() }] });
     setNewProof({ texte: "", url: "" });
   }
-  async function del(d: any) {
+  async function del(d: Row) {
     if (!window.confirm(`Supprimer le dossier « ${d.titre} » ?`)) return;
     const r = await gmWrite("tribunal_dossiers", "DELETE", { id: d.id });
     if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else { showToast("Supprimé"); load(); }
@@ -119,10 +121,10 @@ export default function TribunalPage() {
                     <div>
                       <b>🗂️ Preuves</b>
                       {(d.preuves || []).length === 0 && <div style={{ color: "var(--text-dim)" }}>Aucune preuve</div>}
-                      {(d.preuves || []).map((p: any, i: number) => (
+                      {(d.preuves || []).map((p: Row, i: number) => (
                         <div key={i} style={{ display: "flex", gap: "0.5rem", alignItems: "baseline", padding: "0.25rem 0" }}>
                           <span>·</span><span style={{ flex: 1 }}>{p.texte}{p.url && <> - <a href={p.url} target="_blank" rel="noreferrer" style={{ color: "var(--gold)" }}>lien</a></>}<span style={{ color: "var(--text-dim)", fontSize: "0.68rem" }}> {p.par ? `· ${p.par}` : ""} {p.date ? `· ${fmtDT(p.date)}` : ""}</span></span>
-                          {canWrite && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => quick(d, { preuves: d.preuves.filter((_: any, j: number) => j !== i) })}>✕</button>}
+                          {canWrite && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => quick(d, { preuves: d.preuves.filter((_: Row, j: number) => j !== i) })}>✕</button>}
                         </div>
                       ))}
                       {canWrite && (
@@ -133,7 +135,7 @@ export default function TribunalPage() {
                         </div>
                       )}
                     </div>
-                    <div><button className="btn btn-outline btn-sm" onClick={() => pdfDossier(d)}>📄 Dossier PDF</button></div>
+                    <div><button className="btn btn-outline btn-sm" onClick={() => pdfDossier(d as DossierP)}>📄 Dossier PDF</button></div>
                     {canWrite && (
                       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                         {d.statut !== "clos" && <button className="btn btn-gold btn-sm" onClick={() => quick(d, { statut: nextStatut(d.statut) })}>➡️ Passer à : {STATUTS.find(s => s.k === nextStatut(d.statut))?.label}</button>}

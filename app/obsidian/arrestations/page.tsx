@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { PhotoPicker } from "@/components/PhotoPicker";
@@ -20,7 +21,7 @@ import SearchBox, { matchQ } from "@/components/SearchBox";
 const fmt = (n: number) => money(n);
 function localInputNow() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); }
 
-interface Arrest { id: string; membre: string; amende: number; argent_perdu: number; type_argent: string; items: any[]; notes?: string; created_by?: string; created_at: string; photo_url?: string | null; }
+interface Arrest { id: string; membre: string; amende: number; argent_perdu: number; type_argent: string; items: Row[]; notes?: string; created_by?: string; created_at: string; photo_url?: string | null; }
 interface StockLite { id: string; nom: string; emoji: string; categorie: string; quantite: number; unite: string; }
 const EMPTY = () => ({ membre: "", amende: "", argent: "", type_argent: "sale", date: localInputNow(), notes: "", photo_url: "" as string });
 
@@ -51,8 +52,8 @@ export default function ArrestationsPage() {
       lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }),
       lire("obsidian_stocks", { select: "id,nom,emoji,categorie,quantite,unite", order: [["categorie", true], ["nom", true]] }),
     ]);
-    setList((a || []).map((r: any) => ({ ...r, amende: Number(r.amende) || 0, argent_perdu: Number(r.argent_perdu) || 0, items: r.items || [] })));
-    setEmployes((e || []).filter((x: any) => x.actif !== false).map((x: any) => x.nom).filter(Boolean));
+    setList(((a || []).map((r: Row) => ({ ...r, amende: Number(r.amende) || 0, argent_perdu: Number(r.argent_perdu) || 0, items: r.items || [] }))) as Arrest[]);
+    setEmployes((e || []).filter((x: Row) => x.actif !== false).map((x: Row) => x.nom).filter(Boolean));
     setStocks((s || []) as StockLite[]);
     setLoading(false);
   }
@@ -75,7 +76,7 @@ export default function ArrestationsPage() {
     const d = new Date(a.created_at); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     setEditId(a.id);
     setForm({ membre: a.membre, amende: a.amende ? String(a.amende) : "", argent: a.argent_perdu ? String(a.argent_perdu) : "", type_argent: a.type_argent || "sale", date: d.toISOString().slice(0, 16), notes: a.notes || "", photo_url: a.photo_url || "" });
-    setRows((a.items || []).filter((i: any) => i.stock_id).map((i: any) => ({ stock_id: i.stock_id, quantite: Number(i.quantite) || 1 })));
+    setRows((a.items || []).filter((i: Row) => i.stock_id).map((i: Row) => ({ stock_id: i.stock_id, quantite: Number(i.quantite) || 1 })));
     setShowForm(true);
   }
 
@@ -90,7 +91,7 @@ export default function ArrestationsPage() {
       items: rows.filter(r => r.stock_id && r.quantite > 0),
       notes: form.notes.trim() || null,
       photo_url: form.photo_url || null,
-      created_by: (user as any)?.nom || "",
+      created_by: (user as Row)?.nom || "",
       created_at: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
     };
     const res = await fetch("/api/obsidian/arrestations", { method: editId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editId ? { ...payload, id: editId } : payload) });
@@ -165,7 +166,7 @@ export default function ArrestationsPage() {
               </div>
               {a.items.length > 0 && (
                 <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
-                  {a.items.map((it: any, i: number) => (
+                  {a.items.map((it: Row, i: number) => (
                     <span key={i} style={{ fontSize: "0.7rem", padding: "0.12rem 0.55rem", borderRadius: 999, background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
                       {it.emoji} {it.nom} x {it.quantite}{it.retire < it.quantite ? ` (stock : ${it.retire} retiré)` : ""}
                     </span>

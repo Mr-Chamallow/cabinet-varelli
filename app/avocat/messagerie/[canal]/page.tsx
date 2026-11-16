@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import CabinetShell from "@/components/cabinet/CabinetShell";
@@ -29,7 +30,7 @@ export default function Page() {
     if (canal.startsWith("bureau-")) {
       const id = canal.slice(7);
       fetch("/api/cabinet/staff").then(r => r.json()).then(d => {
-        const s = (d.rows || []).find((x: any) => x.discord_id === id);
+        const s = (d.rows || []).find((x: Row) => x.discord_id === id);
         setTitre(s ? `Bureau de ${s.nom}` : "Bureau");
       });
     }

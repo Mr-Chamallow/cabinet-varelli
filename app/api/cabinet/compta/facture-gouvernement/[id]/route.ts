@@ -1,8 +1,9 @@
+import type { Row } from "@/lib/types";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { estBilan } from "@/lib/cabinetAcces";
 import { PERMS_BUREAU } from "@/lib/cabinetRoles";
 
-const echap = (s: any) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+const echap = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
 const montantTxt = (n: number) => `${Math.round(Number(n) || 0).toLocaleString("fr-FR")} $`;
 const dateFr = (s?: string | null) => (s ? new Date(s + (s.length === 10 ? "T12:00:00" : "")).toLocaleDateString("fr-FR") : "—");
 
@@ -13,7 +14,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!r.authorized || !estBilan(r.user)) return new Response("Réservé au bureau", { status: 403 });
   const { data: f } = await r.supabaseAdmin.from("cabinet_factures_gouvernement").select("*").eq("id", id).maybeSingle();
   if (!f) return new Response("Facture introuvable", { status: 404 });
-  const lignes = (f.detail || []).map((l: any) => `<tr><td>${echap(dateFr(l.date))} ${echap(l.heure || "")}</td><td>${echap(l.tribunal || "")}</td><td>${echap(l.client)}</td><td>${echap(l.chefs || "")}</td><td>${echap(l.avocat || "")}</td><td class="r">${montantTxt(l.honoraire)}</td></tr>`).join("");
+  const lignes = (f.detail || []).map((l: Row) => `<tr><td>${echap(dateFr(l.date))} ${echap(l.heure || "")}</td><td>${echap(l.tribunal || "")}</td><td>${echap(l.client)}</td><td>${echap(l.chefs || "")}</td><td>${echap(l.avocat || "")}</td><td class="r">${montantTxt(l.honoraire)}</td></tr>`).join("");
   const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Facture ${echap(f.numero)}</title>
 <style>
 body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:40px;font-size:13px}

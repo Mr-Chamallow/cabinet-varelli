@@ -1,3 +1,7 @@
+import type { RoleKey } from "@/lib/discordRoles";
+import type { UserLike } from "@/lib/types";
+import { appUser } from "@/lib/cabinetServer";
+import type { Row } from "@/lib/types";
 import { palierOf } from "@/lib/rolesRP";
 import { NextResponse } from "next/server";
 import { requirePermission, type Db } from "@/lib/serverAuth";
@@ -17,18 +21,18 @@ const TABLES: Record<string, { perm: string[]; cols: string[] }> = {
 
 async function auth(table: string) {
   const cfg = TABLES[table];
-  if (!cfg) return { err: NextResponse.json({ error: "Table inconnue" }, { status: 404 }) } as any;
-  let last: any = null;
+  if (!cfg) return { err: NextResponse.json({ error: "Table inconnue" }, { status: 404 }) } as Row;
+  let last: Row = null;
   for (const p of cfg.perm) {
     const r = await requirePermission(p);
     last = r;
     if (r.authorized) {
-      const u: any = r.user;
-      const ok = hasWriteAccess({ id: u.discord_id, nom: u.discord_name, role: u.site_role, permissions: u.permissions } as any, p);
+      const u = r.user as UserLike;
+      const ok = hasWriteAccess(appUser(u), p);
       if (ok) return { db: r.supabaseAdmin, who: u.nom_perso || u.discord_name || "", cfg };
     }
   }
-  return { err: NextResponse.json({ error: last?.error || "Écriture non autorisée sur cet onglet" }, { status: 403 }) } as any;
+  return { err: NextResponse.json({ error: last?.error || "Écriture non autorisée sur cet onglet" }, { status: 403 }) } as Row;
 }
 
 // Le groupe doit exister dans Base de données -> Groupes (carte_gangs) : on le relie par son id.
@@ -37,7 +41,7 @@ const GROUP_FIELD: Record<string, { field: string; strict: boolean }> = {
   gm_audits: { field: "organisation", strict: true }, gm_reputation_log: { field: "organisation", strict: true },
   gm_evenements: { field: "partenaire", strict: false },
 };
-async function linkGroupe(db: Db, table: string, payload: Record<string, any>): Promise<string | null> {
+async function linkGroupe(db: Db, table: string, payload: Row): Promise<string | null> {
   const g = GROUP_FIELD[table]; if (!g || !(g.field in payload)) return null;
   const name = String(payload[g.field] ?? "").trim();
   if (!name) { payload.groupe_id = null; return null; }
@@ -47,7 +51,7 @@ async function linkGroupe(db: Db, table: string, payload: Record<string, any>): 
   return g.strict ? `Groupe « ${name} » introuvable : crée-le d'abord dans Base de données -> Groupes.` : null;
 }
 
-const pick = (b: any, cols: string[]) => Object.fromEntries(Object.entries(b || {}).filter(([k]) => cols.includes(k)).map(([k, v]) => [k, v === "" ? null : v]));
+const pick = (b: Row, cols: string[]) => Object.fromEntries(Object.entries(b || {}).filter(([k]) => cols.includes(k)).map(([k, v]) => [k, v === "" ? null : v]));
 
 async function ensureOrg(db: Db, nom?: string | null) {
   if (nom && nom.trim()) await db.from("gm_organisations").upsert({ nom: nom.trim() }, { onConflict: "nom", ignoreDuplicates: true });
@@ -62,14 +66,14 @@ const clearRep = (db: Db, source: string, id: string) => db.from("gm_reputation_
 // Qui prévenir selon le type d'événement
 // Qui prévenir (seulement si l'alerte est urgente : échec / attaque / capture à faire)
 const evColor = (st: string) => (/echec|attaq/.test(st) ? RED : /livre|cloturee|capturee|resolue/.test(st) ? GREEN : /annul/.test(st) ? GREY : BLUE);
-function pingEvent(type: string, statut = "") {
+function pingEvent(type: string, statut = ""): RoleKey[] {
   if (type === "convoi") return /echec|attaq/.test(statut) ? [...GROUPS.LOGISTIQUE, ...GROUPS.SECURITE] : [];
   if (type === "capture") return statut === "a_faire" ? GROUPS.SECURITE : [];
-  if (type === "alerte") return statut === "ouverte" ? (["RS", "AJ"] as any) : [];
-  return [] as any;
+  if (type === "alerte") return statut === "ouverte" ? ["RS", "AJ"] : [];
+  return [];
 }
 
-async function afterCreate(db: Db, table: string, row: Record<string, any>, who: string) {
+async function afterCreate(db: Db, table: string, row: Row, who: string) {
   if (table === "gm_audits") {
     await rep(db, row.organisation, Math.round((Number(row.note) - 5) * 4), `Audit : ${row.note}/10`, "audit", row.id, who);
     await syncAlert(db, table, row, "gm", `🔎 Audit - ${row.organisation}`, `Note **${row.note}/10**${row.appreciation ? `\n${row.appreciation}` : ""}${row.sanction ? `\n⛔ Sanction : **${row.sanction}**` : ""}`, Number(row.note) >= 5 ? GREEN : RED, undefined, Number(row.note) < 5 ? [...GROUPS.JURIDIQUE, "COO"] : ["RJ", "AJ"]);
@@ -83,11 +87,11 @@ async function afterCreate(db: Db, table: string, row: Record<string, any>, who:
   } else if (table === "gm_evenements") {
     await ensureOrg(db, row.partenaire);
     const ic: Record<string, string> = { convoi: "🚚", enchere: "🔨", alerte: "🚨", capture: "🎯" };
-    await syncAlert(db, table, row, "gm", `${ic[row.type] || "📌"} ${row.titre}`, `Statut : **${row.statut}**${row.partenaire ? `\nPartenaire : ${row.partenaire}` : ""}`, evColor(row.statut), undefined, pingEvent(row.type, row.statut));
+    await syncAlert(db, table, row, "gm", `${ic[row.type] || "📌"} ${row.titre}`, `Statut : **${row.statut}**${row.partenaire ? `\nPartenaire : ${row.partenaire}` : ""}`, evColor(String(row.statut)), undefined, pingEvent(String(row.type), String(row.statut)));
   }
 }
 
-async function afterUpdate(db: Db, table: string, old: Record<string, any>, row: Record<string, any>, who: string) {
+async function afterUpdate(db: Db, table: string, old: Row, row: Row, who: string) {
   if (table === "gm_audits") {
     await clearRep(db, "audit", row.id);
     await rep(db, row.organisation, Math.round((Number(row.note) - 5) * 4), `Audit : ${row.note}/10`, "audit", row.id, who);
@@ -96,7 +100,7 @@ async function afterUpdate(db: Db, table: string, old: Record<string, any>, row:
     const nv = (row.violations || []).length - (old.violations || []).length;
     if (nv > 0) {
       await rep(db, row.organisation, -10 * nv, `${nv} violation(s) du pacte`, "pacte_violation", row.id, who);
-      await postAlert("gm", `⚠️ Violation de pacte - ${row.organisation}`, (row.violations || []).slice(-nv).map((v: any) => `· ${v.texte}`).join("\n"), ORANGE, undefined, ["RESP"]);
+      await postAlert("gm", `⚠️ Violation de pacte - ${row.organisation}`, (row.violations || []).slice(-nv).map((v: Row) => `· ${v.texte}`).join("\n"), ORANGE, undefined, ["RESP"]);
     }
     if (row.statut !== old.statut) {
       if (row.statut === "rompu") await rep(db, row.organisation, -20, "Pacte rompu", "pacte_rompu", row.id, who);
@@ -120,7 +124,7 @@ async function afterUpdate(db: Db, table: string, old: Record<string, any>, row:
       if (row.statut === "echec") await rep(db, row.partenaire, -5, `Convoi échoué : ${row.titre}`, "evenement", row.id, who);
     }
     const ic: Record<string, string> = { convoi: "🚚", enchere: "🔨", alerte: "🚨", capture: "🎯" };
-    await syncAlert(db, table, row, "gm", `${ic[row.type] || "📌"} ${row.titre}`, `Statut : **${row.statut}**${row.partenaire ? `\nPartenaire : ${row.partenaire}` : ""}\n_(avant : ${old.statut})_`, evColor(row.statut), undefined, pingEvent(row.type, row.statut));
+    await syncAlert(db, table, row, "gm", `${ic[row.type] || "📌"} ${row.titre}`, `Statut : **${row.statut}**${row.partenaire ? `\nPartenaire : ${row.partenaire}` : ""}\n_(avant : ${old.statut})_`, evColor(String(row.statut)), undefined, pingEvent(String(row.type), String(row.statut)));
   }
 }
 
@@ -129,14 +133,14 @@ export async function POST(req: Request, ctx: { params: Promise<{ table: string 
     const { table } = await ctx.params;
     const a = await auth(table); if (a.err) return a.err;
     const body = await req.json();
-    const payload: Record<string, any> = { ...pick(body, a.cfg.cols), created_by: a.who };
+    const payload: Row = { ...pick(body, a.cfg.cols), created_by: a.who };
     const le = await linkGroupe(a.db, table, payload); if (le) return NextResponse.json({ error: le }, { status: 400 });
     if (table === "gm_organisations" && !payload.nom) return NextResponse.json({ error: "Nom requis" }, { status: 400 });
     const { data, error } = await a.db.from(table).insert([payload]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     if (table === "gm_reputation_log") {
       const { data: all } = await a.db.from("gm_reputation_log").select("delta").eq("organisation", data.organisation);
-      const after = Math.max(0, Math.min(100, 50 + (all || []).reduce((t: number, r: any) => t + Number(r.delta || 0), 0))), before = Math.max(0, Math.min(100, after - Number(data.delta || 0)));
+      const after = Math.max(0, Math.min(100, 50 + (all || []).reduce((t: number, r: Row) => t + Number(r.delta || 0), 0))), before = Math.max(0, Math.min(100, after - Number(data.delta || 0)));
       const pa = palierOf(after), pb = palierOf(before);
       await postAlert("gm", `⭐ Réputation - ${data.organisation}`, `${data.delta > 0 ? "+" : ""}${data.delta} · ${data.motif || "ajustement manuel"}\nScore : ${after}/100 - **${pa.label}**${pa.label !== pb.label ? `\n${data.delta > 0 ? "⬆️" : "⬇️"} Changement de palier : ${pb.label} -> **${pa.label}**\n_${pa.effet}_` : ""}`, data.delta >= 0 ? GREEN : RED);
     }
@@ -154,7 +158,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ table: string
     if (!body[key]) return NextResponse.json({ error: `${key} requis` }, { status: 400 });
     const { data: old } = await a.db.from(table).select("*").eq(key, body[key]).single();
     if (!old) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
-    const patch: Record<string, any> = pick(body, a.cfg.cols); delete patch.nom;
+    const patch: Row = pick(body, a.cfg.cols); delete patch.nom;
     const le = await linkGroupe(a.db, table, patch); if (le) return NextResponse.json({ error: le }, { status: 400 });
     const { data, error } = await a.db.from(table).update(patch).eq(key, body[key]).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });

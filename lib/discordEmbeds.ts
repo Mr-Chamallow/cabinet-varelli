@@ -10,7 +10,7 @@ const PRIO_COLOR: Record<string, number> = {
   Basse: 0x4c5470, Normale: 0x64b5f6, Haute: 0xeab308, Critique: 0xff5470, "Neutralisé": 0x22c55e,
 };
 
-export function buildFicheEmbed(f: any): NotifyEmbed {
+export function buildFicheEmbed(f: Row): NotifyEmbed {
   return {
     title: `🗂️ ${f.nom}`,
     color: PRIO_COLOR[f.priorite] ?? 0xa48fff,
@@ -38,7 +38,7 @@ const STATUT_CONTRAT_COLOR: Record<string, number> = {
   "En attente": 0x4c5470, "En cours": 0xeab308, "Terminé": 0x22c55e, "Échoué": 0xff5470, "Annulé": 0x555566,
 };
 
-export function buildContratEmbed(c: any): NotifyEmbed {
+export function buildContratEmbed(c: Row): NotifyEmbed {
   return {
     title: `📋 ${c.titre}`,
     color: STATUT_CONTRAT_COLOR[c.statut] ?? 0xa48fff,
@@ -55,7 +55,7 @@ export function buildContratEmbed(c: any): NotifyEmbed {
   };
 }
 
-export function buildRdvEmbed(r: any): NotifyEmbed {
+export function buildRdvEmbed(r: Row): NotifyEmbed {
   return {
     title: `📅 ${r.titre}`,
     color: 0xa48fff,

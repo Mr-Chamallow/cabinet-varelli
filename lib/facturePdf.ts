@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { MENTIONS_CABINET } from "@/lib/factureMentions";
 import { jsPDF } from "jspdf";
 import { CABINET_LOGO_PNG } from "@/lib/cabinetLogo";
@@ -19,7 +20,7 @@ const STATUT: Record<string, { label: string; couleur: [number, number, number] 
 };
 
 // titre : "FACTURE" (défaut) ou "DEVIS"
-export function facturePdf(f: any, titre = "FACTURE"): Buffer {
+export function facturePdf(f: Row, titre = "FACTURE"): Buffer {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = 210;
   const gauche = 16;
@@ -63,7 +64,7 @@ export function facturePdf(f: any, titre = "FACTURE"): Buffer {
   y += 9;
 
   doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(...NOIR);
-  (f.lignes || []).forEach((l: any, i: number) => {
+  (f.lignes || []).forEach((l: Row, i: number) => {
     if (y > 225) { doc.addPage(); y = 30; }
     if (i % 2 === 0) { doc.setFillColor(...CLAIR); doc.rect(gauche, y, droite - gauche, 9, "F"); }
     doc.text(String(l.description).slice(0, 75), gauche + 4, y + 6);

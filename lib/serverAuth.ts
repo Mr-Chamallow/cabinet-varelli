@@ -1,3 +1,5 @@
+import type { UserLike } from "@/lib/types";
+import type { Row } from "@/lib/types";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -11,7 +13,7 @@ const supabaseAdmin = createClient(
 
 async function session() {
   const s = await getServerSession(authOptions);
-  const user = (s?.user as any) || null;
+  const user = (s?.user as Row) || null;
   if (!user) return { user: null, u: null };
   const u = { id: user.discord_id, nom: user.discord_name, role: user.site_role, permissions: user.permissions || [] };
   return { user, u };
@@ -19,13 +21,13 @@ async function session() {
 
 export async function requirePermission(permission: string) {
   const { user, u } = await session();
-  const authorized = !!u && hasPermission(u as any, permission);
+  const authorized = !!u && hasPermission(u as UserLike, permission);
   return { authorized, user, supabaseAdmin, error: authorized ? null : "Non autorisé" };
 }
 
 export async function requireAnyPermission(permissions: string[]) {
   const { user, u } = await session();
-  const authorized = !!u && permissions.some(p => hasPermission(u as any, p));
+  const authorized = !!u && permissions.some(p => hasPermission(u as UserLike, p));
   return { authorized, user, supabaseAdmin, error: authorized ? null : "Non autorisé" };
 }
 

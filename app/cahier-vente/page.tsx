@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { drogueAutorisee, armeLourdeOuAuto, estKevlar } from "@/lib/regles";
@@ -130,9 +131,9 @@ export default function CahierVentePage() {
       loadPriceTable().catch(() => [] as Awaited<ReturnType<typeof loadPriceTable>>),
     ]);
     const venteDe = new Map<string, number>(table.map(r => [norm(r.nom), r.vente] as [string, number]));
-    setTransactions(t || []);
+    setTransactions((t || []) as Transaction[]);
     // Produits = uniquement les articles du Stock (une seule source de vérité).
-    setProduits((p || []).map((x: any, i: number) => ({ id: x.id, nom: x.nom, type: x.categorie || "", emoji: x.emoji || "📦", prix_propre: venteDe.get(norm(x.nom)) || Number(x.prix_unitaire) || 0, prix_sale: venteDe.get(norm(x.nom)) || Number(x.prix_unitaire) || 0, achat: Number(x.prix_unitaire) || 0, actif: true, ordre: i, quantite: Number(x.quantite) || 0, unite: x.unite || "" })));
+    setProduits((p || []).map((x: Row, i: number) => ({ id: x.id, nom: x.nom, type: x.categorie || "", emoji: x.emoji || "📦", prix_propre: venteDe.get(norm(x.nom)) || Number(x.prix_unitaire) || 0, prix_sale: venteDe.get(norm(x.nom)) || Number(x.prix_unitaire) || 0, achat: Number(x.prix_unitaire) || 0, actif: true, ordre: i, quantite: Number(x.quantite) || 0, unite: x.unite || "" })));
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -240,7 +241,7 @@ export default function CahierVentePage() {
     setSaving(true);
     const { data } = await dbw.insert("cahier_produits", { ...produitForm, ordre: produits.length + 1 });
     if (data) { 
-      setProduits(ps => [...ps, data]); 
+      setProduits(ps => [...ps, data as Produit]); 
       showToast("Produit ajouté"); 
       setProduitForm({ nom: "", type: "drogue", emoji: "💊", prix_propre: 0, prix_sale: 0, actif: true, ordre: 0 }); 
     }
@@ -274,7 +275,7 @@ export default function CahierVentePage() {
     scheduleDelete(`Produit "${p.nom}" supprimé`, async () => {}, async () => {
       const { id: _id, ...rest } = p;
       const { data } = await dbw.insert("cahier_produits", rest);
-      if (data) setProduits(ps => [...ps, data]);
+      if (data) setProduits(ps => [...ps, data as Produit]);
     });
   }
 

@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { MENTIONS_CABINET } from "@/lib/factureMentions";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
@@ -19,9 +20,9 @@ export async function GET() {
     const rows = data || [];
     const aujourdHui = new Date().toISOString().slice(0, 10);
     const totaux = {
-      encaisse: rows.filter((f: any) => f.statut === "payee").reduce((s: number, f: any) => s + Number(f.montant || 0), 0),
-      attente: rows.filter((f: any) => f.statut === "en_attente").reduce((s: number, f: any) => s + Number(f.montant || 0), 0),
-      retard: rows.filter((f: any) => f.statut === "en_attente" && f.date_echeance && f.date_echeance < aujourdHui).length,
+      encaisse: rows.filter((f: Row) => f.statut === "payee").reduce((s: number, f: Row) => s + Number(f.montant || 0), 0),
+      attente: rows.filter((f: Row) => f.statut === "en_attente").reduce((s: number, f: Row) => s + Number(f.montant || 0), 0),
+      retard: rows.filter((f: Row) => f.statut === "en_attente" && f.date_echeance && f.date_echeance < aujourdHui).length,
     };
     return NextResponse.json({ rows, totaux });
   } catch (e: unknown) {
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
     const r = await requireAnyPermission(PERMS_BUREAU);
     if (!r.authorized || !estFacturation(r.user)) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     if (!estStaff(r.user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const db = r.supabaseAdmin;
     const b = await req.json();
 

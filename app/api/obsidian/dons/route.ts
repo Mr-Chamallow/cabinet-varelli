@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { logAudit } from "@/lib/alerts";
 import { requirePermission } from "@/lib/serverAuth";
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
     const semaine = String(form.get("semaine") || "") || weekStartOf();
     if (!(montant > 0)) return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
     if (!["propre", "sale"].includes(type_argent)) return NextResponse.json({ error: "Choisis argent propre ou sale" }, { status: 400 });
-    const employe = String((user as any)?.nom_perso || (user as any)?.discord_name || "").trim();
+    const employe = String((user as Row)?.nom_perso || (user as Row)?.discord_name || "").trim();
     if (!employe) return NextResponse.json({ error: "Employé introuvable" }, { status: 400 });
 
     let preuve_url: string | null = null;
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
 
     const { data, error: dbError } = await supabaseAdmin.from("obsidian_dons").insert([{
       employe, montant, type_argent, motif, semaine, preuve_url,
-      created_by: employe, created_by_id: String((user as any)?.discord_id || ""),
+      created_by: employe, created_by_id: String((user as Row)?.discord_id || ""),
     }]).select().single();
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     await postAlert("compta", `🎁 Don à valider - ${money(montant)}`, `${employe} propose un don en argent ${type_argent}${motif ? `\n${motif}` : ""}`, GOLD);
@@ -53,10 +54,10 @@ export async function PATCH(req: Request) {
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
     const { id, ok } = await req.json();
     if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
-    const par = String((user as any)?.nom_perso || (user as any)?.discord_name || "");
+    const par = String((user as Row)?.nom_perso || (user as Row)?.discord_name || "");
     const { data, error: dbError } = await supabaseAdmin.rpc("obsidian_don_valider", { p_id: id, p_par: par, p_ok: !!ok });
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
-    const d: any = data;
+    const d: Row = data;
     await logAudit(supabaseAdmin, par, ok ? "Don valide" : "Don refuse", d.employe, `${d.montant}$ ${d.type_argent}`);
     await postAlert("compta", `${ok ? "✅ Don validé" : "❌ Don refusé"} - ${money(d.montant)}`, `${d.employe} · argent ${d.type_argent}\nPar ${par}`, ok ? GREEN : RED);
     return NextResponse.json(d);

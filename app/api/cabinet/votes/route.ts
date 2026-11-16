@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { nomAffiche, notifyDiscord } from "@/lib/cabinetServer";
@@ -18,7 +19,7 @@ export async function GET() {
     if (votes.error) return NextResponse.json({ error: votes.error.message }, { status: 400 });
     return NextResponse.json({
       rows: votes.data || [],
-      moiId: (r.user as any).discord_id,
+      moiId: (r.user as Row).discord_id,
       employes: employes.count || 0,
       topic: topicPour("liste:votes"),
     });
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
   try {
     const r = await requireAnyPermission(["cabinet_dossiers", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     if (!estStaff(user)) return NextResponse.json({ error: "Réservé aux employés" }, { status: 403 });
     const b = await req.json();
     const titre = String(b.titre || "").trim().slice(0, 150);

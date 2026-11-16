@@ -1,8 +1,8 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { CODES, TAGS, LIBELLE_TAG, type CodeInfo } from "@/lib/codesJuridiques";
 
-type Row = Record<string, any>;
 
 const GROUPES: { label: string; slugs: string[] }[] = [
   { label: "Fondamentaux", slugs: ["constitution_usa", "constitution_sa"] },

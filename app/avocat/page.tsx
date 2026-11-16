@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { ObsLogo } from "@/components/ObsLogo";
@@ -20,8 +21,8 @@ const SECTIONS = [
 
 export default function AvocatAccueil() {
   const { user, loading } = useCurrentUser();
-  const [profil, setProfil] = useState<any>(null);
-  const [discord, setDiscord] = useState<any>(null);
+  const [profil, setProfil] = useState<Row | null>(null);
+  const [discord, setDiscord] = useState<Row | null>(null);
   const [pret, setPret] = useState(false);
   const [editer, setEditer] = useState(false);
 
@@ -36,7 +37,7 @@ export default function AvocatAccueil() {
   if (!pret) return <div className="page-container" style={{ color: "var(--text-dim)" }}>Chargement...</div>;
 
   const recharger = () => window.location.reload();
-  const infosDiscord = discord || { discord_id: "", discord_name: "" };
+  const infosDiscord = (discord || { discord_id: "", discord_name: "" }) as { discord_id: string; discord_name: string };
 
   return (
     <div className="page-container cab-enter">

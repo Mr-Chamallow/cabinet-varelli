@@ -1,4 +1,6 @@
 "use client";
+import type { PacteP } from "@/lib/pdfDocs";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -21,14 +23,14 @@ const EMPTY = { organisation: "", statut: "actif", date_signature: new Date().to
 export default function PactesPage() {
   const { canWrite } = useGmAccess("gm_pactes");
   const { toast, showToast } = useToast();
-  const [list, setList] = useState<any[]>([]);
+  const [list, setList] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [show, setShow] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<any>(EMPTY);
+  const [form, setForm] = useState<Row>(EMPTY);
   const [saving, setSaving] = useState(false);
-  const [viol, setViol] = useState<{ pact: any; texte: string } | null>(null);
+  const [viol, setViol] = useState<{ pact: Row; texte: string } | null>(null);
   const groupes = useGroupes();
 
   useEffect(() => { load(); }, []);
@@ -39,7 +41,7 @@ export default function PactesPage() {
     setList(data || []); setLoading(false);
   }
   function openNew() { setEditId(null); setForm(EMPTY); setShow(true); }
-  function openEdit(p: any) { setEditId(p.id); setForm({ organisation: p.organisation, statut: p.statut, date_signature: p.date_signature || "", date_fin: p.date_fin || "", signataire: p.signataire || "", clauses: p.clauses || "" }); setShow(true); }
+  function openEdit(p: Row) { setEditId(p.id); setForm({ organisation: p.organisation, statut: p.statut, date_signature: p.date_signature || "", date_fin: p.date_fin || "", signataire: p.signataire || "", clauses: p.clauses || "" }); setShow(true); }
   async function save() {
     if (!form.organisation.trim()) return;
     setSaving(true);
@@ -54,11 +56,11 @@ export default function PactesPage() {
     if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); return; }
     setViol(null); showToast("Violation notée (réputation -10)"); load();
   }
-  async function setStatut(p: any, statut: string) {
+  async function setStatut(p: Row, statut: string) {
     const r = await gmWrite("gm_pactes", "PATCH", { id: p.id, statut });
     if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else load();
   }
-  async function del(p: any) {
+  async function del(p: Row) {
     if (!window.confirm(`Supprimer le pacte avec ${p.organisation} ?`)) return;
     const r = await gmWrite("gm_pactes", "DELETE", { id: p.id });
     if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else { showToast("Supprimé"); load(); }
@@ -93,10 +95,10 @@ export default function PactesPage() {
                 {(p.violations || []).length > 0 && (
                   <div style={{ marginBottom: "0.6rem", padding: "0.5rem 0.7rem", background: "rgba(239,68,68,0.06)", borderRadius: "var(--radius)", borderLeft: "3px solid var(--danger)" }}>
                     <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--danger)", marginBottom: "0.2rem" }}>{p.violations.length} violation(s)</div>
-                    {p.violations.map((v: any, i: number) => <div key={i} style={{ fontSize: "0.75rem" }}>· {v.texte} <span style={{ color: "var(--text-dim)" }}>({fmtDT(v.date)})</span></div>)}
+                    {p.violations.map((v: Row, i: number) => <div key={i} style={{ fontSize: "0.75rem" }}>· {v.texte} <span style={{ color: "var(--text-dim)" }}>({fmtDT(v.date)})</span></div>)}
                   </div>
                 )}
-                <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: canWrite ? "0.35rem" : 0 }}><button className="btn btn-outline btn-sm" onClick={() => pdfPacte(p)}>📄 PDF</button></div>
+                <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: canWrite ? "0.35rem" : 0 }}><button className="btn btn-outline btn-sm" onClick={() => pdfPacte(p as PacteP)}>📄 PDF</button></div>
                 {canWrite && (
                   <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
                     <button className="btn btn-outline btn-sm" onClick={() => setViol({ pact: p, texte: "" })}>⚠️ Violation</button>

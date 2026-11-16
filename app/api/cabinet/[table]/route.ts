@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { PERMS_BUREAU } from "@/lib/cabinetRoles";
 import { estCompta } from "@/lib/cabinetAcces";
 import { NextResponse } from "next/server";
@@ -36,16 +37,16 @@ const TABLES: Record<string, { write: string; cols: string[]; order: string; key
 
 async function guard(table: string, mode: "read" | "write") {
   const c = TABLES[table];
-  if (!c) return { err: NextResponse.json({ error: "Table inconnue" }, { status: 404 }) } as any;
+  if (!c) return { err: NextResponse.json({ error: "Table inconnue" }, { status: 404 }) } as Row;
   // Table réservée au cabinet (ex : avis non publiés) : même la lecture est réservée aux employés
   const bureau = c.write === "cabinet_compta";
   const r = await requireAnyPermission(bureau ? PERMS_BUREAU : mode === "read" && !c.staffOnly ? ["avocat", c.write, "cabinet_compta"] : [c.write]);
-  if (!r.authorized || (bureau && !estCompta(r.user))) return { err: NextResponse.json({ error: "Non autorisé" }, { status: 403 }) } as any;
-  if (mode === "write" && !bureau && !canWrite(r.user, c.write)) return { err: NextResponse.json({ error: "Lecture seule pour toi sur cet onglet" }, { status: 403 }) } as any;
+  if (!r.authorized || (bureau && !estCompta(r.user))) return { err: NextResponse.json({ error: "Non autorisé" }, { status: 403 }) } as Row;
+  if (mode === "write" && !bureau && !canWrite(r.user, c.write)) return { err: NextResponse.json({ error: "Lecture seule pour toi sur cet onglet" }, { status: 403 }) } as Row;
   return { db: r.supabaseAdmin, c, user: r.user };
 }
 
-const pick = (b: any, cols: string[]) =>
+const pick = (b: Row, cols: string[]) =>
   Object.fromEntries(
     cols.filter(c => c in (b || {})).map(c => {
       const v = b[c];

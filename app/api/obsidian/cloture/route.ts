@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { logAudit } from "@/lib/alerts";
 import { requirePermission, requirePatron } from "@/lib/serverAuth";
@@ -20,7 +21,7 @@ export async function DELETE(req: Request) {
     const { semaine } = await req.json();
     const { error: e } = await supabaseAdmin.from("obsidian_semaines").delete().eq("semaine", semaine);
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
-    await logAudit(supabaseAdmin, String((user as any)?.nom_perso || (user as any)?.discord_name || ""), "Semaine rouverte", String(semaine));
+    await logAudit(supabaseAdmin, String((user as Row)?.nom_perso || (user as Row)?.discord_name || ""), "Semaine rouverte", String(semaine));
     return NextResponse.json({ ok: true });
   } catch (e: unknown) { return NextResponse.json({ error: `Erreur serveur : ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }); }
 }

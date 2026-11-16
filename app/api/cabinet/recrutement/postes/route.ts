@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { estDirection } from "@/lib/cabinetAcces";
@@ -19,7 +20,7 @@ export async function GET() {
   }
 }
 
-function propre(b: any) {
+function propre(b: Row) {
   const role = b.role_acces ? String(b.role_acces) : null;
   return {
     nom: String(b.nom || "").trim().slice(0, 80),

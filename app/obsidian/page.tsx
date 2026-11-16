@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -12,8 +13,8 @@ export default function ObsidianDashboard() {
   const { user, loading: userLoading } = useCurrentUser();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_dashboard"))) { window.location.href = "/"; } }, [user, userLoading]);
   const [stats, setStats] = useState({recettes:0,depenses:0,argSale:0,nbArmes:0,nbDrogues:0});
-  const [events, setEvents] = useState<any[]>([]);
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [events, setEvents] = useState<Row[]>([]);
+  const [alerts, setAlerts] = useState<Row[]>([]);
   const [todo, setTodo] = useState({ propre: 0, sale: 0, seuil: 0, capital: 0, dons: 0, aVenir: 0 });
   const [loading, setLoading] = useState(true);
   useEffect(()=>{load();},[]);
@@ -27,15 +28,15 @@ export default function ObsidianDashboard() {
     ]);
     const r=Number(bud?.recettes)||0, d=Number(bud?.depenses)||0, sal=Number(bud?.sale)||0;
     setStats({recettes:r,depenses:d,argSale:sal,
-      nbArmes:(stocks||[]).filter((s:any)=>s.categorie==="arme").reduce((a:number,x:any)=>a+x.quantite,0),
-      nbDrogues:(stocks||[]).filter((s:any)=>s.categorie==="drogue").reduce((a:number,x:any)=>a+x.quantite,0)});
+      nbArmes:(stocks||[]).filter((s: Row)=>s.categorie==="arme").reduce((a:number,x: Row)=>a+x.quantite,0),
+      nbDrogues:(stocks||[]).filter((s: Row)=>s.categorie==="drogue").reduce((a:number,x: Row)=>a+x.quantite,0)});
     const [{count:dons},{count:aVenir}] = await Promise.all([
       lire("obsidian_dons", { select: "id", count: true, head: true, eq: [["statut", "en_attente"]] }),
       lire("obsidian_contrats", { select: "id", count: true, head: true, eq: [["statut", "En attente"]] }),
     ]);
     setTodo({ propre:(Number(bud?.capital)||0)+(Number(bud?.propre)||0), sale:Number(bud?.sale)||0, seuil:Number(bud?.seuil)||0, capital:Number(bud?.capital)||0, dons:dons||0, aVenir:aVenir||0 });
-    setAlerts((stocks||[]).filter((s:any)=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte));
-    setEvents([...(rdv||[]).map((r:any)=>({...r,_type:"RDV"})),...(contrats||[]).map((c:any)=>({...c,_type:"Contrat"}))].sort((a,b)=>(a.date||"").localeCompare(b.date||"")));
+    setAlerts((stocks||[]).filter((s: Row)=>s.seuil_alerte>0&&s.quantite<=s.seuil_alerte));
+    setEvents([...(rdv||[]).map((r: Row)=>({...r,_type:"RDV"} as Row)),...(contrats||[]).map((c: Row)=>({...c,_type:"Contrat"} as Row))].sort((a,b)=>(a.date||"").localeCompare(b.date||"")));
     setLoading(false);
   }
   const s=stats; const solde=s.recettes-s.depenses;
@@ -43,7 +44,7 @@ export default function ObsidianDashboard() {
     <div className="page-container">
       <Link className="back-link" href="/">Tableau de bord</Link>
       <div className="page-header"><div><h1 className="page-title">🖤 Obsidian Logistics</h1><p className="page-subtitle">Dashboard - Vue d&apos;ensemble des opérations</p><div className="gold-line"/></div><button className="btn btn-outline" onClick={load}>↻</button></div>
-      {alerts.length>0&&<div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:"var(--radius-lg)",padding:"0.875rem 1.125rem",marginBottom:"1.25rem"}}><div style={{fontSize:"0.72rem",fontWeight:700,color:"var(--danger)",marginBottom:"0.4rem"}}>⚠️ Stock bas</div><div style={{display:"flex",gap:"0.5rem",flexWrap:"wrap"}}>{alerts.map((a:any)=><span key={a.id} style={{fontSize:"0.75rem",padding:"0.2rem 0.65rem",borderRadius:999,background:"rgba(239,68,68,0.12)",color:"var(--danger)",border:"1px solid rgba(239,68,68,0.25)",fontWeight:600}}>{a.emoji} {a.nom} : {a.quantite}/{a.seuil_alerte}</span>)}</div></div>}
+      {alerts.length>0&&<div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:"var(--radius-lg)",padding:"0.875rem 1.125rem",marginBottom:"1.25rem"}}><div style={{fontSize:"0.72rem",fontWeight:700,color:"var(--danger)",marginBottom:"0.4rem"}}>⚠️ Stock bas</div><div style={{display:"flex",gap:"0.5rem",flexWrap:"wrap"}}>{alerts.map((a: Row)=><span key={a.id} style={{fontSize:"0.75rem",padding:"0.2rem 0.65rem",borderRadius:999,background:"rgba(239,68,68,0.12)",color:"var(--danger)",border:"1px solid rgba(239,68,68,0.25)",fontWeight:600}}>{a.emoji} {a.nom} : {a.quantite}/{a.seuil_alerte}</span>)}</div></div>}
       <div className="stat-grid" style={{marginBottom:"1.5rem"}}>
         {[
           {l:"Solde",v:fmt(solde),i:"⚖️",c:solde>=0?"var(--success)":"var(--danger)"},
@@ -69,7 +70,7 @@ export default function ObsidianDashboard() {
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1.25rem"}}>
         <div className="card"><div className="section-title" style={{marginBottom:"0.875rem"}}>📅 Prochains événements</div>
           {loading?<LoadingBlock />:events.length===0?<div style={{color:"var(--text-dim)",textAlign:"center",padding:"1rem",fontSize:"0.82rem"}}>Aucun événement</div>:
-          <div style={{display:"flex",flexDirection:"column",gap:"0.375rem"}}>{events.slice(0,6).map((e:any)=><div key={e.id} style={{display:"flex",alignItems:"center",gap:"0.75rem",padding:"0.5rem 0.75rem",background:"var(--surface)",borderRadius:"var(--radius)",borderLeft:"3px solid "+(e._type==="RDV"?"var(--info)":"var(--warning)")}}>
+          <div style={{display:"flex",flexDirection:"column",gap:"0.375rem"}}>{events.slice(0,6).map((e: Row)=><div key={e.id} style={{display:"flex",alignItems:"center",gap:"0.75rem",padding:"0.5rem 0.75rem",background:"var(--surface)",borderRadius:"var(--radius)",borderLeft:"3px solid "+(e._type==="RDV"?"var(--info)":"var(--warning)")}}>
             <div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:"0.82rem",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.titre}</div><div style={{fontSize:"0.65rem",color:"var(--text-dim)"}}>{e._type}{e.date?" · "+new Date(e.date+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"short"}):""}</div></div>
             <span style={{fontSize:"0.6rem",padding:"0.08rem 0.4rem",borderRadius:999,background:"var(--surface)",color:"var(--text-dim)",border:"1px solid var(--border)",flexShrink:0}}>{e.statut}</span>
           </div>)}</div>}

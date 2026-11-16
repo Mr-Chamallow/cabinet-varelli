@@ -5,12 +5,12 @@ import type { Row } from "@/lib/types";
 
 export type Lecture = {
   select?: string;
-  eq?: [string, any][];
+  eq?: [string, unknown][];
   ilike?: [string, string][];
-  gte?: [string, any][]; // colonne >= valeur
-  gt?: [string, any][]; // colonne > valeur
-  in?: [string, any[]][]; // colonne dans la liste
-  contains?: [string, any][]; // tableau contient
+  gte?: [string, unknown][]; // colonne >= valeur
+  gt?: [string, unknown][]; // colonne > valeur
+  in?: [string, unknown[]][]; // colonne dans la liste
+  contains?: [string, unknown][]; // tableau contient
   is?: [string, null][]; // colonne IS NULL
   or?: string; // filtre PostgREST, ex: "nom.ilike.%x%,prenom.ilike.%x%"
   order?: [string, boolean][]; // [colonne, ascendant ?]

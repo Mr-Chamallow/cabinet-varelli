@@ -1,4 +1,6 @@
 "use client";
+import type { AppUser } from "@/lib/auth";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -8,20 +10,20 @@ import { poleOf } from "@/components/EmployeeCard";
 type Tile = { i: string; l: string; v: number | string; href: string; c: string; warn?: boolean };
 
 // « Mon accueil » : chaque tuile n'apparaît que si le membre a la permission de l'onglet correspondant (rien n'est forcé par le rôle).
-export function PoleHome({ user }: { user: any }) {
+export function PoleHome({ user }: { user: AppUser }) {
   const pole = poleOf(user?.role);
   const [tiles, setTiles] = useState<Tile[] | null>(null);
   useEffect(() => {
     if (!supabase || !user) return;
     const db = supabase; const can = (p: string) => hasPermission(user, p);
-    const n = async (q: any) => { const { count } = await q; return count || 0; };
+    const n = async (q: Row) => { const { count } = await q; return count || 0; };
     (async () => {
       const t: Tile[] = [];
       const now = new Date().toISOString(); const wk = new Date(Date.now() - 7 * 86400000).toISOString();
       if (can("gm_tribunal")) t.push({ i: "⚖️", l: "Dossiers en cours", v: await n(lire("tribunal_dossiers", { select: "id", count: true, head: true, eq: [["verdict", "en_cours"]] })), href: "/obsidian/tribunal", c: "#a78bfa" });
       if (can("gm_pactes")) t.push({ i: "🤝", l: "Pactes actifs", v: await n(lire("gm_pactes", { select: "id", count: true, head: true, eq: [["statut", "actif"]] })), href: "/obsidian/pactes", c: "#a78bfa" });
       if (can("gm_audits")) t.push({ i: "⛔", l: "Sanctions en cours", v: await n(lire("gm_audits", { select: "id", count: true, head: true, gt: [["sanction_fin", now]] })), href: "/obsidian/audits", c: "var(--danger)" });
-      if (can("obsidian_stocks")) { const { data } = await lire("obsidian_stocks", { select: "quantite,seuil_alerte" }); const low = (data || []).filter((s: any) => s.seuil_alerte > 0 && s.quantite <= s.seuil_alerte).length; t.push({ i: "📦", l: "Stocks bas", v: low, href: "/obsidian/stocks", c: "var(--gold)", warn: low > 0 }); }
+      if (can("obsidian_stocks")) { const { data } = await lire("obsidian_stocks", { select: "quantite,seuil_alerte" }); const low = (data || []).filter((s: Row) => s.seuil_alerte > 0 && s.quantite <= s.seuil_alerte).length; t.push({ i: "📦", l: "Stocks bas", v: low, href: "/obsidian/stocks", c: "var(--gold)", warn: low > 0 }); }
       if (can("gm_evenements")) t.push({ i: "🚚", l: "Convois à venir", v: await n(lire("gm_evenements", { select: "id", count: true, head: true, eq: [["type", "convoi"]], in: [["statut", ["planifie", "en_route"]]] })), href: "/obsidian/evenements", c: "var(--info)" });
       if (can("gm_evenements")) { const c = await n(lire("gm_evenements", { select: "id", count: true, head: true, eq: [["type", "capture"]], in: [["statut", ["a_faire", "en_cours"]]] })); t.push({ i: "🎯", l: "Captures à faire", v: c, href: "/obsidian/evenements", c: "var(--danger)", warn: c > 0 }); }
       if (can("obsidian_arrestations")) t.push({ i: "🚔", l: "Arrestations (7 j)", v: await n(lire("arrestations", { select: "id", count: true, head: true, gte: [["created_at", wk]] })), href: "/obsidian/arrestations", c: "var(--warning)" });

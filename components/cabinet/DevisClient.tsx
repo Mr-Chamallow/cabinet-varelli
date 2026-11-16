@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
 
@@ -6,7 +7,7 @@ const dateFr = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "nu
 
 // Devis du client : il peut signer (nom complet) ou refuser un devis envoyé. Rien n'apparaît s'il n'y en a pas.
 export default function DevisClient() {
-  const [rows, setRows] = useState<any[] | null>(null);
+  const [rows, setRows] = useState<Row[] | null>(null);
   const [noms, setNoms] = useState<Record<string, string>>({});
   const [erreur, setErreur] = useState("");
 
@@ -29,8 +30,8 @@ export default function DevisClient() {
       {erreur && <div style={{ color: "#f87171", fontSize: "0.85rem" }}>{erreur}</div>}
       {rows.map(d => {
         const enAttente = d.statut === "envoye";
-        const sigAvocat = (d.signatures || []).find((s: any) => s.role === "avocat");
-        const sigsClient = (d.signatures || []).filter((s: any) => s.role === "client");
+        const sigAvocat = (d.signatures || []).find((s: Row) => s.role === "avocat");
+        const sigsClient = (d.signatures || []).filter((s: Row) => s.role === "client");
         return (
           <div key={d.id} className="cab-card">
             <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -38,7 +39,7 @@ export default function DevisClient() {
               <span className="cab-muted" style={{ fontSize: "0.8rem" }}>{d.statut === "envoye" ? "À signer" : d.statut === "accepte" ? "Signé" : "Refusé"}</span>
             </div>
             <div className="cab-muted" style={{ fontSize: "0.8rem", margin: "0.3rem 0" }}>Émis le {dateFr(d.created_at)}</div>
-            {(d.lignes || []).map((l: any, i: number) => (
+            {(d.lignes || []).map((l: Row, i: number) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", padding: "0.2rem 0", borderBottom: "1px solid var(--border, #333)" }}>
                 <span>{l.description} × {l.quantite}</span>
                 <span>{montant(Math.round((Number(l.quantite) || 0) * (Number(l.prix) || 0)))}</span>
@@ -48,7 +49,7 @@ export default function DevisClient() {
 
             <div style={{ marginTop: "0.6rem", fontSize: "0.85rem" }}>
               {sigAvocat && <div>✍️ Avocat : <b>{sigAvocat.nom}</b> · {dateFr(sigAvocat.at)}</div>}
-              {sigsClient.map((s: any, i: number) => <div key={i}>✍️ Client : <b>{s.nom}</b> · {dateFr(s.at)}</div>)}
+              {sigsClient.map((s: Row, i: number) => <div key={i}>✍️ Client : <b>{s.nom}</b> · {dateFr(s.at)}</div>)}
             </div>
 
             {enAttente && (

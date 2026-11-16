@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { jsPDF } from "jspdf";
 import { CABINET_LOGO_PNG } from "@/lib/cabinetLogo";
 import { montant } from "@/lib/montant";
@@ -7,7 +8,7 @@ const OR: [number, number, number] = [176, 138, 62];
 const NOIR: [number, number, number] = [24, 24, 27];
 const GRIS: [number, number, number] = [110, 110, 118];
 
-export function bilanPdf(b: any, libelle: string): Buffer {
+export function bilanPdf(b: Row, libelle: string): Buffer {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const gauche = 16, droite = 194;
   doc.addImage(CABINET_LOGO_PNG, "PNG", gauche, 12, 50, 50 * 369 / 676);

@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -26,22 +27,22 @@ export default function ContratsPage(){
   const { user, loading: userLoading } = useCurrentUser();
   const { toast, showToast } = useToast();
   useEffect(() => { if (!userLoading && (!user || !hasPermission(user, "obsidian_contrats"))) { window.location.href = "/"; } }, [user, userLoading]);
-  const [contrats,setContrats]=useState<any[]>([]);
+  const [contrats,setContrats]=useState<Row[]>([]);
   const [loading,setLoading]=useState(true);
   const [showForm,setShowForm]=useState(false);
-  const [showRapport,setShowRapport]=useState<any>(null);
+  const [showRapport,setShowRapport]=useState<Row | null>(null);
   const [editId,setEditId]=useState<string|null>(null);
   const [form,setForm]=useState({...EMPTY});
   const [membresInput,setMembresInput]=useState("");
   const [emps,setEmps]=useState<string[]>([]);
-  useEffect(()=>{lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }).then(({data})=>setEmps((data||[]).filter((e:any)=>e.actif!==false).map((e:any)=>e.nom)));},[]);
+  useEffect(()=>{lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }).then(({data})=>setEmps((data||[]).filter((e: Row)=>e.actif!==false).map((e: Row)=>e.nom)));},[]);
   const [rapport,setRapport]=useState("");
   const [filterStatut,setFilterStatut]=useState("");
   const [saving,setSaving]=useState(false);
   async function load(){if(!supabase){setLoading(false);return;}const{data}=await lire("obsidian_contrats", { order: [["created_at", false]] });setContrats(data||[]);setLoading(false);}
   useEffect(()=>{load();},[]);
   async function save(){if(!supabase||!form.titre)return;setSaving(true);const membres=membresInput.split(",").map(s=>s.trim()).filter(Boolean);const payload={...form,membres_affectes:membres,created_by:user?.nom||""};if(editId){const{data,error}=await dbw.update("obsidian_contrats", editId, payload);if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setContrats(c=>c.map(x=>x.id===editId?data:x));showToast("Mis à jour");notifyDiscordUpdate("contrats",data.discord_message_id,buildContratEmbed(data));}else{const{data,error}=await dbw.insert("obsidian_contrats", payload);if(error){alert("❌ Erreur: "+error.message);setSaving(false);return;}setContrats(c=>[data,...c]);showToast("Contrat créé");notifyDiscordCreate("contrats",buildContratEmbed(data)).then(msgId=>{if(msgId&&supabase){dbw.update("obsidian_contrats", data.id, {discord_message_id:msgId}).then();setContrats(c=>c.map(x=>x.id===data.id?{...x,discord_message_id:msgId}:x));}});}setShowForm(false);setEditId(null);setForm({...EMPTY});setMembresInput("");setSaving(false);}
-  async function saveRapport(){if(!supabase||!showRapport)return;await dbw.update("obsidian_contrats", showRapport.id, {rapport});const updated={...showRapport,rapport};setContrats(c=>c.map(x=>x.id===showRapport.id?updated:x));setShowRapport(null);showToast("Rapport sauvegardé");notifyDiscordUpdate("contrats",updated.discord_message_id,buildContratEmbed(updated));}
+  async function saveRapport(){if(!supabase||!showRapport)return;await dbw.update("obsidian_contrats", showRapport.id, {rapport});const updated: Row={...showRapport,rapport};setContrats(c=>c.map(x=>x.id===showRapport.id?updated:x));setShowRapport(null);showToast("Rapport sauvegardé");notifyDiscordUpdate("contrats",updated.discord_message_id,buildContratEmbed(updated));}
   async function changeStatut(id:string,statut:string){if(!supabase)return;await dbw.update("obsidian_contrats", id, {statut});const c0=contrats.find(x=>x.id===id);const updated={...c0,statut};setContrats(c=>c.map(x=>x.id===id?updated:x));if(c0)notifyDiscordUpdate("contrats",c0.discord_message_id,buildContratEmbed(updated));}
   async function del(id:string){if(!supabase)return;const c0=contrats.find(x=>x.id===id);await dbw.remove("obsidian_contrats", id);setContrats(c=>c.filter(x=>x.id!==id));showToast("Supprimé");if(c0)notifyDiscordDelete("contrats",c0.discord_message_id,buildContratEmbed(c0));}
   const [qS,setQS]=useState("");

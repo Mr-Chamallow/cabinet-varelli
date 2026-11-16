@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
 import { LignesEditor, LigneForm, LIGNE_VIDE, dateFr, totalLignes, versPayload, champ } from "@/components/compta/commun";
@@ -12,10 +13,10 @@ const STATUT_DEVIS: Record<string, { label: string; color: string }> = {
 
 // Devis : créés ici, acceptés ou refusés, puis transformés en facture en un clic
 export default function ComptaDevis() {
-  const [devis, setDevis] = useState<any[]>([]);
-  const [dossiers, setDossiers] = useState<any[]>([]);
-  const [tarifs, setTarifs] = useState<any[]>([]);
-  const [staff, setStaff] = useState<any[]>([]);
+  const [devis, setDevis] = useState<Row[]>([]);
+  const [dossiers, setDossiers] = useState<Row[]>([]);
+  const [tarifs, setTarifs] = useState<Row[]>([]);
+  const [staff, setStaff] = useState<Row[]>([]);
   const [erreur, setErreur] = useState("");
   const [dossierId, setDossierId] = useState("");
   const [lignes, setLignes] = useState<LigneForm[]>([{ ...LIGNE_VIDE }]);
@@ -26,7 +27,7 @@ export default function ComptaDevis() {
 
   useEffect(() => {
     charger();
-    fetch("/api/cabinet/dossiers").then(r => r.json()).then(d => setDossiers((d.rows || []).filter((x: any) => x.statut !== "archive")));
+    fetch("/api/cabinet/dossiers").then(r => r.json()).then(d => setDossiers((d.rows || []).filter((x: Row) => x.statut !== "archive")));
     fetch("/api/cabinet/cabinet_tarifs").then(r => r.json()).then(d => setTarifs(d.rows || []));
     fetch("/api/cabinet/staff").then(r => r.json()).then(d => setStaff(d.rows || []));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -62,7 +63,7 @@ export default function ComptaDevis() {
         <div className="form-group"><label>Dossier</label>
           <select value={dossierId} onChange={e => setDossierId(e.target.value)}>
             <option value="">Choisir un dossier</option>
-            {dossiers.map((d: any) => <option key={d.id} value={d.id}>{d.titre} ({d.client_nom || "client"})</option>)}
+            {dossiers.map((d: Row) => <option key={d.id} value={d.id}>{d.titre} ({d.client_nom || "client"})</option>)}
           </select>
         </div>
         <LignesEditor lignes={lignes} setLignes={setLignes} staff={staff} tarifs={tarifs} />
@@ -90,8 +91,8 @@ export default function ComptaDevis() {
               <span style={{ alignSelf: "flex-start", color: st.color, border: `1px solid ${st.color}`, borderRadius: 999, padding: "0.15rem 0.6rem", fontSize: "0.72rem" }}>{st.label}</span>
             </div>
             <div style={{ marginTop: "0.5rem", fontSize: "0.82rem" }}>
-              {(d.signatures || []).map((s: any, i: number) => <div key={i}>✍️ {s.role === "avocat" ? "Avocat" : "Client"} : <b>{s.nom}</b> · {dateFr(s.at)}</div>)}
-              {d.statut === "envoye" && !(d.signatures || []).some((s: any) => s.role === "client") && <div className="cab-muted">En attente de la signature du client</div>}
+              {(d.signatures || []).map((s: Row, i: number) => <div key={i}>✍️ {s.role === "avocat" ? "Avocat" : "Client"} : <b>{s.nom}</b> · {dateFr(s.at)}</div>)}
+              {d.statut === "envoye" && !(d.signatures || []).some((s: Row) => s.role === "client") && <div className="cab-muted">En attente de la signature du client</div>}
             </div>
             {d.statut !== "facture" && (
               <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.6rem" }}>

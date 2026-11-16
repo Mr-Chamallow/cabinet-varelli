@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useMemo, useState } from "react";
 import { montant } from "@/lib/montant";
 import { champ, dateFr } from "@/components/compta/commun";
@@ -24,7 +25,7 @@ export default function Comparutions({ patron = false }: { patron?: boolean }) {
   const [rows, setRows] = useState<Ligne[] | null>(null);
   const [infractions, setInfractions] = useState<string[]>([]);
   const [livret, setLivret] = useState<{ titre: string; cat: string }[]>([]);
-  const [form, setForm] = useState<any>(videForm);
+  const [form, setForm] = useState<Row>(videForm);
   const [editId, setEditId] = useState<string | null>(null);
   const [filtre, setFiltre] = useState("tous");
   const [erreur, setErreur] = useState("");
@@ -40,8 +41,8 @@ export default function Comparutions({ patron = false }: { patron?: boolean }) {
     charger();
     fetch("/api/cabinet/cabinet_codes_livret").then(r => r.json()).then(d => {
       const rows = d.rows || [];
-      setInfractions(rows.map((x: any) => x.titre).filter(Boolean));
-      setLivret(rows.filter((x: any) => x.titre).map((x: any) => ({ titre: x.titre, cat: x.categorie_id })));
+      setInfractions(rows.map((x: Row) => x.titre).filter(Boolean));
+      setLivret(rows.filter((x: Row) => x.titre).map((x: Row) => ({ titre: x.titre, cat: x.categorie_id })));
     });
   }, []);
 
@@ -50,7 +51,7 @@ export default function Comparutions({ patron = false }: { patron?: boolean }) {
     const morceaux = valeur.split(/[,;+]/).map(m => m.trim().toLowerCase()).filter(Boolean);
     const trouves = livret.filter(l => morceaux.includes(l.titre.toLowerCase()));
     const max = trouves.length ? Math.max(...trouves.map(l => honorairePour(l.cat))) : null;
-    setForm((f: any) => ({ ...f, chefs: valeur, ...(max !== null ? { montant: String(max) } : {}) }));
+    setForm((f: Row) => ({ ...f, chefs: valeur, ...(max !== null ? { montant: String(max) } : {}) }));
   };
 
   const liste = useMemo(() => (rows || []).filter(r => filtre === "tous" || r.statut === filtre), [rows, filtre]);
@@ -88,7 +89,7 @@ export default function Comparutions({ patron = false }: { patron?: boolean }) {
     setOuvert(true);
   };
 
-  const champFormulaire = (label: string, cle: string, type = "text", extra: any = {}) => (
+  const champFormulaire = (label: string, cle: string, type = "text", extra: Row = {}) => (
     <div className="form-group" style={{ marginBottom: 0 }}>
       <label style={{ fontSize: "0.75rem" }}>{label}</label>
       <input type={type} style={champ} value={form[cle]} onChange={e => setForm({ ...form, [cle]: e.target.value })} {...extra} />

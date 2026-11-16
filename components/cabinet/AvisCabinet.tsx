@@ -1,11 +1,12 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 const etoiles = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
 
 // Avis clients publiés + formulaire pour laisser un avis (validé ensuite par le cabinet)
 export default function AvisCabinet() {
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [note, setNote] = useState(5);
   const [contenu, setContenu] = useState("");
   const [erreur, setErreur] = useState("");

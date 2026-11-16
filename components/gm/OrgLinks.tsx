@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -10,7 +11,7 @@ const Pill = ({ href, children }: { href: string; children: React.ReactNode }) =
 );
 
 export function OrgLinks({ organisation, excludeDossierId }: { organisation?: string | null; excludeDossierId?: string }) {
-  const [d, setD] = useState<any>(null);
+  const [d, setD] = useState<Row | null>(null);
   useEffect(() => {
     if (!supabase || !organisation) return;
     let off = false;
@@ -22,7 +23,7 @@ export function OrgLinks({ organisation, excludeDossierId }: { organisation?: st
         lire("tribunal_dossiers", { select: "id,titre,verdict", eq: [["organisation", organisation]] }),
         lire("gm_reputation_log", { select: "delta", eq: [["organisation", organisation]] }),
       ]);
-      if (!off) setD({ pactes: pa.data || [], audits: au.data || [], fiches: fi.data || [], dossiers: (tr.data || []).filter((x: any) => x.id !== excludeDossierId), score: scoreOf((rp.data || []).map((x: any) => x.delta)) });
+      if (!off) setD({ pactes: pa.data || [], audits: au.data || [], fiches: fi.data || [], dossiers: (tr.data || []).filter((x: Row) => x.id !== excludeDossierId), score: scoreOf((rp.data || []).map((x: Row) => x.delta)) });
     })();
     return () => { off = true; };
   }, [organisation, excludeDossierId]);
@@ -34,10 +35,10 @@ export function OrgLinks({ organisation, excludeDossierId }: { organisation?: st
       {!d ? <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>Chargement...</span> : (
         <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
           <Pill href="/obsidian/reputation">⭐ Réputation {d.score}/100{lab ? ` · ${lab.label}` : ""}</Pill>
-          {d.pactes.map((p: any) => <Pill key={p.id} href="/obsidian/pactes">🤝 Pacte {p.statut}</Pill>)}
-          {d.audits.map((a: any) => <Pill key={a.id} href="/obsidian/audits">🔎 Audit {a.note}/10</Pill>)}
-          {d.fiches.map((f: any) => <Pill key={f.id} href="/obsidian/fiches">🗂️ {f.nom}</Pill>)}
-          {d.dossiers.map((x: any) => <Pill key={x.id} href="/obsidian/tribunal">⚖️ {x.titre}{x.verdict !== "en_cours" ? ` (${x.verdict})` : ""}</Pill>)}
+          {d.pactes.map((p: Row) => <Pill key={p.id} href="/obsidian/pactes">🤝 Pacte {p.statut}</Pill>)}
+          {d.audits.map((a: Row) => <Pill key={a.id} href="/obsidian/audits">🔎 Audit {a.note}/10</Pill>)}
+          {d.fiches.map((f: Row) => <Pill key={f.id} href="/obsidian/fiches">🗂️ {f.nom}</Pill>)}
+          {d.dossiers.map((x: Row) => <Pill key={x.id} href="/obsidian/tribunal">⚖️ {x.titre}{x.verdict !== "en_cours" ? ` (${x.verdict})` : ""}</Pill>)}
           {!d.pactes.length && !d.audits.length && !d.fiches.length && !d.dossiers.length && <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>Aucun pacte, audit, fiche ni autre dossier lié.</span>}
         </div>
       )}

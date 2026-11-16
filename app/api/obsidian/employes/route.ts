@@ -1,10 +1,12 @@
+import type { UserLike } from "@/lib/types";
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requirePermission, requirePatron } from "@/lib/serverAuth";
 import { estAdminUser } from "@/lib/auth";
 import { logAudit, postAlert, GREEN } from "@/lib/alerts";
 
 // Promouvoir = permission admin en écriture (table roles), aucun nom de rôle en dur.
-const isPromoter = (u: any) => estAdminUser(u);
+const isPromoter = (u: UserLike) => estAdminUser(u);
 
 // [table, colonne du nom] - toutes pointent vers l'employé par employe_id (rempli automatiquement en base).
 const TABLES_NOM: [string, string][] = [["actions_illegales", "membre"], ["arrestations", "membre"], ["obsidian_comptabilite", "membre"], ["obsidian_mouvements", "membre"], ["obsidian_paiements", "employe"], ["cahier_transactions", "created_by"]];
@@ -40,7 +42,7 @@ export async function PATCH(req: Request) {
     } else { delete patch.nom; }
     const { error: dbError } = await supabaseAdmin.from("obsidian_employes").update(patch).eq("id", id);
     if (!dbError && renamed) {
-      await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Employé renommé", old!.nom, `-> ${patch.nom}`);
+      await logAudit(supabaseAdmin, ((user as Row)?.nom_perso || (user as Row)?.discord_name), "Employé renommé", old!.nom, `-> ${patch.nom}`);
       for (const [t, c] of TABLES_NOM) {
         await supabaseAdmin.from(t).update({ [c]: patch.nom }).eq("employe_id", id);
         await supabaseAdmin.from(t).update({ [c]: patch.nom }).eq(c, old!.nom); // lignes anciennes sans employe_id
@@ -50,7 +52,7 @@ export async function PATCH(req: Request) {
     }
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
     if (promoted && old) {
-      const who = (user as any)?.nom_perso || (user as any)?.discord_name;
+      const who = (user as Row)?.nom_perso || (user as Row)?.discord_name;
       await logAudit(supabaseAdmin, who, "Promotion / changement de rôle", old.nom, `${old.role || "-"} -> ${patch.role}`);
       await postAlert("compta", `⬆️ Promotion - ${old.nom}`, `${old.role || "-"} -> **${patch.role}**\nPar **${who || "?"}**`, GREEN);
     }
@@ -69,7 +71,7 @@ export async function DELETE(req: Request) {
     const { data: emp } = await supabaseAdmin.from("obsidian_employes").select("nom,discord_id").eq("id", id).maybeSingle();
     const { error: dbError } = await supabaseAdmin.from("obsidian_employes").delete().eq("id", id);
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 400 });
-    await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Employé supprimé", emp?.nom || String(id));
+    await logAudit(supabaseAdmin, ((user as Row)?.nom_perso || (user as Row)?.discord_name), "Employé supprimé", emp?.nom || String(id));
     // Ne pas le recréer automatiquement à la prochaine synchro.
     if (emp?.discord_id) await supabaseAdmin.from("site_logins").update({ employe_exclu: true }).eq("discord_id", emp.discord_id);
     else if (emp?.nom) await supabaseAdmin.from("site_logins").update({ employe_exclu: true }).ilike("discord_name", emp.nom);

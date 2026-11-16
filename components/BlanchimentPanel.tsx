@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -16,7 +17,7 @@ export function BlanchimentPanel({ onDone }: { onDone?: () => void }) {
   const [groupe, setGroupe] = useState("");
   const [orgs, setOrgs] = useState<string[]>([]);
   const [emps, setEmps] = useState<string[]>([]);
-  const [hist, setHist] = useState<any[]>([]);
+  const [hist, setHist] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const src = sens === "sale_propre" ? "sale" : "propre", dst = sens === "sale_propre" ? "propre" : "sale";
@@ -31,7 +32,7 @@ export function BlanchimentPanel({ onDone }: { onDone?: () => void }) {
     const { data } = await lire("obsidian_comptabilite", { eq: [["source", "blanchiment"], ["type", "dépense"]], order: [["created_at", false]], limit: 15 });
     setHist(data || []);
   }
-  useEffect(() => { load(); lire("carte_gangs", { select: "nom", order: [["nom", true]] }).then(({ data }) => setOrgs((data || []).map((o: any) => o.nom))); lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }).then(({ data }) => setEmps((data || []).filter((e: any) => e.actif !== false).map((e: any) => e.nom))); }, []);
+  useEffect(() => { load(); lire("carte_gangs", { select: "nom", order: [["nom", true]] }).then(({ data }) => setOrgs((data || []).map((o: Row) => o.nom))); lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }).then(({ data }) => setEmps((data || []).filter((e: Row) => e.actif !== false).map((e: Row) => e.nom))); }, []);
 
   async function go() {
     setBusy(true); setMsg("");

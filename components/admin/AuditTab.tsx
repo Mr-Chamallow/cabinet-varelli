@@ -1,16 +1,17 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/apiRequest";
 
 export function AuditTab() {
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [q, setQ] = useState("");
   async function load() {
     setLoading(true);
     const r = await apiRequest("/api/admin/audit", {});
-    if (!r.ok) setErr(r.error || "Erreur"); else { setErr(""); setRows(r.data || []); }
+    if (!r.ok) setErr(r.error || "Erreur"); else { setErr(""); setRows((r.data || []) as Row[]); }
     setLoading(false);
   }
   useEffect(() => { load(); }, []);

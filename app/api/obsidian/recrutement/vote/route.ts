@@ -1,3 +1,5 @@
+import type { UserLike } from "@/lib/types";
+import type { Row } from "@/lib/types";
 import type { Db } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
@@ -8,8 +10,8 @@ import { postAlert, logAudit, GREEN, GREY } from "@/lib/alerts";
 // Regle : majorite des membres (> 50 %) pour valider, 50 % ou plus de refus pour refuser.
 async function guard() {
   const r = await requirePermission("obsidian_recrutement");
-  if (!r.authorized) return { err: NextResponse.json({ error: r.error || "Non autorisé" }, { status: 403 }) } as any;
-  const u: any = r.user;
+  if (!r.authorized) return { err: NextResponse.json({ error: r.error || "Non autorisé" }, { status: 403 }) } as Row;
+  const u = r.user as UserLike;
   return { db: r.supabaseAdmin, id: String(u.discord_id || ""), nom: String(u.nom_perso || u.discord_name || "") };
 }
 
@@ -21,8 +23,8 @@ async function resolve(db: Db, recId: string, nom: string, auteur: string) {
   ]);
   if (!rec || rec.statut !== "candidat") return null;
   const total = Math.max(1, count || 1);
-  const ok = (votes || []).filter((v: any) => v.vote === "approuve").length;
-  const ko = (votes || []).filter((v: any) => v.vote === "refuse").length;
+  const ok = (votes || []).filter((v: Row) => v.vote === "approuve").length;
+  const ko = (votes || []).filter((v: Row) => v.vote === "refuse").length;
   let statut: string | null = null;
   if (ok > total / 2) statut = "valide"; else if (ko >= total / 2) statut = "refuse";
   if (!statut) return null;

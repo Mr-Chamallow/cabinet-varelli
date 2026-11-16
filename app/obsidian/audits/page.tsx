@@ -1,4 +1,6 @@
 "use client";
+import type { AuditP } from "@/lib/pdfDocs";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -27,7 +29,7 @@ function ScoreSelector({ value, onChange }: { value: number; onChange: (n: numbe
       </div>
       <div className="ss-row" role="radiogroup" aria-label="Note">
         {Array.from({ length: 11 }).map((_, n) => (
-          <button type="button" key={n} role="radio" aria-checked={value === n} className={`ss-pip${n <= value ? " on" : ""}${n === value ? " cur" : ""}`} style={{ ["--pc" as any]: NOTE_COL(n) }} onClick={() => onChange(n)}>{n}</button>
+          <button type="button" key={n} role="radio" aria-checked={value === n} className={`ss-pip${n <= value ? " on" : ""}${n === value ? " cur" : ""}`} style={{ ["--pc" as string]: NOTE_COL(n) }} onClick={() => onChange(n)}>{n}</button>
         ))}
       </div>
     </div>
@@ -38,12 +40,12 @@ const EMPTY = { organisation: "", note: 5, appreciation: "", sanction: "", sanct
 export default function AuditsPage() {
   const { canWrite } = useGmAccess("gm_audits");
   const { toast, showToast } = useToast();
-  const [list, setList] = useState<any[]>([]);
+  const [list, setList] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
   const [show, setShow] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<any>(EMPTY);
+  const [form, setForm] = useState<Row>(EMPTY);
   const [saving, setSaving] = useState(false);
   const groupes = useGroupes();
 
@@ -55,8 +57,8 @@ export default function AuditsPage() {
     setList(data || []); setLoading(false);
   }
   function openNew() { setEditId(null); setForm(EMPTY); setShow(true); }
-  function openEdit(a: any) { setEditId(a.id); setForm({ organisation: a.organisation, note: a.note, appreciation: a.appreciation || "", sanction: a.sanction || "", sanction_fin: toLocalInput(a.sanction_fin), notes: a.notes || "" }); setShow(true); }
-  function quickDuration(h: number) { const d = new Date(Date.now() + h * 3600_000); setForm((f: any) => ({ ...f, sanction_fin: toLocalInput(d.toISOString()) })); }
+  function openEdit(a: Row) { setEditId(a.id); setForm({ organisation: a.organisation, note: a.note, appreciation: a.appreciation || "", sanction: a.sanction || "", sanction_fin: toLocalInput(a.sanction_fin), notes: a.notes || "" }); setShow(true); }
+  function quickDuration(h: number) { const d = new Date(Date.now() + h * 3600_000); setForm((f: Row) => ({ ...f, sanction_fin: toLocalInput(d.toISOString()) })); }
   async function save() {
     if (!form.organisation.trim()) return;
     setSaving(true);
@@ -66,7 +68,7 @@ export default function AuditsPage() {
     if (!r.ok) { showToast(`Erreur : ${r.error}`, "danger"); return; }
     setShow(false); showToast("Audit enregistré (réputation mise à jour)"); load();
   }
-  async function del(a: any) {
+  async function del(a: Row) {
     if (!window.confirm(`Supprimer l'audit de ${a.organisation} ?`)) return;
     const r = await gmWrite("gm_audits", "DELETE", { id: a.id });
     if (!r.ok) showToast(`Erreur : ${r.error}`, "danger"); else { showToast("Supprimé"); load(); }
@@ -107,7 +109,7 @@ export default function AuditsPage() {
                   <div style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>{fmtDT(a.created_at)}{a.created_by ? ` · ${a.created_by}` : ""}{a.notes ? ` · ${a.notes}` : ""}</div>
                 </div>
                 {a.sanction && <Badge color="var(--warning)">⛔ {a.sanction}{a.sanction_fin ? ` · jusqu'au ${fmtDT(a.sanction_fin)}` : ""}</Badge>}
-                <button className="btn btn-ghost btn-sm" title="PDF" onClick={() => pdfAudit(a)}>📄</button>
+                <button className="btn btn-ghost btn-sm" title="PDF" onClick={() => pdfAudit(a as AuditP)}>📄</button>
                 {canWrite && <><button className="btn btn-ghost btn-sm" onClick={() => openEdit(a)}>✏️</button><button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => del(a)}>🗑️</button></>}
               </div>
             );

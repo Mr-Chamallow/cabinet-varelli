@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire, lireUn } from "@/lib/lire";
 import Link from "next/link";
 import { Stamp } from "@/components/Stamp";
@@ -43,11 +44,11 @@ export default function PaieObsidianPage() {
   const [tab, setTab] = useState<"apercu" | "dons" | "reglages">("apercu");
   const [weekOffset, setWeekOffset] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [compta, setCompta] = useState<any[]>([]);
-  const [paiements, setPaiements] = useState<any[]>([]);
-  const [arrests, setArrests] = useState<any[]>([]);
-  const [dons, setDons] = useState<any[]>([]);
-  const [budget, setBudget] = useState<any>(null);
+  const [compta, setCompta] = useState<Row[]>([]);
+  const [paiements, setPaiements] = useState<Row[]>([]);
+  const [arrests, setArrests] = useState<Row[]>([]);
+  const [dons, setDons] = useState<Row[]>([]);
+  const [budget, setBudget] = useState<Row | null>(null);
   const [pct, setPct] = useState(20);
   const [primeSeuil, setPrimeSeuil] = useState(20000);
   const [primeFixe, setPrimeFixe] = useState(5000);

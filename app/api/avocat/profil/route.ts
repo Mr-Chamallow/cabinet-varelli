@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import type { Row } from "@/lib/types";
+import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { supabaseAdmin } from "@/lib/serverAuth";
 import { DISCORD_ROLE_MAP } from "@/lib/discord-config";
@@ -14,13 +15,13 @@ async function attribuerRoleClient(discordId: string, discordRoles: string[]) {
   await supabaseAdmin.from("role_overrides").insert([{ discord_id: discordId, role: CLIENT_ROLE }]);
 }
 
-async function moi(req: Request) {
-  const t: any = await getToken({ req: req as any, secret: process.env.NEXTAUTH_SECRET });
+async function moi(req: NextRequest) {
+  const t: Row = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   if (!t?.discord_id) return null;
   return { discord_id: String(t.discord_id), discord_name: String(t.discord_name || "Membre"), discord_roles: (t.discord_roles || []) as string[] };
 }
 
-function champs(body: any) {
+function champs(body: Row) {
   return {
     nom_rp: String(body.nom_rp || "").trim(),
     tel_rp: String(body.tel_rp || "").trim(),
@@ -28,14 +29,14 @@ function champs(body: any) {
   };
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const me = await moi(req);
   if (!me) return NextResponse.json({ error: "Non connecté" }, { status: 401 });
   const { data } = await supabaseAdmin.from("avocat_clients").select("*").eq("discord_id", me.discord_id).maybeSingle();
   return NextResponse.json({ profil: data, discord: me });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const me = await moi(req);
   if (!me) return NextResponse.json({ error: "Non connecté" }, { status: 401 });
   const c = champs(await req.json());
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true });
 }
 
-export async function PUT(req: Request) {
+export async function PUT(req: NextRequest) {
   const me = await moi(req);
   if (!me) return NextResponse.json({ error: "Non connecté" }, { status: 401 });
   const c = champs(await req.json());

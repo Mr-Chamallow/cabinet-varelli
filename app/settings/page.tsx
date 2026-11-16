@@ -1,5 +1,6 @@
 "use client";
 
+import type { Row } from "@/lib/types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -37,7 +38,7 @@ export default function SettingsPage() {
       return;
     }
     const m: Record<string, string> = {};
-    (data || []).forEach((r: any) => { m[r.cle] = r.valeur; });
+    (data || []).forEach((r: Row) => { m[r.cle] = r.valeur; });
     setSettings(m);
     const savedGold = m["couleur_gold"] && isValidHex(m["couleur_gold"]) ? m["couleur_gold"] : DEFAULT_GOLD;
     setGold(savedGold);

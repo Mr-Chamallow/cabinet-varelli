@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 
 import Link from "next/link";
@@ -156,9 +157,9 @@ export default function PlanningOperationsPage() {
   async function fetchFiches() {
     if (!supabase) return;
     const { data } = await lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] });
-    setFiches((data || []).filter((c: any) => c.actif !== false).map((c: any) => c.nom));
+    setFiches((data || []).filter((c: Row) => c.actif !== false).map((c: Row) => c.nom));
     const lg = (await fetch("/api/membres-liste").then(r => r.json())).membres || [];
-    setSiteMembers((lg || []).map((x: any) => x.discord_name).filter(Boolean));
+    setSiteMembers((lg || []).map((x: Row) => x.discord_name).filter(Boolean));
   }
 
   async function fetchContrats() {
@@ -216,7 +217,7 @@ async function saveOperation() {
       const { id: _id, created_at: _ca, discord_message_id: _dmid, ...rest } = op;
       const { data } = await dbw.insert("obsidian_rdv", rest);
       if (data) {
-        setOperations(ops => [...ops, data]);
+        setOperations(ops => [...ops, data as Operation]);
         notifyDiscordCreate("rdv", buildRdvEmbed(data)).then(msgId => {
           if (msgId && supabase) dbw.update("obsidian_rdv", data.id, { discord_message_id: msgId }).then();
         });

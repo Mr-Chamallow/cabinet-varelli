@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -41,7 +42,7 @@ export default function BaseDeDonneesPage() {
   const [points, setPoints] = useState<CartePoint[]>([]);
 
   const [selectedPersonneId, setSelectedPersonneId] = useState<string | null>(null);
-  useDeepLink("personne", personnes.length > 0, (v) => { const p = personnes.find(x => x.id === v || `${(x as any).prenom || ""} ${x.nom}`.trim().toLowerCase() === v.toLowerCase()); if (p) { setTab("personnes"); setSelectedPersonneId(p.id); } });
+  useDeepLink("personne", personnes.length > 0, (v) => { const p = personnes.find(x => x.id === v || `${(x as Row).prenom || ""} ${x.nom}`.trim().toLowerCase() === v.toLowerCase()); if (p) { setTab("personnes"); setSelectedPersonneId(p.id); } });
   const [selectedVehiculeId, setSelectedVehiculeId] = useState<string | null>(null);
   const [selectedGroupeId, setSelectedGroupeId] = useState<string | null>(null);
   const [groupeSearch, setGroupeSearch] = useState("");
@@ -63,7 +64,7 @@ export default function BaseDeDonneesPage() {
 
   const [showGroupeForm, setShowGroupeForm] = useState(false);
   const [groupeNom, setGroupeNom] = useState("");
-  const [wantedP, setWantedP] = useState<any>(null);
+  const [wantedP, setWantedP] = useState<Row | null>(null);
   const [groupeType, setGroupeType] = useState<Gang["type"]>("orga");
   const [formPointId, setFormPointId] = useState<string>("");
 
@@ -115,7 +116,7 @@ export default function BaseDeDonneesPage() {
   useEffect(() => {
     if (!supabase || !selectedPersonneId) { setActivites([]); return; }
     lire("bdd_activites", { eq: [["personne_id", selectedPersonneId]], order: [["created_at", false]] })
-      .then(({ data }: any) => setActivites(data || []));
+      .then(({ data }: Row) => setActivites(data || []));
   }, [selectedPersonneId]);
 
   // --- Recherche globale (personne ou plaque) ---
@@ -214,24 +215,24 @@ export default function BaseDeDonneesPage() {
     if (editPersonneId) {
       const { data, error } = await dbw.update("bdd_personnes", editPersonneId, payload);
       if (error) { alert("❌ Erreur: " + error.message); setSavingPersonne(false); return; }
-      setPersonnes(list => list.map(x => x.id === editPersonneId ? data : x));
+      setPersonnes(list => list.map(x => x.id === editPersonneId ? (data as Personne) : x));
       if (data.fiche_id) await syncBddToFiche(supabase, data); // fiche liée mise à jour aussi
       showToast("Fiche mise à jour");
       if (before && before.statut !== data.statut) await logActivite(data.id, "statut", `Statut : ${before.statut || "-"} -> ${data.statut || "-"}`);
       if (before && before.groupe_id !== data.groupe_id) await logActivite(data.id, "groupe", `Groupe : ${gangOf(before.groupe_id)?.nom || "aucun"} -> ${gangOf(data.groupe_id)?.nom || "aucun"}`);
       if (before && before.priorite !== "Critique" && data.priorite === "Critique") {
-        await notifyDiscord("🚨 Priorité CRITIQUE", `**${fullName(data)}** est passé(e) en priorité Critique${user?.nom ? ` (par ${user.nom})` : ""}.`);
+        await notifyDiscord("🚨 Priorité CRITIQUE", `**${fullName(data as Personne)}** est passé(e) en priorité Critique${user?.nom ? ` (par ${user.nom})` : ""}.`);
       }
     } else {
       const { data, error } = await dbw.insert("bdd_personnes", { ...payload, created_by: user?.nom || "" });
       if (error) { alert("❌ Erreur: " + error.message); setSavingPersonne(false); return; }
-      setPersonnes(list => [...list, data]);
+      setPersonnes(list => [...list, data as Personne]);
       setSelectedPersonneId(data.id);
       savedId = data.id;
       showToast("Personne recensée");
       await logActivite(data.id, "creation", `Fiche créée${user?.nom ? " par " + user.nom : ""}`);
       if (data.priorite === "Critique") {
-        await notifyDiscord("🚨 Nouvelle fiche CRITIQUE", `**${fullName(data)}** recensé(e) directement en priorité Critique${user?.nom ? ` (par ${user.nom})` : ""}.`);
+        await notifyDiscord("🚨 Nouvelle fiche CRITIQUE", `**${fullName(data as Personne)}** recensé(e) directement en priorité Critique${user?.nom ? ` (par ${user.nom})` : ""}.`);
       }
     }
     if (savedId) {
@@ -288,12 +289,12 @@ export default function BaseDeDonneesPage() {
     if (editVehiculeId) {
       const { data, error } = await dbw.update("bdd_vehicules", editVehiculeId, payload);
       if (error) { alert("❌ Erreur: " + error.message); setSavingVehicule(false); return; }
-      setVehicules(list => list.map(x => x.id === editVehiculeId ? data : x));
+      setVehicules(list => list.map(x => x.id === editVehiculeId ? (data as Vehicule) : x));
       showToast("Véhicule mis à jour");
     } else {
       const { data, error } = await dbw.insert("bdd_vehicules", payload);
       if (error) { alert("❌ Erreur: " + error.message); setSavingVehicule(false); return; }
-      setVehicules(list => [...list, data]);
+      setVehicules(list => [...list, data as Vehicule]);
       setSelectedVehiculeId(data.id);
       showToast("Véhicule ajouté");
       if (doublonsAvant.length > 0) {
@@ -436,7 +437,7 @@ export default function BaseDeDonneesPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "0.35rem" }}>
-                  {(selectedPersonne as any).fiche_id && <Link className="btn btn-outline btn-sm" href="/obsidian/fiches" title="Fiche liée">🗂️ Fiche</Link>}
+                  {(selectedPersonne as Row).fiche_id && <Link className="btn btn-outline btn-sm" href="/obsidian/fiches" title="Fiche liée">🗂️ Fiche</Link>}
                   <button className="btn btn-outline btn-sm" title="Avis de recherche du Consortium" onClick={() => setWantedP(selectedPersonne)}>🧾 Recherché</button>
                   {canWrite && <button className="btn btn-outline btn-sm" onClick={() => openEditPersonne(selectedPersonne)}>✏️</button>}
                   {canWrite && <button className="btn btn-ghost btn-sm" onClick={() => deletePersonne(selectedPersonne.id)} style={{ color: "var(--danger)" }}>🗑️</button>}
@@ -676,7 +677,7 @@ export default function BaseDeDonneesPage() {
               <div className="form-group"><label>Occupation</label><input value={personneForm.occupation} onChange={e => setPersonneForm(f => ({ ...f, occupation: e.target.value }))} /></div>
               <div className="form-group"><label>Origine</label><input value={personneForm.origine} onChange={e => setPersonneForm(f => ({ ...f, origine: e.target.value }))} /></div>
               <div className="form-group"><label>Âge</label><input type="number" value={personneForm.age || ""} onChange={e => setPersonneForm(f => ({ ...f, age: +e.target.value }))} /></div>
-              <div className="form-group"><label>Récompense (avis de recherche, $)</label><input type="number" min={0} value={(personneForm as any).prime || ""} onChange={e => setPersonneForm(f => ({ ...f, prime: +e.target.value } as any))} /></div>
+              <div className="form-group"><label>Récompense (avis de recherche, $)</label><input type="number" min={0} value={(personneForm as Row).prime || ""} onChange={e => setPersonneForm(f => ({ ...f, prime: +e.target.value }))} /></div>
               <div className="form-group"><label>Tags (virgule)</label><input value={tagsInput} onChange={e => setTagsInput(e.target.value)} placeholder="suspect,fournisseur,ennemi" /></div>
             </div>
             <div className="form-group"><label>Adresses</label><textarea rows={2} value={personneForm.adresses} onChange={e => setPersonneForm(f => ({ ...f, adresses: e.target.value }))} /></div>
@@ -752,7 +753,7 @@ export default function BaseDeDonneesPage() {
 
       {wantedP && (
         <Modal title="🧾 Avis de recherche" size="lg" onClose={() => setWantedP(null)}>
-          <WantedPoster d={{ nom: fullName(wantedP), alias: wantedP.surnom, organisation: gangOf(wantedP.groupe_id)?.nom || wantedP.organisation, priorite: wantedP.priorite, prime: (wantedP as any).prime, photo_url: wantedP.photo_police || wantedP.photo_identite, photo_id: wantedP.photo_police ? wantedP.photo_identite : null, motif: (wantedP.notes_publiques || "").split("\n")[0].slice(0, 140), age: wantedP.age, origine: wantedP.origine, occupation: wantedP.occupation, vehicules: undefined, tags: wantedP.tags }} />
+          <WantedPoster d={{ nom: fullName(wantedP as Personne), alias: wantedP.surnom, organisation: gangOf(wantedP.groupe_id)?.nom || wantedP.organisation, priorite: wantedP.priorite, prime: (wantedP as Row).prime, photo_url: wantedP.photo_police || wantedP.photo_identite, photo_id: wantedP.photo_police ? wantedP.photo_identite : null, motif: (wantedP.notes_publiques || "").split("\n")[0].slice(0, 140), age: wantedP.age, origine: wantedP.origine, occupation: wantedP.occupation, vehicules: undefined, tags: wantedP.tags }} />
         </Modal>
       )}
 

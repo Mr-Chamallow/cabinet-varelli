@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 
 import Link from "next/link";
@@ -93,16 +94,16 @@ export default function SupervisionPage() {
     const depenses = Number(bud?.depenses) || 0;
 
     const stockList = stocks || [];
-    const stockTotal = stockList.reduce((s: number, r: any) => s + (r.quantite || 0), 0);
-    const stockValeur = stockList.reduce((s: number, r: any) => s + (r.quantite || 0) * (r.prix_unitaire || 0), 0);
+    const stockTotal = stockList.reduce((s: number, r: Row) => s + (r.quantite || 0), 0);
+    const stockValeur = stockList.reduce((s: number, r: Row) => s + (r.quantite || 0) * (r.prix_unitaire || 0), 0);
 
     const empList = employes || [];
-    setEmployesNoms(empList.map((e: any) => e.nom).filter(Boolean).sort());
+    setEmployesNoms(empList.map((e: Row) => e.nom).filter(Boolean).sort());
 
     setStats({
       caSale, caPropre, depenses,
       stockTotal, stockValeur,
-      employesActifs: empList.filter((e: any) => e.actif !== false).length,
+      employesActifs: empList.filter((e: Row) => e.actif !== false).length,
       employesTotal: empList.length,
       operationsAVenir: rdvAVenir?.length ?? 0,
       contratsEnCours: contratsEnCours || 0,
@@ -165,7 +166,7 @@ export default function SupervisionPage() {
         {([["stats", "📊 Vue d'ensemble"], ["operations", "🗓️ Opérations"], ["activite", "📋 Activité"]] as [string, string][]).map(([k, l]) => (
           <button
             key={k}
-            onClick={() => setActiveTab(k as any)}
+            onClick={() => setActiveTab(k as typeof activeTab)}
             style={{
               padding: "0.55rem 1.25rem", borderRadius: "var(--radius)", cursor: "pointer",
               fontFamily: "'Inter',sans-serif", fontSize: "0.85rem", fontWeight: activeTab === k ? 700 : 400,

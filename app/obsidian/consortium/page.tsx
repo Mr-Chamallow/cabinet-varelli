@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -18,7 +19,7 @@ const Bar = ({ label, value, max, color }: { label: string; value: number; max: 
 
 export default function ConsortiumStatsPage() {
   useGmAccess("gm_stats");
-  const [d, setD] = useState<any>(null);
+  const [d, setD] = useState<Row | null>(null);
   useEffect(() => {
     if (!supabase) return;
     Promise.all([
@@ -30,21 +31,21 @@ export default function ConsortiumStatsPage() {
 
   const k = useMemo(() => {
     if (!d) return null;
-    const byOrg: Record<string, number[]> = {}; d.rep.forEach((x: any) => (byOrg[x.organisation] ??= []).push(x.delta));
-    const scores = d.gangs.map((g: any) => ({ nom: g.nom, score: scoreOf(byOrg[g.nom] || []) })).sort((a: any, b: any) => b.score - a.score);
-    const cnt = (arr: any[], f: (x: any) => boolean) => arr.filter(f).length;
-    const ev = (t: string) => d.events.filter((x: any) => x.type === t);
+    const byOrg: Record<string, number[]> = {}; d.rep.forEach((x: Row) => (byOrg[x.organisation] ??= []).push(x.delta));
+    const scores = d.gangs.map((g: Row) => ({ nom: g.nom, score: scoreOf(byOrg[g.nom] || []) })).sort((a: Row, b: Row) => b.score - a.score);
+    const cnt = (arr: Row[], f: (x: Row) => boolean) => arr.filter(f).length;
+    const ev = (t: string) => d.events.filter((x: Row) => x.type === t);
     const conv = ev("convoi");
     return {
-      scores, avgScore: scores.length ? Math.round(scores.reduce((s: number, x: any) => s + x.score, 0) / scores.length) : 0,
-      pactes: { actifs: cnt(d.pactes, (x: any) => x.statut === "actif"), suspendus: cnt(d.pactes, (x: any) => x.statut === "suspendu"), rompus: cnt(d.pactes, (x: any) => x.statut === "rompu"), viol: d.pactes.reduce((s: number, x: any) => s + (x.violations || []).length, 0) },
-      auditAvg: d.audits.length ? (d.audits.reduce((s: number, x: any) => s + Number(x.note), 0) / d.audits.length).toFixed(1) : " - ",
-      auditBad: cnt(d.audits, (x: any) => Number(x.note) < 5),
-      dossiers: { total: d.dossiers.length, cours: cnt(d.dossiers, (x: any) => x.verdict === "en_cours"), coupable: cnt(d.dossiers, (x: any) => x.verdict === "coupable"), innocent: cnt(d.dossiers, (x: any) => x.verdict === "innocent") },
-      convois: { livres: cnt(conv, (x: any) => x.statut === "livre"), echecs: cnt(conv, (x: any) => x.statut === "echec"), valeur: conv.filter((x: any) => x.statut === "livre").reduce((s: number, x: any) => s + Number(x.montant), 0) },
-      encheres: ev("enchere").filter((x: any) => x.statut === "cloturee").reduce((s: number, x: any) => s + Number(x.montant), 0),
-      captures: { faire: cnt(ev("capture"), (x: any) => x.statut === "a_faire" || x.statut === "en_cours"), faites: cnt(ev("capture"), (x: any) => x.statut === "capturee") },
-      alertes: cnt(ev("alerte"), (x: any) => x.statut === "ouverte" || x.statut === "traquee"),
+      scores, avgScore: scores.length ? Math.round(scores.reduce((s: number, x: Row) => s + x.score, 0) / scores.length) : 0,
+      pactes: { actifs: cnt(d.pactes, (x: Row) => x.statut === "actif"), suspendus: cnt(d.pactes, (x: Row) => x.statut === "suspendu"), rompus: cnt(d.pactes, (x: Row) => x.statut === "rompu"), viol: d.pactes.reduce((s: number, x: Row) => s + (x.violations || []).length, 0) },
+      auditAvg: d.audits.length ? (d.audits.reduce((s: number, x: Row) => s + Number(x.note), 0) / d.audits.length).toFixed(1) : " - ",
+      auditBad: cnt(d.audits, (x: Row) => Number(x.note) < 5),
+      dossiers: { total: d.dossiers.length, cours: cnt(d.dossiers, (x: Row) => x.verdict === "en_cours"), coupable: cnt(d.dossiers, (x: Row) => x.verdict === "coupable"), innocent: cnt(d.dossiers, (x: Row) => x.verdict === "innocent") },
+      convois: { livres: cnt(conv, (x: Row) => x.statut === "livre"), echecs: cnt(conv, (x: Row) => x.statut === "echec"), valeur: conv.filter((x: Row) => x.statut === "livre").reduce((s: number, x: Row) => s + Number(x.montant), 0) },
+      encheres: ev("enchere").filter((x: Row) => x.statut === "cloturee").reduce((s: number, x: Row) => s + Number(x.montant), 0),
+      captures: { faire: cnt(ev("capture"), (x: Row) => x.statut === "a_faire" || x.statut === "en_cours"), faites: cnt(ev("capture"), (x: Row) => x.statut === "capturee") },
+      alertes: cnt(ev("alerte"), (x: Row) => x.statut === "ouverte" || x.statut === "traquee"),
     };
   }, [d]);
 
@@ -64,11 +65,11 @@ export default function ConsortiumStatsPage() {
       {!k ? <LoadingBlock /> : (
         <>
           <div className="stat-grid" style={{ marginBottom: "1.5rem" }}>
-            {tiles.map(t => <div key={t.l} className="stat-card no-fx"><div className="stat-icon">{t.i}</div><div className="stat-value" style={{ color: t.c, fontSize: "1.3rem" }}><CountUp value={t.v as number} />{(t as any).suf || ""}</div><div className="stat-label">{t.l}</div></div>)}
+            {tiles.map(t => <div key={t.l} className="stat-card no-fx"><div className="stat-icon">{t.i}</div><div className="stat-value" style={{ color: t.c, fontSize: "1.3rem" }}><CountUp value={t.v as number} />{(t as Row).suf || ""}</div><div className="stat-label">{t.l}</div></div>)}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: "1.1rem" }}>
             <div className="card"><div className="section-title" style={{ marginBottom: "0.8rem" }}>⭐ Classement réputation</div>
-              {k.scores.length === 0 ? <div style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>Aucun groupe.</div> : k.scores.slice(0, 10).map((s: any) => <Bar key={s.nom} label={s.nom} value={s.score} max={100} color={s.score >= 60 ? "var(--success)" : s.score >= 40 ? "var(--gold)" : "var(--danger)"} />)}
+              {k.scores.length === 0 ? <div style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>Aucun groupe.</div> : k.scores.slice(0, 10).map((s: Row) => <Bar key={s.nom} label={s.nom} value={s.score} max={100} color={s.score >= 60 ? "var(--success)" : s.score >= 40 ? "var(--gold)" : "var(--danger)"} />)}
             </div>
             <div className="card"><div className="section-title" style={{ marginBottom: "0.8rem" }}>⚖️ Justice & pactes</div>
               <Bar label="Verdicts coupables" value={k.dossiers.coupable} max={Math.max(1, k.dossiers.total)} color="var(--danger)" />

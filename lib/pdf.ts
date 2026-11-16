@@ -1,4 +1,5 @@
 "use client";
+import type { jsPDF } from "jspdf";
 import { money } from "@/lib/money";
 // Gabarit PDF commun à tous les documents partageables (fiches, procès, pactes, audits, convois...).
 // Même en-tête, même classification, même pied de page : un seul style pour tout le Consortium.
@@ -9,7 +10,7 @@ const MUTED: [number, number, number] = [110, 110, 122];
 const SCARLET: [number, number, number] = [200, 50, 56];
 
 // jsPDF (polices standard) ne gère pas les emojis ni l'unicode hors Latin-1 : on nettoie proprement.
-export function clean(s: any): string {
+export function clean(s: unknown): string {
   if (s === null || s === undefined || s === "") return "-";
   return String(s)
     .replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/\u2026/g, "...")
@@ -53,8 +54,8 @@ const THEMES: Record<PdfKind, { accent: RGB; band: RGB; emblem: string; stamp: s
 };
 
 export class Pdf {
-  doc: any; y = 0; logo: string | null = null; W = 210; H = 297; M = 18;
-  private constructor(doc: any, private opts: PdfOpts) { this.doc = doc; }
+  doc: jsPDF; y = 0; logo: string | null = null; W = 210; H = 297; M = 18;
+  private constructor(doc: jsPDF, private opts: PdfOpts) { this.doc = doc; }
 
   static async create(opts: PdfOpts) {
     const { jsPDF } = await import("jspdf");
@@ -235,7 +236,7 @@ export class Pdf {
     this.y += 8;
   }
 
-  para(text: any, opts: { color?: [number, number, number]; italic?: boolean } = {}) {
+  para(text: unknown, opts: { color?: [number, number, number]; italic?: boolean } = {}) {
     const d = this.doc;
     d.setFont("helvetica", opts.italic ? "italic" : "normal"); d.setFontSize(10); d.setTextColor(...(opts.color || INK));
     const lines = d.splitTextToSize(clean(text), this.W - 2 * this.M);
@@ -243,7 +244,7 @@ export class Pdf {
     this.y += 1.5;
   }
 
-  kv(rows: [string, any][]) {
+  kv(rows: [string, unknown][]) {
     const d = this.doc; const w = this.W - 2 * this.M; const col = w / 2;
     for (let i = 0; i < rows.length; i += 2) {
       this.ensure(12);
@@ -319,12 +320,13 @@ export class Pdf {
     this.validation();
     const d = this.doc; const n = d.getNumberOfPages();
     const stamp = `Genere le ${new Date().toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}`;
-    let GState: any = null; try { GState = (d as any).GState; } catch { /* ignoré */ }
+    type GStateCtor = new (o: Record<string, number>) => unknown;
+    let GState: GStateCtor | null = null; try { GState = (d as unknown as { GState?: GStateCtor }).GState ?? null; } catch { /* ignoré */ }
     for (let i = 1; i <= n; i++) {
       d.setPage(i);
       this.frame();
       if (GState) { // filigrane diagonal très léger
-        try { d.setGState(new GState({ opacity: 0.05, "stroke-opacity": 0.05 } as any)); this.emblem(this.W / 2, this.H / 2, 95, this.t.accent, 2.2); d.setGState(new GState({ opacity: 1, "stroke-opacity": 1 } as any)); } catch { /* ignoré */ }
+        try { d.setGState(new GState({ opacity: 0.05, "stroke-opacity": 0.05 }) as Parameters<jsPDF["setGState"]>[0]); this.emblem(this.W / 2, this.H / 2, 95, this.t.accent, 2.2); d.setGState(new GState({ opacity: 1, "stroke-opacity": 1 }) as Parameters<jsPDF["setGState"]>[0]); } catch { /* ignoré */ }
       }
       if (i > 1) { // bandeau fin sur les pages suivantes
         d.setFillColor(...this.t.band); d.rect(0, 0, this.W, 11, "F"); d.setFillColor(...this.t.accent); d.rect(0, 11, this.W, 0.5, "F");

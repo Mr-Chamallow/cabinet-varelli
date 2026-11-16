@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
@@ -7,7 +8,7 @@ import { montant } from "@/lib/montant";
 export default function Recherche() {
   // Pré-remplissage depuis l'URL (?q=...) : utilisé par le raccourci Ctrl+K
   const [q, setQ] = useState(() => (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("q") || "" : ""));
-  const [res, setRes] = useState<any>(null);
+  const [res, setRes] = useState<Row | null>(null);
   const [erreur, setErreur] = useState("");
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function Recherche() {
       {res?.clients?.length > 0 && (
         <div>
           <h2 className="cab-section-titre">Clients</h2>
-          {res.clients.map((c: any) => (
+          {res.clients.map((c: Row) => (
             <Link key={c.discord_id} href={`/avocat/clients/${c.discord_id}`} className="cab-card" style={carte}>
               <b>{c.nom_rp || c.discord_name}</b>{c.id_perso ? <span className="cab-muted"> · {c.id_perso}</span> : null}
             </Link>
@@ -50,7 +51,7 @@ export default function Recherche() {
       {res?.dossiers?.length > 0 && (
         <div>
           <h2 className="cab-section-titre">Dossiers</h2>
-          {res.dossiers.map((d: any) => (
+          {res.dossiers.map((d: Row) => (
             <Link key={d.id} href={`/avocat/dossiers/${d.id}`} className="cab-card" style={carte}>
               <b>{d.titre}</b><span className="cab-muted"> · {d.client_nom} · {d.statut}</span>
             </Link>
@@ -61,7 +62,7 @@ export default function Recherche() {
       {res?.devis?.length > 0 && (
         <div>
           <h2 className="cab-section-titre">Devis</h2>
-          {res.devis.map((d: any) => (
+          {res.devis.map((d: Row) => (
             <Link key={d.id} href="/avocat/facturation" className="cab-card" style={carte}>
               <b>{d.numero}</b><span className="cab-muted"> · {d.client_nom} · {montant(Number(d.montant))} · {d.statut}</span>
             </Link>
@@ -72,7 +73,7 @@ export default function Recherche() {
       {res?.factures?.length > 0 && (
         <div>
           <h2 className="cab-section-titre">Factures</h2>
-          {res.factures.map((f: any) => (
+          {res.factures.map((f: Row) => (
             <a key={f.id} href={`/api/cabinet/factures/${f.id}/pdf`} target="_blank" rel="noreferrer" className="cab-card" style={carte}>
               <b>{f.numero}</b><span className="cab-muted"> · {f.client_nom} · {montant(Number(f.montant))} · {f.statut === "payee" ? "payée" : f.statut === "annulee" ? "annulée" : "en attente"}</span>
             </a>

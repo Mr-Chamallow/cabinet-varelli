@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useState } from "react";
 import { money } from "@/lib/money";
 import { GroupeInput } from "@/components/GroupeInput";
@@ -11,14 +12,14 @@ export function FournisseursPanel({ categorie, produit, vente, list, onChange, c
 }) {
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<string | null>(null);
-  const empty = { qui: "", groupe: "", telephone: "", prix_achat: "" as any, prefere: false };
-  const [form, setForm] = useState<any>(empty);
+  const empty = { qui: "", groupe: "", telephone: "", prix_achat: "" as string, prefere: false };
+  const [form, setForm] = useState<Row>(empty);
   const [busy, setBusy] = useState(false);
   const groupes = useGroupes();
   const ref = refAchat(list), cheap = moinsCher(list);
   const mg = ref ? marge(vente, ref.prix_achat) : null;
 
-  async function call(method: string, body: any) {
+  async function call(method: string, body: Row) {
     setBusy(true);
     const r = await fetch("/api/obsidian/fournisseurs", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const out = await r.json().catch(() => ({}));
@@ -71,12 +72,12 @@ export function FournisseursPanel({ categorie, produit, vente, list, onChange, c
         {canEdit && <div style={{ background: "var(--surface)", borderRadius: "var(--radius)", padding: "0.5rem", display: "flex", flexDirection: "column", gap: "0.3rem" }}>
           <div style={col}>{edit ? "Modifier le fournisseur" : "+ Ajouter un fournisseur"}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.3rem" }}>
-            <input placeholder="À qui (nom)" value={form.qui} onChange={e => setForm((f: any) => ({ ...f, qui: e.target.value }))} />
-            <GroupeInput groupes={groupes} value={form.groupe} onChange={v => setForm((f: any) => ({ ...f, groupe: v }))} />
-            <input placeholder="Téléphone" value={form.telephone} onChange={e => setForm((f: any) => ({ ...f, telephone: e.target.value }))} />
-            <input type="number" min={0} placeholder="Prix d'achat" value={form.prix_achat} onChange={e => setForm((f: any) => ({ ...f, prix_achat: e.target.value }))} />
+            <input placeholder="À qui (nom)" value={form.qui} onChange={e => setForm((f: Row) => ({ ...f, qui: e.target.value }))} />
+            <GroupeInput groupes={groupes} value={form.groupe} onChange={v => setForm((f: Row) => ({ ...f, groupe: v }))} />
+            <input placeholder="Téléphone" value={form.telephone} onChange={e => setForm((f: Row) => ({ ...f, telephone: e.target.value }))} />
+            <input type="number" min={0} placeholder="Prix d'achat" value={form.prix_achat} onChange={e => setForm((f: Row) => ({ ...f, prix_achat: e.target.value }))} />
           </div>
-          <label style={{ fontSize: "0.72rem", display: "flex", gap: "0.35rem", alignItems: "center" }}><input type="checkbox" style={{ width: "auto" }} checked={form.prefere} onChange={e => setForm((f: any) => ({ ...f, prefere: e.target.checked }))} /> Fournisseur préféré (sinon : le moins cher)</label>
+          <label style={{ fontSize: "0.72rem", display: "flex", gap: "0.35rem", alignItems: "center" }}><input type="checkbox" style={{ width: "auto" }} checked={form.prefere} onChange={e => setForm((f: Row) => ({ ...f, prefere: e.target.checked }))} /> Fournisseur préféré (sinon : le moins cher)</label>
           <div style={{ display: "flex", gap: "0.3rem" }}>
             <button className="btn btn-gold btn-sm" style={{ flex: 1 }} disabled={busy || !form.qui.trim() || !(Number(form.prix_achat) > 0)} onClick={save}>{edit ? "OK" : "+ Ajouter"}</button>
             {edit && <button className="btn btn-ghost btn-sm" onClick={() => { setEdit(null); setForm(empty); }}>✕</button>}

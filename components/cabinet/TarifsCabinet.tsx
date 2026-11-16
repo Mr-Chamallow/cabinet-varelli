@@ -1,12 +1,13 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatedTestimonials } from "@/components/ui/animated-testimonials";
 
 // Grille des honoraires en carrousel : une fiche par prestation (image, description, prix)
 // et un second onglet pour les offres groupées
 export default function TarifsCabinet() {
-  const [rows, setRows] = useState<any[]>([]);
-  const [offres, setOffres] = useState<any[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
+  const [offres, setOffres] = useState<Row[]>([]);
   const [erreur, setErreur] = useState("");
   const [chargement, setChargement] = useState(true);
   const [onglet, setOnglet] = useState<"prestations" | "offres">("prestations");

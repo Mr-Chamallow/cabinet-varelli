@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { montant } from "@/lib/montant";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -9,7 +10,7 @@ const heure = (s: string) => new Date(s).toLocaleString("fr-FR", { weekday: "sho
 
 // Tableau de bord direction : vue d'ensemble, mise à jour en temps réel
 export default function TableauBord({ lecture = false }: { lecture?: boolean }) {
-  const [d, setD] = useState<any>(null);
+  const [d, setD] = useState<Row | null>(null);
   const [erreur, setErreur] = useState("");
   const [info, setInfo] = useState("");
 
@@ -18,8 +19,8 @@ export default function TableauBord({ lecture = false }: { lecture?: boolean }) 
   useTempsReel(d?.topics?.votes, charger);
   useTempsReel(d?.topics?.plaintes, charger);
 
-  const purger = async (corps: any, quoi: string) => {
-    const res = await supprimerDefinitivement(corps, quoi);
+  const purger = async (corps: Row, quoi: string) => {
+    const res = await supprimerDefinitivement(corps as { type: string; id?: string }, quoi);
     setInfo(res.message);
     if (res.ok) charger();
   };
@@ -48,7 +49,7 @@ export default function TableauBord({ lecture = false }: { lecture?: boolean }) 
 
       <h2 className="cab-section-titre">Rendez-vous du jour</h2>
       {d.rdvJour.length === 0 && <div className="cab-muted" style={{ marginBottom: "1rem" }}>Aucun rendez-vous aujourd&apos;hui.</div>}
-      {d.rdvJour.map((r: any) => (
+      {d.rdvJour.map((r: Row) => (
         <div key={r.id} className="cab-card" style={{ marginBottom: "0.5rem" }}>
           <div style={{ fontWeight: 600 }}>{heure(r.date_rdv)} · {r.client_nom || "Client"}</div>
           <div className="cab-muted" style={{ fontSize: "0.78rem" }}>{r.motif || "-"} · {r.avocat_nom ? `Avocat : ${r.avocat_nom}` : "Avocat non attribué"} · {r.statut}</div>
@@ -57,7 +58,7 @@ export default function TableauBord({ lecture = false }: { lecture?: boolean }) 
 
       <h2 className="cab-section-titre" style={{ marginTop: "1.2rem" }}>Votes en cours</h2>
       {d.votesOuverts.length === 0 && <div className="cab-muted" style={{ marginBottom: "1rem" }}>Aucun vote en cours.</div>}
-      {d.votesOuverts.map((v: any) => (
+      {d.votesOuverts.map((v: Row) => (
         <Link key={v.id} href="/avocat/votes" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
           <div className="cab-card" style={{ marginBottom: "0.5rem" }}>
             <div style={{ fontWeight: 600 }}>{v.titre}</div>

@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -19,24 +20,24 @@ const today = () => new Date().toISOString().slice(0, 10);
 const EMPTY = { adversaire: "", type: "GDT", enjeu: "", date_debut: today(), date_fin: "", statut: "en_cours", issue: "", perte: "aucune", notes: "" };
 
 // Dates derivees (reglement) : treve apres reddition, cooldown apres perte.
-function derives(g: any) {
+function derives(g: Row) {
   if (g.statut !== "terminee" || !g.date_fin) return [];
   const out: { label: string; fin: Date }[] = [];
   if (g.issue === "reddition") out.push({ label: "Trêve", fin: addDays(g.date_fin, TREVE_JOURS) });
   if (g.perte === "zone") out.push({ label: "Cooldown zone", fin: addDays(g.date_fin, COOLDOWN_ZONE_JOURS) });
   if (g.perte === "business") out.push({ label: "Cooldown business", fin: addDays(g.date_fin, COOLDOWN_BUSINESS_JOURS) });
-  return out.map(o => ({ ...o, j: joursRestants(o.fin) })).filter((o: any) => o.j > 0) as any;
+  return out.map(o => ({ ...o, j: joursRestants(o.fin) })).filter((o: Row) => o.j > 0) as Row;
 }
 
 export default function GuerresPage() {
   const { canWrite, user } = useGmAccess("obsidian_guerres");
   const { toast, showToast } = useToast();
   const groupes = useGroupes();
-  const [list, setList] = useState<any[]>([]);
+  const [list, setList] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [show, setShow] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<any>({ ...EMPTY });
+  const [form, setForm] = useState<Row>({ ...EMPTY });
   const [saving, setSaving] = useState(false);
   const [filtre, setFiltre] = useState("tout");
 
@@ -51,19 +52,19 @@ export default function GuerresPage() {
   const visibles = list.filter(g => filtre === "tout" || g.statut === filtre);
 
   function openNew() { setEditId(null); setForm({ ...EMPTY, date_debut: today() }); setShow(true); }
-  function openEdit(g: any) { setEditId(g.id); setForm({ ...EMPTY, ...g, enjeu: g.enjeu || "", date_fin: g.date_fin || "", issue: g.issue || "", perte: g.perte || "aucune", notes: g.notes || "" }); setShow(true); }
+  function openEdit(g: Row) { setEditId(g.id); setForm({ ...EMPTY, ...g, enjeu: g.enjeu || "", date_fin: g.date_fin || "", issue: g.issue || "", perte: g.perte || "aucune", notes: g.notes || "" }); setShow(true); }
   async function save() {
     if (!form.adversaire.trim()) return;
     setSaving(true);
     const g = groupes.find(x => x.nom === form.adversaire);
     const terminee = form.statut === "terminee";
-    const row = { adversaire: form.adversaire.trim(), groupe_id: g?.id || null, type: form.type, enjeu: form.enjeu.trim() || null, date_debut: form.date_debut || today(), date_fin: terminee ? (form.date_fin || today()) : null, statut: form.statut, issue: terminee ? (form.issue || null) : null, perte: terminee ? form.perte : "aucune", notes: form.notes.trim() || null, created_by: (user as any)?.nom || null };
+    const row = { adversaire: form.adversaire.trim(), groupe_id: g?.id || null, type: form.type, enjeu: form.enjeu.trim() || null, date_debut: form.date_debut || today(), date_fin: terminee ? (form.date_fin || today()) : null, statut: form.statut, issue: terminee ? (form.issue || null) : null, perte: terminee ? form.perte : "aucune", notes: form.notes.trim() || null, created_by: (user as Row)?.nom || null };
     const r = editId ? await dbw.update("obsidian_guerres", editId, row) : await dbw.insert("obsidian_guerres", row);
     setSaving(false);
     if (r.error) { showToast(`Erreur : ${r.error.message}`, "danger"); return; }
     setShow(false); showToast(editId ? "Guerre modifiée" : "Guerre ouverte"); load();
   }
-  async function del(g: any) {
+  async function del(g: Row) {
     if (!window.confirm(`Supprimer la guerre contre ${g.adversaire} ?`)) return;
     const r = await dbw.remove("obsidian_guerres", g.id);
     if (r.error) showToast(`Erreur : ${r.error.message}`, "danger"); else { showToast("Supprimée"); load(); }
@@ -87,7 +88,7 @@ export default function GuerresPage() {
       {loading ? <LoadingBlock /> : visibles.length === 0 ? <div className="empty-state"><div className="empty-icon">⚔️</div><div className="empty-title">Aucune guerre enregistrée</div></div> : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
           {visibles.map(g => {
-            const d: any[] = derives(g); const col = g.statut === "en_cours" ? "var(--danger)" : "var(--text-dim)";
+            const d: Row[] = derives(g) as Row[]; const col = g.statut === "en_cours" ? "var(--danger)" : "var(--text-dim)";
             return (
               <div key={g.id} className="card" style={{ padding: "0.8rem 1rem", borderLeft: `3px solid ${col}` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>

@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import type { Db } from "@/lib/serverAuth";
 import { money } from "@/lib/money";
 import { NextResponse } from "next/server";
@@ -5,8 +6,8 @@ import { requirePermission } from "@/lib/serverAuth";
 import { weekStartOf } from "@/lib/weekStart";
 import { postAlert, syncAlert, logAudit, usd, ORANGE, RED, GREY } from "@/lib/alerts";
 
-function arrestFields(row: any) {
-  const items = (row.items || []).map((i: any) => `${i.emoji || ""} ${i.nom} x ${i.quantite}`).join("\n");
+function arrestFields(row: Row) {
+  const items = (row.items || []).map((i: Row) => `${i.emoji || ""} ${i.nom} x ${i.quantite}`).join("\n");
   return [
     { name: "Amende", value: usd(Number(row.amende) || 0), inline: true },
     { name: "Argent perdu (profil uniquement)", value: `${usd(Number(row.argent_perdu) || 0)} · argent ${row.type_argent || "sale"}`, inline: true },
@@ -21,7 +22,7 @@ function arrestFields(row: any) {
 
 type Parsed = { membre: string; amende: number; argent: number; typeArgent: string; createdBy: string; createdAt: string; notes: string | null; photo: string | null; wanted: { stock_id: string; quantite: number }[] };
 
-function parse(b: any): Parsed | { error: string } {
+function parse(b: Row): Parsed | { error: string } {
   const membre = String(b.membre || "").trim();
   if (!membre) return { error: "Employé requis" };
   return {
@@ -34,13 +35,13 @@ function parse(b: any): Parsed | { error: string } {
     notes: b.notes || null,
     photo: typeof b.photo_url === "string" && b.photo_url ? b.photo_url : null,
     wanted: (Array.isArray(b.items) ? b.items : [])
-      .map((i: any) => ({ stock_id: String(i.stock_id || ""), quantite: Math.floor(Number(i.quantite) || 0) }))
-      .filter((i: any) => i.stock_id && i.quantite > 0),
+      .map((i: Row) => ({ stock_id: String(i.stock_id || ""), quantite: Math.floor(Number(i.quantite) || 0) }))
+      .filter((i: Row) => i.stock_id && i.quantite > 0),
   };
 }
 
-async function createArrest(db: Db, p: Parsed): Promise<{ row?: any; error?: string }> {
-  const items: any[] = [];
+async function createArrest(db: Db, p: Parsed): Promise<{ row?: Row; error?: string }> {
+  const items: Row[] = [];
   for (const w of p.wanted) {
     const { data: st } = await db.from("obsidian_stocks").select("*").eq("id", w.stock_id).single();
     if (!st) return { error: "Objet de stock introuvable" };
@@ -64,7 +65,7 @@ async function createArrest(db: Db, p: Parsed): Promise<{ row?: any; error?: str
   return { row };
 }
 
-async function revertArrest(db: Db, row: any, by: string) {
+async function revertArrest(db: Db, row: Row, by: string) {
   for (const it of (row.items || [])) {
     if (!it.retire || it.retire <= 0) continue;
     const { data: st } = await db.from("obsidian_stocks").select("*").eq("id", it.stock_id).single();
@@ -108,14 +109,14 @@ export async function PATCH(req: Request) {
     if (!old) return NextResponse.json({ error: "Arrestation introuvable" }, { status: 404 });
 
     p.createdBy = old.created_by || p.createdBy; // on garde l'auteur de la saisie d'origine
-    await revertArrest(supabaseAdmin, old, ((user as any)?.nom_perso || (user as any)?.discord_name || ""));
+    await revertArrest(supabaseAdmin, old, ((user as Row)?.nom_perso || (user as Row)?.discord_name || ""));
     const r = await createArrest(supabaseAdmin, p);
     if (!r.row) {
       // Échec : on restaure l'ancienne version pour ne rien perdre.
       await createArrest(supabaseAdmin, {
         membre: old.membre, amende: Number(old.amende) || 0, argent: Number(old.argent_perdu) || 0, typeArgent: old.type_argent || "sale",
         createdBy: old.created_by || "", createdAt: old.created_at, notes: old.notes || null, photo: old.photo_url || null,
-        wanted: (old.items || []).map((i: any) => ({ stock_id: i.stock_id, quantite: i.quantite })),
+        wanted: (old.items || []).map((i: Row) => ({ stock_id: i.stock_id, quantite: i.quantite })),
       });
       return NextResponse.json({ error: r.error || "Échec de la modification" }, { status: 400 });
     }
@@ -136,9 +137,9 @@ export async function DELETE(req: Request) {
     if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
     const { data: row } = await supabaseAdmin.from("arrestations").select("*").eq("id", id).single();
     if (!row) return NextResponse.json({ error: "Arrestation introuvable" }, { status: 404 });
-    const { error: e } = await revertArrest(supabaseAdmin, row, ((user as any)?.nom_perso || (user as any)?.discord_name || ""));
+    const { error: e } = await revertArrest(supabaseAdmin, row, ((user as Row)?.nom_perso || (user as Row)?.discord_name || ""));
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
-    await logAudit(supabaseAdmin, ((user as any)?.nom_perso || (user as any)?.discord_name), "Arrestation annulée", row.membre, `amende ${money(row.amende)} · argent perdu ${money(row.argent_perdu)}`);
+    await logAudit(supabaseAdmin, ((user as Row)?.nom_perso || (user as Row)?.discord_name), "Arrestation annulée", row.membre, `amende ${money(row.amende)} · argent perdu ${money(row.argent_perdu)}`);
     await syncAlert(supabaseAdmin, "arrestations", row, "arrestations", `🗑️ Arrestation annulée - ${row.membre}`, "Stock remis, prime de paie retirée.", GREY, arrestFields(row));
     return NextResponse.json({ ok: true });
   } catch (e: unknown) {

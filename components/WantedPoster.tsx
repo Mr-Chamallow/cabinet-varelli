@@ -1,4 +1,6 @@
 "use client";
+import type { ReactNode } from "react";
+import type { Row } from "@/lib/types";
 import { money } from "@/lib/money";
 import { ObsLogo } from "@/components/ObsLogo";
 import { useLayoutEffect, useRef, useState } from "react";
@@ -6,7 +8,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 // Avis de recherche du Consortium : affiche papier vieilli, photo, récompense, tampon animé, recto/verso.
 export interface WantedData { nom: string; alias?: string | null; organisation?: string | null; priorite?: string | null; prime?: number | string | null; photo_url?: string | null; photo_id?: string | null; motif?: string | null; age?: number | string | null; origine?: string | null; occupation?: string | null; vehicules?: string | null; tags?: string[] | null }
 const BASE = 380;
-const usd = (n: any) => money(n);
+const usd = (n: unknown) => money(Number(n) || 0);
 
 export function WantedPoster({ d }: { d: WantedData }) {
   const wrap = useRef<HTMLDivElement>(null); const [scale, setScale] = useState(1); const [back, setBack] = useState(false);
@@ -47,7 +49,7 @@ export function WantedPoster({ d }: { d: WantedData }) {
             </div>
             <div className="wp-vname">{d.nom}{d.alias ? <i> dit « {d.alias} »</i> : null}</div>
             <div className="wp-rows">
-              {([["Âge", d.age ? `${d.age} ans` : "", 0], ["Origine", d.origine, 0], ["Occupation", d.occupation, 1], ["Groupe", d.organisation, 0], ["Danger", threat, 0], ["Véhicules", d.vehicules, 1], ["Signes", (d.tags || []).join(", "), 1], ["Motif", d.motif, 1]] as [string, any, number][]).filter(r => r[1]).map(([k, v, w]) => <div key={k} className={w ? "w2" : ""}><small>{k}</small><span>{v}</span></div>)}
+              {([["Âge", d.age ? `${d.age} ans` : "", 0], ["Origine", d.origine, 0], ["Occupation", d.occupation, 1], ["Groupe", d.organisation, 0], ["Danger", threat, 0], ["Véhicules", d.vehicules, 1], ["Signes", (d.tags || []).join(", "), 1], ["Motif", d.motif, 1]] as [string, ReactNode, number][]).filter(r => r[1]).map(([k, v, w]) => <div key={k} className={w ? "w2" : ""}><small>{k}</small><span>{v}</span></div>)}
             </div>
             <div className="wp-foot">Document interne - Consortium Obsidian</div>
           </div>

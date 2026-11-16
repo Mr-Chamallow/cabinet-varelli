@@ -2,15 +2,15 @@ import type { Row } from "@/lib/types";
 import { lire, lireUn } from "@/lib/lire";
 import { money } from "@/lib/money";
 // Fiches (obsidian_fiches) <-> Base de données (bdd_personnes) : recherche, pré-remplissage et synchronisation.
-type Db = any;
+type Db = import("@/lib/serverAuth").Db;
 
 export const splitNom = (full: string) => { const t = (full || "").trim().split(/\s+/); return t.length < 2 ? { prenom: "", nom: t[0] || "" } : { prenom: t[0], nom: t.slice(1).join(" ") }; };
 export const fullNom = (p: Row) => `${p.prenom || ""} ${p.nom || ""}`.trim();
 
-export function ficheToPersonne(f: any, groupes: { id: string; nom: string }[]) {
+export function ficheToPersonne(f: Row, groupes: { id: string; nom: string }[]) {
   const { prenom, nom } = splitNom(f.nom);
   const g = groupes.find(x => x.nom === f.organisation);
-  const o: any = {
+  const o: Row = {
     nom, prenom, telephone: f.telephone || "", age: f.age || null, origine: f.origine || "", occupation: f.occupation || "",
     organisation: g?.nom || f.organisation || "", groupe_id: g?.id ?? null, statut: f.statut || "", priorite: f.priorite || "Normale",
     tags: f.tags || [], adresses: f.adresses || "", comptes_bancaires: f.comptes_bancaires || "", relations: f.relations || "",
@@ -22,7 +22,7 @@ export function ficheToPersonne(f: any, groupes: { id: string; nom: string }[]) 
   return o;
 }
 
-export function personneToFiche(p: any) {
+export function personneToFiche(p: Row) {
   return {
     nom: fullNom(p), telephone: p.telephone || "", age: p.age || 0, origine: p.origine || "", occupation: p.occupation || "",
     organisation: p.organisation || "", groupe_id: p.groupe_id ?? null, statut: p.statut || "Actif", priorite: p.priorite || "Normale",
@@ -33,7 +33,7 @@ export function personneToFiche(p: any) {
 }
 
 // Crée / met à jour le profil de la Base de données lié à une fiche. Retourne l'id du profil.
-export async function syncFicheToBdd(db: Db, fiche: any, groupes: { id: string; nom: string }[], by: string): Promise<string | null> {
+export async function syncFicheToBdd(db: Db, fiche: Row, groupes: { id: string; nom: string }[], by: string): Promise<string | null> {
   if (!["personne", "inconnu"].includes(fiche.type || "personne")) return null;
   const body = ficheToPersonne(fiche, groupes);
   let pid: string | null = fiche.personne_id || null;
@@ -56,12 +56,12 @@ export async function syncFicheToBdd(db: Db, fiche: any, groupes: { id: string; 
 }
 
 // Pousse les modifications du profil (Base de données) vers la fiche liée.
-export async function syncBddToFiche(db: Db, personne: any) {
+export async function syncBddToFiche(db: Db, personne: Row) {
   if (!personne?.fiche_id) return;
   await db.from("obsidian_fiches").update({ ...personneToFiche(personne), updated_at: new Date().toISOString() }).eq("id", personne.fiche_id);
 }
 
-export interface Candidate { key: string; source: string; label: string; detail: string; personne?: any; vehicules: Row[]; plaque?: string }
+export interface Candidate { key: string; source: string; label: string; detail: string; personne?: Row; vehicules: Row[]; plaque?: string }
 
 // Recherche par nom, prénom, téléphone ou plaque dans la Base de données, les véhicules, la carte enquêteur et les fiches existantes.
 export async function lookupPeople(db: Db, query: string): Promise<{ candidates: Candidate[]; fiches: Row[] }> {
@@ -79,7 +79,7 @@ export async function lookupPeople(db: Db, query: string): Promise<{ candidates:
   const match = (p: Row) => tokens.every(t => `${p.nom} ${p.prenom || ""} ${p.surnom || ""} ${p.telephone || ""}`.toLowerCase().includes(t.toLowerCase()));
   const out: Candidate[] = [];
   const byId: Record<string, Candidate> = {};
-  const add = async (p: any, extraVeh: Row[] = [], plaque?: string) => {
+  const add = async (p: Row, extraVeh: Row[] = [], plaque?: string) => {
     if (byId[p.id]) { byId[p.id].vehicules.push(...extraVeh.filter(v => !byId[p.id].vehicules.some(x => x.id === v.id))); if (plaque) byId[p.id].plaque = plaque; return; }
     const { data: vs } = await db.from("bdd_vehicules").select("*").eq("proprietaire_id", p.id);
     const c: Candidate = { key: "p" + p.id, source: "Base de données", label: fullNom(p) + (p.surnom ? ` « ${p.surnom} »` : ""), detail: [p.telephone, p.organisation, p.priorite].filter(Boolean).join(" · "), personne: p, vehicules: vs || [], plaque };

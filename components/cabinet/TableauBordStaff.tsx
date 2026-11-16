@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
@@ -9,7 +10,7 @@ const heure = (s: string) => String(s || "").slice(11, 16);
 
 // Tableau de bord des employés : ce qui compte aujourd'hui
 export default function TableauBordStaff() {
-  const [d, setD] = useState<any>(null);
+  const [d, setD] = useState<Row | null>(null);
   const charger = () => fetch("/api/cabinet/tableau-bord").then(r => r.json()).then(x => { if (!x.error) setD(x); });
   useEffect(() => { charger(); }, []);
   useCabinetTemps(["cabinet_rdv", "cabinet_factures", "cabinet_devis", "cabinet_dossiers"], charger);
@@ -24,7 +25,7 @@ export default function TableauBordStaff() {
         <div className="cab-card">
           <div style={{ fontWeight: 700, marginBottom: "0.3rem" }}>Rendez-vous du jour <span className="cab-muted">· {d.rdv.length}</span></div>
           {d.rdv.length === 0 && <div className="cab-muted" style={{ fontSize: "0.85rem" }}>Aucun rendez-vous aujourd&apos;hui.</div>}
-          {d.rdv.map((r: any) => (
+          {d.rdv.map((r: Row) => (
             <Link key={r.id} href="/avocat/rdv" style={carte}>
               <b>{heure(r.date_rdv)}</b> · {r.client_nom || "Client"}
               <div className="cab-muted" style={{ fontSize: "0.78rem" }}>{r.prestation || "-"} · {STATUT_RDV[r.statut] || r.statut}{r.avocat_nom ? ` · ${r.avocat_nom}` : ""}</div>
@@ -35,7 +36,7 @@ export default function TableauBordStaff() {
         <div className="cab-card">
           <div style={{ fontWeight: 700, marginBottom: "0.3rem" }}>Mes dossiers ouverts <span className="cab-muted">· {d.dossiers.length}</span></div>
           {d.dossiers.length === 0 && <div className="cab-muted" style={{ fontSize: "0.85rem" }}>Aucun dossier ouvert qui t&apos;est attribué.</div>}
-          {d.dossiers.map((x: any) => (
+          {d.dossiers.map((x: Row) => (
             <Link key={x.id} href={`/avocat/dossiers/${x.id}`} style={carte}>
               <b>{x.titre}</b>
               <div className="cab-muted" style={{ fontSize: "0.78rem" }}>{x.client_nom || "-"}</div>
@@ -49,7 +50,7 @@ export default function TableauBordStaff() {
             {d.devisEnAttente > 0 && (
               <Link href="/avocat/facturation" style={carte}>Devis en attente de réponse <b>· {d.devisEnAttente}</b></Link>
             )}
-            {d.facturesRetard.map((f: any) => (
+            {d.facturesRetard.map((f: Row) => (
               <Link key={f.id} href="/avocat/facturation" style={carte}>
                 <span style={{ color: "#e88a86" }}>En retard</span> · <b>{f.numero}</b> · {f.client_nom || "-"} · {montant(Number(f.montant))}
               </Link>

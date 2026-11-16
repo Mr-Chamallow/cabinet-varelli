@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { estFacturation } from "@/lib/cabinetAcces";
@@ -9,7 +10,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     const { id } = await ctx.params;
     const r = await requireAnyPermission(["avocat", "cabinet_dossiers"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const db = r.supabaseAdmin;
     const { data: facture } = await db.from("cabinet_factures").select("*").eq("id", id).maybeSingle();
     if (!facture) return NextResponse.json({ error: "Facture introuvable" }, { status: 404 });

@@ -1,4 +1,6 @@
 "use client";
+import type { AppUser } from "@/lib/auth";
+import type { Row } from "@/lib/types";
 import { useState } from "react";
 import ComptaDepenses from "@/components/compta/ComptaDepenses";
 import ComptaCommissions from "@/components/compta/ComptaCommissions";
@@ -12,7 +14,7 @@ const ONGLETS = [
   { id: "bilan", label: "Bilan", perm: "cabinet_bilan", composant: ComptaBilan },
 ];
 
-export default function Comptabilite({ user }: { user: any }) {
+export default function Comptabilite({ user }: { user: AppUser }) {
   const visibles = ONGLETS.filter(o => hasPermission(user, o.perm));
   const [onglet, setOnglet] = useState(visibles[0]?.id || "");
   const actif = visibles.find(o => o.id === onglet) || visibles[0];

@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 export interface CrudField { key: string; label: string; type?: "text" | "textarea" | "number" | "image"; placeholder?: string; }
@@ -16,11 +17,11 @@ interface Props {
 const vide = (fields: CrudField[]) => Object.fromEntries(fields.map(f => [f.key, ""]));
 
 export default function CabinetCrud({ table, fields, canWrite, titleKey, subKey, groupKey, libelle }: Props) {
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
-  const [edition, setEdition] = useState<any | null>(null); // null = fermé, {} = nouveau
-  const [form, setForm] = useState<any>({});
+  const [edition, setEdition] = useState<Row | null>(null); // null = fermé, {} = nouveau
+  const [form, setForm] = useState<Row>({});
 
   const charger = () => fetch(`/api/cabinet/${table}`).then(r => r.json()).then(d => {
     if (d.error) setErreur(d.error); else setRows(d.rows || []);
@@ -28,7 +29,7 @@ export default function CabinetCrud({ table, fields, canWrite, titleKey, subKey,
   });
   useEffect(() => { charger(); }, [table]);
 
-  const ouvrir = (row: any | null) => {
+  const ouvrir = (row: Row | null) => {
     setErreur("");
     setEdition(row ?? {});
     setForm(row ? Object.fromEntries(fields.map(f => [f.key, row[f.key] ?? ""])) : vide(fields));
@@ -48,7 +49,7 @@ export default function CabinetCrud({ table, fields, canWrite, titleKey, subKey,
     charger();
   };
 
-  const supprimer = async (row: any) => {
+  const supprimer = async (row: Row) => {
     if (!confirm(`Supprimer ce ${libelle} ?`)) return;
     const r = await fetch(`/api/cabinet/${table}`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: row.id }) });
     const d = await r.json();
@@ -57,14 +58,14 @@ export default function CabinetCrud({ table, fields, canWrite, titleKey, subKey,
   };
 
   // Regroupement par catégorie si demandé
-  const groupes: [string, any[]][] = [];
+  const groupes: [string, Row[]][] = [];
   for (const row of rows) {
     const g = groupKey ? (row[groupKey] || "Autres") : "";
     const existant = groupes.find(([nom]) => nom === g);
     if (existant) existant[1].push(row); else groupes.push([g, [row]]);
   }
 
-  const ligne = (row: any) => (
+  const ligne = (row: Row) => (
     <div key={row.id} className="cab-card" style={{ marginBottom: "0.6rem", display: "flex", gap: "0.8rem", alignItems: "flex-start", justifyContent: "space-between" }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontWeight: 700 }}>{row[titleKey]}</div>

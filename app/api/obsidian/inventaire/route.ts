@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { estDirection, RAISONS_INVENTAIRE } from "@/lib/direction";
@@ -9,15 +10,15 @@ export async function POST(req: Request) {
   try {
     const { authorized, supabaseAdmin, user, error } = await requireAnyPermission(["obsidian_stocks", "obsidian_armurerie"]);
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
-    if (!estDirection((user as any)?.site_role)) return NextResponse.json({ error: "Inventaire réservé au CEO et au COO" }, { status: 403 });
+    if (!estDirection((user as Row)?.site_role)) return NextResponse.json({ error: "Inventaire réservé au CEO et au COO" }, { status: 403 });
 
     const { lines } = await req.json();
     if (!Array.isArray(lines) || lines.length === 0) return NextResponse.json({ error: "Aucune ligne" }, { status: 400 });
     if (lines.length > 300) return NextResponse.json({ error: "Trop de lignes (300 max)" }, { status: 400 });
-    const who = (user as any)?.nom_perso || (user as any)?.discord_name || "?";
+    const who = (user as Row)?.nom_perso || (user as Row)?.discord_name || "?";
 
-    const stocks: Record<string, any> = {};
-    const results: any[] = [];
+    const stocks: Row = {};
+    const results: Row[] = [];
     const resume: string[] = [];
     for (const l of lines) {
       const compte = Number(l.compte);
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
         p_membre: who, p_user: who, p_prix: null, p_type_argent: "sale",
       });
       if (rpcErr) { results.push({ stock_id: st.id, ok: false, error: rpcErr.message }); continue; }
-      const ns = (data as any)?.stock;
+      const ns = (data as Row)?.stock;
       stocks[st.id] = ns;
       results.push({ stock_id: st.id, ok: true, diff, stock: ns });
       resume.push(`${diff > 0 ? "➕" : "➖"} **${st.nom}** : ${st.quantite} -> ${ns?.quantite} (${diff > 0 ? "+" : ""}${diff}) · ${raison}`);

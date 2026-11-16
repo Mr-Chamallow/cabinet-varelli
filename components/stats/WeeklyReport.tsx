@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { lire } from "@/lib/lire";
 import { money } from "@/lib/money";
 
@@ -18,9 +19,9 @@ function weekRange(offset: number) {
 // Rapport hebdomadaire prêt à copier (ex: pour Discord).
 export function WeeklyReport() {
   const [offset, setOffset] = useState(0);
-  const [compta, setCompta] = useState<any[]>([]);
-  const [actions, setActions] = useState<any[]>([]);
-  const [arrests, setArrests] = useState<any[]>([]);
+  const [compta, setCompta] = useState<Row[]>([]);
+  const [actions, setActions] = useState<Row[]>([]);
+  const [arrests, setArrests] = useState<Row[]>([]);
   const [copied, setCopied] = useState(false);
 
   async function load() {

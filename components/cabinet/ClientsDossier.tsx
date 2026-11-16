@@ -1,13 +1,14 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 interface Props { id: string; peutGerer: boolean; onChange: () => void; }
 
 // Clients supplémentaires du dossier : ils voient le dossier et la messagerie, comme le client principal
 export default function ClientsDossier({ id, peutGerer, onChange }: Props) {
-  const [clients, setClients] = useState<any[]>([]);
+  const [clients, setClients] = useState<Row[]>([]);
   const [recherche, setRecherche] = useState("");
-  const [resultats, setResultats] = useState<any[]>([]);
+  const [resultats, setResultats] = useState<Row[]>([]);
   const [erreur, setErreur] = useState("");
 
   const charger = () => fetch(`/api/cabinet/dossiers/${id}/clients`).then(r => r.json()).then(d => d.error ? setErreur(d.error) : setClients(d.rows || []));

@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { montant } from "@/lib/montant";
 import Link from "next/link";
 import DevisClient from "@/components/cabinet/DevisClient";
@@ -20,7 +21,7 @@ const Badge = ({ txt, color }: { txt: string; color: string }) => (
 
 // Espace client : vue globale de ses dossiers, factures et rendez-vous
 export default function MonEspace() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<Row | null>(null);
   const [erreur, setErreur] = useState("");
 
   const charger = () => fetch("/api/cabinet/mon-espace").then(r => r.json()).then(d => d.error ? setErreur(d.error) : setData(d)).catch(() => {});
@@ -41,8 +42,8 @@ export default function MonEspace() {
   if (erreur) return <div style={{ color: "var(--danger)" }}>{erreur}</div>;
   if (!data) return <div style={{ color: "var(--text-dim)" }}>Chargement...</div>;
 
-  const enAttente = data.factures.filter((f: any) => f.statut !== "payee");
-  const totalDu = enAttente.reduce((a: number, f: any) => a + Number(f.montant || 0), 0);
+  const enAttente = data.factures.filter((f: Row) => f.statut !== "payee");
+  const totalDu = enAttente.reduce((a: number, f: Row) => a + Number(f.montant || 0), 0);
   const prochain = data.rdv[0];
 
   return (
@@ -91,7 +92,7 @@ export default function MonEspace() {
         </div>
         {data.dossiers.length === 0 ? <div className="cab-muted">Aucun dossier en cours.</div> : (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-            {data.dossiers.map((d: any) => {
+            {data.dossiers.map((d: Row) => {
               const s = STATUT_DOSSIER[d.statut] || { txt: d.statut, color: "var(--text-dim)" };
               return (
                 <Link key={d.id} href={`/avocat/dossiers/${d.id}`} className="cab-link">
@@ -114,7 +115,7 @@ export default function MonEspace() {
         <h2 className="cab-section-titre">Mes factures</h2>
         {data.factures.length === 0 ? <div className="cab-muted">Aucune facture pour le moment.</div> : (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-            {data.factures.map((f: any) => {
+            {data.factures.map((f: Row) => {
               const payee = f.statut === "payee";
               return (
                 <div key={f.id} className="cab-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>
@@ -144,7 +145,7 @@ export default function MonEspace() {
         </div>
         {data.rdv.length === 0 ? <div className="cab-muted">Aucun rendez-vous à venir.</div> : (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-            {data.rdv.map((r: any) => (
+            {data.rdv.map((r: Row) => (
               <div key={r.id} className="cab-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>
                 <div>
                   <div style={{ fontWeight: 600 }}>{dateHeure(r.date_rdv)}</div>

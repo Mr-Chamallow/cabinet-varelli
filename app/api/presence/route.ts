@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
@@ -8,7 +9,7 @@ import { supabaseAdmin } from "@/lib/serverAuth";
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    const user = session?.user as any;
+    const user = session?.user as Row;
     if (!user?.discord_id) return NextResponse.json({ error: "Non connecté" }, { status: 401 });
 
     const { action } = await req.json().catch(() => ({ action: "heartbeat" }));

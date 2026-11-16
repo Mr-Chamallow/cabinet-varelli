@@ -20,7 +20,7 @@ export async function fetchDossiers(): Promise<Dossier[]> {
 export async function createPoint(point: Omit<CartePoint, 'id' | 'created_at'>): Promise<CartePoint> {
   const { data, error } = await dbw.insert("carte_points", point);
   if (error) throw error;
-  return data;
+  return data as CartePoint;
 }
 
 export async function updatePoint(id: string, patch: Partial<CartePoint>): Promise<void> {
@@ -41,7 +41,7 @@ export async function upsertDossier(dossier: Dossier): Promise<Dossier> {
   const { id, ...payload } = dossier;
   const { data, error } = await dbw.upsert('carte_dossiers', { ...payload, point_id: dossier.point_id }, 'point_id');
   if (error) throw error;
-  return data;
+  return data as Dossier;
 }
 
 export async function fetchCategories(): Promise<Category[]> {
@@ -53,7 +53,7 @@ export async function fetchCategories(): Promise<Category[]> {
 export async function createCategory(category: Omit<Category, 'id'>): Promise<Category> {
   const { data, error } = await dbw.insert("carte_categories", category);
   if (error) throw error;
-  return data;
+  return data as Category;
 }
 
 export async function updateCategory(id: string, patch: Partial<Category>): Promise<void> {
@@ -75,7 +75,7 @@ export async function fetchPersonnes(): Promise<Personne[]> {
 export async function createPersonne(p: Omit<Personne, 'id' | 'created_at'>): Promise<Personne> {
   const { data, error } = await dbw.insert("carte_personnes", p);
   if (error) throw error;
-  return data;
+  return data as Personne;
 }
 
 export async function updatePersonne(id: string, patch: Partial<Personne>): Promise<void> {
@@ -97,7 +97,7 @@ export async function fetchPlaques(): Promise<Plaque[]> {
 export async function createPlaque(p: Omit<Plaque, 'id' | 'created_at'>): Promise<Plaque> {
   const { data, error } = await dbw.insert("carte_plaques", p);
   if (error) throw error;
-  return data;
+  return data as Plaque;
 }
 
 export async function updatePlaque(id: string, patch: Partial<Plaque>): Promise<void> {
@@ -130,7 +130,7 @@ export async function fetchGangs(): Promise<Gang[]> {
 export async function createGang(g: Omit<Gang, 'id'>): Promise<Gang> {
   const { data, error } = await dbw.insert("carte_gangs", g);
   if (error) throw error;
-  return data;
+  return data as Gang;
 }
 
 export async function updateGang(id: string, patch: Partial<Gang>): Promise<void> {

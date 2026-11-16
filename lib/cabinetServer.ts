@@ -1,9 +1,11 @@
+import type { AppUser } from "@/lib/auth";
+import type { Row } from "@/lib/types";
 import type { UserLike } from "@/lib/types";
 import { hasPermission, hasWriteAccess } from "@/lib/auth";
 
 // Utilitaires serveur partagés par les routes /api/cabinet/*
-export function appUser(user: UserLike) {
-  return { id: user?.discord_id || "", nom: user?.discord_name || "", role: user?.site_role || "", permissions: user?.permissions || [] } as any;
+export function appUser(user: UserLike): AppUser {
+  return { id: user?.discord_id || "", nom: user?.discord_name || "", role: user?.site_role || "", permissions: user?.permissions || [] };
 }
 
 export function nomAffiche(user: UserLike): string {

@@ -1,3 +1,6 @@
+import type { UserLike } from "@/lib/types";
+import { appUser } from "@/lib/cabinetServer";
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { hasWriteAccess } from "@/lib/auth";
@@ -36,22 +39,22 @@ const STRIP = ["id", "created_at"]; // jamais fournis par le client sauf upsert 
 
 async function auth(table: string) {
   const cfg = TABLES[table];
-  if (!cfg) return { err: NextResponse.json({ error: "Table inconnue" }, { status: 404 }) } as any;
-  let last: any = null;
+  if (!cfg) return { err: NextResponse.json({ error: "Table inconnue" }, { status: 404 }) } as Row;
+  let last: Row = null;
   for (const p of cfg.perm) {
     const r = await requirePermission(p);
     last = r;
     if (r.authorized) {
-      const u: any = r.user;
-      if (hasWriteAccess({ id: u.discord_id, nom: u.discord_name, role: u.site_role, permissions: u.permissions } as any, p)) {
+      const u = r.user as UserLike;
+      if (hasWriteAccess(appUser(u), p)) {
         return { db: r.supabaseAdmin, who: String(u.nom_perso || u.discord_name || ""), cfg };
       }
     }
   }
-  return { err: NextResponse.json({ error: last?.error || "Ecriture non autorisee" }, { status: 403 }) } as any;
+  return { err: NextResponse.json({ error: last?.error || "Ecriture non autorisee" }, { status: 403 }) } as Row;
 }
-const clean = (o: any) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => !STRIP.includes(k)));
-const describe = (cfg: any, row: any) => (cfg.audit && row ? String(row[cfg.audit] ?? "") : "");
+const clean = (o: Row) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => !STRIP.includes(k)));
+const describe = (cfg: Row, row: Row) => (cfg.audit && row ? String(row[cfg.audit] ?? "") : "");
 
 export async function POST(req: Request, { params }: { params: Promise<{ table: string }> }) {
   try {

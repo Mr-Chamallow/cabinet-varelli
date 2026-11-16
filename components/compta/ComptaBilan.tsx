@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
 import { semaineCourante } from "@/lib/compta";
@@ -9,7 +10,7 @@ import FacturesGouvernement from "@/components/compta/FacturesGouvernement";
 // Bilan hebdomadaire : encaissements, charges, TVA, résultat net
 export default function ComptaBilan() {
   const [semaine, setSemaine] = useState(() => semaineCourante());
-  const [resume, setResume] = useState<any>(null);
+  const [resume, setResume] = useState<Row | null>(null);
   const [erreur, setErreur] = useState("");
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function ComptaBilan() {
       <div className="cab-card">
         <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>Encaissements par moyen de paiement</div>
         {Object.keys(resume.parMode).length === 0 && <div className="cab-muted">Aucun paiement cette semaine.</div>}
-        {Object.entries(resume.parMode).map(([mode, m]: any) => (
+        {Object.entries(resume.parMode as Record<string, number>).map(([mode, m]) => (
           <div key={mode} style={{ display: "flex", justifyContent: "space-between", padding: "0.3rem 0" }}><span>{mode}</span><strong>{montant(m)}</strong></div>
         ))}
       </div>
@@ -55,7 +56,7 @@ export default function ComptaBilan() {
       <div className="cab-card">
         <div className="cab-section-titre" style={{ fontSize: "0.9rem" }}>Avoirs de la semaine</div>
         {resume.avoirs.length === 0 && <div className="cab-muted">Aucun avoir.</div>}
-        {resume.avoirs.map((a: any) => (
+        {resume.avoirs.map((a: Row) => (
           <div key={a.id} style={{ padding: "0.3rem 0", fontSize: "0.85rem" }}>{a.numero} · {dateFr(a.created_at)} · {montant(Number(a.montant))} · {a.motif}</div>
         ))}
       </div>

@@ -1,4 +1,5 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { montant } from "@/lib/montant";
 import { Stat, dateFr } from "@/components/compta/commun";
@@ -8,7 +9,7 @@ const CATEGORIES = ["Fournitures", "Loyer", "Abonnements", "Transport", "Frais b
 
 // Dépenses du cabinet : pour calculer le bénéfice réel
 export default function ComptaDepenses() {
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [erreur, setErreur] = useState("");
   const [form, setForm] = useState({ date_depense: dateISO(), categorie: "Fournitures", libelle: "", montant: "" });
 

@@ -1,8 +1,9 @@
 "use client";
+import type { Row } from "@/lib/types";
 import { useState } from "react";
 
 interface Props {
-  profil?: any;
+  profil?: Row;
   discord: { discord_id: string; discord_name: string };
   onClose?: () => void;
   onDone: () => void;

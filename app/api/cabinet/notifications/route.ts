@@ -1,3 +1,4 @@
+import type { Row } from "@/lib/types";
 import { NextResponse } from "next/server";
 import { requireAnyPermission } from "@/lib/serverAuth";
 import { CABINET_STAFF_ROLES, estDirection, estStaff, topicPour } from "@/lib/cabinetAcces";
@@ -8,7 +9,7 @@ export async function GET() {
   try {
     const r = await requireAnyPermission(["avocat", "cabinet_dossiers", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const db = r.supabaseAdmin;
     const topics = { plaintes: topicPour("liste:plaintes"), votes: topicPour("liste:votes") };
 
@@ -18,7 +19,7 @@ export async function GET() {
       const depuis = vu?.vu_at || "1970-01-01T00:00:00Z";
       const { data: dossiers } = await db.from("cabinet_dossiers").select("id").eq("client_discord_id", user.discord_id);
       const { data: co } = await db.from("cabinet_dossier_clients").select("dossier_id").eq("client_discord_id", user.discord_id);
-      const ids = [...new Set([...(dossiers || []).map((d: any) => d.id), ...(co || []).map((x: any) => x.dossier_id)])];
+      const ids = [...new Set([...(dossiers || []).map((d: Row) => d.id), ...(co || []).map((x: Row) => x.dossier_id)])];
       let messages = 0;
       if (ids.length) {
         const { count } = await db.from("cabinet_messages").select("id", { count: "exact", head: true })
@@ -38,14 +39,14 @@ export async function GET() {
     }
 
     const { data: votes } = await db.from("cabinet_votes").select("id, cabinet_votes_reponses(voter_discord_id)").eq("statut", "ouvert");
-    const aVoter = (votes || []).filter((v: any) => !(v.cabinet_votes_reponses || []).some((x: any) => x.voter_discord_id === user.discord_id)).length;
+    const aVoter = (votes || []).filter((v: Row) => !(v.cabinet_votes_reponses || []).some((x: Row) => x.voter_discord_id === user.discord_id)).length;
 
     // Non-lus de la messagerie : salons et bureaux (un canal sans visite antérieure compte 0 jusqu'à la première ouverture)
     const { data: staffRows } = await db.from("site_logins").select("discord_id").in("site_role", CABINET_STAFF_ROLES);
     const canaux: Record<string, string> = { "salon-general": "salon:general", "salon-juridique": "salon:juridique" };
     for (const s of staffRows || []) if (s.discord_id) canaux[`bureau-${s.discord_id}`] = `bureau:${s.discord_id}`;
     const { data: vus } = await db.from("cabinet_vus").select("section,vu_at").eq("discord_id", user.discord_id).like("section", "canal:%");
-    const vuPar: Record<string, string> = Object.fromEntries((vus || []).map((v: any) => [v.section.slice(6), v.vu_at]));
+    const vuPar: Record<string, string> = Object.fromEntries((vus || []).map((v: Row) => [v.section.slice(6), v.vu_at]));
     const compteurs = await Promise.all(Object.entries(canaux).map(async ([slug, canal]) => {
       const depuis = vuPar[slug];
       if (!depuis) return [slug, 0] as const;
@@ -62,7 +63,7 @@ export async function GET() {
       if (!depuis || !prenom) return [slug, 0] as const;
       const { data } = await db.from("cabinet_internes").select("contenu")
         .eq("canal", canal).gt("created_at", depuis).neq("auteur_discord_id", user.discord_id).ilike("contenu", `%@${prenom}%`);
-      return [slug, (data || []).filter((r: any) => motif.test(r.contenu || "")).length] as const;
+      return [slug, (data || []).filter((r: Row) => motif.test(r.contenu || "")).length] as const;
     }));
     const totalMentions = mentions.reduce((t, [, n]) => t + n, 0);
     // Aperçu : dernier message de chaque canal
@@ -84,7 +85,7 @@ export async function POST(req: Request) {
   try {
     const r = await requireAnyPermission(["avocat", "cabinet_dossiers", "cabinet_rdv"]);
     if (!r.authorized) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    const user = r.user as any;
+    const user = r.user as Row;
     const b = await req.json();
     const canalOk = typeof b.section === "string" && /^canal:(salon-general|salon-juridique|bureau-[A-Za-z0-9_-]+)$/.test(b.section);
     if (!["plaintes", "messages-client"].includes(b.section) && !canalOk) return NextResponse.json({ error: "Section inconnue" }, { status: 400 });

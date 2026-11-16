@@ -1,10 +1,12 @@
+import type { UserLike } from "@/lib/types";
+import type { Row } from "@/lib/types";
 import type { Db } from "@/lib/serverAuth";
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/serverAuth";
 import { logAudit } from "@/lib/alerts";
 
 const CATS = ["drogue", "arme", "accessoire"];
-const clean = (b: any) => ({
+const clean = (b: Row) => ({
   ...(b.categorie !== undefined ? { categorie: String(b.categorie) } : {}),
   ...(b.produit !== undefined ? { produit: String(b.produit).trim().slice(0, 120) } : {}),
   ...(b.qui !== undefined ? { qui: String(b.qui).trim().slice(0, 80) } : {}),
@@ -16,19 +18,19 @@ const clean = (b: any) => ({
 const normSql = (s: string) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
 
 // Le groupe est relie a la base (carte_gangs) quand il existe
-async function linkGroupe(db: Db, row: any) {
+async function linkGroupe(db: Db, row: Row) {
   if (row.groupe === undefined) return;
   const n = String(row.groupe || "").trim();
   if (!n) { row.groupe_id = null; return; }
   const { data } = await db.from("carte_gangs").select("id,nom").ilike("nom", n).limit(1).maybeSingle();
   if (data) { row.groupe_id = data.id; row.groupe = data.nom; } else row.groupe_id = null;
 }
-const who = (u: any) => String(u?.nom_perso || u?.discord_name || "");
+const who = (u: UserLike) => String(u?.nom_perso || u?.discord_name || "");
 
 // Un seul "préféré" par produit
 async function unsetOthers(db: Db, categorie: string, produit: string, exceptId: string) {
   const { data } = await db.from("obsidian_fournisseurs").select("id,produit").eq("categorie", categorie).eq("prefere", true).neq("id", exceptId);
-  const ids = (data || []).filter((x: any) => normSql(x.produit) === normSql(produit)).map((x: any) => x.id);
+  const ids = (data || []).filter((x: Row) => normSql(x.produit) === normSql(produit)).map((x: Row) => x.id);
   if (ids.length) await db.from("obsidian_fournisseurs").update({ prefere: false }).in("id", ids);
 }
 
@@ -37,13 +39,13 @@ export async function POST(req: Request) {
     const { authorized, supabaseAdmin, error, user } = await requirePermission("obsidian_prix");
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
     const b = await req.json();
-    const row: any = clean(b);
+    const row: Row = clean(b);
     if (!CATS.includes(row.categorie)) return NextResponse.json({ error: "Catégorie invalide" }, { status: 400 });
     if (!row.produit || !row.qui) return NextResponse.json({ error: "Produit et nom du vendeur requis" }, { status: 400 });
     if (!(row.prix_achat > 0)) return NextResponse.json({ error: "Prix d'achat invalide" }, { status: 400 });
     await linkGroupe(supabaseAdmin, row);
     row.prefere = !!b.prefere;
-    row.created_by = String((user as any)?.nom_perso || (user as any)?.discord_name || "");
+    row.created_by = String((user as Row)?.nom_perso || (user as Row)?.discord_name || "");
     const { data, error: e } = await supabaseAdmin.from("obsidian_fournisseurs").insert([row]).select().single();
     if (e) return NextResponse.json({ error: e.message }, { status: 400 });
     if (row.prefere) await unsetOthers(supabaseAdmin, row.categorie, row.produit, data.id);
@@ -58,7 +60,7 @@ export async function PATCH(req: Request) {
     if (!authorized) return NextResponse.json({ error: error || "Non autorisé" }, { status: 403 });
     const b = await req.json();
     if (!b.id) return NextResponse.json({ error: "id requis" }, { status: 400 });
-    const row: any = clean(b);
+    const row: Row = clean(b);
     if (row.prix_achat !== undefined && !(row.prix_achat > 0)) return NextResponse.json({ error: "Prix d'achat invalide" }, { status: 400 });
     if (b.prefere !== undefined) row.prefere = !!b.prefere;
     await linkGroupe(supabaseAdmin, row);

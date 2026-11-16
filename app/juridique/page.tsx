@@ -1,5 +1,6 @@
 "use client";
 
+import type { Row } from "@/lib/types";
 import Link from "next/link";
 import { useState, useMemo } from "react";
 import { CODE_COMPLET as ARTICLES, CATEGORIES_INFRACTIONS } from "@/lib/code-penal";
@@ -82,7 +83,7 @@ const SUB_KEYWORDS: Record<string, string[]> = {
   animaux: ["animal", "chasse", "gibier", "faune"],
 };
 
-function matchesSubFilter(article: any, sub: string) {
+function matchesSubFilter(article: Row, sub: string) {
   if (!sub) return true;
   const kws = SUB_KEYWORDS[sub] || [];
   const haystack = (article.titre + " " + article.contenu).toLowerCase();
