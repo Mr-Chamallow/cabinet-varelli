@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -24,7 +25,7 @@ function Inner() {
   useEffect(() => {
     if (!supabase) return;
     const p = new URLSearchParams(window.location.search).get("nom"); if (p) setNom(p);
-    Promise.all([supabase.from("obsidian_employes").select("nom"), supabase.from("obsidian_fiches").select("nom").is("deleted_at", null), supabase.from("bdd_personnes").select("nom,prenom")]).then(([e, f, b]) =>
+    Promise.all([lire("obsidian_employes", { select: "nom" }), supabase.from("obsidian_fiches").select("nom").is("deleted_at", null), supabase.from("bdd_personnes").select("nom,prenom")]).then(([e, f, b]) =>
       setNames([...new Set([...(e.data || []).map((x: any) => x.nom), ...(f.data || []).map((x: any) => x.nom), ...(b.data || []).map((x: any) => `${x.prenom || ""} ${x.nom || ""}`.trim())])].filter(Boolean).sort((a, b) => a.localeCompare(b))));
   }, []);
 
@@ -33,7 +34,7 @@ function Inner() {
     setBusy(true);
     const q = n.trim(); const like = `%${q}%`;
     const [emp, fic, bdd, act, arr, ctr, rdv, gar] = await Promise.all([
-      supabase.from("obsidian_employes").select("*").ilike("nom", q).maybeSingle(),
+      lire("obsidian_employes", { ilike: [["nom", q]], limit: 1 }).then(r => ({ data: r.data?.[0] ?? null, error: r.error })),
       supabase.from("obsidian_fiches").select("*").is("deleted_at", null).ilike("nom", q).maybeSingle(),
       supabase.from("bdd_personnes").select("*").or(`nom.ilike.${like},prenom.ilike.${like}`).limit(5),
       supabase.from("actions_illegales").select("*").ilike("membre", q).order("created_at", { ascending: false }).limit(50),

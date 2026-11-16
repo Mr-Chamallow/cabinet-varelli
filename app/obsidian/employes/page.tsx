@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -98,7 +99,7 @@ export default function EmployesObsidianPage() {
   async function load() {
     if (!supabase) return;
     setLoading(true);
-    const { data } = await supabase.from("obsidian_employes").select("*").order("nom");
+    const { data } = await lire("obsidian_employes", { order: [["nom", true]] });
     setEmployes(data || []);
     setLoading(false);
   }

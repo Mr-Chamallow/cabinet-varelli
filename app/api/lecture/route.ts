@@ -14,6 +14,8 @@ const LECTURE: Record<string, string[]> = {
   obsidian_taxes: ["obsidian_taxes"],
   obsidian_taxes_paiements: ["obsidian_taxes"],
   cahier_transactions: ["cahier_vente", "obsidian_comptabilite", "obsidian_stats"],
+  obsidian_employes: ["obsidian_dashboard", "obsidian_employes", "obsidian_rdv", "obsidian_contrats", "obsidian_garage", "obsidian_arrestations", "obsidian_reglement", "obsidian_recrutement", "obsidian_stats", "supervision"],
+  obsidian_mouvements: ["obsidian_stocks", "obsidian_comptabilite", "obsidian_dashboard", "obsidian_stats"],
 };
 
 export const dynamic = "force-dynamic";

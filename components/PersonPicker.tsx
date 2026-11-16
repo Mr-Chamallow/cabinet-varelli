@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -41,7 +42,7 @@ export function PersonPicker({ value, onChange, placeholder = "- Aucune personne
 // Choix d'un membre (employé) : juge, procureur, avocat... plus de saisie libre.
 export function EmployeePicker({ value, onChange, placeholder = "- Choisir un membre - " }: { value: string; onChange: (nom: string) => void; placeholder?: string }) {
   const [list, setList] = useState<{ nom: string; role: string }[]>([]);
-  useEffect(() => { if (!supabase) return; supabase.from("obsidian_employes").select("nom,role,actif").order("nom").then(({ data }) => setList((data || []).filter((e: any) => e.actif !== false))); }, []);
+  useEffect(() => { if (!supabase) return; lire("obsidian_employes", { select: "nom,role,actif", order: [["nom", true]] }).then(({ data }) => setList((data || []).filter((e: any) => e.actif !== false))); }, []);
   const known = !value || list.some(e => e.nom === value);
   return (
     <select value={value} onChange={e => onChange(e.target.value)}>

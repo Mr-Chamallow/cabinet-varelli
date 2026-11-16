@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -68,7 +69,7 @@ export default function ActionsIllegalesPage() {
     if (!supabase) { setLoading(false); return; }
     const [{ data }, { data: emp }, { data: ty, error: tyErr }] = await Promise.all([
       supabase.from("actions_illegales").select("*").order("created_at", { ascending: false }).limit(1000),
-      supabase.from("obsidian_employes").select("nom").order("nom"),
+      lire("obsidian_employes", { select: "nom", order: [["nom", true]] }),
       supabase.from("actions_illegales_types").select("*").order("ordre").order("nom"),
     ]);
     if (!tyErr && ty && ty.length > 0) setTypes(ty.map(rowToType));

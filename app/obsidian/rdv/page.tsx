@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
@@ -154,7 +155,7 @@ export default function PlanningOperationsPage() {
 
   async function fetchFiches() {
     if (!supabase) return;
-    const { data } = await supabase.from("obsidian_employes").select("nom,actif").order("nom");
+    const { data } = await lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] });
     setFiches((data || []).filter((c: any) => c.actif !== false).map((c: any) => c.nom));
     const lg = (await fetch("/api/membres-liste").then(r => r.json())).membres || [];
     setSiteMembers((lg || []).map((x: any) => x.discord_name).filter(Boolean));

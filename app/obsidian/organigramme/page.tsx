@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -37,10 +38,10 @@ export default function OrganigrammePage() {
   const effMax = DEFAUTS.effectifMax;
   useEffect(() => {
     if (!supabase) return;
-    supabase.from("obsidian_employes").select("actif").then(({ data }) => setEffectif((data || []).filter((x: any) => x.actif !== false).length));
+    lire("obsidian_employes", { select: "actif" }).then(({ data }) => setEffectif((data || []).filter((x: any) => x.actif !== false).length));
     Promise.all([
       fetch("/api/membres-liste").then(r => r.json()).then(j => ({ data: j.membres || [] })),
-      supabase.from("obsidian_employes").select("discord_id,nom"),
+      lire("obsidian_employes", { select: "discord_id,nom" }),
     ]).then(([{ data }, { data: emps }]) => {
       const byId: Record<string, string> = {}; (emps || []).forEach((e: any) => { if (e.discord_id) byId[e.discord_id] = e.nom; });
       const m: Record<string, string[]> = {};

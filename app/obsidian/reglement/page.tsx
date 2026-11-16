@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -26,7 +27,7 @@ export default function ReglementPage() {
     if (!supabase) return;
     Promise.all([
       supabase.from("obsidian_settings").select("*").eq("id", "default").maybeSingle(),
-      supabase.from("obsidian_employes").select("actif"),
+      lire("obsidian_employes", { select: "actif" }),
       supabase.from("obsidian_stocks").select("nom,categorie,quantite"),
     ]).then(([{ data: s }, { data: e }, { data: st }]) => {
       if (s) {

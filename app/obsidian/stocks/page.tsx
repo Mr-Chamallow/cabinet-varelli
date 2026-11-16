@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { ALL_SUGG, DEFAULT_TAGS } from "@/lib/illegalItems";
 import { useEffect, useState, useMemo } from "react";
@@ -53,7 +54,7 @@ export default function StocksPage(){
   useEffect(()=>{ try{ if(new URLSearchParams(window.location.search).get("cat")==="armurerie") setFilterCat("__armurerie"); }catch{} },[]);
   useRealtimeTable(["obsidian_stocks","obsidian_mouvements"], load);
   async function load(){if(!supabase){setLoading(false);return;}
-    const[{data:s},{data:m}]=await Promise.all([supabase.from("obsidian_stocks").select("*").order("categorie").order("nom"),supabase.from("obsidian_mouvements").select("*").order("created_at",{ascending:false}).limit(100)]);
+    const[{data:s},{data:m}]=await Promise.all([supabase.from("obsidian_stocks").select("*").order("categorie").order("nom"),lire("obsidian_mouvements", { order: [["created_at", false]], limit: 100 })]);
     setStocks(s||[]);setMouvements(m||[]);setLoading(false);}
   async function addStock(){
   if(!form.nom)return;setSaving(true);

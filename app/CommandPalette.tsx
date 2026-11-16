@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -130,7 +131,7 @@ export default function CommandPalette() {
       sources.push("stock");
     }
     if (supabase && hasPermission(user, "obsidian_employes")) {
-      queries.push(supabase.from("obsidian_employes").select("id,nom,poste").ilike("nom", like).limit(5));
+      queries.push(lire("obsidian_employes", { select: "id,nom,poste", ilike: [["nom", like]], limit: 5 }));
       sources.push("employe");
     }
 

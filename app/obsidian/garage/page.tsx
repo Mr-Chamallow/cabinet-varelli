@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -34,7 +35,7 @@ export default function GaragePage(){
   const autorises=vehAutorises();
   const ref=useReferentiel();
   const [emps,setEmps]=useState<string[]>([]);
-  useEffect(()=>{supabase.from("obsidian_employes").select("nom,actif").order("nom").then(({data})=>setEmps((data||[]).filter((e:any)=>e.actif!==false).map((e:any)=>e.nom)));},[]);
+  useEffect(()=>{lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }).then(({data})=>setEmps((data||[]).filter((e:any)=>e.actif!==false).map((e:any)=>e.nom)));},[]);
   const [filterStatut,setFilterStatut]=useState("");
   useEffect(()=>{load();},[]);
   async function load(){if(!supabase){setLoading(false);return;}const{data}=await supabase.from("obsidian_garage").select("*").order("statut").order("modele");setVeh(data||[]);setLoading(false);}

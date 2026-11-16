@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -82,7 +83,7 @@ export default function SupervisionPage() {
     ] = await Promise.all([
       supabase.rpc("obsidian_budget"),
       supabase.from("obsidian_stocks").select("quantite,prix_unitaire"),
-      supabase.from("obsidian_employes").select("nom,actif"),
+      lire("obsidian_employes", { select: "nom,actif" }),
       supabase.from("obsidian_rdv").select("id", { count: "exact", head: true }).gte("date", today),
       supabase.from("obsidian_contrats").select("*", { count: "exact", head: true }).eq("statut", "En cours"),
     ]);

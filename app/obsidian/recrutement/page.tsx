@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -35,7 +36,7 @@ export default function RecrutementPage() {
     if (!supabase) { setLoading(false); return; }
     const [{ data }, { count }, { data: vt }] = await Promise.all([
       supabase.from("obsidian_recrutement").select("*").order("created_at", { ascending: false }),
-      supabase.from("obsidian_employes").select("id", { count: "exact", head: true }),
+      lire("obsidian_employes", { select: "id", count: true, head: true }),
       supabase.from("obsidian_recrutement_votes").select("recrutement_id,voter_id,voter_nom,vote"),
     ]);
     setVotes(vt || []);

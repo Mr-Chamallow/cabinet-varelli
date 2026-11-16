@@ -55,7 +55,7 @@ export default function ComptaHubPage() {
     const [data, ar, mv, tr, { data: st }, { data: sw }, { data: bgd }, { data: stg }] = await Promise.all([
       fetchAll((a, b) => lire("obsidian_comptabilite", { order: [["created_at", false], ["id", true]], range: [a, b] })),
       fetchAll((a, b) => supabase!.from("arrestations").select("id,membre,amende,argent_perdu,created_at").order("created_at").order("id").range(a, b)),
-      fetchAll((a, b) => supabase!.from("obsidian_mouvements").select("stock_nom,type,quantite,total,motif,created_at").order("created_at").order("id").range(a, b)),
+      fetchAll((a, b) => lire("obsidian_mouvements", { select: "stock_nom,type,quantite,total,motif,created_at", order: [["created_at", true], ["id", true]], range: [a, b] })),
       fetchAll((a, b) => lire("cahier_transactions", { select: "type,montant,quantite,produit_nom,categorie,created_at", order: [["created_at", true], ["id", true]], range: [a, b] })),
       supabase.from("obsidian_stocks").select("nom,categorie,quantite,prix_unitaire").limit(2000),
       supabase.from("obsidian_semaines").select("*").order("semaine", { ascending: false }).limit(200),

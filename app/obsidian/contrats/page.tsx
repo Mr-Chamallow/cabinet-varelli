@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -33,7 +34,7 @@ export default function ContratsPage(){
   const [form,setForm]=useState({...EMPTY});
   const [membresInput,setMembresInput]=useState("");
   const [emps,setEmps]=useState<string[]>([]);
-  useEffect(()=>{supabase?.from("obsidian_employes").select("nom,actif").order("nom").then(({data})=>setEmps((data||[]).filter((e:any)=>e.actif!==false).map((e:any)=>e.nom)));},[]);
+  useEffect(()=>{lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }).then(({data})=>setEmps((data||[]).filter((e:any)=>e.actif!==false).map((e:any)=>e.nom)));},[]);
   const [rapport,setRapport]=useState("");
   const [filterStatut,setFilterStatut]=useState("");
   const [saving,setSaving]=useState(false);

@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { useEffect, useMemo, useState } from "react";
@@ -47,7 +48,7 @@ export default function ArrestationsPage() {
     if (!supabase) { setLoading(false); return; }
     const [{ data: a }, { data: e }, { data: s }] = await Promise.all([
       supabase.from("arrestations").select("*").order("created_at", { ascending: false }).limit(500),
-      supabase.from("obsidian_employes").select("nom,actif").order("nom"),
+      lire("obsidian_employes", { select: "nom,actif", order: [["nom", true]] }),
       supabase.from("obsidian_stocks").select("id,nom,emoji,categorie,quantite,unite").order("categorie").order("nom"),
     ]);
     setList((a || []).map((r: any) => ({ ...r, amende: Number(r.amende) || 0, argent_perdu: Number(r.argent_perdu) || 0, items: r.items || [] })));
