@@ -6,6 +6,8 @@ export type Lecture = {
   select?: string;
   eq?: [string, any][];
   ilike?: [string, string][];
+  is?: [string, null][]; // colonne IS NULL
+  or?: string; // filtre PostgREST, ex: "nom.ilike.%x%,prenom.ilike.%x%"
   order?: [string, boolean][]; // [colonne, ascendant ?]
   range?: [number, number];
   limit?: number;

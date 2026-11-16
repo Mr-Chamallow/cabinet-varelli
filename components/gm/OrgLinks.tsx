@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { scoreOf, scoreLabel } from "@/lib/gmApi";
@@ -13,7 +14,7 @@ export function OrgLinks({ organisation, excludeDossierId }: { organisation?: st
       const [pa, au, fi, tr, rp] = await Promise.all([
         supabase!.from("gm_pactes").select("id,statut,date_fin").eq("organisation", organisation),
         supabase!.from("gm_audits").select("id,note,created_at").eq("organisation", organisation).order("created_at", { ascending: false }).limit(3),
-        supabase!.from("obsidian_fiches").select("id,nom").eq("organisation", organisation).limit(8),
+        lire("obsidian_fiches", { select: "id,nom", eq: [["organisation", organisation]], limit: 8 }),
         supabase!.from("tribunal_dossiers").select("id,titre,verdict").eq("organisation", organisation),
         supabase!.from("gm_reputation_log").select("delta").eq("organisation", organisation),
       ]);

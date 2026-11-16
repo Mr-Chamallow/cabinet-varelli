@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { money } from "@/lib/money";
 import { useGroupes, GroupeSelect } from "@/components/gm/bits";
@@ -54,7 +55,7 @@ export default function FichesPage(){
   const groupes=useGroupes();
   useEffect(()=>{load();},[]);
   useDeepLink("fiche",!loading&&fiches.length>0,(v)=>{const f=fiches.find(x=>x.id===v||x.nom.toLowerCase()===v.toLowerCase());if(f)setSelected(f);});
-  async function load(){if(!supabase){setLoading(false);return;}const{data}=await supabase.from("obsidian_fiches").select("*").order("priorite").order("nom");setFiches(data||[]);setLoading(false);}
+  async function load(){if(!supabase){setLoading(false);return;}const{data}=await lire("obsidian_fiches", { order: [["priorite", true], ["nom", true]] });setFiches(data||[]);setLoading(false);}
   const alive=fiches.filter(f=>!f.deleted_at);
   const trashed=fiches.filter(f=>f.deleted_at);
   function closeDossier(){setClosing(true);setTimeout(()=>{setSelected(null);setClosing(false);},380);}

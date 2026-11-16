@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { fileToPhoto } from "@/components/PhotoPicker";
@@ -65,8 +66,8 @@ export function InvestigationBoard({ fiches, onOpen, onPhoto, user }: { fiches: 
       supabase.from("obsidian_board").select("*").order("created_at"),
       supabase.from("obsidian_board_links").select("*"),
       supabase.from("obsidian_garage").select("id,modele,plaque,assigne_a,photo_url"),
-      supabase.from("bdd_vehicules").select("id,plaque,marque_modele,photos,proprietaire_id"),
-      supabase.from("bdd_personnes").select("id,nom,prenom"),
+      lire("bdd_vehicules", { select: "id,plaque,marque_modele,photos,proprietaire_id" }),
+      lire("bdd_personnes", { select: "id,nom,prenom" }),
       supabase.from("tribunal_dossiers").select("id,titre,accuse,organisation,statut"),
       supabase.from("gm_pactes").select("id,organisation,statut"),
       supabase.from("carte_gangs").select("id,nom,type").order("nom"),

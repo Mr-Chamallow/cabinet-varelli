@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -15,7 +16,7 @@ export function useReferentiel(): Referentiel {
     if (!supabase) return;
     const db = supabase;
     Promise.all([
-      db.from("bdd_vehicules").select("plaque,marque_modele,couleur").limit(2000),
+      lire("bdd_vehicules", { select: "plaque,marque_modele,couleur", limit: 2000 }),
       db.from("obsidian_garage").select("plaque,modele,couleur,position").limit(1000),
       db.from("carte_plaques").select("plaque").limit(2000),
       db.from("carte_points").select("title").limit(2000),

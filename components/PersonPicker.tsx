@@ -9,7 +9,7 @@ export function usePersonnes() {
   const [list, setList] = useState<{ nom: string; source: string; href: string }[]>([]);
   useEffect(() => {
     if (!supabase) return; let off = false;
-    Promise.all([supabase.from("bdd_personnes").select("id,nom,prenom"), supabase.from("obsidian_fiches").select("id,nom,type")]).then(([p, f]) => {
+    Promise.all([lire("bdd_personnes", { select: "id,nom,prenom" }), lire("obsidian_fiches", { select: "id,nom,type" })]).then(([p, f]) => {
       if (off) return; const seen = new Set<string>(); const out: { nom: string; source: string; href: string }[] = [];
       (p.data || []).forEach((x: any) => { const n = `${x.prenom || ""} ${x.nom || ""}`.trim(); if (n && !seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); out.push({ nom: n, source: "Base de données", href: `/base-de-donnees?personne=${x.id}` }); } });
       (f.data || []).forEach((x: any) => { const n = (x.nom || "").trim(); if (n && !seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); out.push({ nom: n, source: "Fiches", href: `/obsidian/fiches?fiche=${x.id}` }); } });

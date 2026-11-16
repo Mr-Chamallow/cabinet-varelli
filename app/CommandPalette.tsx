@@ -119,7 +119,7 @@ export default function CommandPalette() {
     const sources: string[] = [];
 
     if (supabase && hasPermission(user, "obsidian_fiches")) {
-      queries.push(supabase.from("obsidian_fiches").select("id,nom,organisation").ilike("nom", like).limit(5));
+      queries.push(lire("obsidian_fiches", { select: "id,nom,organisation", ilike: [["nom", like]], limit: 5 }));
       sources.push("client");
     }
     if (supabase && hasPermission(user, "obsidian_contrats")) {

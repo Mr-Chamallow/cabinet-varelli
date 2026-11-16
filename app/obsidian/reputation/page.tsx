@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { gangTypeLabel } from "@/components/carte-enqueteur/types";
 import { useEffect, useMemo, useState } from "react";
@@ -56,12 +57,12 @@ export default function ReputationPage() {
       supabase.from("gm_audits").select("*").eq("organisation", o.nom).order("created_at", { ascending: false }),
       supabase.from("tribunal_dossiers").select("*").eq("organisation", o.nom).order("created_at", { ascending: false }),
       supabase.from("gm_evenements").select("*").eq("partenaire", o.nom).order("created_at", { ascending: false }),
-      supabase.from("obsidian_fiches").select("nom,metier,priorite,statut").eq("organisation", o.nom),
+      lire("obsidian_fiches", { select: "nom,metier,priorite,statut", eq: [["organisation", o.nom]] }),
     ]);
     await pdfOrganisation({ ...o, categorie: gangTypeLabel(o.type) }, { pactes: pactes || [], audits: audits || [], dossiers: dossiers || [], evenements: evenements || [], history: o.history, fiches: fiches || [] });
   }
   async function openConv(o: any) {
-    const { data } = supabase ? await supabase.from("obsidian_fiches").select("nom").eq("organisation", o.nom) : { data: [] as any[] };
+    const { data } = await lire("obsidian_fiches", { select: "nom", eq: [["organisation", o.nom]] });
     const d = new Date(Date.now() + 86400_000).toISOString().slice(0, 10);
     setConv({ org: o.nom, destinataire: "", lieu: "Hangar du désert de Blaine County", date: d, heure: "22:00", objet: "Audit de conformité", consignes: "Présence personnelle et obligatoire. Aucune arme, aucun enregistrement. Venir seul ou avec un seul second.", noms: (data || []).map((f: any) => f.nom), score: o.score });
   }

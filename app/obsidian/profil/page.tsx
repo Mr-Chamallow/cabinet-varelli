@@ -25,7 +25,7 @@ function Inner() {
   useEffect(() => {
     if (!supabase) return;
     const p = new URLSearchParams(window.location.search).get("nom"); if (p) setNom(p);
-    Promise.all([lire("obsidian_employes", { select: "nom" }), supabase.from("obsidian_fiches").select("nom").is("deleted_at", null), supabase.from("bdd_personnes").select("nom,prenom")]).then(([e, f, b]) =>
+    Promise.all([lire("obsidian_employes", { select: "nom" }), lire("obsidian_fiches", { select: "nom", is: [["deleted_at", null]] }), lire("bdd_personnes", { select: "nom,prenom" })]).then(([e, f, b]) =>
       setNames([...new Set([...(e.data || []).map((x: any) => x.nom), ...(f.data || []).map((x: any) => x.nom), ...(b.data || []).map((x: any) => `${x.prenom || ""} ${x.nom || ""}`.trim())])].filter(Boolean).sort((a, b) => a.localeCompare(b))));
   }, []);
 
@@ -35,8 +35,8 @@ function Inner() {
     const q = n.trim(); const like = `%${q}%`;
     const [emp, fic, bdd, act, arr, ctr, rdv, gar] = await Promise.all([
       lire("obsidian_employes", { ilike: [["nom", q]], limit: 1 }).then(r => ({ data: r.data?.[0] ?? null, error: r.error })),
-      supabase.from("obsidian_fiches").select("*").is("deleted_at", null).ilike("nom", q).maybeSingle(),
-      supabase.from("bdd_personnes").select("*").or(`nom.ilike.${like},prenom.ilike.${like}`).limit(5),
+      lire("obsidian_fiches", { is: [["deleted_at", null]], ilike: [["nom", q]], limit: 1 }).then(r => ({ data: r.data?.[0] ?? null, error: r.error })),
+      lire("bdd_personnes", { or: `nom.ilike.${like},prenom.ilike.${like}`, limit: 5 }),
       supabase.from("actions_illegales").select("*").ilike("membre", q).order("created_at", { ascending: false }).limit(50),
       supabase.from("arrestations").select("*").ilike("membre", q).order("created_at", { ascending: false }).limit(50),
       supabase.from("obsidian_contrats").select("titre,statut,recompense,membres_affectes").contains("membres_affectes", [q]),

@@ -16,6 +16,10 @@ const LECTURE: Record<string, string[]> = {
   cahier_transactions: ["cahier_vente", "obsidian_comptabilite", "obsidian_stats"],
   obsidian_employes: ["obsidian_dashboard", "obsidian_employes", "obsidian_rdv", "obsidian_contrats", "obsidian_garage", "obsidian_arrestations", "obsidian_reglement", "obsidian_recrutement", "obsidian_stats", "supervision"],
   obsidian_mouvements: ["obsidian_stocks", "obsidian_comptabilite", "obsidian_dashboard", "obsidian_stats"],
+  bdd_personnes: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements"],
+  bdd_vehicules: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements"],
+  bdd_activites: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements"],
+  obsidian_fiches: ["base_donnees", "obsidian_fiches", "obsidian_dashboard", "carte-enqueteur", "juridique", "obsidian_arrestations", "gm_tribunal", "gm_reputation", "gm_evenements"].concat(["gm_pactes", "gm_audits"]),
 };
 
 export const dynamic = "force-dynamic";
@@ -43,6 +47,8 @@ export async function POST(req: Request) {
 
     for (const [col, val] of (b.eq || []) as Filtre[]) q = q.eq(col, val);
     for (const [col, val] of (b.ilike || []) as Filtre[]) q = q.ilike(col, val);
+    for (const [col] of (b.is || []) as [string, null][]) q = q.is(col, null);
+    if (b.or) q = q.or(String(b.or));
     for (const [col, ascending] of (b.order || []) as [string, boolean][]) q = q.order(col, { ascending: !!ascending });
     if (b.range) q = q.range(Number(b.range[0]), Number(b.range[1]));
     if (b.limit) q = q.limit(Number(b.limit));

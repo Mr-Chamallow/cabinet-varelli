@@ -1,4 +1,5 @@
 "use client";
+import { lire } from "@/lib/lire";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useDeepLink } from "@/lib/deeplink";
@@ -75,8 +76,8 @@ export default function BaseDeDonneesPage() {
   async function load() {
     if (!supabase) { setLoading(false); return; }
     const [{ data: p }, { data: v }, gs, pts] = await Promise.all([
-      supabase.from("bdd_personnes").select("*").order("nom"),
-      supabase.from("bdd_vehicules").select("*").order("plaque"),
+      lire("bdd_personnes", { order: [["nom", true]] }),
+      lire("bdd_vehicules", { order: [["plaque", true]] }),
       fetchGangs(),
       fetchPoints(),
     ]);
@@ -113,7 +114,7 @@ export default function BaseDeDonneesPage() {
   }
   useEffect(() => {
     if (!supabase || !selectedPersonneId) { setActivites([]); return; }
-    supabase.from("bdd_activites").select("*").eq("personne_id", selectedPersonneId).order("created_at", { ascending: false })
+    lire("bdd_activites", { eq: [["personne_id", selectedPersonneId]], order: [["created_at", false]] })
       .then(({ data }: any) => setActivites(data || []));
   }, [selectedPersonneId]);
 
