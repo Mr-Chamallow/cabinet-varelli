@@ -55,48 +55,9 @@ export const PERMISSION_LABELS: Record<string, string> = {
   cabinet_journal: "Cabinet Varelli : Journal d'activité",
 };
 
-// --- Niveaux d'accès par permission (onglet) ---
-// Une entrée de permission peut s'écrire "perm" (= écriture, comportement
-// historique) ou "perm:read" (lecture seule). Rien ne casse pour les rôles
-// non migrés : toute entrée sans suffixe reste en écriture comme avant.
-export type PermLevel = "none" | "read" | "write";
-
-function parsePermEntry(entry: string): { key: string; level: PermLevel } {
-  if (entry.endsWith(":read")) return { key: entry.slice(0, -5), level: "read" };
-  if (entry.endsWith(":write")) return { key: entry.slice(0, -6), level: "write" };
-  return { key: entry, level: "write" };
-}
-
-// Sujet de permission : AppUser (forme interne) ou UserLike (session brute). Seul .permissions compte.
-export type PermSubject = AppUser | UserLike | string | null | undefined;
-
-export function getPermLevel(userOrRole: PermSubject, permission: string): PermLevel {
-  if (!userOrRole) return "none";
-  // Seule source de vérité : les permissions stockées dans la table `roles` (et les overrides).
-  const all = typeof userOrRole === "string" ? [] : (userOrRole.permissions || []);
-  if (all.includes("admin")) return "write";
-  let level: PermLevel = "none";
-  for (const entry of all) {
-    const { key, level: l } = parsePermEntry(entry);
-    if (key !== permission) continue;
-    if (l === "write") return "write"; // l'écriture l'emporte si les deux existent
-    level = l;
-  }
-  return level;
-}
-
-export function hasPermission(userOrRole: PermSubject, permission: string): boolean {
-  return getPermLevel(userOrRole, permission) !== "none";
-}
-
-// Accès en écriture (création/édition/suppression) sur un onglet donné.
-export function hasWriteAccess(userOrRole: PermSubject, permission: string): boolean {
-  return getPermLevel(userOrRole, permission) === "write";
-}
-
-export function isReadOnlyRole(userOrRole: PermSubject): boolean {
-  return getPermLevel(userOrRole, "carte-enqueteur") === "read";
-}
+import { getPermLevel, hasPermission, hasWriteAccess, isReadOnlyRole } from "@/lib/permissions";
+export { getPermLevel, hasPermission, hasWriteAccess, isReadOnlyRole };
+export type { PermLevel, PermSubject } from "@/lib/permissions";
 
 export const canAccess = hasPermission;
 

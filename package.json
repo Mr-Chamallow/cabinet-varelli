@@ -9,7 +9,8 @@
     "stats": "node scripts/stats-projet.mjs",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run lint && npm run build"
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "test": "node --experimental-strip-types --test tests/permissions.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.7",
